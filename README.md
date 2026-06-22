@@ -1,12 +1,12 @@
-# Reprise AI — Web UI (`reprise-ui`)
+# Reprise AI - Web UI (`reprise-ui`)
 
-The Next.js 14 web frontend for **Reprise AI** — the meeting room, the per-participant agent sidebar, dashboards, and all client-facing screens.
+The Next.js 14 web frontend for **Reprise AI** - the meeting room, the per-participant agent sidebar, dashboards, and all client-facing screens.
 
 ## What this is
 
 `reprise-ui` houses the **web-app**: the browser-facing client of Reprise AI. Reprise AI is an intelligent meeting-orchestration, multi-tenant SaaS in which every participant gets a **personal AI agent** that attends their meetings, captures role-relevant notes, suggests questions in real time, and surfaces detected decisions, action items, and conflicts.
 
-This repo renders that experience: a React Server Components-first Next.js 14 App Router app that streams the dashboard, runs the live meeting room (LiveKit video + live captions + the agent sidebar), and presents settings, billing, and admin consoles. It is an **edge/client-tier** application — it owns **no backend data**. Every durable fact (a confirmed decision, a persisted worklog, a final caption) arrives over a server contract; the client owns rendering, optimistic UI, animation discipline, and reconnect resilience.
+This repo renders that experience: a React Server Components-first Next.js 14 App Router app that streams the dashboard, runs the live meeting room (LiveKit video + live captions + the agent sidebar), and presents settings, billing, and admin consoles. It is an **edge/client-tier** application - it owns **no backend data**. Every durable fact (a confirmed decision, a persisted worklog, a final caption) arrives over a server contract; the client owns rendering, optimistic UI, animation discipline, and reconnect resilience.
 
 > The split is deliberate: **the server decides what is true; the client decides how it appears.**
 
@@ -79,7 +79,7 @@ reprise-ui/
       layout.tsx                 # RBAC gate
       tenant/page.tsx            # tenant admin console
       ops/page.tsx               # internal ops console (feature-flagged)
-    api/                         # route handlers only — no business logic
+    api/                         # route handlers only - no business logic
       livekit-token/route.ts     # proxies POST /api/v1/meetings/:id/token
       health/route.ts
   components/                    # design system primitives + feature components
@@ -134,7 +134,7 @@ pnpm test:e2e    # Playwright
 
 ## Environment variables
 
-The client knows only two backend origins; everything tenant-scoped is derived from the Clerk JWT server-side, never from the browser. **No secret is ever exposed to the client** — only `NEXT_PUBLIC_*` values reach the browser bundle.
+The client knows only two backend origins; everything tenant-scoped is derived from the Clerk JWT server-side, never from the browser. **No secret is ever exposed to the client** - only `NEXT_PUBLIC_*` values reach the browser bundle.
 
 | Variable | Public? | Description |
 | --- | --- | --- |
@@ -150,12 +150,12 @@ The client knows only two backend origins; everything tenant-scoped is derived f
 | `NEXT_PUBLIC_OTEL_EXPORTER_URL` | yes | OpenTelemetry browser collector endpoint (optional). |
 | `NEXT_PUBLIC_APP_ENV` | yes | `development` \| `preview` \| `production`, for environment-aware behavior. |
 
-> LiveKit credentials, Deepgram keys, and all service secrets live **server-side in the backend services** (`meeting-service`, `transcription-service`) — never in this repo. The `app/api/livekit-token/route.ts` handler proxies the mint; it holds no LiveKit secret.
+> LiveKit credentials, Deepgram keys, and all service secrets live **server-side in the backend services** (`meeting-service`, `transcription-service`) - never in this repo. The `app/api/livekit-token/route.ts` handler proxies the mint; it holds no LiveKit secret.
 
 ## Testing
 
-- **Vitest + Testing Library** — unit and component tests for primitives, hooks, stores, and the agent-sidebar reducers (delta accumulation, draft→final swap, conflict-banner pinning).
-- **Playwright** — end-to-end flows (sign-in, join meeting room, confirm a decision, save-for-later persistence) **and accessibility checks**: keyboard-only navigation of the meeting room and sidebar, focus order, and contrast of the red/yellow/blue priority strip against both light and dark token sets. A11y is part of the E2E suite, not a separate audit.
+- **Vitest + Testing Library** - unit and component tests for primitives, hooks, stores, and the agent-sidebar reducers (delta accumulation, draft→final swap, conflict-banner pinning).
+- **Playwright** - end-to-end flows (sign-in, join meeting room, confirm a decision, save-for-later persistence) **and accessibility checks**: keyboard-only navigation of the meeting room and sidebar, focus order, and contrast of the red/yellow/blue priority strip against both light and dark token sets. A11y is part of the E2E suite, not a separate audit.
 
 ```bash
 pnpm test           # Vitest watch/CI
@@ -170,12 +170,12 @@ All eight `reprise-*` repos make up Reprise AI:
 
 | Repo | One-liner |
 | --- | --- |
-| **reprise-ui** | This repo — the Next.js 14 web-app: meeting room, agent sidebar, dashboards, settings. |
-| **reprise-docs** | The frozen architecture canon and naming authority (the `_canon/` source of truth) — service, topic, and entity names. |
+| **reprise-ui** | This repo - the Next.js 14 web-app: meeting room, agent sidebar, dashboards, settings. |
+| **reprise-docs** | The frozen architecture canon and naming authority (the `_canon/` source of truth) - service, topic, and entity names. |
 | **reprise-backend** | The CRUD/control-plane services behind `api-gateway`→`bff` (core-api, identity-tenant, meeting, billing-metering, integration, admin-ops, notification). |
-| **reprise-realtime** | The `realtime-gateway` + `transcription-service` live plane — Socket.io fan-out, Deepgram proxy, live captions. |
-| **reprise-intelligence** | The AI/inference tier — the six LangGraph agents (`agent-runtime-service`), RAG, embedding/reranker, knowledge-graph (`nexus_knowledge`). |
-| **reprise-events** | The event backbone — Redpanda topics (`transcript-chunks`, `agent-stream`, `agent-results`, …), Avro schemas, Schema Registry. |
+| **reprise-realtime** | The `realtime-gateway` + `transcription-service` live plane - Socket.io fan-out, Deepgram proxy, live captions. |
+| **reprise-intelligence** | The AI/inference tier - the six LangGraph agents (`agent-runtime-service`), RAG, embedding/reranker, knowledge-graph (`nexus_knowledge`). |
+| **reprise-events** | The event backbone - Redpanda topics (`transcript-chunks`, `agent-stream`, `agent-results`, …), Avro schemas, Schema Registry. |
 | **reprise-platform** | Infrastructure-as-code, Kubernetes/Terraform, CI/CD, and observability platform. |
 | **reprise-mobile** | The mobile client of Reprise AI. |
 

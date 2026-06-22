@@ -1,4 +1,4 @@
-# `reprise-ui` — System Design
+# `reprise-ui` - System Design
 
 The deep technical reference for the **Reprise AI web-app**: the Next.js 14 App Router client that renders the meeting room, the per-participant agent sidebar, dashboards, and all client-facing screens. This document is the implementation-facing companion to the architecture canon; where they disagree, the canon wins.
 
@@ -12,11 +12,11 @@ The deep technical reference for the **Reprise AI web-app**: the Next.js 14 App 
 
 It does **not**:
 
-- Rename any entity, topic, or service — those are frozen in the canon (`_canon/01-service-catalog.md`, `_canon/02-data-model.md`, `_canon/03-event-taxonomy.md`).
-- Define the server-side fan-out (`realtime-gateway`, `agent-stream`, the Redis pub/sub backbone) — that is `10-realtime-and-transcription.md`. This repo **consumes** those contracts as a client.
-- Define the `bff`'s screen-shaped endpoints' internal fan-out — that is the `bff` row in the service catalog. This repo specifies which `/bff/*` and direct service endpoints each screen calls.
+- Rename any entity, topic, or service - those are frozen in the canon (`_canon/01-service-catalog.md`, `_canon/02-data-model.md`, `_canon/03-event-taxonomy.md`).
+- Define the server-side fan-out (`realtime-gateway`, `agent-stream`, the Redis pub/sub backbone) - that is `10-realtime-and-transcription.md`. This repo **consumes** those contracts as a client.
+- Define the `bff`'s screen-shaped endpoints' internal fan-out - that is the `bff` row in the service catalog. This repo specifies which `/bff/*` and direct service endpoints each screen calls.
 
-The clean split: **the server decides what is true; the client decides how it appears.** Every durable fact arrives over a server contract; the client owns rendering, optimistic UI, animation discipline, and offline/reconnect resilience. The browser is **not** a tenancy boundary — it treats every response as already `org_id`-scoped.
+The clean split: **the server decides what is true; the client decides how it appears.** Every durable fact arrives over a server contract; the client owns rendering, optimistic UI, animation discipline, and offline/reconnect resilience. The browser is **not** a tenancy boundary - it treats every response as already `org_id`-scoped.
 
 ## 2. Responsibilities
 
@@ -30,7 +30,7 @@ The clean split: **the server decides what is true; the client decides how it ap
 | **Settings / billing** | Profile, integrations (Calendar/Slack/Jira\|Linear), plan/seats/usage/invoices | `identity-tenant-service`, `integration-service`, `billing-metering-service` via `bff` |
 | **Admin consoles** | Tenant admin and internal ops (RBAC-gated, server-enforced) | `admin-ops-service` |
 
-The sidebar **renders** these; it never decides them. Confidence gating (> 0.7 surface) happens in `agent-runtime-service`, so anything reaching the UI is already above threshold. The **decision/action confirmation rule is load-bearing**: the agent never silently writes — the card surfaces, the user clicks **Confirm**, and only then does `core-api` emit on the `decisions`/`actions` topic and `knowledge-graph-service` create the edge in `nexus_knowledge`.
+The sidebar **renders** these; it never decides them. Confidence gating (> 0.7 surface) happens in `agent-runtime-service`, so anything reaching the UI is already above threshold. The **decision/action confirmation rule is load-bearing**: the agent never silently writes - the card surfaces, the user clicks **Confirm**, and only then does `core-api` emit on the `decisions`/`actions` topic and `knowledge-graph-service` create the edge in `nexus_knowledge`.
 
 ## 3. Architecture
 
@@ -51,7 +51,7 @@ The app is **React Server Components-first**. The default is a server component;
 
 ### 3.3 Route groups & org context
 
-Route groups separate auth state, layout shells, and tenancy context without leaking path segments into the URL: `(marketing)`, `(auth)`, `(app)`, `(admin)`. The **`(app)/layout.tsx` is the single place** the org/tenant context is established for authenticated screens — it reads the Clerk session, resolves the active `org_id`, resolves per-tenant theming and locale from `tenant_settings`, and renders the persistent nav shell. Children inherit a typed `OrgContext` so no screen re-derives tenancy.
+Route groups separate auth state, layout shells, and tenancy context without leaking path segments into the URL: `(marketing)`, `(auth)`, `(app)`, `(admin)`. The **`(app)/layout.tsx` is the single place** the org/tenant context is established for authenticated screens - it reads the Clerk session, resolves the active `org_id`, resolves per-tenant theming and locale from `tenant_settings`, and renders the persistent nav shell. Children inherit a typed `OrgContext` so no screen re-derives tenancy.
 
 ### 3.4 Server Actions as the write chokepoint
 
@@ -68,7 +68,7 @@ Each Server Action calls the canonical service endpoint through `bff`/`api-gatew
 | Real-time (non-AV) | `socket.io-client` | 4.x |
 | Media | `@livekit/components-react` + `livekit-client` | latest |
 | Styling | TailwindCSS | 3.x |
-| Component primitives | shadcn/ui (copy-in) over CSS custom properties | — |
+| Component primitives | shadcn/ui (copy-in) over CSS custom properties | - |
 | Async client cache | TanStack Query (`@tanstack/react-query`) | 5.x |
 | Ephemeral state | Zustand | 4.x |
 | Motion | Framer Motion | 11.x |
@@ -76,17 +76,17 @@ Each Server Action calls the canonical service endpoint through `bff`/`api-gatew
 | E2E + a11y | Playwright | latest |
 | Lint/format | ESLint + Prettier | latest |
 | Errors/observability | Sentry browser SDK, OpenTelemetry browser | latest |
-| Package manager / runtime | pnpm / Node 20+ | — |
+| Package manager / runtime | pnpm / Node 20+ | - |
 
 ## 5. How it talks to the backend
 
 ### 5.1 REST through api-gateway → bff
 
-The client knows exactly two origins: the `api-gateway` HTTPS origin and the `realtime-gateway` WSS origin. The `bff` fan-out to 8+ services is invisible to the client — this is what lets the service mesh evolve without a single frontend change.
+The client knows exactly two origins: the `api-gateway` HTTPS origin and the `realtime-gateway` WSS origin. The `bff` fan-out to 8+ services is invisible to the client - this is what lets the service mesh evolve without a single frontend change.
 
-- **RSC reads** fetch from the `bff` **screen-shaped endpoints** (`/bff/*`, owned only by `bff`) — e.g. `GET /bff/dashboard`, `GET /bff/meeting-room/:id` returns the meeting, participants, the user's worklog, open suggestions, and presence in one composite payload. Or directly from a read endpoint the catalog assigns to `core-api`/`rag-service`/`search-service`. They run server-side with the forwarded JWT; `api-gateway` injects `org_id`.
+- **RSC reads** fetch from the `bff` **screen-shaped endpoints** (`/bff/*`, owned only by `bff`) - e.g. `GET /bff/dashboard`, `GET /bff/meeting-room/:id` returns the meeting, participants, the user's worklog, open suggestions, and presence in one composite payload. Or directly from a read endpoint the catalog assigns to `core-api`/`rag-service`/`search-service`. They run server-side with the forwarded JWT; `api-gateway` injects `org_id`.
 - **Client mutations** go through Server Actions or typed client calls, both terminating at `api-gateway` (`PATCH /api/v1/worklogs/:id`, `POST /api/v1/decisions/:id/confirm`, …). The public REST surface is `/api/v1/...`, resource-oriented, `snake_case` JSON mirroring column names, cursor-paginated, RFC 7807 typed errors with a stable `code` enum, `Idempotency-Key` on mutations.
-- **Caching:** RSC fetches use Next.js `fetch` cache tags keyed by resource (`meeting:{id}`, `tasks:{userId}`); Server Actions `revalidateTag` after a write. There is **no** client-side duplication of the `bff` read-through Redis cache — the client trusts the server's freshness.
+- **Caching:** RSC fetches use Next.js `fetch` cache tags keyed by resource (`meeting:{id}`, `tasks:{userId}`); Server Actions `revalidateTag` after a write. There is **no** client-side duplication of the `bff` read-through Redis cache - the client trusts the server's freshness.
 
 Key endpoints this UI calls (all `/api/v1`, via `api-gateway`):
 
@@ -109,10 +109,10 @@ The browser holds exactly two long-lived connections, matching the two server pl
 | Non-AV real-time | Socket.io client | live captions, agent sidebar output, streamed `agent-stream` tokens, presence, in-meeting chat | `realtime-gateway` (WSS via `api-gateway`) |
 | Media | LiveKit React client | audio/video tracks, screen share, room events | LiveKit SFU |
 
-**Socket.io rooms are keyed by `meeting_id`.** The client joins the `meeting_id` room; fan-out across `realtime-gateway` instances happens server-side over the `nexus:{org_id}:pubsub:meeting:{meeting_id}` Redis pub/sub channel — invisible to the client. The sidebar subscribes to two channels:
+**Socket.io rooms are keyed by `meeting_id`.** The client joins the `meeting_id` room; fan-out across `realtime-gateway` instances happens server-side over the `nexus:{org_id}:pubsub:meeting:{meeting_id}` Redis pub/sub channel - invisible to the client. The sidebar subscribes to two channels:
 
-- `agent-stream` token deltas — disposable, progressive text (the `AgentStreamDelta` envelope).
-- `agent-results` final messages — the durable card (the `AgentResult` schema).
+- `agent-stream` token deltas - disposable, progressive text (the `AgentStreamDelta` envelope).
+- `agent-results` final messages - the durable card (the `AgentResult` schema).
 
 Client rules that mirror the server contract:
 
@@ -128,7 +128,7 @@ Client rules that mirror the server contract:
 - The client **never injects or trusts `org_id` from the browser.** `api-gateway` verifies the JWT signature against Clerk's cached JWKS, extracts the `org` claim → `org_id`, and injects it server-side; the service tier re-verifies. The UI displays the active org but cannot widen its own scope.
 - **Org switching** re-authenticates through Clerk; it never mutates a header. The active org comes from the Clerk session, never from app state.
 - **RBAC gating** on `(admin)` routes is enforced server-side (fail-closed at the gateway/service). The client hides/disables admin affordances as a UX courtesy only.
-- Because tenancy is enforced at every server layer (RLS, namespaced Redis, per-tenant Qdrant, org-partitioned `nexus_knowledge`), the client receives only its tenant's data and **never filters by tenant itself** — removing a whole class of client-side leakage bugs.
+- Because tenancy is enforced at every server layer (RLS, namespaced Redis, per-tenant Qdrant, org-partitioned `nexus_knowledge`), the client receives only its tenant's data and **never filters by tenant itself** - removing a whole class of client-side leakage bugs.
 
 > The single most important frontend security property: **the browser is not a tenancy boundary.** The client treats every response as already-scoped and the gateway as the only place `org_id` is decided.
 
@@ -142,17 +142,17 @@ A layered model keeps server truth and client UI state cleanly separated:
 | Async client cache | TanStack Query | client reads/mutations of CRUD data; query keys mirror resources (`["tasks", userId]`, `["meeting", id]`); optimistic updates with rollback |
 | Ephemeral UI state | Zustand | sidebar collapse, draft streaming cards, toast queue, device-check state |
 | Live event state | Socket.io → Zustand | captions, agent cards, presence reduce into the sidebar store |
-| Auth/session | Clerk | user/session, active `org_id` — source of identity, never stored in app state |
+| Auth/session | Clerk | user/session, active `org_id` - source of identity, never stored in app state |
 
 **Reconciliation rule:** a streamed `agent-results` card writes into the Zustand live store (immediate render) **and** is reconciled against the TanStack Query cache for the relevant list (a confirmed decision invalidates `["decisions", meetingId]`). The client never invents data the server has not produced; optimistic UI (e.g. marking an action complete) always carries a rollback path keyed on the server's response.
 
 ## 8. Real-time UX
 
 - **Live captions** render within the **< 2 s** caption SLO, interim-then-final, without layout shift. Interims are mutable and never persisted (enforced server-side by `transcription-service`).
-- **Agent sidebar** renders LLM output **as it streams** — a suggestion or detected decision materializes progressively rather than popping in fully formed. Target: p95 < 4 s speech→sidebar (interactive class). Streaming text appends without layout thrash (reserved min-height per card).
+- **Agent sidebar** renders LLM output **as it streams** - a suggestion or detected decision materializes progressively rather than popping in fully formed. Target: p95 < 4 s speech→sidebar (interactive class). Streaming text appends without layout thrash (reserved min-height per card).
 - **Priority color language (frozen):** red (`--priority-high`, priority 1, act now), yellow (`--priority-medium`, priority 2, attention), blue (`--priority-low`, priority 3, info). The **red conflict banner** pre-empts and always renders above all other cards; the client pins it to the top regardless of arrival order.
-- **Animation discipline — calm, not flashy** (a behavioral contract): cards fade+slide in over ~150 ms, never bounce/flash/shake; at most one attention-grabbing motion at a time (the conflict banner's single subtle pulse); toasts auto-dismiss after a fixed dwell and queue rather than stack chaotically; `prefers-reduced-motion` degrades all entrances to an instant opacity-only transition. Motion is enforced with a small set of shared Framer Motion variants (`cardEnter`, `bannerPulseOnce`, `toastDwell`) so no feature component invents its own motion.
-- **Save-for-later** sets `agent_suggestions.status = 'Save-for-later'` (durable in Postgres), so the queue is re-hydrated when the user opens their **next** meeting room — a question parked in Monday's standup reappears in Wednesday's planning.
+- **Animation discipline - calm, not flashy** (a behavioral contract): cards fade+slide in over ~150 ms, never bounce/flash/shake; at most one attention-grabbing motion at a time (the conflict banner's single subtle pulse); toasts auto-dismiss after a fixed dwell and queue rather than stack chaotically; `prefers-reduced-motion` degrades all entrances to an instant opacity-only transition. Motion is enforced with a small set of shared Framer Motion variants (`cardEnter`, `bannerPulseOnce`, `toastDwell`) so no feature component invents its own motion.
+- **Save-for-later** sets `agent_suggestions.status = 'Save-for-later'` (durable in Postgres), so the queue is re-hydrated when the user opens their **next** meeting room - a question parked in Monday's standup reappears in Wednesday's planning.
 
 ## 9. Performance
 
@@ -168,11 +168,11 @@ Budgets anchored to the SLOs the canon imports:
 
 Techniques: **RSC is served Cloudflare/CDN-cached** at the edge; route-level code splitting (the heavy LiveKit + Socket.io bundle loads only on the meeting room, not the dashboard); `next/image` through Cloudflare for avatars/assets; `Suspense` boundaries for progressive aggregate streaming; **virtualized lists** for the transcript view (a meeting yields up to ~360 finals) and long decision/task lists. **Core Web Vitals targets:** LCP < 2.5 s, INP < 200 ms, CLS < 0.1.
 
-**Mobile responsive — the bottom-sheet sidebar.** Below the `lg` breakpoint the agent sidebar is a **bottom sheet** (drag-up over the video grid), not a side rail. Collapsed, it shows a peek handle with unread counts and the conflict indicator; a red conflict banner auto-expands the sheet a notch. Same priority language, streaming, Save-for-later, and frozen section order apply — only the container changes, so there is no second implementation of the hardest screen.
+**Mobile responsive - the bottom-sheet sidebar.** Below the `lg` breakpoint the agent sidebar is a **bottom sheet** (drag-up over the video grid), not a side rail. Collapsed, it shows a peek handle with unread counts and the conflict indicator; a red conflict banner auto-expands the sheet a notch. Same priority language, streaming, Save-for-later, and frozen section order apply - only the container changes, so there is no second implementation of the hardest screen.
 
 ## 10. Accessibility & i18n
 
-- **Accessibility:** shadcn/ui primitives ship accessible-by-default (focus-trapped `Modal`, labeled `Input`, ARIA-correct `Badge`/`Avatar`); `prefers-reduced-motion` honored throughout. Verified in the Playwright E2E suite — keyboard-only navigation of the meeting room and sidebar, focus order, and contrast of the priority strip in both light and dark token sets — not left to manual spot-checks.
+- **Accessibility:** shadcn/ui primitives ship accessible-by-default (focus-trapped `Modal`, labeled `Input`, ARIA-correct `Badge`/`Avatar`); `prefers-reduced-motion` honored throughout. Verified in the Playwright E2E suite - keyboard-only navigation of the meeting room and sidebar, focus order, and contrast of the priority strip in both light and dark token sets - not left to manual spot-checks.
 - **i18n:** locale resolves from `tenant_settings.default_locale` at the `(app)/layout.tsx` boundary (the same boundary that resolves theming and `org_id`), so every screen renders in the tenant's default locale without per-screen wiring; user-level overrides layer on top. Strings are externalized rather than inlined.
 
 ## 11. Security
@@ -180,16 +180,16 @@ Techniques: **RSC is served Cloudflare/CDN-cached** at the edge; route-level cod
 - **No secrets client-side.** Only `NEXT_PUBLIC_*` values reach the browser bundle. Clerk secret key, Sentry auth token, LiveKit/Deepgram/service credentials live server-side (in Next.js server context or backend services). The LiveKit token route proxies the mint and holds no LiveKit secret.
 - **CSP.** A strict Content-Security-Policy is set (via `next.config.mjs` headers / middleware) restricting `script-src`, `connect-src` (limited to the `api-gateway` HTTPS origin, the `realtime-gateway` WSS origin, the LiveKit SFU, Clerk, and Sentry), `frame-src`, and `img-src`; nonce-based for inline scripts where required.
 - **XSS.** React escapes by default; `dangerouslySetInnerHTML` is forbidden except for vetted, sanitized server-rendered content. Citation/agent output is treated as text, never HTML.
-- **Trust model.** The client treats every response as already `org_id`-scoped; `404` (not `403`) is returned for cross-tenant access so existence stays tenant-confidential — the UI surfaces it as "not found."
+- **Trust model.** The client treats every response as already `org_id`-scoped; `404` (not `403`) is returned for cross-tenant access so existence stays tenant-confidential - the UI surfaces it as "not found."
 
 ## 12. Dev practices
 
 - **TypeScript strict** everywhere; no `any` without justification.
 - **ESLint + Prettier** enforced in CI; conventional-commits message format.
 - **Trunk-based development** with short-lived branches and mandatory PR review.
-- **TDD with Vitest** — tests before implementation for primitives, hooks, store reducers, and the sidebar streaming logic.
+- **TDD with Vitest** - tests before implementation for primitives, hooks, store reducers, and the sidebar streaming logic.
 - **Commits in this project must NOT include a `Co-Authored-By` footer.**
-- Names (services, topics, entities) come from the `reprise-docs` `_canon/` authority — never invented locally. Frozen identifiers (`agent-stream`, `transcript-chunks`, `agent-results`, the `nexus:{org_id}:` Redis prefix, `nexus_knowledge`) are used verbatim.
+- Names (services, topics, entities) come from the `reprise-docs` `_canon/` authority - never invented locally. Frozen identifiers (`agent-stream`, `transcript-chunks`, `agent-results`, the `nexus:{org_id}:` Redis prefix, `nexus_knowledge`) are used verbatim.
 
 ## 13. CI/CD
 
@@ -202,20 +202,20 @@ GitHub Actions pipeline on every PR:
 5. **E2E** (Playwright, incl. a11y) on the built app
 6. **preview deploy** per PR (Vercel preview or container preview environment), commented on the PR for review.
 
-Production deploys on merge to the default branch — **Vercel** (the RSC-native path) or a container deploy (Next.js standalone output in a Docker image to Kubernetes) consistent with the platform's compute substrate. The OpenAPI breaking-change gate (`oasdiff`) lives in the backend repos; this repo regenerates its TS client from the published spec.
+Production deploys on merge to the default branch - **Vercel** (the RSC-native path) or a container deploy (Next.js standalone output in a Docker image to Kubernetes) consistent with the platform's compute substrate. The OpenAPI breaking-change gate (`oasdiff`) lives in the backend repos; this repo regenerates its TS client from the published spec.
 
 ## 14. Observability
 
-- **Sentry browser SDK** — errors, releases, and source maps (uploaded in CI). Errors carry the `trace_id` so support can pivot from a client-reported error to the exact request.
-- **Web Vitals** — LCP, INP, CLS reported from the client for the Core Web Vitals targets in §9.
-- **OpenTelemetry browser** — client spans correlated with the W3C trace context propagated through `api-gateway`, so a slow screen can be traced end-to-end across the `bff` fan-out.
+- **Sentry browser SDK** - errors, releases, and source maps (uploaded in CI). Errors carry the `trace_id` so support can pivot from a client-reported error to the exact request.
+- **Web Vitals** - LCP, INP, CLS reported from the client for the Core Web Vitals targets in §9.
+- **OpenTelemetry browser** - client spans correlated with the W3C trace context propagated through `api-gateway`, so a slow screen can be traced end-to-end across the `bff` fan-out.
 
 ## 15. Folder / module boundaries
 
-- `app/` — routes only (RSC pages, layouts, route handlers, Server Actions). No business logic beyond orchestration; mutations call the canonical endpoint through `bff`/`api-gateway`.
-- `components/ui/` — the **only** visual vocabulary: `Button`, `Input`, `Modal`, `Card` (with optional `priorityStrip`), `EmptyState`, `Avatar`, `Badge`. Feature components compose these and never introduce ad-hoc styling.
-- `components/meeting/`, `components/sidebar/` — feature components for the room and the agent sidebar.
-- `lib/api/` — the generated TS client + the single gateway base URL. No component holds a service URL.
-- `lib/realtime/` — `SocketProvider` (joins the `meeting_id` room) and `LiveKitRoom` wrappers; both wrap the meeting-room subtree only.
-- `lib/query/` — TanStack Query keys and client. `lib/store/` — Zustand stores. `lib/motion/` — the frozen Framer Motion variants.
+- `app/` - routes only (RSC pages, layouts, route handlers, Server Actions). No business logic beyond orchestration; mutations call the canonical endpoint through `bff`/`api-gateway`.
+- `components/ui/` - the **only** visual vocabulary: `Button`, `Input`, `Modal`, `Card` (with optional `priorityStrip`), `EmptyState`, `Avatar`, `Badge`. Feature components compose these and never introduce ad-hoc styling.
+- `components/meeting/`, `components/sidebar/` - feature components for the room and the agent sidebar.
+- `lib/api/` - the generated TS client + the single gateway base URL. No component holds a service URL.
+- `lib/realtime/` - `SocketProvider` (joins the `meeting_id` room) and `LiveKitRoom` wrappers; both wrap the meeting-room subtree only.
+- `lib/query/` - TanStack Query keys and client. `lib/store/` - Zustand stores. `lib/motion/` - the frozen Framer Motion variants.
 - The **token layer** (`app/globals.css` CSS custom properties → `tailwind.config.ts`) is the single source of visual truth; components read tokens, never raw hex, so dark mode and per-tenant theming flip by swapping a token set.
