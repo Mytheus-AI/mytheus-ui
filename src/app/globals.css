@@ -2,26 +2,346 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ================================================================== */
+/*  Reprise — "hand-set machine"                                       */
+/*  Warm editorial paper on the outside, quiet machine on the inside.  */
+/*  Fraunces display + Geist text + Geist Mono labels. One signal:     */
+/*  lilac. Everything else is restraint, type, and motion.            */
+/* ================================================================== */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Warm paper canvas — a touch warmer than before, less "default white" */
+  --paper: #f5f2ec;
+  --paper-2: #ece7dd;
+  --paper-3: #e4ddf0; /* faint lilac haze for glows */
+
+  /* Warm near-black ink with an aubergine bias */
+  --ink: #18131f;
+  --ink-soft: #645c70;
+  --line: rgba(24, 19, 31, 0.12);
+  --line-strong: rgba(24, 19, 31, 0.28);
+
+  /* The one signal — lilac */
+  --signal: #6f51c9;
+  --signal-deep: #4c3795;
+  --signal-glow: rgba(111, 81, 201, 0.5);
+
+  /* Colored feature blocks */
+  --block-deep: #221b38; /* deep aubergine-lilac — light text on top */
+  --block-deep-ink: #ece8f5;
+  --block-soft: #e7e1f4; /* pale lilac — dark ink on top */
+
+  /* Dark machine console */
+  --console: #181321;
+  --console-2: #221b2f;
+  --console-line: rgba(235, 231, 223, 0.12);
+  --console-ink: #e6e1ec;
+
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* Subtle paper grain over everything — the "made by hand" texture */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.32'/%3E%3C/svg%3E");
+}
+
+::selection {
+  background: var(--signal);
+  color: var(--paper);
+}
+
+/* Honest, visible focus — accessibility is part of craft */
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .font-display {
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  }
+  .font-mono {
+    font-family: var(--font-mono), ui-monospace, monospace;
+  }
+
+  /* Elegant editorial serif for major display headings (Fraunces) */
+  .font-serif {
+    font-family: var(--font-serif), ui-serif, Georgia, "Times New Roman", serif;
+  }
+  /* Big serif display heading: tight, optically-set, slightly soft */
+  .display-serif {
+    font-family: var(--font-serif), ui-serif, Georgia, serif;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.02;
+    font-optical-sizing: auto;
+  }
+
+  /* Outlined display type — used sparingly for a hand-set, layered feel */
+  .text-outline {
+    -webkit-text-stroke: 1.4px var(--ink);
+    color: transparent;
+  }
+  .text-outline-signal {
+    -webkit-text-stroke: 1.4px var(--signal);
+    color: transparent;
+  }
+
+  /* mono micro-label, used for eyebrows / kickers */
+  .kicker {
+    font-family: var(--font-mono), monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  /* deliberate brand underline beneath a word (hand-drawn wobble) */
+  .mark {
+    position: relative;
+    white-space: nowrap;
+  }
+  .mark::after {
+    content: "";
+    position: absolute;
+    left: -0.04em;
+    right: -0.04em;
+    bottom: 0.1em;
+    height: 0.34em;
+    z-index: -1;
+    border-radius: 40% 60% 55% 45% / 60% 50% 50% 40%;
+    background: var(--signal);
+    opacity: 0.26;
+    transform: rotate(-0.6deg);
+  }
+
+  .hairline {
+    border-color: var(--line);
+  }
+
+  /* Animated underline for inline links */
+  .link-underline {
+    background-image: linear-gradient(var(--signal), var(--signal));
+    background-size: 0% 1.5px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    transition: background-size 0.4s var(--ease-soft);
+  }
+  .link-underline:hover {
+    background-size: 100% 1.5px;
+  }
+
+  /* A soft animated aurora glow — the only "background motion" */
+  .aurora {
+    background:
+      radial-gradient(40% 55% at 20% 30%, rgba(111, 81, 201, 0.22), transparent 70%),
+      radial-gradient(35% 45% at 80% 20%, rgba(111, 81, 201, 0.16), transparent 70%),
+      radial-gradient(45% 60% at 60% 80%, rgba(228, 221, 240, 0.5), transparent 70%);
+    filter: blur(8px);
+    animation: drift 22s ease-in-out infinite alternate;
+  }
+}
+
+/* ---------------- Motion keyframes ---------------- */
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes growLine {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes equalize {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes softPulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.12;
+    transform: scale(1.3);
+  }
+}
+
+@keyframes drift {
+  from {
+    transform: translate3d(-2%, -1%, 0) scale(1.05);
+  }
+  to {
+    transform: translate3d(3%, 2%, 0) scale(1.15);
+  }
+}
+
+@keyframes spinSlow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Initial page-load lift, staggered via inline animation-delay */
+.lift {
+  opacity: 0;
+  animation: fadeUp 0.85s var(--ease-out) both;
+}
+
+.blink {
+  animation: blink 1.6s steps(1, end) infinite;
+}
+
+.marquee-track {
+  animation: marquee 38s linear infinite;
+}
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+.spin-slow {
+  animation: spinSlow 26s linear infinite;
+}
+
+/* Scroll reveal (toggled via IntersectionObserver) */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.7s var(--ease-out),
+    transform 0.7s var(--ease-out);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .lift,
+  .reveal {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .marquee-track,
+  .blink,
+  .eq-bar,
+  .shimmer,
+  .live-ring,
+  .aurora,
+  .spin-slow {
+    animation: none !important;
+  }
+}
+
+@layer utilities {
+  .eq-bar {
+    transform-origin: bottom;
+    animation: equalize 0.9s ease-in-out infinite;
+  }
+  .shimmer {
+    background-size: 200% 100%;
+    animation: shimmer 1.4s linear infinite;
+  }
+  .live-ring {
+    animation: softPulse 2s ease-in-out infinite;
   }
 }
