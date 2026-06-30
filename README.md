@@ -1,10 +1,10 @@
-# Reprise AI - Web UI (`reprise-ui`)
+# Mytheus - Web UI (`mytheus-ui`)
 
-The Next.js 14 web frontend for **Reprise AI** - the meeting room, the per-participant agent sidebar, dashboards, and all client-facing screens.
+The Next.js 14 web frontend for **Mytheus** - the meeting room, the per-participant agent sidebar, dashboards, and all client-facing screens.
 
 ## What this is
 
-`reprise-ui` houses the **web-app**: the browser-facing client of Reprise AI. Reprise AI is an intelligent meeting-orchestration, multi-tenant SaaS in which every participant gets a **personal AI agent** that attends their meetings, captures role-relevant notes, suggests questions in real time, and surfaces detected decisions, action items, and conflicts.
+`mytheus-ui` houses the **web-app**: the browser-facing client of Mytheus. Mytheus is an intelligent meeting-orchestration, multi-tenant SaaS in which every participant gets a **personal AI agent** that attends their meetings, captures role-relevant notes, suggests questions in real time, and surfaces detected decisions, action items, and conflicts.
 
 This repo renders that experience: a React Server Components-first Next.js 14 App Router app that streams the dashboard, runs the live meeting room (LiveKit video + live captions + the agent sidebar), and presents settings, billing, and admin consoles. It is an **edge/client-tier** application - it owns **no backend data**. Every durable fact (a confirmed decision, a persisted worklog, a final caption) arrives over a server contract; the client owns rendering, optimistic UI, animation discipline, and reconnect resilience.
 
@@ -26,7 +26,7 @@ Browser ──HTTPS/WSS──▶ Cloudflare CDN + WAF
 - The live plane (captions, agent token streaming, presence, in-meeting chat) rides Socket.io to `realtime-gateway`; media (audio/video, screen share) rides the LiveKit React client to the LiveKit SFU.
 - Auth is **Clerk**; `org_id` is extracted from the Clerk JWT at `api-gateway` and injected server-side. The browser is **not** a tenancy boundary.
 
-See the architecture canon for the authoritative view: `03-container-architecture.md` (where web-app sits), `20-frontend-architecture.md` (the primary frontend spec), `19-api-architecture.md` (the API surface this UI calls), and `11-security-architecture.md` / `06-multi-tenancy.md` (Clerk auth, `org_id`, JWT). These live in the **reprise-docs** repo. Conceptually, `reprise-ui` consumes **reprise-backend** (CRUD/control plane via `api-gateway`→`bff`) and **reprise-realtime** (the WSS live plane).
+See the architecture canon for the authoritative view: `03-container-architecture.md` (where web-app sits), `20-frontend-architecture.md` (the primary frontend spec), `19-api-architecture.md` (the API surface this UI calls), and `11-security-architecture.md` / `06-multi-tenancy.md` (Clerk auth, `org_id`, JWT). These live in the **mytheus-docs** repo. Conceptually, `mytheus-ui` consumes **mytheus-backend** (CRUD/control plane via `api-gateway`→`bff`) and **mytheus-realtime** (the WSS live plane).
 
 ## Tech stack
 
@@ -49,7 +49,7 @@ See the architecture canon for the authoritative view: `03-container-architectur
 ## Repo structure
 
 ```
-reprise-ui/
+mytheus-ui/
   app/
     layout.tsx                   # ClerkProvider, fonts, globals, token layer
     (marketing)/                 # unauthenticated: landing, pricing, self-serve signup
@@ -138,7 +138,7 @@ The client knows only two backend origins; everything tenant-scoped is derived f
 
 | Variable | Public? | Description |
 | --- | --- | --- |
-| `NEXT_PUBLIC_API_GATEWAY_URL` | yes | HTTPS origin of `api-gateway` (e.g. `https://api.reprise.app`). The only REST origin the client holds. |
+| `NEXT_PUBLIC_API_GATEWAY_URL` | yes | HTTPS origin of `api-gateway` (e.g. `https://api.mytheus.app`). The only REST origin the client holds. |
 | `NEXT_PUBLIC_REALTIME_WS_URL` | yes | WSS origin of `realtime-gateway` (captions, agent stream, presence, chat). |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | yes | Clerk publishable key (front-channel). |
 | `CLERK_SECRET_KEY` | no (server) | Clerk secret key for server-side session verification in RSC / route handlers. |
@@ -166,19 +166,19 @@ pnpm test:e2e:ui    # Playwright with UI runner
 
 ## Related repos
 
-All eight `reprise-*` repos make up Reprise AI:
+All eight `mytheus-*` repos make up Mytheus:
 
 | Repo | One-liner |
 | --- | --- |
-| **reprise-ui** | This repo - the Next.js 14 web-app: meeting room, agent sidebar, dashboards, settings. |
-| **reprise-docs** | The frozen architecture canon and naming authority (the `_canon/` source of truth) - service, topic, and entity names. |
-| **reprise-backend** | The CRUD/control-plane services behind `api-gateway`→`bff` (core-api, identity-tenant, meeting, billing-metering, integration, admin-ops, notification). |
-| **reprise-realtime** | The `realtime-gateway` + `transcription-service` live plane - Socket.io fan-out, Deepgram proxy, live captions. |
-| **reprise-intelligence** | The AI/inference tier - the six LangGraph agents (`agent-runtime-service`), RAG, embedding/reranker, knowledge-graph (`nexus_knowledge`). |
-| **reprise-events** | The event backbone - Redpanda topics (`transcript-chunks`, `agent-stream`, `agent-results`, …), Avro schemas, Schema Registry. |
-| **reprise-platform** | Infrastructure-as-code, Kubernetes/Terraform, CI/CD, and observability platform. |
-| **reprise-mobile** | The mobile client of Reprise AI. |
+| **mytheus-ui** | This repo - the Next.js 14 web-app: meeting room, agent sidebar, dashboards, settings. |
+| **mytheus-docs** | The frozen architecture canon and naming authority (the `_canon/` source of truth) - service, topic, and entity names. |
+| **mytheus-backend** | The CRUD/control-plane services behind `api-gateway`→`bff` (core-api, identity-tenant, meeting, billing-metering, integration, admin-ops, notification). |
+| **mytheus-realtime** | The `realtime-gateway` + `transcription-service` live plane - Socket.io fan-out, Deepgram proxy, live captions. |
+| **mytheus-intelligence** | The AI/inference tier - the six LangGraph agents (`agent-runtime-service`), RAG, embedding/reranker, knowledge-graph (`nexus_knowledge`). |
+| **mytheus-events** | The event backbone - Redpanda topics (`transcript-chunks`, `agent-stream`, `agent-results`, …), Avro schemas, Schema Registry. |
+| **mytheus-platform** | Infrastructure-as-code, Kubernetes/Terraform, CI/CD, and observability platform. |
+| **mytheus-mobile** | The mobile client of Mytheus. |
 
 ## License
 
-Proprietary. © Reprise AI. All rights reserved.
+Proprietary. © Mytheus. All rights reserved.

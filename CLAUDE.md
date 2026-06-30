@@ -1,10 +1,10 @@
 # CLAUDE.md
 
-This is `reprise-ui`, the Next.js 14 web frontend of Reprise AI. The one thing to keep in mind on every change: the server decides what is true; the client only decides how it appears. This repo owns no backend data, holds no secrets, and reaches the backend only through `api-gateway`/`bff` (REST) and `realtime-gateway` (WSS).
+This is `mytheus-ui`, the Next.js 14 web frontend of Mytheus. The one thing to keep in mind on every change: the server decides what is true; the client only decides how it appears. This repo owns no backend data, holds no secrets, and reaches the backend only through `api-gateway`/`bff` (REST) and `realtime-gateway` (WSS).
 
 ## Repo at a glance
 
-- What it is: the web-app container of Reprise AI, a multi-tenant meeting-orchestration SaaS where every participant gets a personal AI agent. This repo renders the meeting room (LiveKit video, live captions, the agent sidebar), dashboards, search, settings, billing, and admin consoles.
+- What it is: the web-app container of Mytheus, a multi-tenant meeting-orchestration SaaS where every participant gets a personal AI agent. This repo renders the meeting room (LiveKit video, live captions, the agent sidebar), dashboards, search, settings, billing, and admin consoles.
 - Tier: edge/client tier. Everything here runs in the browser or in the Next.js server (RSC, route handlers, Server Actions).
 - What it owns: rendering, optimistic UI, animation discipline, reconnect/offline resilience, and the client-side composition of server contracts.
 - What it must NEVER do:
@@ -12,7 +12,7 @@ This is `reprise-ui`, the Next.js 14 web frontend of Reprise AI. The one thing t
   - Hold a secret. Only `NEXT_PUBLIC_*` values may reach the browser bundle.
   - Talk to a backend service directly. All REST goes through `api-gateway` -> `bff`; all live traffic goes through `realtime-gateway`. The client knows exactly two backend origins (plus the LiveKit SFU host and Clerk).
   - Filter by tenant, inject `org_id`, or treat the browser as a tenancy boundary.
-  - Rename any service, topic, or entity. Names are frozen in the `reprise-docs` `_canon/`.
+  - Rename any service, topic, or entity. Names are frozen in the `mytheus-docs` `_canon/`.
 
 ## Architecture orientation
 
@@ -58,7 +58,7 @@ Two data planes, two origins:
 
 ## Naming authority
 
-Service, topic, and entity names are frozen in the `reprise-docs` `_canon/` (`01-service-catalog.md`, `02-data-model.md`, `03-event-taxonomy.md`) and the Glossary (doc 24). Never invent or rename a service, topic, or store name locally. Use these verbatim where referenced: `agent-stream`, `agent-results`, `transcript-chunks`, `decisions`, `actions`, the Redis prefix `nexus:{org_id}:`, `nexus_knowledge`, `meeting_id`. If a name seems missing or wrong, check `_canon/` first; a rename must land in the canon/Glossary before it appears here.
+Service, topic, and entity names are frozen in the `mytheus-docs` `_canon/` (`01-service-catalog.md`, `02-data-model.md`, `03-event-taxonomy.md`) and the Glossary (doc 24). Never invent or rename a service, topic, or store name locally. Use these verbatim where referenced: `agent-stream`, `agent-results`, `transcript-chunks`, `decisions`, `actions`, the Redis prefix `nexus:{org_id}:`, `nexus_knowledge`, `meeting_id`. If a name seems missing or wrong, check `_canon/` first; a rename must land in the canon/Glossary before it appears here.
 
 ## Conventions
 
@@ -153,11 +153,11 @@ Required env vars (public ones reach the browser; never put a secret in a `NEXT_
 ## Working with other repos
 
 This repo consumes contracts; it must stay compatible with them and must not redefine them.
-- reprise-backend (`api-gateway`/`bff`): the REST shapes this UI calls (`/bff/*` screen endpoints, `/api/v1/...` resource endpoints). The TS client regenerates from the published OpenAPI 3.1 spec, so wire drift is structurally prevented; regenerate rather than hand-edit types. The `oasdiff` breaking-change gate lives in the backend repos.
-- reprise-realtime (`realtime-gateway` + `transcription-service`): the Socket.io events and envelopes this UI subscribes to (`agent-stream` `AgentStreamDelta`, `agent-results` `AgentResult`, captions, presence, chat) and the `meeting_id` room contract.
-- reprise-events: the Redpanda topic and Avro schema names (`transcript-chunks`, `agent-stream`, `agent-results`, `decisions`, `actions`) - referenced by name only, never produced/consumed here.
-- reprise-docs: the `_canon/` naming authority and the architecture specs.
-- reprise-mobile: the other client of the same backend. Keep REST/WS usage compatible; do not push backend changes that would only suit web.
+- mytheus-backend (`api-gateway`/`bff`): the REST shapes this UI calls (`/bff/*` screen endpoints, `/api/v1/...` resource endpoints). The TS client regenerates from the published OpenAPI 3.1 spec, so wire drift is structurally prevented; regenerate rather than hand-edit types. The `oasdiff` breaking-change gate lives in the backend repos.
+- mytheus-realtime (`realtime-gateway` + `transcription-service`): the Socket.io events and envelopes this UI subscribes to (`agent-stream` `AgentStreamDelta`, `agent-results` `AgentResult`, captions, presence, chat) and the `meeting_id` room contract.
+- mytheus-events: the Redpanda topic and Avro schema names (`transcript-chunks`, `agent-stream`, `agent-results`, `decisions`, `actions`) - referenced by name only, never produced/consumed here.
+- mytheus-docs: the `_canon/` naming authority and the architecture specs.
+- mytheus-mobile: the other client of the same backend. Keep REST/WS usage compatible; do not push backend changes that would only suit web.
 
 ## Commit and PR conventions
 

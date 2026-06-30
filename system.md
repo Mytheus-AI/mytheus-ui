@@ -1,14 +1,14 @@
-# `reprise-ui` - System Design
+# `mytheus-ui` - System Design
 
-The deep technical reference for the **Reprise AI web-app**: the Next.js 14 App Router client that renders the meeting room, the per-participant agent sidebar, dashboards, and all client-facing screens. This document is the implementation-facing companion to the architecture canon; where they disagree, the canon wins.
+The deep technical reference for the **Mytheus web-app**: the Next.js 14 App Router client that renders the meeting room, the per-participant agent sidebar, dashboards, and all client-facing screens. This document is the implementation-facing companion to the architecture canon; where they disagree, the canon wins.
 
-**Canon references** (in the `reprise-docs` repo): `20-frontend-architecture.md` (the primary frontend spec), `03-container-architecture.md` (where web-app sits), `19-api-architecture.md` (the API surface), `11-security-architecture.md` and `06-multi-tenancy.md` (Clerk auth, `org_id`, JWT), `10-realtime-and-transcription.md` (server-side fan-out this client consumes), `09-rag-and-inference-serving.md` (the RAG/citation contract), and the frozen `_canon/` naming authority.
+**Canon references** (in the `mytheus-docs` repo): `20-frontend-architecture.md` (the primary frontend spec), `03-container-architecture.md` (where web-app sits), `19-api-architecture.md` (the API surface), `11-security-architecture.md` and `06-multi-tenancy.md` (Clerk auth, `org_id`, JWT), `10-realtime-and-transcription.md` (server-side fan-out this client consumes), `09-rag-and-inference-serving.md` (the RAG/citation contract), and the frozen `_canon/` naming authority.
 
 ---
 
 ## 1. Purpose & bounded context
 
-`reprise-ui` owns the **web-app container** and nothing else: everything that runs in the browser or in the Next.js server (RSC, route handlers, Server Actions). It specifies how the client renders Reprise AI, how it consumes the live and CRUD planes, and how the agent sidebar is built.
+`mytheus-ui` owns the **web-app container** and nothing else: everything that runs in the browser or in the Next.js server (RSC, route handlers, Server Actions). It specifies how the client renders Mytheus, how it consumes the live and CRUD planes, and how the agent sidebar is built.
 
 It does **not**:
 
@@ -189,7 +189,7 @@ Techniques: **RSC is served Cloudflare/CDN-cached** at the edge; route-level cod
 - **Trunk-based development** with short-lived branches and mandatory PR review.
 - **TDD with Vitest** - tests before implementation for primitives, hooks, store reducers, and the sidebar streaming logic.
 - **Commits in this project must NOT include a `Co-Authored-By` footer.**
-- Names (services, topics, entities) come from the `reprise-docs` `_canon/` authority - never invented locally. Frozen identifiers (`agent-stream`, `transcript-chunks`, `agent-results`, the `nexus:{org_id}:` Redis prefix, `nexus_knowledge`) are used verbatim.
+- Names (services, topics, entities) come from the `mytheus-docs` `_canon/` authority - never invented locally. Frozen identifiers (`agent-stream`, `transcript-chunks`, `agent-results`, the `nexus:{org_id}:` Redis prefix, `nexus_knowledge`) are used verbatim.
 
 ## 13. CI/CD
 
