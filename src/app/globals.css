@@ -1,0 +1,446 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ================================================================== */
+/*  Mytheus — "Playex-style" system (Claude-light themed)              */
+/*  Cool near-white monochrome. Huge tight grotesk type. Soft pills    */
+/*  and big rounded cards. One signal: lilac — expressed as glossy 3D  */
+/*  orbs and glows, the way Playex uses its green. Calm, premium.      */
+/* ================================================================== */
+
+:root {
+  /* Claude light theme — warm cream canvas */
+  --bg: #faf9f5;
+  --bg-2: #f3f1ea;
+  --bg-3: #ede9de; /* warm cream — sections / card fills */
+  --surface: #ffffff;
+
+  /* Inks — warm near-blacks / browns, never pure on text */
+  --ink: #1c1a15; /* strongest — wordmark */
+  --ink-display: #26231d; /* big display headings */
+  --ink-2: #423e36; /* nav / strong body */
+  --ink-3: #6f6a5f; /* muted body */
+  --line: #e7e2d6; /* warm hairline */
+  --line-2: #d8d2c3;
+
+  /* The one signal — Claude clay / coral */
+  --signal: #d97757;
+  --signal-deep: #bd5d3a;
+  --signal-bright: #e8a489;
+  --signal-soft: #f5e5dc;
+  --signal-glow: rgba(217, 119, 87, 0.5);
+
+  /* Warm near-black pills (dark accents / icon buttons) */
+  --pill: #26231d;
+
+  --radius-pill: 40px;
+  --radius-card: 24px;
+  --radius-md: 16px;
+  --radius-sm: 12px;
+
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--ink-2);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* clip (not hidden) so it doesn't become a scroll container and break the
+     position:sticky used by the LiveCapture scroll-pinned conveyor */
+  overflow-x: clip;
+}
+
+::selection {
+  background: var(--signal);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+    color: var(--ink-display);
+    font-weight: 550;
+    letter-spacing: -0.03em;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+  .font-sans {
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  }
+  .font-mono {
+    font-family: var(--font-mono), ui-monospace, monospace;
+  }
+
+  /* The signature Playex display: huge, tight, near-black, optical line-height */
+  .display {
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+    color: var(--ink-display);
+    font-weight: 550;
+    letter-spacing: -0.035em;
+    line-height: 0.92;
+  }
+  .display-tight {
+    line-height: 0.82;
+    letter-spacing: -0.045em;
+  }
+
+  /* the Mytheus wordmark — bold geometric display face (letters only) */
+  .wordmark {
+    font-family: var(--font-wordmark), var(--font-sans), ui-sans-serif,
+      system-ui, sans-serif;
+    font-weight: 400; /* Refinity Regular already reads heavy — no faux bold */
+    font-feature-settings: "liga" 1, "kern" 1;
+  }
+
+  /* mono micro-label / eyebrow */
+  .kicker {
+    font-family: var(--font-mono), monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  /* soft pill surface used by nav + secondary buttons */
+  .pill-surface {
+    background-image: linear-gradient(180deg, #ffffff, #fbfbfb);
+    border: 1px solid var(--line);
+  }
+
+  .hairline {
+    border-color: var(--line);
+  }
+
+  /* animated inline-link underline */
+  .link-underline {
+    background-image: linear-gradient(var(--ink-2), var(--ink-2));
+    background-size: 0% 1.5px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    transition: background-size 0.4s var(--ease-soft);
+  }
+  .link-underline:hover {
+    background-size: 100% 1.5px;
+  }
+
+  /* blurred glow halo placed behind the graph */
+  .orb-glow {
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--signal-glow) 0%, transparent 68%);
+    filter: blur(28px);
+  }
+
+  /* warm "sunburst" — colorful radiating backdrop panel behind the hero
+     note card. Conic rays in clay tones over a deep base, with a soft
+     centre highlight. Pair with .grain for texture. */
+  .sunburst {
+    background:
+      radial-gradient(80% 80% at 70% 18%, rgba(255, 255, 255, 0.45) 0%, transparent 42%),
+      conic-gradient(
+        from 210deg at 78% 12%,
+        #bd5d3a 0deg,
+        #d97757 38deg,
+        #e8a489 74deg,
+        #c98a6a 120deg,
+        #8f4a30 176deg,
+        #bd5d3a 232deg,
+        #e8a489 300deg,
+        #bd5d3a 360deg
+      );
+  }
+
+  /* soft abstract gradient field — the hero "dunes" backdrop */
+  .mesh-field {
+    background:
+      radial-gradient(58% 52% at 72% 62%, #f0ece1 0%, transparent 70%),
+      radial-gradient(52% 60% at 24% 74%, #ece6d9 0%, transparent 70%),
+      radial-gradient(42% 44% at 56% 40%, rgba(217, 119, 87, 0.13) 0%, transparent 72%),
+      linear-gradient(180deg, #faf9f5 0%, #f1eee5 100%);
+  }
+
+  /* living mesh — the gradient slowly breathes/drifts so big stage panels
+     never read as a flat, static image. Pair with .mesh-field. */
+  .mesh-anim {
+    background-size:
+      160% 160%,
+      175% 175%,
+      150% 150%,
+      100% 100%;
+    animation: meshDrift 28s ease-in-out infinite alternate;
+  }
+
+  /* a card that feels physical: lifts toward the cursor with a warm clay
+     shadow + brightening hairline. Use on bordered white cards. */
+  .card-interactive {
+    transition:
+      transform 0.5s var(--ease-soft),
+      box-shadow 0.5s var(--ease-soft),
+      border-color 0.5s var(--ease-soft);
+    will-change: transform;
+  }
+  .card-interactive:hover {
+    transform: translateY(-5px);
+    border-color: var(--line-2);
+    box-shadow:
+      0 32px 64px -34px rgba(189, 93, 58, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  }
+
+  /* animated clay gradient clipped to text — for accent words in headings */
+  .text-gradient-signal {
+    background-image: linear-gradient(
+      100deg,
+      var(--signal-deep),
+      var(--signal),
+      var(--signal-bright),
+      var(--signal)
+    );
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradientPan 8s ease-in-out infinite;
+  }
+
+  /* a soft moving sheen swept across a surface (badges, pills) */
+  .sheen {
+    position: relative;
+    overflow: hidden;
+  }
+  .sheen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      105deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.55) 48%,
+      transparent 66%
+    );
+    background-size: 250% 100%;
+    animation: shimmer 5.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.4;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.28'/%3E%3C/svg%3E");
+  }
+}
+
+/* ---------------- motion keyframes ---------------- */
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floaty {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+@keyframes glowPulse {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes drift {
+  from {
+    transform: translate3d(-2%, -1%, 0) scale(1.04);
+  }
+  to {
+    transform: translate3d(3%, 2%, 0) scale(1.12);
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* a token travelling along a workflow connector (left→right) */
+@keyframes flowDot {
+  0% {
+    offset-distance: 0%;
+    transform: translateX(-140%);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(520%);
+    opacity: 0;
+  }
+}
+
+@keyframes arrowNudge {
+  0%,
+  100% {
+    transform: var(--nudge-base, translateX(0));
+    opacity: 0.55;
+  }
+  50% {
+    transform: var(--nudge-mid, translateX(4px));
+    opacity: 1;
+  }
+}
+
+@keyframes meshDrift {
+  0% {
+    background-position:
+      0% 0%,
+      100% 100%,
+      50% 50%,
+      0 0;
+  }
+  100% {
+    background-position:
+      28% 22%,
+      72% 78%,
+      62% 38%,
+      0 0;
+  }
+}
+
+@keyframes gradientPan {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 250% 0;
+  }
+  100% {
+    background-position: -150% 0;
+  }
+}
+
+.lift {
+  opacity: 0;
+  animation: fadeUp 0.8s var(--ease-out) both;
+}
+.floaty {
+  animation: floaty 7s ease-in-out infinite;
+}
+.glow-pulse {
+  animation: glowPulse 5s ease-in-out infinite;
+}
+.drift {
+  animation: drift 24s ease-in-out infinite alternate;
+}
+.marquee-track {
+  animation: marquee 38s linear infinite;
+}
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+.flow-dot {
+  animation: flowDot 2.6s var(--ease-out) infinite;
+}
+.arrow-nudge {
+  animation: arrowNudge 2.2s ease-in-out infinite;
+}
+
+/* scroll reveal toggled via IntersectionObserver (in motion.tsx) */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.7s var(--ease-out),
+    transform 0.7s var(--ease-out);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .lift,
+  .reveal {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .floaty,
+  .glow-pulse,
+  .drift,
+  .marquee-track,
+  .flow-dot,
+  .arrow-nudge,
+  .mesh-anim,
+  .text-gradient-signal,
+  .sheen::after {
+    animation: none !important;
+  }
+  .card-interactive {
+    transition: none;
+  }
+  .card-interactive:hover {
+    transform: none;
+  }
+}
