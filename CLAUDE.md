@@ -1,10 +1,10 @@
 # CLAUDE.md
 
-This is `reprise-ui`, the Next.js 14 web frontend of Reprise AI. The one thing to keep in mind on every change: the server decides what is true; the client only decides how it appears. This repo owns no backend data, holds no secrets, and reaches the backend only through `api-gateway`/`bff` (REST) and `realtime-gateway` (WSS).
+This is `reprise-ui`, the Next.js 14 web frontend of Mytheus. The one thing to keep in mind on every change: the server decides what is true; the client only decides how it appears. This repo owns no backend data, holds no secrets, and reaches the backend only through `api-gateway`/`bff` (REST) and `realtime-gateway` (WSS).
 
 ## Repo at a glance
 
-- What it is: the web-app container of Reprise AI, a multi-tenant meeting-orchestration SaaS where every participant gets a personal AI agent. This repo renders the meeting room (LiveKit video, live captions, the agent sidebar), dashboards, search, settings, billing, and admin consoles.
+- What it is: the web-app container of Mytheus, a multi-tenant meeting-orchestration SaaS where every participant gets a personal AI agent. This repo renders the meeting room (LiveKit video, live captions, the agent sidebar), dashboards, search, settings, billing, and admin consoles.
 - Tier: edge/client tier. Everything here runs in the browser or in the Next.js server (RSC, route handlers, Server Actions).
 - What it owns: rendering, optimistic UI, animation discipline, reconnect/offline resilience, and the client-side composition of server contracts.
 - What it must NEVER do:

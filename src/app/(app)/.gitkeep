@@ -1,0 +1,4 @@
+# (app)
+
+Authenticated app shell. Per docs 20-frontend-architecture.md §2.2:
+`layout.tsx` (OrgProvider + AppShell), `dashboard/`, `meetings/[meetingId]/`, `decisions/`, `tasks/`, `org/`, `search/`, `settings/`.

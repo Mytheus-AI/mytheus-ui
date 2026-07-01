@@ -1,55 +1,32 @@
-import { Reveal, CTAButton, WordReveal } from "./motion";
+"use client";
 
-/**
- * Final CTA — the closing crescendo. One massive editorial serif statement,
- * a quiet aurora glow behind it, and a prominent magnetic CTA.
- */
+import { PillCTA } from "./ui";
+import { WordReveal, Magnetic } from "./motion";
+import { FlowField } from "./FlowField";
+
+/* Closing CTA — a big rounded stage echoing the hero: a living gradient mesh,
+   a flowing line of "memory" with a pulse travelling across it, one large
+   statement that develops word by word, and the split-pill CTA. */
+
 export function FinalCTA() {
   return (
-    <section className="mx-auto max-w-[80rem] px-6 pb-16 pt-12 sm:pb-24 lg:pb-32">
-      <Reveal>
-        <div className="relative overflow-hidden rounded-[1.75rem] border border-line bg-gradient-to-b from-paper-3/70 to-paper-2 px-5 py-16 text-center sm:rounded-[2.5rem] sm:px-6 sm:py-24 lg:py-36">
-          {/* quiet living glow */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 -z-10 opacity-80"
-          >
-            <div className="aurora absolute left-1/2 top-0 h-[34rem] w-[44rem] -translate-x-1/2" />
-          </div>
-
-          <p className="kicker mb-7 text-signal-deep">Every meeting, on repeat</p>
-
-          <h2 className="display-serif mx-auto max-w-5xl leading-[0.95]">
-            <span className="relative block text-[clamp(2.3rem,9vw,7rem)]">
-              <span
-                aria-hidden
-                className="text-outline-signal pointer-events-none absolute inset-0 -translate-y-[0.06em] translate-x-[0.03em] select-none opacity-30"
-              >
-                Unlimited
-              </span>
-              <span className="relative text-ink">Unlimited</span>
-            </span>
-            <WordReveal
-              as="span"
-              className="block text-[clamp(2.3rem,9vw,7rem)] italic text-signal-deep"
-              text="meeting memory."
-              accentClass=""
-            />
-          </h2>
-
-          <Reveal delay={160}>
-            <div className="mt-10 flex flex-col items-center gap-4 sm:mt-12">
-              <CTAButton href="/sign-up" className="px-8 py-4 text-[0.95rem]">
-                Get started free
-                <span className="transition-transform group-hover:translate-x-0.5">→</span>
-              </CTAButton>
-              <p className="text-balance px-2 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-ink-soft/70 sm:tracking-[0.18em]">
-                Free to start · macOS, Windows &amp; iPhone
-              </p>
-            </div>
-          </Reveal>
+    <section className="px-3 pb-3 sm:px-5">
+      <div className="mesh-field mesh-anim grain relative isolate overflow-hidden rounded-[28px] border border-line">
+        {/* flowing "memory" line + travelling pulse, behind the statement */}
+        <FlowField className="absolute inset-0 z-0 opacity-60" />
+        <div className="relative z-10 mx-auto flex max-w-[1340px] flex-col items-center gap-12 px-6 py-28 text-center sm:px-10 sm:py-36">
+          <WordReveal
+            as="h2"
+            text="Unlimited meeting"
+            accent="memory."
+            accentClass="text-gradient-signal"
+            className="display display-tight mx-auto max-w-[14ch] text-balance text-[clamp(2.6rem,8vw,6.5rem)]"
+          />
+          <Magnetic strength={0.3}>
+            <PillCTA href="/sign-up">Get started free</PillCTA>
+          </Magnetic>
         </div>
-      </Reveal>
+      </div>
     </section>
   );
 }

@@ -1,10 +1,10 @@
-# Reprise AI - Web UI (`reprise-ui`)
+# Mytheus - Web UI (`reprise-ui`)
 
-The Next.js 14 web frontend for **Reprise AI** - the meeting room, the per-participant agent sidebar, dashboards, and all client-facing screens.
+The Next.js 14 web frontend for **Mytheus** - the meeting room, the per-participant agent sidebar, dashboards, and all client-facing screens.
 
 ## What this is
 
-`reprise-ui` houses the **web-app**: the browser-facing client of Reprise AI. Reprise AI is an intelligent meeting-orchestration, multi-tenant SaaS in which every participant gets a **personal AI agent** that attends their meetings, captures role-relevant notes, suggests questions in real time, and surfaces detected decisions, action items, and conflicts.
+`reprise-ui` houses the **web-app**: the browser-facing client of Mytheus. Mytheus is an intelligent meeting-orchestration, multi-tenant SaaS in which every participant gets a **personal AI agent** that attends their meetings, captures role-relevant notes, suggests questions in real time, and surfaces detected decisions, action items, and conflicts.
 
 This repo renders that experience: a React Server Components-first Next.js 14 App Router app that streams the dashboard, runs the live meeting room (LiveKit video + live captions + the agent sidebar), and presents settings, billing, and admin consoles. It is an **edge/client-tier** application - it owns **no backend data**. Every durable fact (a confirmed decision, a persisted worklog, a final caption) arrives over a server contract; the client owns rendering, optimistic UI, animation discipline, and reconnect resilience.
 
@@ -166,7 +166,7 @@ pnpm test:e2e:ui    # Playwright with UI runner
 
 ## Related repos
 
-All eight `reprise-*` repos make up Reprise AI:
+All eight `reprise-*` repos make up Mytheus:
 
 | Repo | One-liner |
 | --- | --- |
@@ -177,8 +177,8 @@ All eight `reprise-*` repos make up Reprise AI:
 | **reprise-intelligence** | The AI/inference tier - the six LangGraph agents (`agent-runtime-service`), RAG, embedding/reranker, knowledge-graph (`nexus_knowledge`). |
 | **reprise-events** | The event backbone - Redpanda topics (`transcript-chunks`, `agent-stream`, `agent-results`, …), Avro schemas, Schema Registry. |
 | **reprise-platform** | Infrastructure-as-code, Kubernetes/Terraform, CI/CD, and observability platform. |
-| **reprise-mobile** | The mobile client of Reprise AI. |
+| **reprise-mobile** | The mobile client of Mytheus. |
 
 ## License
 
-Proprietary. © Reprise AI. All rights reserved.
+Proprietary. © Mytheus. All rights reserved.

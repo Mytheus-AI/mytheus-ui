@@ -319,7 +319,7 @@ export function WordReveal({
         <span
           key={`${item.w}-${i}`}
           className="inline-block overflow-hidden align-bottom"
-          style={{ paddingBottom: "0.12em", marginBottom: "-0.12em" }}
+          style={{ paddingBottom: "0.22em", marginBottom: "-0.22em" }}
         >
           <motion.span
             className={`inline-block ${item.accent ? accentClass : ""}`}
