@@ -5,11 +5,11 @@ type Tone = "default" | "success" | "warning" | "danger" | "high" | "medium" | "
 const toneClass: Record<Tone, string> = {
   default: "bg-bg-2 text-ink-2",
   success: "bg-[#e4efe1] text-[#3a6b34]",
-  warning: "bg-[#f7edd3] text-[#8a6a1c]",
-  danger: "bg-[#f6e0da] text-[#a83f28]",
-  high: "bg-[#f6e0da] text-[#a83f28]",
-  medium: "bg-[#f7edd3] text-[#8a6a1c]",
-  low: "bg-[#dfe9f4] text-[#2c5c8a]",
+  warning: "bg-priority-medium-soft text-priority-medium",
+  danger: "bg-priority-high-soft text-priority-high",
+  high: "bg-priority-high-soft text-priority-high",
+  medium: "bg-priority-medium-soft text-priority-medium",
+  low: "bg-priority-low-soft text-priority-low",
 };
 
 export function Badge({

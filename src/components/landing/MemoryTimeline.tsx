@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { motion, useInView, useReducedMotion } from "framer-motion";
-import { Reveal } from "./motion";
+import { Reveal, CountUp, ScrollScale } from "./motion";
 import { Eyebrow } from "./ui";
 
 /* ================================================================== */
@@ -92,6 +92,7 @@ export function MemoryTimeline() {
         </Reveal>
 
         <Reveal delay={120}>
+          <ScrollScale from={0.96}>
           <div className="mt-14 grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr]">
             {/* ---- left ledger card (the "Initiatives" rail) ---- */}
             <div className="rounded-card border border-line bg-surface/70 p-6 backdrop-blur-sm">
@@ -115,7 +116,7 @@ export function MemoryTimeline() {
                       </span>
                     </span>
                     <span className="font-mono text-sm tabular-nums text-ink-3">
-                      {row.n}
+                      <CountUp to={row.n} duration={1.2} />
                     </span>
                   </li>
                 ))}
@@ -403,6 +404,7 @@ export function MemoryTimeline() {
               </svg>
             </div>
           </div>
+          </ScrollScale>
         </Reveal>
       </div>
     </section>

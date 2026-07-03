@@ -186,7 +186,7 @@ export default function Page() {
                 and see what your agents remember.
               </p>
               <div className="mt-8">
-                <PillCTA href="/sign-up">Get started free</PillCTA>
+                <PillCTA href="/dashboard">Get started free</PillCTA>
               </div>
             </div>
           </div>

@@ -1,14 +1,8 @@
-import type { Metadata } from "next";
-import { ComingSoon } from "@/components/ComingSoon";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Log in — Mytheus" };
-
+/* Auth bypass (4-July Part 4a): accounts aren't wired yet, so logging in
+   drops you straight into the app. */
+// TODO(auth): replace with the real Clerk <SignIn /> screen once keys land.
 export default function Page() {
-  return (
-    <ComingSoon
-      eyebrow="Welcome back"
-      title="Log in is on its way."
-      blurb="Accounts aren't open just yet. Mytheus is still being built — you'll be able to sign in here soon."
-    />
-  );
+  redirect("/dashboard");
 }

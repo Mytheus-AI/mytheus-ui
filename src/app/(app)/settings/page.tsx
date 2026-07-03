@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useOrgContext } from "@/lib/org-context";
+import { SettingsTabs } from "@/components/app/SettingsTabs";
 import { Card } from "@/components/ui/Card";
-import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -45,11 +45,7 @@ function Toggle({
 }
 
 export default function SettingsPage() {
-  const { org, user } = useOrgContext();
-
-  const [name, setName] = useState(user.name);
-  const [email, setEmail] = useState(user.email);
-  const [profileSaved, setProfileSaved] = useState(false);
+  const { org } = useOrgContext();
 
   const [orgName, setOrgName] = useState(org.name);
   const [orgSaved, setOrgSaved] = useState(false);
@@ -63,54 +59,11 @@ export default function SettingsPage() {
       <div>
         <p className="kicker mb-2">Settings</p>
         <h1 className="text-[28px] font-medium tracking-tight text-ink-display">
-          Account &amp; workspace
+          Workspace
         </h1>
       </div>
 
-      {/* Profile */}
-      <Card>
-        <div className="mb-5 flex items-center gap-4">
-          <Avatar name={user.name} size="lg" />
-          <div>
-            <p className="text-[15px] font-medium text-ink">{user.name}</p>
-            <p className="text-[13px] text-ink-3">{user.email}</p>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <Input
-            label="Name"
-            name="name"
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              setProfileSaved(false);
-            }}
-          />
-          <Input
-            label="Email"
-            name="email"
-            type="email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setProfileSaved(false);
-            }}
-          />
-        </div>
-
-        <div className="mt-5 flex items-center gap-3">
-          <Button
-            variant="primary"
-            onClick={() => setProfileSaved(true)}
-          >
-            Save changes
-          </Button>
-          {profileSaved ? (
-            <span className="text-[13px] text-ink-3">Saved.</span>
-          ) : null}
-        </div>
-      </Card>
+      <SettingsTabs />
 
       {/* Organization */}
       <Card>

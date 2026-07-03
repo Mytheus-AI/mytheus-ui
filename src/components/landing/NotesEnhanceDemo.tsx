@@ -13,8 +13,8 @@ import { Eyebrow } from "./ui";
 /* ================================================================== */
 /*  NotesEnhanceDemo — the "before & after" notepad widget.            */
 /*  A Granola-style composition: an off-white notepad sitting on a     */
-/*  bright lime "stacked paper" card, with a two-person video PiP      */
-/*  tucked into the corner. Shorthand notes type themselves in, a      */
+/*  clay "stacked paper" card, with a two-person video PiP tucked      */
+/*  into the corner. Shorthand notes type themselves in, a             */
 /*  "Generate notes" beat plays, then they cross-fade into clean,      */
 /*  structured minutes. The My notes / Enhanced toggle replays it.     */
 /* ================================================================== */
@@ -28,7 +28,9 @@ const RAW = [
   "pricing page = blocker, follow up tues",
 ];
 
-const LIME = "#c8e44d";
+/* stacked-paper sheets behind the notepad — clay, matching the theme */
+const PAPER_BACK = "var(--signal-bright)"; /* #e8a489 */
+const PAPER_MID = "var(--signal-soft)"; /* #f5e5dc */
 
 /* A live wall-clock (HH:MM, 24h) that ticks with the real current time so the
    meeting reads as happening right now. Renders a stable placeholder on the
@@ -159,16 +161,16 @@ export function NotesWidget() {
 
   return (
     <div ref={ref} className="relative w-full max-w-[460px]">
-              {/* lime "stacked paper" card behind */}
+              {/* clay "stacked paper" cards behind */}
               <div
                 aria-hidden
                 className="absolute -left-4 top-6 h-full w-full rounded-[26px] sm:-left-6 sm:top-8"
-                style={{ background: LIME }}
+                style={{ background: PAPER_BACK }}
               />
               <div
                 aria-hidden
                 className="absolute -left-2 top-3 h-full w-full rounded-[26px] sm:-left-3 sm:top-4"
-                style={{ background: "#dcefae" }}
+                style={{ background: PAPER_MID }}
               />
 
               {/* the notepad */}
@@ -288,7 +290,7 @@ export function NotesWidget() {
 function Attendees() {
   const items = [
     { i: "M", c: "bg-signal-soft text-signal-deep" },
-    { i: "R", c: "bg-[#dcefae] text-[#5a6a2a]" },
+    { i: "R", c: "bg-signal-soft text-signal-deep" },
     { i: "P", c: "bg-bg-3 text-ink-2" },
   ];
   return (

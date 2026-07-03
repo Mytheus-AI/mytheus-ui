@@ -4,11 +4,30 @@ import { useState } from "react";
 import Link from "next/link";
 import { MaskReveal, Parallax } from "./motion";
 import { LogoMark } from "@/components/Logo";
+import { FEATURES } from "@/lib/marketing/features";
 
 /* Footer — a dramatic warm-dark stage that closes the cream site: a warm clay
    horizon glow, tidy link columns + a working email capture, and a giant
    clay-gradient "Mytheus" wordmark as the centrepiece. Reduced-motion safe
    (reveals / gradient all guard). */
+
+/* five tidy columns — the feature pages split into what the agents do vs.
+   what the platform provides, so no single column becomes a wall of links */
+const AGENT_SLUGS = [
+  "personal-agent",
+  "live-notes",
+  "smart-questions",
+  "decisions",
+  "action-items",
+  "context-gaps",
+  "proactive-insights",
+];
+
+const featureLinks = (slugs: string[]) =>
+  FEATURES.filter((f) => slugs.includes(f.slug)).map((f) => ({
+    label: f.nav,
+    href: `/features/${f.slug}`,
+  }));
 
 const COLS: { title: string; links: { label: string; href: string }[] }[] = [
   {
@@ -16,8 +35,20 @@ const COLS: { title: string; links: { label: string; href: string }[] }[] = [
     links: [
       { label: "Overview", href: "/#product" },
       { label: "How it works", href: "/#how" },
+      { label: "Pricing", href: "/pricing" },
       { label: "Enterprise", href: "/enterprise" },
       { label: "Students", href: "/students" },
+    ],
+  },
+  {
+    title: "Your agent",
+    links: featureLinks(AGENT_SLUGS),
+  },
+  {
+    title: "Platform",
+    links: [
+      ...featureLinks(["transcription", "search", "knowledge-graph", "integrations"]),
+      { label: "All features", href: "/features" },
     ],
   },
   {
@@ -78,14 +109,15 @@ export function SiteFooter() {
       />
 
       <div className="relative z-10 mx-auto max-w-[1340px] px-6 pb-8 pt-20 sm:px-10 sm:pt-24">
-        <div className="grid grid-cols-2 gap-x-8 gap-y-12 md:grid-cols-4 lg:grid-cols-[1.6fr_1fr_1fr_1fr_1.5fr]">
+        {/* band one — brand story left, email capture right */}
+        <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between">
           {/* brand + socials */}
-          <div className="col-span-2 md:col-span-4 lg:col-span-1">
-            <p className="flex items-center gap-2 text-[28px] font-medium tracking-[-0.05em] text-bg">
+          <div>
+            <p className="group flex items-center gap-2 text-[28px] font-medium tracking-[-0.05em] text-bg">
               <LogoMark size={30} />
               Mytheus
             </p>
-            <p className="mt-4 max-w-[30ch] text-sm leading-relaxed text-bg/55">
+            <p className="mt-4 max-w-[34ch] text-sm leading-relaxed text-bg/55">
               Every meeting, on repeat. A personal AI agent for everyone in the
               room — capturing decisions, actions, and memory as you talk.
             </p>
@@ -107,29 +139,8 @@ export function SiteFooter() {
             </div>
           </div>
 
-          {/* link columns */}
-          {COLS.map((col) => (
-            <div key={col.title}>
-              <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-bg/40">
-                {col.title}
-              </p>
-              <ul className="mt-5 space-y-3">
-                {col.links.map((l) => (
-                  <li key={l.label}>
-                    <Link
-                      href={l.href}
-                      className="relative inline-block text-[15px] text-bg/65 transition-colors hover:text-bg after:absolute after:-bottom-0.5 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-signal after:transition-transform after:duration-300 after:ease-out hover:after:scale-x-100"
-                    >
-                      {l.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-
           {/* email capture */}
-          <div className="col-span-2 md:col-span-1">
+          <div className="w-full max-w-[400px]">
             <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-bg/40">
               Stay in the loop
             </p>
@@ -182,6 +193,29 @@ export function SiteFooter() {
               </>
             )}
           </div>
+        </div>
+
+        {/* band two — the link columns, airy and even */}
+        <div className="mt-14 grid grid-cols-2 gap-x-8 gap-y-10 border-t border-white/10 pt-10 sm:grid-cols-3 lg:grid-cols-5">
+          {COLS.map((col) => (
+            <div key={col.title}>
+              <p className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-bg/40">
+                {col.title}
+              </p>
+              <ul className="mt-4 space-y-2.5">
+                {col.links.map((l) => (
+                  <li key={l.label}>
+                    <Link
+                      href={l.href}
+                      className="relative inline-block text-[13.5px] leading-snug text-bg/60 transition-colors hover:text-bg after:absolute after:-bottom-0.5 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-signal after:transition-transform after:duration-300 after:ease-out hover:after:scale-x-100"
+                    >
+                      {l.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
         {/* bottom bar */}

@@ -1,19 +1,30 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ScrubReveal, Reveal } from "./motion";
+import { type ReactNode } from "react";
+import {
+  AnimatePresence,
+  motion,
+  useReducedMotion,
+  useSpring,
+  type MotionValue,
+} from "framer-motion";
+import { PinnedScene, StageSwitch, ScrubReveal, Reveal } from "./motion";
 import { Eyebrow } from "./ui";
+import {
+  CaptureDemo,
+  LabelDemo,
+  ConfirmDemo,
+  RouteDemo,
+  RememberDemo,
+} from "./steps/demos";
 
-/* "How it works" as a hover-driven pipeline: a slim row of compact panels, one
-   stage of meeting follow-through each. At rest the row is a short strip (icon
-   + number + flow name); hovering (or focusing, for keyboard) a panel grows
-   the whole row and widens that panel to reveal its title/body/tokens, while
-   the rest shrink to slivers. A soft auto-cycling spotlight ring keeps the
-   idle row feeling alive without ever revealing detail on its own — detail
-   only ever appears on hover/focus. Sizing changes are FLIP-animated via
-   Framer's `layout` prop; content crossfades with AnimatePresence. Mobile +
-   reduced-motion degrade to a plain stack / instant transitions. */
+/* "How it works" as a scroll-pinned sequential scene: below the heading the
+   section pins for five viewport-heights and the five stages of follow-through
+   (Capture → Label → Confirm → Route → Remember) swap in place — a vertical
+   progress spine on the left ties the swap to scroll, and each stage plays a
+   mini live demo of the product moment. The viewport never jumps; only the
+   stage inside the pinned frame changes (StageSwitch). Mobile and
+   reduced-motion render the five stages as a calm static stack instead. */
 
 function MicIcon({ className = "h-5 w-5" }: { className?: string }) {
   return (
@@ -62,6 +73,7 @@ type Card = {
   body: string;
   icon: ReactNode;
   tokens: { label: string; clay?: boolean }[];
+  visual: (still: boolean) => ReactNode;
 };
 
 const CARDS: Card[] = [
@@ -73,6 +85,7 @@ const CARDS: Card[] = [
     body: "No bot, no recording link — just live, role-relevant notes.",
     icon: <MicIcon />,
     tokens: [{ label: "Role-relevant notes" }, { label: "Live transcript" }],
+    visual: (still) => <CaptureDemo still={still} />,
   },
   {
     key: "label",
@@ -86,6 +99,7 @@ const CARDS: Card[] = [
       { label: "Action item", clay: true },
       { label: "Conflict", clay: true },
     ],
+    visual: (still) => <LabelDemo still={still} />,
   },
   {
     key: "confirm",
@@ -95,6 +109,7 @@ const CARDS: Card[] = [
     body: "Nothing is saved or assigned without your one-tap confirm.",
     icon: <ShieldCheckIcon />,
     tokens: [{ label: "One-tap confirm" }],
+    visual: (still) => <ConfirmDemo still={still} />,
   },
   {
     key: "route",
@@ -104,6 +119,7 @@ const CARDS: Card[] = [
     body: "Assigned to an owner and shared with anyone who missed it.",
     icon: <SendIcon />,
     tokens: [{ label: "Owner assigned" }, { label: "Shared with absentees" }],
+    visual: (still) => <RouteDemo still={still} />,
   },
   {
     key: "remember",
@@ -113,10 +129,13 @@ const CARDS: Card[] = [
     body: "A decision Monday becomes context your agents reuse Friday.",
     icon: <LoopIcon />,
     tokens: [{ label: "→ Next meeting" }, { label: "Cross-meeting memory" }],
+    visual: (still) => <RememberDemo still={still} />,
   },
 ];
 
 export function Steps() {
+  const reduce = useReducedMotion();
+
   return (
     <section id="how" className="px-3 py-24 sm:px-5 sm:py-32">
       <div className="mx-auto max-w-[1340px]">
@@ -133,169 +152,195 @@ export function Steps() {
           </p>
         </ScrubReveal>
 
-        <Reveal delay={120} className="mt-14">
-          <Carousel />
-          {/* mobile: a plain readable stack */}
-          <div className="grid gap-4 md:hidden">
-            {CARDS.map((c) => (
-              <article
-                key={c.key}
-                className="rounded-card border border-line bg-white p-6"
-              >
-                <CardBody card={c} />
-              </article>
-            ))}
-          </div>
+        {/* desktop: the pinned sequential scene */}
+        {!reduce && (
+          <PinnedScene count={CARDS.length} className="mt-4 hidden md:block">
+            {({ index, progress, goTo }) => (
+              <div className="grid w-full items-center gap-10 md:grid-cols-[minmax(0,0.55fr)_minmax(0,1fr)] lg:gap-16">
+                <Spine index={index} progress={progress} goTo={goTo} />
+                <Stage index={index} />
+              </div>
+            )}
+          </PinnedScene>
+        )}
+
+        {/* mobile (and desktop reduced-motion): a calm static stack */}
+        <Reveal
+          delay={120}
+          className={`mt-14 grid gap-5 ${reduce ? "" : "md:hidden"}`}
+        >
+          {CARDS.map((c) => (
+            <article
+              key={c.key}
+              className="rounded-card border border-line bg-white p-6"
+            >
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-signal">
+                  <span className="font-mono text-sm tabular-nums">{c.n}</span>
+                  <span className="kicker">{c.flow}</span>
+                </span>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-signal-soft text-signal-deep">
+                  {c.icon}
+                </span>
+              </div>
+              <h3 className="mt-4 text-[1.35rem] font-medium tracking-tight text-ink-display">
+                {c.title}
+              </h3>
+              <p className="mt-2 text-[15px] leading-relaxed text-ink-3">{c.body}</p>
+              <div className="mt-5">{c.visual(true)}</div>
+              <Tokens tokens={c.tokens} className="mt-5" />
+            </article>
+          ))}
         </Reveal>
       </div>
     </section>
   );
 }
 
-const EASE_SOFT = [0.16, 1, 0.3, 1] as const;
+const EASE = [0.16, 1, 0.3, 1] as const;
 
-/* the desktop hover-driven expanding-panel carousel. At rest the row is a
-   short strip; a slow idle "spotlight" cycles a highlight ring around the
-   icons (the self-driving pun) without ever expanding — expansion is
-   strictly a hover/focus response. */
-function Carousel() {
-  const reduce = useReducedMotion();
-  const [hovered, setHovered] = useState<number | null>(null);
-  const [spotlight, setSpotlight] = useState(0);
+/* ---------------- left rail: the progress spine ---------------- */
 
-  useEffect(() => {
-    if (reduce || hovered !== null) return;
-    const id = setInterval(
-      () => setSpotlight((s) => (s + 1) % CARDS.length),
-      2000,
-    );
-    return () => clearInterval(id);
-  }, [reduce, hovered]);
-
-  const open = hovered !== null;
-  const transition = reduce
-    ? { duration: 0 }
-    : { duration: 0.6, ease: EASE_SOFT };
+function Spine({
+  index,
+  progress,
+  goTo,
+}: {
+  index: number;
+  progress: MotionValue<number>;
+  goTo: (i: number) => void;
+}) {
+  const fill = useSpring(progress, { stiffness: 120, damping: 30, mass: 0.4 });
 
   return (
-    <motion.div
-      layout={!reduce}
-      transition={transition}
-      className="hidden gap-3 md:flex"
-      style={{ height: open ? "clamp(360px,42vw,460px)" : "clamp(68px,7.5vw,88px)" }}
-      onMouseLeave={() => setHovered(null)}
-    >
-      {CARDS.map((c, i) => {
-        const isOpen = i === hovered;
-        const isSpotlit = hovered === null && i === spotlight;
-        return (
-          <motion.button
-            key={c.key}
-            type="button"
-            layout={!reduce}
-            transition={transition}
-            onMouseEnter={() => setHovered(i)}
-            onFocus={() => setHovered(i)}
-            onBlur={() => setHovered(null)}
-            aria-label={`${c.flow}: ${c.title}`}
-            className={`group relative min-w-0 overflow-hidden rounded-card border bg-white text-left transition-colors duration-500 ${
-              isOpen
-                ? "border-signal/40 shadow-[0_30px_60px_-40px_rgba(189,93,58,0.5)]"
-                : isSpotlit
-                  ? "border-signal/30"
-                  : "border-line hover:border-line-2"
-            }`}
-            style={{ flexGrow: isOpen ? 6 : open ? 0.6 : 1, flexBasis: 0 }}
-          >
-            <AnimatePresence initial={false} mode="wait">
-              {isOpen ? (
-                <motion.div
-                  key="expanded"
-                  initial={reduce ? false : { opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={reduce ? undefined : { opacity: 0, y: 6 }}
-                  transition={{ duration: reduce ? 0 : 0.35, ease: EASE_SOFT }}
-                  className="h-full w-[clamp(280px,32vw,380px)] p-7"
-                >
-                  <CardBody card={c} />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="collapsed"
-                  initial={reduce ? false : { opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={reduce ? undefined : { opacity: 0 }}
-                  transition={{ duration: reduce ? 0 : 0.3 }}
-                  className="flex h-full items-center gap-2.5 px-4"
+    <div>
+      {/* the big stage number, ticking like an odometer */}
+      <div className="mb-8 flex items-baseline gap-3">
+        <Odometer value={index + 1} />
+        <span className="font-mono text-sm text-ink-3">/ 05</span>
+      </div>
+
+      <div className="relative">
+        {/* the clay progress line, filling top → down with scroll */}
+        <span aria-hidden className="absolute bottom-3 left-[15px] top-3 w-px bg-line-2">
+          <motion.span
+            className="absolute inset-0 origin-top bg-signal"
+            style={{ scaleY: fill }}
+          />
+        </span>
+
+        <ol className="space-y-1.5">
+          {CARDS.map((c, i) => {
+            const active = i === index;
+            const passed = i < index;
+            return (
+              <li key={c.key}>
+                <button
+                  type="button"
+                  onClick={() => goTo(i)}
+                  aria-current={active ? "step" : undefined}
+                  className="group relative flex w-full items-center gap-4 rounded-2xl py-2.5 pl-1 pr-3 text-left"
                 >
                   <span
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-signal-soft text-signal-deep transition-shadow duration-500 [&>svg]:h-4 [&>svg]:w-4 ${
-                      isSpotlit ? "shadow-[0_0_0_3px_var(--signal-soft),0_0_0_5px_rgba(217,119,87,0.35)]" : ""
+                    className={`relative z-10 grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full border font-mono text-[11px] tabular-nums transition-colors duration-500 ${
+                      active
+                        ? "border-signal bg-signal text-white"
+                        : passed
+                          ? "border-signal/50 bg-signal-soft text-signal-deep"
+                          : "border-line-2 bg-bg text-ink-3 group-hover:border-signal/40"
                     }`}
                   >
-                    {c.icon}
+                    {c.n}
                   </span>
-                  {open ? null : (
-                    <span className="min-w-0 leading-tight">
-                      <span className="block font-mono text-[11px] tabular-nums text-ink-3">
-                        {c.n}
-                      </span>
-                      <span className="block truncate text-[13.5px] font-medium tracking-tight text-ink-2">
-                        {c.flow}
-                      </span>
-                    </span>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* open accent bar */}
-            <motion.span
-              aria-hidden
-              className="absolute inset-x-0 bottom-0 h-1 origin-left bg-signal"
-              initial={false}
-              animate={{ scaleX: isOpen ? 1 : 0 }}
-              transition={transition}
-            />
-          </motion.button>
-        );
-      })}
-    </motion.div>
+                  <span
+                    className={`text-[15px] font-medium tracking-tight transition-colors duration-500 ${
+                      active
+                        ? "text-ink-display"
+                        : "text-ink-3 group-hover:text-ink-2"
+                    }`}
+                  >
+                    {c.flow}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+    </div>
   );
 }
 
-function CardBody({ card }: { card: Card }) {
+function Odometer({ value }: { value: number }) {
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-2 text-signal">
-          <span className="font-mono text-sm tabular-nums">{card.n}</span>
-          <span className="kicker">{card.flow}</span>
-        </span>
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-signal-soft text-signal-deep">
-          {card.icon}
-        </span>
-      </div>
+    <span
+      aria-label={`Stage ${value} of 5`}
+      className="display relative block h-[1em] w-[2.1ch] overflow-hidden text-[clamp(2.4rem,4vw,3.4rem)] leading-none text-signal"
+    >
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.span
+          key={value}
+          className="absolute inset-0 block font-mono tabular-nums"
+          initial={{ y: "105%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "-105%" }}
+          transition={{ duration: 0.4, ease: EASE }}
+        >
+          0{value}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  );
+}
 
-      <h3 className="mt-5 text-[clamp(1.3rem,1.9vw,1.65rem)] font-medium tracking-tight text-ink-display">
-        {card.title}
-      </h3>
-      <p className="mt-2.5 text-[15px] leading-relaxed text-ink-3">{card.body}</p>
+/* ---------------- right side: the live stage ---------------- */
 
-      <div className="mt-auto flex flex-wrap gap-2 pt-6">
-        {card.tokens.map((t) => (
-          <span
-            key={t.label}
-            className={`whitespace-nowrap rounded-full px-3 py-1 text-[12.5px] font-medium ${
-              t.clay
-                ? "border border-signal/30 bg-signal-soft text-signal-deep"
-                : "border border-line bg-bg-2 text-ink-2"
-            }`}
-          >
-            {t.label}
+function Stage({ index }: { index: number }) {
+  const card = CARDS[index];
+  return (
+    /* min-height reserved so the frame never reflows on swap */
+    <div className="flex min-h-[540px] flex-col justify-center">
+      <StageSwitch index={index}>
+        <div className="flex items-center justify-between">
+          <span className="kicker text-signal">{card.flow}</span>
+          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-signal-soft text-signal-deep">
+            {card.icon}
           </span>
-        ))}
-      </div>
+        </div>
+        <h3 className="mt-3 text-[clamp(1.5rem,2.4vw,2.1rem)] font-medium tracking-tight text-ink-display">
+          {card.title}
+        </h3>
+        <p className="mt-2.5 max-w-[46ch] text-[15.5px] leading-relaxed text-ink-3">
+          {card.body}
+        </p>
+        <div className="mt-6">{card.visual(false)}</div>
+        <Tokens tokens={card.tokens} className="mt-6" />
+      </StageSwitch>
+    </div>
+  );
+}
+
+function Tokens({
+  tokens,
+  className = "",
+}: {
+  tokens: Card["tokens"];
+  className?: string;
+}) {
+  return (
+    <div className={`flex flex-wrap gap-2 ${className}`}>
+      {tokens.map((t) => (
+        <span
+          key={t.label}
+          className={`whitespace-nowrap rounded-full px-3 py-1 text-[12.5px] font-medium ${
+            t.clay
+              ? "border border-signal/30 bg-signal-soft text-signal-deep"
+              : "border border-line bg-bg-2 text-ink-2"
+          }`}
+        >
+          {t.label}
+        </span>
+      ))}
     </div>
   );
 }

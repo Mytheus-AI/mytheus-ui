@@ -4,11 +4,13 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { LinkButton } from "@/components/ui/Button";
 import {
   mockOrgContext,
   mockMeetings,
   mockDecisions,
   mockActions,
+  mockSourcedAnswer,
   type Priority,
 } from "@/lib/mock/data";
 
@@ -91,6 +93,31 @@ function AvatarStack({ names }: { names: string[] }) {
   );
 }
 
+/* a compact, linked stat tile — the day's numbers at a glance */
+function StatTile({
+  label,
+  value,
+  hint,
+  href,
+}: {
+  label: string;
+  value: number;
+  hint: string;
+  href: string;
+}) {
+  return (
+    <Link href={href} className="block">
+      <Card className="card-interactive h-full py-4">
+        <p className="kicker text-[9.5px]">{label}</p>
+        <p className="mt-1.5 font-mono text-[28px] leading-none tabular-nums text-ink-display">
+          {value}
+        </p>
+        <p className="mt-1.5 text-[12px] text-ink-3">{hint}</p>
+      </Card>
+    </Link>
+  );
+}
+
 /* ---------------- page ---------------- */
 
 export default function DashboardPage() {
@@ -112,6 +139,10 @@ export default function DashboardPage() {
     .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
     .slice(0, 5);
 
+  const openActionCount = mockActions.filter((a) => a.status === "open").length;
+  const upcomingCount = mockMeetings.filter((m) => m.status === "upcoming").length;
+  const nextDue = openActions[0];
+
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-10">
       {/* Welcome */}
@@ -124,6 +155,34 @@ export default function DashboardPage() {
           Here&apos;s what&apos;s happening across {mockOrgContext.org.name} today.
         </p>
       </div>
+
+      {/* The day at a glance */}
+      <section aria-label="At a glance" className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatTile
+          label="Live now"
+          value={liveMeetings.length}
+          hint={liveMeetings[0] ? liveMeetings[0].title : "No meeting running"}
+          href={liveMeetings[0] ? `/meetings/${liveMeetings[0].id}/room` : "/meetings"}
+        />
+        <StatTile
+          label="Upcoming"
+          value={upcomingCount}
+          hint="meetings on the calendar"
+          href="/meetings"
+        />
+        <StatTile
+          label="Open actions"
+          value={openActionCount}
+          hint={nextDue ? `next due ${formatDueDate(nextDue.dueDate)}` : "all clear"}
+          href="/tasks"
+        />
+        <StatTile
+          label="Decisions"
+          value={mockDecisions.length}
+          hint="confirmed on record"
+          href="/decisions"
+        />
+      </section>
 
       {/* Live now */}
       {liveMeetings.length > 0 ? (
@@ -148,13 +207,71 @@ export default function DashboardPage() {
                       </p>
                     </div>
                   </div>
-                  <AvatarStack names={meeting.participants} />
+                  <div className="flex items-center gap-4">
+                    <AvatarStack names={meeting.participants} />
+                    <LinkButton href={`/meetings/${meeting.id}/room`} size="sm">
+                      Join room
+                    </LinkButton>
+                  </div>
                 </div>
               </Card>
             ))}
           </div>
         </section>
       ) : null}
+
+      {/* From your agent — the digest that makes the app feel inhabited */}
+      <section aria-labelledby="agent-digest-heading">
+        <h2 id="agent-digest-heading" className="text-[20px] font-medium text-ink-display">
+          From your agent
+        </h2>
+        <div className="mt-4 overflow-hidden rounded-card border border-line bg-surface">
+          <ul className="divide-y divide-line">
+            <li className="flex items-start gap-3.5 px-5 py-4">
+              <span aria-hidden className="mt-1 h-2 w-2 shrink-0 rounded-full bg-signal" />
+              <div className="min-w-0">
+                <p className="text-[14px] leading-snug text-ink">
+                  &ldquo;{mockSourcedAnswer.quote}&rdquo;
+                </p>
+                <p className="mt-1.5 font-mono text-[10.5px] uppercase tracking-wider text-ink-3">
+                  Sourced · {mockSourcedAnswer.source.meeting} · {mockSourcedAnswer.source.date}
+                </p>
+              </div>
+            </li>
+            {nextDue ? (
+              <li className="flex items-start gap-3.5 px-5 py-4">
+                <span aria-hidden className="mt-1 h-2 w-2 shrink-0 rounded-full bg-priority-medium" />
+                <div className="min-w-0">
+                  <p className="text-[14px] leading-snug text-ink">
+                    <span className="font-medium">{nextDue.title}</span> is your
+                    next deadline — due {formatDueDate(nextDue.dueDate)}.
+                  </p>
+                  <Link
+                    href="/tasks"
+                    className="link-underline mt-1.5 inline-block text-[12.5px] font-medium text-signal-deep"
+                  >
+                    Open my tasks
+                  </Link>
+                </div>
+              </li>
+            ) : null}
+            <li className="flex items-start gap-3.5 px-5 py-4">
+              <span aria-hidden className="mt-1 h-2 w-2 shrink-0 rounded-full bg-priority-low" />
+              <div className="min-w-0">
+                <p className="text-[14px] leading-snug text-ink">
+                  {mockDecisions[0].title} — confirmed in {mockDecisions[0].meetingTitle}.
+                </p>
+                <Link
+                  href="/decisions"
+                  className="link-underline mt-1.5 inline-block text-[12.5px] font-medium text-signal-deep"
+                >
+                  See the decision record
+                </Link>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </section>
 
       {/* Upcoming meetings */}
       <section aria-labelledby="upcoming-heading">

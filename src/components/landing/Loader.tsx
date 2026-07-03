@@ -213,7 +213,10 @@ export function Loader() {
                   "radial-gradient(closest-side, var(--bg) 38%, transparent 78%)",
               }}
             />
-            <LogoMark size={40} className="relative mb-3" />
+            <LogoMark
+              size={40}
+              className={`relative mb-3 ${reduce ? "" : "logo-breathe"}`}
+            />
             <span className="wordmark relative text-[clamp(2.6rem,8vw,4.2rem)] font-normal leading-none tracking-[-0.02em] text-ink">
               Mytheus
             </span>

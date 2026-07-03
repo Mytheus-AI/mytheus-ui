@@ -10,6 +10,18 @@ This repo renders that experience: a React Server Components-first Next.js 14 Ap
 
 > The split is deliberate: **the server decides what is true; the client decides how it appears.**
 
+## Contributor docs
+
+Start here when working in this repo:
+
+- [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) - setup, scripts, conventions, quality gates
+- [docs/DESIGN-SYSTEM.md](docs/DESIGN-SYSTEM.md) - the token layer, UI primitives, priority color language
+- [docs/MOTION.md](docs/MOTION.md) - the motion language and the full primitive catalog
+- [docs/PAGES.md](docs/PAGES.md) - every route, its render mode, data source, and status
+- [docs/MOCK-DATA.md](docs/MOCK-DATA.md) - what lives in the mock module and the swap-to-real path
+- [PROGRESS.md](PROGRESS.md) - the running build log
+- [CLAUDE.md](CLAUDE.md) - the authoritative constraints (invariants, naming authority)
+
 ## Where it sits
 
 ```

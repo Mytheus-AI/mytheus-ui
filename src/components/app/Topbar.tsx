@@ -7,6 +7,9 @@ import { useOrgContext } from "@/lib/org-context";
 const TITLES: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/meetings": "Meetings",
+  "/decisions": "Decisions",
+  "/tasks": "Tasks",
+  "/org": "Org chart",
   "/search": "Search",
   "/settings": "Settings",
   "/billing": "Billing",
@@ -15,6 +18,9 @@ const TITLES: Record<string, string> = {
 function titleFor(pathname: string | null) {
   if (!pathname) return "";
   if (TITLES[pathname]) return TITLES[pathname];
+  if (/^\/meetings\/[^/]+\/room$/.test(pathname)) return "Meeting room";
+  if (/^\/meetings\/[^/]+\/transcript$/.test(pathname)) return "Transcript";
+  if (/^\/meetings\/[^/]+$/.test(pathname)) return "Meeting";
   const root = "/" + (pathname.split("/")[1] ?? "");
   return TITLES[root] ?? "";
 }

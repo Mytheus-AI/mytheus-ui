@@ -103,7 +103,7 @@ export function FAQ() {
               your privacy, and where your meetings actually live.
             </p>
             <div className="mt-9">
-              <PillCTA href="/sign-up">Get started free</PillCTA>
+              <PillCTA href="/dashboard">Get started free</PillCTA>
             </div>
             <p className="mt-5 text-[13px] text-ink-3">
               Still curious?{" "}
@@ -136,6 +136,30 @@ export function FAQ() {
                     >
                       {item.q}
                     </span>
+                    {/* plus → × : the row's "there's more here" affordance */}
+                    <motion.span
+                      aria-hidden
+                      animate={{ rotate: isOpen ? 45 : 0 }}
+                      transition={
+                        reduce
+                          ? { duration: 0 }
+                          : { type: "spring", stiffness: 300, damping: 22 }
+                      }
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-colors duration-300 ${
+                        isOpen
+                          ? "border-signal bg-signal text-white"
+                          : "border-line text-ink-3 group-hover:border-line-2 group-hover:text-ink-2"
+                      }`}
+                    >
+                      <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4">
+                        <path
+                          d="M8 3.5v9M3.5 8h9"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </motion.span>
                   </button>
 
                   <AnimatePresence initial={false}>

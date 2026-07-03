@@ -20,7 +20,7 @@ function MeetingCard({ meeting }: { meeting: Meeting }) {
   const hasBadges = meeting.decisionCount > 0 || meeting.actionCount > 0;
 
   return (
-    <Link href={`/meetings/${meeting.id}/room`} className="block">
+    <Link href={`/meetings/${meeting.id}`} className="block">
       <Card className="cursor-pointer transition-colors hover:border-line-2">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">

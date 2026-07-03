@@ -60,26 +60,31 @@ function HeroSequence() {
   // the scroll cue fades the instant you begin
   const cueO = useTransform(scrollYProgress, [0, 0.05], [1, 0]);
 
+  // a gentle camera pull-back as you scroll away into the next section
+  const stageScale = useTransform(scrollYProgress, [0.9, 1], [1, 0.97]);
+
   return (
     <section ref={ref} className="relative" style={{ height: "260vh" }}>
       <div className="mesh-field mesh-anim grain sticky top-0 h-screen overflow-hidden">
-        {/* ---- page one — gathers, then exits to the left ---- */}
-        <div
-          className={`absolute inset-0 flex items-center ${
-            showTwo ? "pointer-events-none" : ""
-          }`}
-        >
-          <SeqPageOne progress={p} />
-        </div>
+        <motion.div className="absolute inset-0" style={{ scale: stageScale }}>
+          {/* ---- page one — gathers, then exits to the left ---- */}
+          <div
+            className={`absolute inset-0 flex items-center ${
+              showTwo ? "pointer-events-none" : ""
+            }`}
+          >
+            <SeqPageOne progress={p} />
+          </div>
 
-        {/* ---- page two — assembles in place on the same stage ---- */}
-        <div
-          className={`absolute inset-0 flex items-center ${
-            showTwo ? "" : "pointer-events-none"
-          }`}
-        >
-          <SeqPageTwo progress={p} show={showTwo} />
-        </div>
+          {/* ---- page two — assembles in place on the same stage ---- */}
+          <div
+            className={`absolute inset-0 flex items-center ${
+              showTwo ? "" : "pointer-events-none"
+            }`}
+          >
+            <SeqPageTwo progress={p} show={showTwo} />
+          </div>
+        </motion.div>
 
         {/* ---- scroll cue ---- */}
         <motion.div
@@ -272,7 +277,7 @@ function SeqPageTwo({
           className="mt-10 flex items-center gap-6"
         >
           <Magnetic strength={0.3}>
-            <PillCTA href="/sign-up">Get started free</PillCTA>
+            <PillCTA href="/dashboard">Get started free</PillCTA>
           </Magnetic>
           <a
             href="#product"
@@ -414,7 +419,7 @@ function HeroStatic() {
             </p>
             <div className="mt-10 flex items-center gap-6">
               <Magnetic strength={0.3}>
-                <PillCTA href="/sign-up">Get started free</PillCTA>
+                <PillCTA href="/dashboard">Get started free</PillCTA>
               </Magnetic>
               <a
                 href="#product"
@@ -439,28 +444,66 @@ function HeroStatic() {
 
 function Intro() {
   return (
-    <div className="max-w-[36rem]">
+    <div className="max-w-[38rem]">
+      {/* announcement pill — the newest headline feature, one glance */}
+      <Reveal delay={40} y={14}>
+        <a
+          href="/features/context-gaps"
+          className="group/pill sheen inline-flex items-center gap-2.5 rounded-pill border border-signal/25 bg-signal-soft/60 py-1.5 pl-3 pr-4 text-[12.5px] font-medium text-signal-deep transition-[border-color,transform] duration-300 hover:-translate-y-0.5 hover:border-signal/50"
+        >
+          <span className="relative flex h-1.5 w-1.5" aria-hidden>
+            <span className="absolute h-full w-full animate-ping rounded-full bg-signal/60" />
+            <span className="relative h-1.5 w-1.5 rounded-full bg-signal" />
+          </span>
+          New · Agents now answer across meetings
+          <span
+            aria-hidden
+            className="transition-transform duration-300 group-hover/pill:translate-x-0.5"
+          >
+            →
+          </span>
+        </a>
+      </Reveal>
+
       <WordReveal
         as="h1"
         text="Every meeting,"
         accent="on repeat."
         accentClass="italic text-gradient-signal"
-        className="display display-tight max-w-[15ch] text-balance text-[clamp(2.6rem,6vw,5.2rem)]"
+        className="display display-tight mt-6 max-w-[15ch] text-balance text-[clamp(2.8rem,6.4vw,5.6rem)]"
+        delay={120}
       />
 
-      <Reveal delay={200}>
+      <Reveal delay={260}>
         <p className="mt-7 max-w-[42ch] text-[18px] leading-relaxed text-ink-3">
           Everyone gets their own agent. It listens, extracts the decisions, and
           carries them forward — across every meeting, not just this one.
         </p>
       </Reveal>
 
-      <Reveal delay={320}>
-        <div className="mt-10 flex items-center gap-5">
+      <Reveal delay={380}>
+        <div className="mt-10 flex flex-wrap items-center gap-6">
           <Magnetic strength={0.3}>
-            <PillCTA href="/sign-up">Get started free</PillCTA>
+            <PillCTA href="/dashboard">Get started free</PillCTA>
           </Magnetic>
+          <a
+            href="#how"
+            className="text-[15px] font-medium text-ink-2 underline-offset-4 transition-colors hover:text-ink hover:underline"
+          >
+            See how it works
+          </a>
         </div>
+      </Reveal>
+
+      {/* trust line — quiet, honest, mono */}
+      <Reveal delay={480}>
+        <p className="mt-9 flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-3">
+          Free to start
+          <span aria-hidden className="h-1 w-1 rounded-full bg-signal/60" />
+          No bot in the room
+          <span aria-hidden className="h-1 w-1 rounded-full bg-signal/60" />
+          Every answer cited
+        </p>
       </Reveal>
     </div>
   );

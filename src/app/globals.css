@@ -34,6 +34,15 @@
   /* Warm near-black pills (dark accents / icon buttons) */
   --pill: #26231d;
 
+  /* Priority color language (frozen): red = act now, yellow = attention,
+     blue = info. Warm-tuned so they sit on the cream canvas. */
+  --priority-high: #c2402a;
+  --priority-high-soft: #f7e3dd;
+  --priority-medium: #b98314;
+  --priority-medium-soft: #f6ecd6;
+  --priority-low: #4a6fa5;
+  --priority-low-soft: #e4eaf3;
+
   --radius-pill: 40px;
   --radius-card: 24px;
   --radius-md: 16px;
@@ -45,6 +54,19 @@
 
 html {
   scroll-behavior: smooth;
+}
+
+/* Lenis (landing page smooth scroll) — while it drives the scroll, native
+   smooth-behavior must yield or anchor jumps double-animate */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
 }
 
 body {
@@ -376,6 +398,39 @@ body {
   }
 }
 
+/* the logo mark draws itself — the path's dashoffset sweeps 1 → 0 (the path
+   is pathLength-normalized), so the tangle scribbles in and resolves into
+   the line, like a hand drawing it live. Plays once on mount; hovering any
+   ancestor .group redraws it. */
+@keyframes logoDraw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+/* identical twin keyframe so hover can restart the animation */
+@keyframes logoRedraw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* a slow breathing pulse for the loader mark while the page loads */
+@keyframes logoBreathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.07);
+  }
+}
+
 .lift {
   opacity: 0;
   animation: fadeUp 0.8s var(--ease-out) both;
@@ -400,6 +455,20 @@ body {
 }
 .arrow-nudge {
   animation: arrowNudge 2.2s ease-in-out infinite;
+}
+.logo-mark {
+  transform-origin: 50% 55%;
+}
+.logo-path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: logoDraw 1.4s var(--ease-soft) 0.1s both;
+}
+.group:hover .logo-path {
+  animation: logoRedraw 1.1s var(--ease-soft);
+}
+.logo-breathe {
+  animation: logoBreathe 2.4s ease-in-out infinite;
 }
 
 /* scroll reveal toggled via IntersectionObserver (in motion.tsx) */
@@ -434,7 +503,10 @@ body {
   .arrow-nudge,
   .mesh-anim,
   .text-gradient-signal,
-  .sheen::after {
+  .sheen::after,
+  .logo-path,
+  .group:hover .logo-path,
+  .logo-breathe {
     animation: none !important;
   }
   .card-interactive {
