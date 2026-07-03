@@ -4,9 +4,9 @@ import type { HTMLAttributes } from "react";
    blue = info. The priorityStrip renders as a thin left-edge bar; a "high"
    strip pins above other cards in a list regardless of arrival order. */
 const stripClass: Record<"high" | "medium" | "low", string> = {
-  high: "before:bg-[#c0402c]",
-  medium: "before:bg-[#c99a2e]",
-  low: "before:bg-[#3f7fbf]",
+  high: "before:bg-priority-high",
+  medium: "before:bg-priority-medium",
+  low: "before:bg-priority-low",
 };
 
 export function Card({

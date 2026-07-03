@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 /* RBAC gate is UX courtesy only per CLAUDE.md; real enforcement is
    server-side. Auth isn't wired up yet, so there's no gate at all right now
    — anyone can reach /admin. Add the Clerk role check here once auth lands. */
+// TODO(auth): restore Clerk middleware + RBAC gate for (admin) here.
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <OrgProvider value={mockOrgContext}>

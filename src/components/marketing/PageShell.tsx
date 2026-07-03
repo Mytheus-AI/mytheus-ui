@@ -22,12 +22,24 @@ export function PageShell({ children }: { children: ReactNode }) {
           </Link>
           <nav className="flex items-center gap-2">
             <Link
+              href="/features"
+              className="hidden rounded-pill px-4 py-2 text-[15px] font-medium text-ink-2 transition-colors hover:text-ink md:inline-flex"
+            >
+              Features
+            </Link>
+            <Link
+              href="/pricing"
+              className="hidden rounded-pill px-4 py-2 text-[15px] font-medium text-ink-2 transition-colors hover:text-ink md:inline-flex"
+            >
+              Pricing
+            </Link>
+            <Link
               href="/sign-in"
               className="hidden rounded-pill px-4 py-2 text-[15px] font-medium text-ink-2 transition-colors hover:text-ink sm:inline-flex"
             >
               Log in
             </Link>
-            <OutlinePill href="/sign-up">Get started</OutlinePill>
+            <OutlinePill href="/dashboard">Get started</OutlinePill>
           </nav>
         </div>
       </header>

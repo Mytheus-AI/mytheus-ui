@@ -2,18 +2,22 @@
 
 import Link from "next/link";
 import {
+  AnimatePresence,
   motion,
   useReducedMotion,
   useScroll,
   useSpring,
   useTransform,
   useMotionValue,
+  useMotionValueEvent,
   useInView,
   animate,
   type HTMLMotionProps,
+  type MotionValue,
   type Variants,
 } from "framer-motion";
-import { useRef, useState, useEffect, type ReactNode } from "react";
+import { useRef, useState, useEffect, useCallback, type ReactNode } from "react";
+import { lenis } from "./SmoothScroll";
 
 /* ------------------------------------------------------------------ */
 /*  Shared Framer Motion primitives for the landing page.              */
@@ -44,8 +48,8 @@ export function Reveal({
   return (
     <motion.div
       className={className}
-      initial={reduce ? false : { opacity: 0, y }}
-      whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
+      initial={reduce ? false : { opacity: 0, y, filter: "blur(6px)" }}
+      whileInView={reduce ? undefined : { opacity: 1, y: 0, filter: "blur(0px)" }}
       viewport={{ once: true, margin: "0px 0px -10% 0px" }}
       transition={{ duration: 0.7, ease: EASE, delay: delay / 1000 }}
     >
@@ -63,8 +67,13 @@ const containerVariants: Variants = {
   show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
 };
 const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 18 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } },
+  hidden: { opacity: 0, y: 18, filter: "blur(5px)" },
+  show: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: { duration: 0.6, ease: EASE },
+  },
 };
 
 export function Stagger({
@@ -540,6 +549,168 @@ export function CountUp({
       {display}
       {suffix}
     </span>
+  );
+}
+
+/* ================================================================== */
+/*  Pinned / zoom primitives — the cinematic layer (4-July pass).      */
+/* ================================================================== */
+
+/**
+ * PinnedScene — pins a section for `count` viewport-heights and hands the
+ * render prop the active stage index, the raw scene progress (as a
+ * MotionValue, so scroll-linked styling never re-renders React), and a
+ * `goTo(i)` that glides to a stage (through Lenis when it's driving).
+ * Under reduced motion it renders the children once, unpinned, at index 0 —
+ * callers should branch to a static layout before that matters.
+ */
+export function PinnedScene({
+  count,
+  children,
+  className = "",
+}: {
+  count: number;
+  children: (scene: {
+    index: number;
+    progress: MotionValue<number>;
+    goTo: (i: number) => void;
+  }) => ReactNode;
+  className?: string;
+}) {
+  const reduce = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end end"],
+  });
+  const [index, setIndex] = useState(0);
+
+  useMotionValueEvent(scrollYProgress, "change", (v) => {
+    setIndex(Math.min(count - 1, Math.max(0, Math.floor(v * count))));
+  });
+
+  const goTo = useCallback(
+    (i: number) => {
+      const el = ref.current;
+      if (!el) return;
+      const vh = window.innerHeight;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      // land in the middle of stage i's scroll segment
+      const target = top + ((i + 0.5) / count) * (el.offsetHeight - vh);
+      if (lenis) lenis.scrollTo(target);
+      else window.scrollTo({ top: target, behavior: "smooth" });
+    },
+    [count],
+  );
+
+  if (reduce) {
+    return (
+      <div className={className}>
+        {children({ index: 0, progress: scrollYProgress, goTo: () => {} })}
+      </div>
+    );
+  }
+
+  return (
+    <div ref={ref} className={className} style={{ height: `${count * 100}vh` }}>
+      <div className="sticky top-0 flex h-screen flex-col justify-center overflow-hidden">
+        {children({ index, progress: scrollYProgress, goTo })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * ScrollScale — a scroll-linked "camera push": the element scales from
+ * `from` to `to` as it enters the viewport, then (optionally) eases toward
+ * `exitTo` as it leaves. Springed; a no-op under reduced motion.
+ */
+export function ScrollScale({
+  children,
+  className = "",
+  from = 0.94,
+  to = 1,
+  exitTo,
+}: {
+  children: ReactNode;
+  className?: string;
+  from?: number;
+  to?: number;
+  exitTo?: number;
+}) {
+  const reduce = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const p = useSpring(scrollYProgress, { stiffness: 100, damping: 30, mass: 0.4 });
+  const scale = useTransform(p, [0, 0.35, 0.65, 1], [from, to, to, exitTo ?? to]);
+
+  return (
+    <motion.div ref={ref} className={className} style={reduce ? undefined : { scale }}>
+      {children}
+    </motion.div>
+  );
+}
+
+/**
+ * StageSwitch — the standard in-place content swap: outgoing stage exits up
+ * with a slight shrink + blur, incoming rises in, keyed by `index`. Used by
+ * PinnedScene consumers and anywhere content replaces content in place.
+ */
+export function StageSwitch({
+  index,
+  children,
+  className = "",
+}: {
+  index: number;
+  children: ReactNode;
+  className?: string;
+}) {
+  const reduce = useReducedMotion();
+  if (reduce) return <div className={className}>{children}</div>;
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={index}
+        className={className}
+        initial={{ opacity: 0, y: 30, scale: 0.98, filter: "blur(4px)" }}
+        animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+        exit={{ opacity: 0, y: -30, scale: 0.96, filter: "blur(6px)" }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+/**
+ * Sticky — a plain sticky wrapper with a gentle intro/outro fade, for section
+ * headers that should hang while their content scrolls past.
+ */
+export function Sticky({
+  children,
+  className = "",
+  top = "5.5rem",
+}: {
+  children: ReactNode;
+  className?: string;
+  top?: string;
+}) {
+  const reduce = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const opacity = useTransform(scrollYProgress, [0, 0.08, 0.85, 1], [0.2, 1, 1, 0.2]);
+
+  return (
+    <div ref={ref} className={`sticky ${className}`} style={{ top }}>
+      <motion.div style={reduce ? undefined : { opacity }}>{children}</motion.div>
+    </div>
   );
 }
 

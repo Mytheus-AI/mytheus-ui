@@ -1,31 +1,60 @@
-# Frontend Progress — Mytheus Landing Page
+# Frontend Progress — Mytheus Web UI
 
-> Handoff log for the **marketing landing page** built in `web/`. Running record of
+> Handoff log for the frontend built in `web/`. Running record of
 > what's done, the decisions behind it, and what's next — so a fresh session has full
 > context without re-reading the tree.
 >
-> **Owner:** Yash V Maurya · **Scope right now:** the public landing page + secondary pages.
-> **Last verified (2026-06-30):** `tsc --noEmit` clean · `next lint` clean · `next build`
-> clean (15 static pages, `/` = **168 kB** First Load JS). The 8 secondary marketing/legal
-> pages are now **real** (no longer "Coming soon"), and the hero live-capture card was redesigned.
+> **Owner:** Yash V Maurya · **Scope now:** the full public site (landing + pricing +
+> 12 feature pages) **and** the authenticated app shell (every doc-20 screen, mock data).
+> **Last verified (2026-07-03):** `tsc --noEmit` clean · `next lint` clean · `next build`
+> clean (**56 static pages**). Contributor docs live in `docs/` (DESIGN-SYSTEM, MOTION,
+> PAGES, MOCK-DATA, CONTRIBUTING).
+
+---
+
+## 2026-07-03 — the "4-July" pass (latest)
+
+Executed the full `4-july.md` brief, UI-only (no sockets/Server Actions/Clerk yet):
+
+- **Motion system:** new `PinnedScene`, `ScrollScale`, `StageSwitch`, `Sticky` primitives
+  in `landing/motion.tsx`; Lenis instance exported for programmatic scrolls. Catalog in
+  `docs/MOTION.md`.
+- **"How it works"** rebuilt as a scroll-pinned sequential scene (progress spine +
+  odometer + per-stage live mini-demos). **"Between meetings"** rebuilt as the enterprise
+  workload scene (team-capacity bars, 96% red flag, sourced answer + lineage).
+- **Priority tokens** (`--priority-high/medium/low` + softs) added; Card/Badge de-hexed.
+- **Marketing:** `/pricing` (honest doc-18 matrix) + `/features` hub + 11 feature pages
+  from a single copy registry (`src/lib/marketing/features.ts`); header Features menu,
+  restructured two-band footer.
+- **App (Part 4):** auth bypassed (`/sign-in|/sign-up` → `/dashboard`, all CTAs point
+  at the app); meeting room with video-grid mock, captions, chat, and the frozen
+  9-section agent sidebar (Confirm is the only commit path); meeting detail, transcript
+  (search + speaker colors), `/decisions` (lineage), `/tasks`, `/org`,
+  `/settings/{profile,integrations}`, `/ops`; sectioned sidebar nav. All mock-driven —
+  see `docs/MOCK-DATA.md` and `docs/PAGES.md`.
+- **Polish:** dashboard stat tiles + agent digest + join-room CTA; hero announcement
+  pill/trust line; logo spin-on-hover + roll-in-on-load.
+
+Still TODO: real plumbing (LiveKit, Socket.io reducers, Server Actions, Clerk) and the
+Vitest/Playwright suites the canon calls for.
 
 ---
 
 ## TL;DR — status
 
-**The landing page is complete and shipping-green.** It started from a "Playex-style" rebuild
-(2026-06-25) on a warm Claude-cream palette, and has since grown a set of **bespoke,
-self-contained interactive demos** (Granola-/Linear-flavored) that replaced the static glossy-orb
-look. Builds with zero type errors, prerenders 15 static pages, every animation is
+**The public site and the app shell are complete and shipping-green.** The landing page
+started from a "Playex-style" rebuild (2026-06-25) on a warm Claude-cream palette and grew
+bespoke interactive demos; the 4-July pass added the cinematic pinned scenes, all
+marketing/feature pages, and every authenticated screen on mock data. Builds with zero
+type errors, prerenders 56 static pages, every animation is
 `prefers-reduced-motion`-guarded, no dead links.
 
 | Check | Status |
 | --- | --- |
 | `tsc --noEmit` | ✅ clean |
 | `next lint` | ✅ clean |
-| `next build` | ✅ clean — 15 static pages |
+| `next build` | ✅ clean — 56 static pages |
 | Reduced-motion | ✅ animations guarded (CSS + framer `useReducedMotion`) |
-| `/` First Load JS | 168 kB |
 
 ---
 

@@ -295,7 +295,7 @@ export default function Page() {
                 </p>
               </div>
               <div className="flex-none">
-                <PillCTA href="/sign-up">Get started free</PillCTA>
+                <PillCTA href="/dashboard">Get started free</PillCTA>
               </div>
             </div>
           </Reveal>

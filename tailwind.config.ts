@@ -30,6 +30,12 @@ const config: Config = {
         "signal-bright": "var(--signal-bright)",
         "signal-soft": "var(--signal-soft)",
         pill: "var(--pill)",
+        "priority-high": "var(--priority-high)",
+        "priority-high-soft": "var(--priority-high-soft)",
+        "priority-medium": "var(--priority-medium)",
+        "priority-medium-soft": "var(--priority-medium-soft)",
+        "priority-low": "var(--priority-low)",
+        "priority-low-soft": "var(--priority-low-soft)",
         // compat aliases so any legacy component still resolves a color
         paper: "var(--bg)",
         "ink-soft": "var(--ink-3)",
