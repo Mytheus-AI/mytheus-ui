@@ -73,8 +73,8 @@ export default function AdminOverviewPage() {
         </Card>
       </div>
 
-      <Card className="p-0">
-        <table className="w-full border-collapse text-left text-[14px]">
+      <Card className="overflow-x-auto p-0">
+        <table className="w-full min-w-[560px] border-collapse text-left text-[14px]">
           <thead>
             <tr className="border-b border-line">
               <th scope="col" className="px-5 py-3 text-[12px] font-medium uppercase tracking-wide text-ink-3">

@@ -25,9 +25,12 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [captionsOn, setCaptionsOn] = useState(true);
+  const [panelOpen, setPanelOpen] = useState(false);
 
   return (
-    <div className="-mx-8 -my-8 flex h-[calc(100dvh-4rem)] min-h-[540px] bg-bg-2">
+    /* negative margins mirror the AppShell main padding (px-4 py-6 sm:px-6
+       lg:px-8 lg:py-8) so the room bleeds edge-to-edge at every breakpoint */
+    <div className="-mx-4 -my-6 flex h-[calc(100dvh-4rem)] min-h-[540px] bg-bg-2 sm:-mx-6 lg:-mx-8 lg:-my-8">
       {/* ---- main stage ---- */}
       <div className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
         {/* header */}
@@ -52,7 +55,7 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
         </div>
 
         {/* video grid */}
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto sm:grid-cols-2">
           {mockRoomParticipants.map((p) => (
             <div
               key={p.name}
@@ -130,7 +133,7 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
         )}
 
         {/* controls */}
-        <div className="mt-3 flex items-center justify-center gap-2.5">
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-2.5">
           <ControlButton
             label={micOn ? "Mute" : "Unmute"}
             active={micOn}
@@ -155,6 +158,14 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
           >
             <CaptionsIcon />
           </ControlButton>
+          <ControlButton
+            label="Agent & chat"
+            active
+            onClick={() => setPanelOpen(true)}
+            className="lg:hidden"
+          >
+            <PanelIcon />
+          </ControlButton>
           <Link
             href={`/meetings/${meeting.id}`}
             className="ml-2 inline-flex items-center gap-2 rounded-pill bg-priority-high px-5 py-2.5 text-[13px] font-medium text-white transition-transform hover:-translate-y-0.5"
@@ -165,33 +176,75 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
         </div>
       </div>
 
-      {/* ---- right rail: agent / chat ---- */}
+      {/* ---- right rail: agent / chat (desktop column) ---- */}
       <aside className="hidden w-[360px] shrink-0 flex-col border-l border-line bg-bg lg:flex xl:w-[380px]">
-        <div className="flex shrink-0 gap-1 border-b border-line p-2">
-          {(
-            [
-              { key: "agent", label: "Your agent" },
-              { key: "chat", label: "Chat" },
-            ] as const
-          ).map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setTab(t.key)}
-              aria-pressed={tab === t.key}
-              className={`flex-1 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
-                tab === t.key ? "bg-bg-2 text-ink" : "text-ink-3 hover:text-ink-2"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-        <div className="min-h-0 flex-1">
-          {tab === "agent" ? <AgentSidebar /> : <ChatPanel />}
-        </div>
+        <RailContent tab={tab} setTab={setTab} />
       </aside>
+
+      {/* ---- right rail as overlay drawer below lg ---- */}
+      {panelOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            type="button"
+            aria-label="Close agent panel"
+            onClick={() => setPanelOpen(false)}
+            className="absolute inset-0 bg-black/30"
+          />
+          <aside className="absolute inset-y-0 right-0 flex w-[min(380px,92vw)] flex-col border-l border-line bg-bg shadow-[0_24px_60px_-24px_rgba(40,30,20,0.5)]">
+            <RailContent tab={tab} setTab={setTab} onClose={() => setPanelOpen(false)} />
+          </aside>
+        </div>
+      )}
     </div>
+  );
+}
+
+/* the tabbed rail body, shared by the desktop column and the mobile drawer */
+function RailContent({
+  tab,
+  setTab,
+  onClose,
+}: {
+  tab: "agent" | "chat";
+  setTab: (t: "agent" | "chat") => void;
+  onClose?: () => void;
+}) {
+  return (
+    <>
+      <div className="flex shrink-0 items-center gap-1 border-b border-line p-2">
+        {(
+          [
+            { key: "agent", label: "Your agent" },
+            { key: "chat", label: "Chat" },
+          ] as const
+        ).map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setTab(t.key)}
+            aria-pressed={tab === t.key}
+            className={`flex-1 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
+              tab === t.key ? "bg-bg-2 text-ink" : "text-ink-3 hover:text-ink-2"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close panel"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-ink-3 transition-colors hover:bg-bg-2 hover:text-ink"
+          >
+            <CloseIcon />
+          </button>
+        )}
+      </div>
+      <div className="min-h-0 flex-1">
+        {tab === "agent" ? <AgentSidebar /> : <ChatPanel />}
+      </div>
+    </>
   );
 }
 
@@ -255,11 +308,13 @@ function ControlButton({
   active,
   onClick,
   children,
+  className = "",
 }: {
   label: string;
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
     <button
@@ -271,7 +326,7 @@ function ControlButton({
         active
           ? "border-line bg-white text-ink-2 hover:border-line-2"
           : "border-priority-high/30 bg-priority-high-soft text-priority-high"
-      }`}
+      } ${className}`}
     >
       {children}
     </button>
@@ -332,6 +387,22 @@ function LeaveIcon() {
   return (
     <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden>
       <path d="M12.5 6.5v-2a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1v-2M8 10h9m0 0-2.5-2.5M17 10l-2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function PanelIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className="h-[18px] w-[18px]" aria-hidden>
+      <rect x="2.5" y="3.5" width="15" height="13" rx="2" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M12.5 3.5v13" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M5 7h4M5 9.5h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden>
+      <path d="m5 5 10 10M15 5 5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }

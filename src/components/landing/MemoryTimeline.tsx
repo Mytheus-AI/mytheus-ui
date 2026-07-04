@@ -94,13 +94,15 @@ export function MemoryTimeline() {
         <Reveal delay={120}>
           <ScrollScale from={0.96}>
           <div className="mt-14 grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr]">
-            {/* ---- left ledger card (the "Initiatives" rail) ---- */}
-            <div className="rounded-card border border-line bg-surface/70 p-6 backdrop-blur-sm">
+            {/* ---- left ledger card (the "Initiatives" rail) ----
+                 a flex column so it distributes to the graph panel's full
+                 height: header top, stats centered, live strip at the base */}
+            <div className="flex flex-col rounded-card border border-line bg-surface/70 p-6 backdrop-blur-sm">
               <p className="kicker">This week</p>
               <p className="mt-1 text-[15px] text-ink-3">
                 One memory, four meetings.
               </p>
-              <ul className="mt-6 space-y-1">
+              <ul className="flex flex-1 flex-col justify-center gap-1.5 py-6">
                 {LEDGER.map((row) => (
                   <li
                     key={row.label}
@@ -121,7 +123,7 @@ export function MemoryTimeline() {
                   </li>
                 ))}
               </ul>
-              <div className="mt-6 flex items-center gap-3 rounded-md border border-line bg-bg-2/60 px-3 py-3">
+              <div className="mt-auto flex items-center gap-3 rounded-md border border-line bg-bg-2/60 px-3 py-3">
                 <span className="relative flex h-2.5 w-2.5">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-signal opacity-60" />
                   <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-signal" />
@@ -293,18 +295,16 @@ export function MemoryTimeline() {
                         delay: 0.5 + i * 0.14,
                       }}
                     />
+                    {/* NB: framer `x` on SVG text is a transform ADDED to the
+                        x attribute — animate a small relative slide only */}
                     <motion.text
                       x={l.diamond.x + 16}
                       y={l.diamond.y + 4}
                       className="font-sans"
                       fontSize={12.5}
                       fill="var(--signal-deep)"
-                      initial={{ opacity: 0, x: l.diamond.x + 8 }}
-                      animate={
-                        go
-                          ? { opacity: 1, x: l.diamond.x + 16 }
-                          : { opacity: 0, x: l.diamond.x + 8 }
-                      }
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={go ? { opacity: 1, x: 0 } : { opacity: 0, x: -8 }}
                       transition={{ duration: 0.5, delay: 0.65 + i * 0.14 }}
                     >
                       {l.decision}

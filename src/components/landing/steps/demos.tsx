@@ -6,23 +6,37 @@ import { motion, useReducedMotion } from "framer-motion";
 /* Mini live demos for the five "How it works" stages. Each one is a small,
    honest re-enactment of the product moment (Appendix A1 of the 4-July brief):
    one continuous story — a Q2 pricing decision that resurfaces later. Every
-   demo replays from its first frame when (re)mounted, which is exactly what
-   the StageSwitch swap gives us; `still` renders the final frame statically
-   for mobile / reduced motion. */
+   demo replays from its first frame when (re)mounted (the StageSwitch swap)
+   AND self-loops in place: after the final beat it holds, then softly settles
+   back to frame one and plays again, so a stage never freezes while the
+   visitor dwells on it. `still` renders the final frame statically for
+   mobile / reduced motion. */
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-/** Advances through numbered phases at the given timestamps (ms). */
-function usePhases(times: number[], still: boolean) {
+/** Advances through numbered phases at the given timestamps (ms). With
+    `loopHold`, the final frame dwells that long, then the demo replays —
+    every state animates via `animate`/CSS transitions, so the rewind is a
+    soft settle back to frame one, not a cut. */
+function usePhases(times: number[], still: boolean, loopHold = 0) {
   const [phase, setPhase] = useState(still ? times.length : 0);
+  const [cycle, setCycle] = useState(0);
   useEffect(() => {
     if (still) return;
     setPhase(0);
     const ids = times.map((t, i) => setTimeout(() => setPhase(i + 1), t));
+    if (loopHold > 0) {
+      ids.push(
+        setTimeout(
+          () => setCycle((c) => c + 1),
+          times[times.length - 1] + loopHold,
+        ),
+      );
+    }
     return () => ids.forEach(clearTimeout);
     // times arrays are module constants per demo
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [still]);
+  }, [still, cycle]);
   return phase;
 }
 
@@ -33,7 +47,10 @@ function useTypewriter(full: string, active: boolean, still: boolean) {
       setText(full);
       return;
     }
-    if (!active) return;
+    if (!active) {
+      setText("");
+      return;
+    }
     let i = 0;
     const id = setInterval(() => {
       i += 1;
@@ -138,53 +155,116 @@ function CheckDot({ className = "h-4 w-4" }: { className?: string }) {
 /*  01 — Capture: the transcript streams; one line becomes a note.     */
 /* ================================================================== */
 
-const CAPTURE_TIMES = [400, 2600];
+const CAPTURE_LINE = "Can we still hit the April launch if pricing slips?";
+const CAPTURE_TIMES = [350, 950, 2900];
+
+/** The "listening" equalizer next to the capturing badge. */
+function WaveBars({ active }: { active: boolean }) {
+  const heights = [0.55, 1, 0.7, 0.9, 0.5];
+  return (
+    <span className="flex h-[11px] items-center gap-[2.5px]" aria-hidden>
+      {heights.map((h, i) => (
+        <motion.span
+          key={i}
+          className="h-full w-[2.5px] rounded-full bg-signal"
+          initial={false}
+          animate={
+            active
+              ? { scaleY: [0.3, h, 0.45, h * 0.85, 0.3] }
+              : { scaleY: 0.35 }
+          }
+          transition={
+            active
+              ? {
+                  duration: 1.15,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: i * 0.12,
+                }
+              : { duration: 0.3 }
+          }
+        />
+      ))}
+    </span>
+  );
+}
 
 export function CaptureDemo({ still = false }: { still?: boolean }) {
-  const phase = usePhases(CAPTURE_TIMES, still);
-  const typed = useTypewriter(
-    "Can we still hit the April launch if pricing slips?",
-    phase >= 1,
-    still,
-  );
+  const reduce = useReducedMotion();
+  const phase = usePhases(CAPTURE_TIMES, still, 3000);
+  const typed = useTypewriter(CAPTURE_LINE, phase >= 2, still);
+  const noted = phase >= 3;
 
   return (
     <DemoFrame>
       <div className="flex items-center justify-between">
         <span className="kicker text-[10px] text-ink-3">Live transcript</span>
-        <span className="flex items-center gap-1.5 text-[10.5px] font-medium text-signal-deep">
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="absolute h-full w-full animate-ping rounded-full bg-signal/50" />
-            <span className="relative h-1.5 w-1.5 rounded-full bg-signal" />
-          </span>
+        <span className="flex items-center gap-2 text-[10.5px] font-medium text-signal-deep">
+          <WaveBars active={!still && !reduce} />
           capturing
         </span>
       </div>
 
       <div className="mt-4 space-y-2.5 text-[13.5px] leading-snug">
-        <p className="text-ink-3">
-          <Speaker name="Priya" />{" "}
-          …still waiting on the final pricing numbers.
-        </p>
+        <Enter show={phase >= 1} y={10}>
+          <p className="text-ink-3">
+            <Speaker name="Priya" />{" "}
+            …still waiting on the final pricing numbers.
+          </p>
+        </Enter>
         <p className="min-h-[2.4em] text-ink">
           <Speaker name="Marcus" /> {typed}
-          {!still && phase >= 1 && typed.length < 51 && (
-            <span className="ml-0.5 inline-block h-[1em] w-[2px] translate-y-[2px] rounded-full bg-signal align-middle" />
+          {!still && phase >= 2 && typed.length < CAPTURE_LINE.length && (
+            <motion.span
+              className="ml-0.5 inline-block h-[1em] w-[2px] translate-y-[2px] rounded-full bg-signal align-middle"
+              animate={reduce ? undefined : { opacity: [1, 1, 0, 0, 1] }}
+              transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
+            />
           )}
         </p>
       </div>
 
-      {/* the line resolves into a role-relevant note */}
-      <Enter show={phase >= 2} className="mt-4">
-        <div className="rounded-2xl border border-signal/25 bg-signal-soft/50 p-4">
+      {/* the line resolves into a role-relevant note — a spring landing
+          with a one-shot radar pulse as it commits */}
+      <motion.div
+        className="mt-4"
+        initial={false}
+        animate={
+          noted
+            ? { opacity: 1, y: 0, scale: 1 }
+            : { opacity: 0, y: reduce ? 0 : 16, scale: reduce ? 1 : 0.97 }
+        }
+        transition={
+          reduce
+            ? { duration: 0 }
+            : { type: "spring", stiffness: 260, damping: 24 }
+        }
+      >
+        <motion.div
+          className="rounded-2xl border border-signal/25 bg-signal-soft/50 p-4"
+          initial={false}
+          animate={
+            noted && !reduce && !still
+              ? {
+                  boxShadow: [
+                    "0 0 0 0px rgba(217,119,87,0.35)",
+                    "0 0 0 14px rgba(217,119,87,0)",
+                  ],
+                }
+              : { boxShadow: "0 0 0 0px rgba(217,119,87,0)" }
+          }
+          transition={{ duration: 1.1, ease: "easeOut" }}
+        >
           <p className="text-[13.5px] font-medium leading-snug text-ink-display">
             Launch at risk if the pricing decision slips past April.
           </p>
-          <p className="mt-2 flex items-center gap-1.5 text-[10.5px] font-medium text-signal-deep">
-            <CheckDot className="h-3.5 w-3.5" /> Role-relevant note · yours only
-          </p>
-        </div>
-      </Enter>
+          <Enter show={noted} y={6} delay={220}>
+            <p className="mt-2 flex items-center gap-1.5 text-[10.5px] font-medium text-signal-deep">
+              <CheckDot className="h-3.5 w-3.5" /> Role-relevant note · yours only
+            </p>
+          </Enter>
+        </motion.div>
+      </motion.div>
     </DemoFrame>
   );
 }
@@ -196,7 +276,7 @@ export function CaptureDemo({ still = false }: { still?: boolean }) {
 const LABEL_TIMES = [900, 1800];
 
 export function LabelDemo({ still = false }: { still?: boolean }) {
-  const phase = usePhases(LABEL_TIMES, still);
+  const phase = usePhases(LABEL_TIMES, still, 3200);
 
   return (
     <DemoFrame>
@@ -256,7 +336,7 @@ export function LabelDemo({ still = false }: { still?: boolean }) {
 const CONFIRM_TIMES = [1100, 1900, 2450];
 
 export function ConfirmDemo({ still = false }: { still?: boolean }) {
-  const phase = usePhases(CONFIRM_TIMES, still);
+  const phase = usePhases(CONFIRM_TIMES, still, 3000);
   const reduce = useReducedMotion();
   const confirmed = phase >= 3;
 
@@ -357,7 +437,7 @@ function MiniAvatar({ initials, ring = false }: { initials: string; ring?: boole
 }
 
 export function RouteDemo({ still = false }: { still?: boolean }) {
-  const phase = usePhases(ROUTE_TIMES, still);
+  const phase = usePhases(ROUTE_TIMES, still, 3200);
 
   return (
     <DemoFrame>
@@ -408,7 +488,7 @@ export function RouteDemo({ still = false }: { still?: boolean }) {
 const REMEMBER_TIMES = [900];
 
 export function RememberDemo({ still = false }: { still?: boolean }) {
-  const phase = usePhases(REMEMBER_TIMES, still);
+  const phase = usePhases(REMEMBER_TIMES, still, 2800);
   const reduce = useReducedMotion();
   const moved = phase >= 1;
 

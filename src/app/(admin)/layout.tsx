@@ -17,7 +17,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <OrgProvider value={mockOrgContext}>
       <div className="min-h-dvh bg-bg">
-        <header className="flex h-16 items-center justify-between border-b border-line bg-surface px-8">
+        <header className="flex h-16 items-center justify-between border-b border-line bg-surface px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <LogoMark size={22} />
             <span className="text-[18px] font-medium tracking-[-0.05em] text-ink">Mytheus</span>
@@ -30,7 +30,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             Back to app
           </Link>
         </header>
-        <main className="px-8 py-8">{children}</main>
+        <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
       </div>
     </OrgProvider>
   );

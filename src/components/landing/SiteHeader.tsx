@@ -25,11 +25,21 @@ const EASE = [0.2, 0.7, 0.2, 1] as const;
 export function SiteHeader() {
   const reduce = useReducedMotion();
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const { scrollY } = useScroll();
   useMotionValueEvent(scrollY, "change", (y) => {
     setScrolled(y > window.innerHeight * 0.75);
   });
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
 
   const pillSurface = scrolled
     ? "bg-bg/75 shadow-[0_10px_30px_-18px_rgba(40,30,20,0.4)] backdrop-blur-md"
@@ -76,29 +86,91 @@ export function SiteHeader() {
           <NavLink href="/enterprise">Enterprise</NavLink>
         </motion.nav>
 
-        {/* compact CTA — arrives once the hero's own CTA has scrolled away */}
-        <motion.div
-          initial={false}
-          animate={
-            reduce
-              ? { opacity: scrolled ? 1 : 0 }
-              : { opacity: scrolled ? 1 : 0, y: scrolled ? 0 : -8 }
-          }
-          transition={{ duration: 0.45, ease: EASE }}
-        >
-          <Link
-            href="/dashboard"
-            tabIndex={scrolled ? 0 : -1}
-            aria-hidden={!scrolled}
-            className={`group inline-flex items-center gap-2 rounded-pill bg-signal py-2.5 pl-5 pr-4 text-[14px] font-medium text-white shadow-[0_16px_36px_-18px_rgba(189,93,58,0.8)] transition-[background-color,transform] duration-300 hover:-translate-y-0.5 hover:bg-signal-deep ${
-              scrolled ? "pointer-events-auto" : "pointer-events-none"
+        <div className="flex items-center gap-2">
+          {/* compact CTA — arrives once the hero's own CTA has scrolled away */}
+          <motion.div
+            initial={false}
+            animate={
+              reduce
+                ? { opacity: scrolled ? 1 : 0 }
+                : { opacity: scrolled ? 1 : 0, y: scrolled ? 0 : -8 }
+            }
+            transition={{ duration: 0.45, ease: EASE }}
+            className="hidden sm:block"
+          >
+            <Link
+              href="/dashboard"
+              tabIndex={scrolled ? 0 : -1}
+              aria-hidden={!scrolled}
+              className={`group inline-flex items-center gap-2 rounded-pill bg-signal py-2.5 pl-5 pr-4 text-[14px] font-medium text-white shadow-[0_16px_36px_-18px_rgba(189,93,58,0.8)] transition-[background-color,transform] duration-300 hover:-translate-y-0.5 hover:bg-signal-deep ${
+                scrolled ? "pointer-events-auto" : "pointer-events-none"
+              }`}
+            >
+              Get started free
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+            </Link>
+          </motion.div>
+
+          {/* mobile menu toggle — the centered nav is desktop-only, so below
+              md this is the only way into Features/Pricing/Enterprise */}
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-expanded={menuOpen}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            className={`pointer-events-auto grid h-10 w-10 place-items-center rounded-pill text-ink transition-[background-color,box-shadow] duration-500 md:hidden ${
+              scrolled || menuOpen ? "bg-bg/75 shadow-[0_10px_30px_-18px_rgba(40,30,20,0.4)] backdrop-blur-md" : "bg-transparent"
             }`}
           >
-            Get started free
-            <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
-          </Link>
-        </motion.div>
+            <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5" aria-hidden>
+              {menuOpen ? (
+                <path d="m5 5 10 10M15 5 5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              ) : (
+                <path d="M3.5 6h13M3.5 10h13M3.5 14h13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              )}
+            </svg>
+          </button>
+        </div>
       </div>
+
+      {/* mobile menu panel */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.nav
+            aria-label="Product"
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, y: -6 }}
+            transition={{ duration: 0.25, ease: EASE }}
+            className="pointer-events-auto mx-4 md:hidden"
+          >
+            <div className="overflow-hidden rounded-[20px] border border-line bg-bg/95 p-3 shadow-[0_40px_80px_-32px_rgba(40,30,20,0.4)] backdrop-blur-md">
+              {[
+                { href: "/features", label: "Features" },
+                { href: "/pricing", label: "Pricing" },
+                { href: "/enterprise", label: "Enterprise" },
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMenuOpen(false)}
+                  className="block rounded-xl px-3.5 py-2.5 text-[15px] font-medium text-ink transition-colors duration-200 hover:bg-bg-2"
+                >
+                  {item.label}
+                </Link>
+              ))}
+              <Link
+                href="/dashboard"
+                onClick={() => setMenuOpen(false)}
+                className="mt-1.5 flex items-center justify-between rounded-xl bg-signal px-3.5 py-2.5 text-[14px] font-medium text-white transition-colors duration-200 hover:bg-signal-deep"
+              >
+                Get started free
+                <span aria-hidden>→</span>
+              </Link>
+            </div>
+          </motion.nav>
+        )}
+      </AnimatePresence>
     </header>
   );
 }
