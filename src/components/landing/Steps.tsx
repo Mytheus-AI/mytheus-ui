@@ -6,6 +6,7 @@ import {
   motion,
   useReducedMotion,
   useSpring,
+  useTransform,
   type MotionValue,
 } from "framer-motion";
 import { PinnedScene, StageSwitch, ScrubReveal, Reveal } from "./motion";
@@ -23,8 +24,13 @@ import {
    (Capture → Label → Confirm → Route → Remember) swap in place — a vertical
    progress spine on the left ties the swap to scroll, and each stage plays a
    mini live demo of the product moment. The viewport never jumps; only the
-   stage inside the pinned frame changes (StageSwitch). Mobile and
-   reduced-motion render the five stages as a calm static stack instead. */
+   stage inside the pinned frame changes (StageSwitch). On top of the swap
+   sits a scroll-linked cinematic layer (SceneFrame): a camera push into the
+   frame at the start of the pin and a gentle pull-back at the end, a
+   drifting dot-grid texture + traveling clay glow behind the content, a
+   giant stage-word watermark that crossfades per stage, and a slow push-in
+   on each demo card during its dwell. Mobile and reduced-motion render the
+   five stages as a calm static stack instead. */
 
 function MicIcon({ className = "h-5 w-5" }: { className?: string }) {
   return (
@@ -156,10 +162,10 @@ export function Steps() {
         {!reduce && (
           <PinnedScene count={CARDS.length} className="mt-4 hidden md:block">
             {({ index, progress, goTo }) => (
-              <div className="grid w-full items-center gap-10 md:grid-cols-[minmax(0,0.55fr)_minmax(0,1fr)] lg:gap-16">
+              <SceneFrame index={index} progress={progress}>
                 <Spine index={index} progress={progress} goTo={goTo} />
-                <Stage index={index} />
-              </div>
+                <Stage index={index} progress={progress} />
+              </SceneFrame>
             )}
           </PinnedScene>
         )}
@@ -199,6 +205,101 @@ export function Steps() {
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
+/** 0→1 within the current stage's scroll segment (sawtooth over the pin). */
+function toStageLocal(v: number) {
+  const s = Math.min(v, 0.9999) * CARDS.length;
+  return s - Math.floor(s);
+}
+
+/* ---------------- the cinematic frame around the pinned scene ---------------- */
+
+function SceneFrame({
+  index,
+  progress,
+  children,
+}: {
+  index: number;
+  progress: MotionValue<number>;
+  children: ReactNode;
+}) {
+  const cam = useSpring(progress, { stiffness: 90, damping: 28, mass: 0.4 });
+
+  /* camera push: the frame settles in over the first beats of the pin and
+     eases back out at the end — a zoom the scrubber drives, never a cut */
+  const scale = useTransform(cam, [0, 0.08, 0.92, 1], [0.96, 1, 1, 0.98]);
+  const opacity = useTransform(cam, [0, 0.07, 0.93, 1], [0.7, 1, 1, 0.82]);
+
+  /* scroll textures: the dot grid drifts against scroll, the glow travels
+     down through the scene over the full pin */
+  const gridY = useTransform(cam, [0, 1], ["0%", "-9%"]);
+  const glowTop = useTransform(cam, [0, 1], ["-14%", "56%"]);
+  const glowLeft = useTransform(cam, [0, 1], ["60%", "38%"]);
+
+  /* the watermark rises through each stage's dwell; the crossfade at the
+     swap masks the sawtooth reset */
+  const wmY = useSpring(useTransform(progress, (v) => 30 - toStageLocal(v) * 60), {
+    stiffness: 180,
+    damping: 30,
+    mass: 0.4,
+  });
+
+  return (
+    <div className="relative flex h-full w-full flex-col justify-center">
+      {/* drifting dot-grid texture, faded out toward the frame edges */}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 -inset-y-[12%]"
+        style={{
+          y: gridY,
+          backgroundImage:
+            "radial-gradient(var(--line-2) 1.1px, transparent 1.1px)",
+          backgroundSize: "26px 26px",
+          opacity: 0.55,
+          maskImage:
+            "radial-gradient(72% 68% at 58% 46%, black 26%, transparent 76%)",
+          WebkitMaskImage:
+            "radial-gradient(72% 68% at 58% 46%, black 26%, transparent 76%)",
+        }}
+      />
+
+      {/* a soft clay glow that migrates through the scene with scroll */}
+      <motion.div
+        aria-hidden
+        className="orb-glow pointer-events-none absolute h-[440px] w-[440px] opacity-60"
+        style={{ top: glowTop, left: glowLeft }}
+      />
+
+      {/* giant stage-word watermark, crossfading per stage */}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-4 right-0 select-none"
+        style={{ y: wmY }}
+      >
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.span
+            key={CARDS[index].flow}
+            className="display block whitespace-nowrap text-[clamp(6.5rem,13vw,12rem)] leading-none text-signal/[0.07]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6, ease: EASE }}
+          >
+            {CARDS[index].flow}
+          </motion.span>
+        </AnimatePresence>
+      </motion.div>
+
+      {/* the content, riding the camera */}
+      <motion.div
+        className="grid w-full items-center gap-10 will-change-transform md:grid-cols-[minmax(0,0.55fr)_minmax(0,1fr)] lg:gap-16"
+        style={{ scale, opacity }}
+      >
+        {children}
+      </motion.div>
+    </div>
+  );
+}
+
 /* ---------------- left rail: the progress spine ---------------- */
 
 function Spine({
@@ -211,6 +312,7 @@ function Spine({
   goTo: (i: number) => void;
 }) {
   const fill = useSpring(progress, { stiffness: 120, damping: 30, mass: 0.4 });
+  const tipTop = useTransform(fill, (v) => `${Math.min(1, Math.max(0, v)) * 100}%`);
 
   return (
     <div>
@@ -226,6 +328,11 @@ function Spine({
           <motion.span
             className="absolute inset-0 origin-top bg-signal"
             style={{ scaleY: fill }}
+          />
+          {/* the glowing head riding the tip of the fill */}
+          <motion.span
+            className="absolute left-1/2 h-[7px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-signal shadow-[0_0_12px_var(--signal-glow)]"
+            style={{ top: tipTop }}
           />
         </span>
 
@@ -295,8 +402,25 @@ function Odometer({ value }: { value: number }) {
 
 /* ---------------- right side: the live stage ---------------- */
 
-function Stage({ index }: { index: number }) {
+function Stage({
+  index,
+  progress,
+}: {
+  index: number;
+  progress: MotionValue<number>;
+}) {
   const card = CARDS[index];
+
+  /* a slow camera push into the demo card over the stage's dwell — the
+     StageSwitch swap masks the sawtooth reset between stages */
+  const local = useSpring(useTransform(progress, toStageLocal), {
+    stiffness: 200,
+    damping: 32,
+    mass: 0.35,
+  });
+  const demoScale = useTransform(local, [0, 1], [1, 1.035]);
+  const demoY = useTransform(local, [0, 1], [8, -8]);
+
   return (
     /* min-height reserved so the frame never reflows on swap */
     <div className="flex min-h-[540px] flex-col justify-center">
@@ -313,7 +437,12 @@ function Stage({ index }: { index: number }) {
         <p className="mt-2.5 max-w-[46ch] text-[15.5px] leading-relaxed text-ink-3">
           {card.body}
         </p>
-        <div className="mt-6">{card.visual(false)}</div>
+        <motion.div
+          className="mt-6 will-change-transform"
+          style={{ scale: demoScale, y: demoY }}
+        >
+          {card.visual(false)}
+        </motion.div>
         <Tokens tokens={card.tokens} className="mt-6" />
       </StageSwitch>
     </div>

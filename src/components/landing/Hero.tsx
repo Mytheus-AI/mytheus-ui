@@ -10,7 +10,7 @@ import {
   type MotionValue,
 } from "framer-motion";
 import { PillCTA } from "./ui";
-import { WordReveal, Reveal, Magnetic } from "./motion";
+import { WordReveal, Reveal, Magnetic, Float } from "./motion";
 import { NotesWidget } from "./NotesEnhanceDemo";
 
 /* ================================================================== */
@@ -138,6 +138,30 @@ const POSES: {
     home: { x: 0, y: 0, r: -1.5, s: 1 },
     stack: { x: -16, y: 0, r: -5, s: 0.9 },
     node: <NoteWindow />,
+  },
+  /* satellites — small product truths orbiting the capture window. Each one
+     teases a section further down the page (agents, routing, memory), so the
+     hero itself invites the scroll. */
+  {
+    key: "agents",
+    z: 40,
+    home: { x: -256, y: -218, r: -6, s: 1 },
+    stack: { x: -38, y: -52, r: 8, s: 0.88 },
+    node: <AgentsSatellite />,
+  },
+  {
+    key: "routed",
+    z: 40,
+    home: { x: -252, y: 168, r: -7, s: 1 },
+    stack: { x: -56, y: 54, r: -14, s: 0.88 },
+    node: <RoutedSatellite />,
+  },
+  {
+    key: "memory",
+    z: 35,
+    home: { x: 272, y: 118, r: 6, s: 1 },
+    stack: { x: 48, y: 40, r: 10, s: 0.88 },
+    node: <MemorySatellite />,
   },
 ];
 
@@ -715,6 +739,123 @@ function Caret() {
       animate={{ opacity: [1, 1, 0, 0] }}
       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
     />
+  );
+}
+
+/* ================================================================== */
+/*  Satellites — floating product truths around the note window        */
+/* ================================================================== */
+
+/** Fade-lift entrance for a satellite, staggered after the hero copy. */
+function SatEnter({ children, delay }: { children: ReactNode; delay: number }) {
+  const reduce = useReducedMotion();
+  if (reduce) return <>{children}</>;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 18, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function SatAvatar({
+  initials,
+  className = "",
+}: {
+  initials: string;
+  className?: string;
+}) {
+  return (
+    <span
+      className={`grid h-6 w-6 place-items-center rounded-full border-[1.5px] border-white bg-signal-soft font-mono text-[8.5px] font-bold text-signal-deep ${className}`}
+    >
+      {initials}
+    </span>
+  );
+}
+
+/* "one agent per person" — the core promise, worn as a badge */
+function AgentsSatellite() {
+  return (
+    <SatEnter delay={0.55}>
+      <Float amount={7} duration={7.5}>
+        <div className="flex items-center gap-2.5 rounded-full border border-line bg-white/95 py-2 pl-2.5 pr-4 shadow-[0_24px_48px_-24px_rgba(40,30,20,0.45)] backdrop-blur-sm">
+          <span className="flex -space-x-1.5">
+            <SatAvatar initials="PR" />
+            <SatAvatar initials="MA" />
+            <SatAvatar initials="DI" />
+            <span className="grid h-6 w-6 place-items-center rounded-full border-[1.5px] border-white bg-signal font-mono text-[8.5px] font-bold text-white">
+              +1
+            </span>
+          </span>
+          <span className="whitespace-nowrap text-[12px] font-medium text-ink-2">
+            One agent per person
+          </span>
+        </div>
+      </Float>
+    </SatEnter>
+  );
+}
+
+/* a decision that already left the room — teases Confirm → Route */
+function RoutedSatellite() {
+  return (
+    <SatEnter delay={0.7}>
+      <Float amount={6} duration={8.5}>
+        <div className="w-[212px] rounded-[20px] border border-line bg-white/95 p-4 shadow-[0_30px_60px_-30px_rgba(40,30,20,0.45)] backdrop-blur-sm">
+          <div className="flex items-center justify-between">
+            <span className="kicker text-[9.5px] text-signal">
+              Decision · routed
+            </span>
+            <span className="grid h-5 w-5 place-items-center rounded-full bg-signal text-white">
+              <svg viewBox="0 0 12 12" className="h-3 w-3" aria-hidden>
+                <path
+                  d="M2.5 6.2 5 8.5 9.5 3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+          </div>
+          <p className="mt-2 text-[13px] font-semibold leading-snug tracking-tight text-ink-display">
+            Pricing locked at $49
+          </p>
+          <div className="mt-3 flex items-center gap-2 border-t border-line pt-2.5">
+            <SatAvatar initials="SA" />
+            <span className="text-[11px] leading-tight text-ink-3">
+              Sarah owns it · shared with 2
+            </span>
+          </div>
+        </div>
+      </Float>
+    </SatEnter>
+  );
+}
+
+/* a fact carried across meetings — teases the memory timeline below */
+function MemorySatellite() {
+  return (
+    <SatEnter delay={0.85}>
+      <Float amount={8} duration={6.5}>
+        <div className="w-[224px] rounded-[20px] border border-signal/25 bg-signal-soft/85 p-4 shadow-[0_30px_60px_-32px_rgba(189,93,58,0.5)] backdrop-blur-sm">
+          <span className="kicker text-[9.5px] text-signal-deep">
+            Cross-meeting memory
+          </span>
+          <p className="mt-2 text-[12.5px] font-medium leading-snug text-ink">
+            &ldquo;Q2 pricing decision&rdquo; resurfaced for today&rsquo;s sync
+          </p>
+          <p className="mt-2.5 font-mono text-[9.5px] uppercase tracking-wider text-signal-deep">
+            Apr 3 &rarr; Today
+          </p>
+        </div>
+      </Float>
+    </SatEnter>
   );
 }
 
