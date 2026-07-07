@@ -102,12 +102,14 @@ export function MemoryTimeline() {
   return (
     <section id="memory" className="px-3 py-24 sm:px-5 sm:py-32">
       <div className="mx-auto max-w-[1340px]">
-        <Reveal>
+        {/* heading centered over the chart (it used to hang off the left
+            edge, disconnected from the diagram below) */}
+        <Reveal className="text-center">
           <Eyebrow>How memory compounds</Eyebrow>
-          <h2 className="display mt-5 max-w-[20ch] text-[clamp(2.1rem,5.5vw,4rem)]">
+          <h2 className="display mx-auto mt-5 max-w-[20ch] text-balance text-[clamp(2.1rem,5.5vw,4rem)]">
             A decision on Monday is context on Friday.
           </h2>
-          <p className="mt-6 max-w-[54ch] text-[17px] leading-relaxed text-ink-3">
+          <p className="mx-auto mt-6 max-w-[54ch] text-[17px] leading-relaxed text-ink-3">
             Every meeting feeds one shared memory. Decisions, owners, and
             promises made early in the week are carried forward automatically —
             so by Friday&apos;s standup, nothing has to be re-explained.
