@@ -19,7 +19,11 @@ about the marketing surface.
 - Pointer effects (Magnetic, Tilt) disable themselves on coarse pointers.
 - Never animate a layout-affecting property without reserving the space
   first (see `min-h` on the Steps stage). Off-screen loops pause via
-  `useInView`.
+  `useInView`. For panels that fill with streamed content, pre-lay every
+  slot as a ghost placeholder and swap ghost ⇄ content with
+  `AnimatePresence` so the container never changes height —
+  `LiveCapture.tsx` is the reference (its panel is pixel-constant through
+  a full loop).
 
 ## Smooth scroll (Lenis)
 
@@ -60,9 +64,27 @@ reduced-motion behavior.
 | `PinnedScene` | `count`, render prop `{ index, progress, goTo }` | a section that pins for `count` viewport-heights and swaps stages with scroll; `progress` is a MotionValue (no per-frame re-render), `goTo(i)` glides to a stage through Lenis | renders children once, unpinned - callers should branch to a static layout |
 | `StageSwitch` | `index` | the standard in-place content swap (exit up + shrink + blur, enter from below); keyed remount restarts the incoming stage's inner animations | plain swap |
 
-`Steps.tsx` is the reference implementation: `PinnedScene` outside,
-`StageSwitch` for the stage, a spine driven by the `progress` MotionValue,
-and a fully separate static stack for mobile and reduced motion.
+Two reference implementations, two flavors:
+
+- `Steps.tsx` — the **staged** flavor: `PinnedScene` outside, `StageSwitch`
+  for discrete stage swaps, a spine driven by the `progress` MotionValue,
+  and a fully separate static stack for mobile and reduced motion.
+- `Statement.tsx` (THE RELAY) — the **continuous scroll-scrubbed** flavor:
+  no stage swaps; every element maps windows of the single `progress`
+  MotionValue through `useTransform` (packet position on bezier arcs, the
+  `LoadTrend` chart's draw, overlay fades), so scrolling backwards reverses
+  the story frame-perfectly.
+
+Rules every pinned scene must follow (learned the hard way):
+
+- **The section heading lives INSIDE the pin.** Eyebrow + h2 + sub must fit
+  in the pinned viewport together with the stage — never leave the heading
+  above the pin where it scrolls away. Pattern: the `SceneHeading` block in
+  `Statement.tsx` (flex column, heading on top, stage `min-h-0 flex-1`,
+  heading scales down slightly once the story starts).
+- **Clear the fixed header.** The pinned viewport sits under the fixed
+  `SiteHeader`; pad the scene (`pt-[92px]` in `Statement.tsx`) or docked
+  content will collide with it.
 
 ### Continuous and pointer
 

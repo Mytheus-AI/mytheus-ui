@@ -46,9 +46,10 @@ export function Play({ className = "h-3.5 w-3.5" }: { className?: string }) {
 /* ---------------- buttons ---------------- */
 
 /**
- * PillCTA — the signature Playex call to action: a black text pill with a
- * separate circular arrow button tucked into its right edge. On hover the
- * circle slides and the whole thing lifts a touch (CSS only).
+ * PillCTA — the primary call to action: one clean signal pill with an
+ * inline arrow, the same language as the header and closing CTAs. Static
+ * by design — hover only deepens the color and nudges the arrow; no lift,
+ * no drift.
  */
 export function PillCTA({
   href,
@@ -62,14 +63,10 @@ export function PillCTA({
   return (
     <Link
       href={href}
-      className={`group inline-flex items-center transition-transform duration-300 ease-out hover:-translate-y-0.5 ${className}`}
+      className={`group inline-flex items-center gap-2.5 rounded-pill bg-signal py-4 pl-7 pr-6 text-[15px] font-medium tracking-tight text-white shadow-[0_20px_44px_-18px_rgba(189,93,58,0.85)] transition-colors duration-300 hover:bg-signal-deep ${className}`}
     >
-      <span className="-mr-4 inline-flex items-center rounded-pill bg-signal px-7 py-4 text-[15px] font-medium tracking-tight text-white">
-        {children}
-      </span>
-      <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-signal text-white transition-colors duration-300 group-hover:bg-signal-deep">
-        <ArrowRight className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-0.5" />
-      </span>
+      {children}
+      <ArrowRight className="h-[18px] w-[18px] transition-transform duration-300 group-hover:translate-x-0.5" />
     </Link>
   );
 }

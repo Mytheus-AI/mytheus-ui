@@ -47,7 +47,7 @@ export default function MeetingDetailPage({
   const isPast = meeting.status === "past";
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-8">
+    <div className="mx-auto flex max-w-4xl flex-col gap-8 motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
       {/* header */}
       <div>
         <div className="flex flex-wrap items-center gap-3">
@@ -60,7 +60,9 @@ export default function MeetingDetailPage({
             </Badge>
           )}
         </div>
-        <h1 className="display mt-2 text-[clamp(1.8rem,4vw,2.4rem)]">{meeting.title}</h1>
+        <h1 className="display mt-2 break-words text-[clamp(1.8rem,4vw,2.4rem)]">
+          {meeting.title}
+        </h1>
         <p className="mt-2 text-[14px] text-ink-3">
           {dateFormatter.format(new Date(meeting.startTime))} · {meeting.durationMinutes} min
         </p>
@@ -127,9 +129,9 @@ export default function MeetingDetailPage({
             <div className="mt-4 flex flex-col gap-3">
               {decisions.map((d) => (
                 <Card key={d.id} priorityStrip={d.priority}>
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="text-[15px] font-medium text-ink">{d.title}</p>
-                    <Badge tone={d.priority} className="capitalize">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <p className="min-w-0 text-[15px] font-medium text-ink">{d.title}</p>
+                    <Badge tone={d.priority} className="shrink-0 capitalize">
                       {d.priority}
                     </Badge>
                   </div>
@@ -155,16 +157,18 @@ export default function MeetingDetailPage({
                 <Card key={a.id} priorityStrip={a.priority}>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <p
-                      className={`text-[14.5px] font-medium ${
+                      className={`min-w-0 text-[14.5px] font-medium ${
                         a.status === "done" ? "text-ink-3 line-through" : "text-ink"
                       }`}
                     >
                       {a.title}
                     </p>
-                    <span className="flex items-center gap-2">
+                    <span className="flex shrink-0 items-center gap-2">
                       <Avatar name={a.assignee} size="sm" />
                       <span className="text-[13px] text-ink-2">{a.assignee}</span>
-                      <span className="text-[12.5px] text-ink-3">· due {a.dueDate.slice(5)}</span>
+                      <span className="whitespace-nowrap text-[12.5px] text-ink-3">
+                        · due {a.dueDate.slice(5)}
+                      </span>
                     </span>
                   </div>
                 </Card>

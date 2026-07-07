@@ -25,10 +25,10 @@ export function SettingsTabs() {
             key={t.href}
             href={t.href}
             aria-current={active ? "page" : undefined}
-            className={`rounded-pill px-4 py-2 text-[13.5px] font-medium transition-colors ${
+            className={`inline-flex min-h-[40px] items-center rounded-pill px-4 text-[13.5px] font-medium transition-colors duration-150 ${
               active
                 ? "bg-pill text-white"
-                : "border border-line bg-white text-ink-2 hover:border-line-2 hover:text-ink"
+                : "border border-line bg-surface text-ink-2 hover:border-line-2 hover:text-ink"
             }`}
           >
             {t.label}

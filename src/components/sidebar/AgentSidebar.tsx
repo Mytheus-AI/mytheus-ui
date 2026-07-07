@@ -61,7 +61,7 @@ export function AgentSidebar() {
     setSaved((s) => (s.includes(title) ? s.filter((x) => x !== title) : [...s, title]));
 
   return (
-    <div className="flex h-full flex-col gap-3 overflow-y-auto p-4">
+    <div className="flex h-full flex-col gap-3 overflow-y-auto p-4 motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
       {/* conflict banner — red, pinned top above everything else */}
       {conflict && (
         <div className="flex items-start gap-2.5 rounded-xl border border-priority-high/30 bg-priority-high-soft px-4 py-3">
@@ -121,24 +121,24 @@ export function AgentSidebar() {
           <p className="mt-1 text-[11.5px] text-ink-3">{decision.detail}</p>
 
           {decisionState === "pending" ? (
-            <div className="mt-3 flex items-center gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => setDecisionState("confirmed")}
-                className="rounded-full bg-signal px-3.5 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-signal-deep"
+                className="inline-flex min-h-[40px] items-center rounded-full bg-signal px-4 text-[12px] font-medium text-white transition-colors duration-150 hover:bg-signal-deep"
               >
                 Confirm
               </button>
               <button
                 type="button"
-                className="rounded-full border border-line bg-white px-3.5 py-1.5 text-[12px] text-ink-2 transition-colors hover:border-line-2"
+                className="inline-flex min-h-[40px] items-center rounded-full border border-line bg-surface px-4 text-[12px] text-ink-2 transition-colors duration-150 hover:border-line-2"
               >
                 Edit
               </button>
               <button
                 type="button"
                 onClick={() => setDecisionState("dismissed")}
-                className="rounded-full border border-line bg-white px-3.5 py-1.5 text-[12px] text-ink-3 transition-colors hover:border-line-2"
+                className="inline-flex min-h-[40px] items-center rounded-full border border-line bg-surface px-4 text-[12px] text-ink-3 transition-colors duration-150 hover:border-line-2"
               >
                 Dismiss
               </button>
@@ -265,7 +265,7 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-line bg-white p-4">
+    <section className="rounded-xl border border-line bg-surface p-4">
       <div className="mb-2.5 flex items-baseline justify-between gap-2">
         <h3 className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-ink-3">
           {label}
@@ -289,17 +289,17 @@ function SidebarCard({
   children: ReactNode;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-xl border border-line bg-white p-4">
+    <div className="relative overflow-hidden rounded-xl border border-line bg-surface p-4">
       {strip && <span aria-hidden className={`absolute inset-y-0 left-0 w-1 ${strip}`} />}
-      <div className={strip ? "pl-1.5" : ""}>{children}</div>
+      <div className={`${strip ? "pl-1.5" : ""} ${onSave ? "pr-8" : ""}`}>{children}</div>
       {onSave && (
         <button
           type="button"
           onClick={onSave}
           aria-label={savedNow ? "Remove from saved" : "Save for later"}
           aria-pressed={savedNow}
-          className={`absolute right-3 top-3 rounded-md p-1 transition-colors ${
-            savedNow ? "text-signal" : "text-ink-3 hover:text-ink-2"
+          className={`absolute right-1 top-1 grid h-10 w-10 place-items-center rounded-lg transition-colors duration-150 ${
+            savedNow ? "text-signal" : "text-ink-3 hover:bg-bg-2 hover:text-ink-2"
           }`}
         >
           <BookmarkIcon className="h-3.5 w-3.5" filled={savedNow} />

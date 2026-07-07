@@ -72,7 +72,7 @@ export function Sidebar({
 
       <p className="mt-1 truncate px-2 text-[12px] text-ink-3">{org.name}</p>
 
-      <nav className="mt-7 flex flex-1 flex-col gap-5 overflow-y-auto">
+      <nav aria-label="Primary" className="mt-7 flex flex-1 flex-col gap-5 overflow-y-auto">
         {SECTIONS.map((section) => (
           <div key={section.label ?? "root"}>
             {section.label && (
@@ -87,7 +87,7 @@ export function Sidebar({
                   href={item.href}
                   onClick={onNavigate}
                   aria-current={isActive(item.href) ? "page" : undefined}
-                  className={`rounded-md px-3 py-2 text-[14px] font-medium transition-colors duration-200 ${
+                  className={`rounded-md px-3 py-2.5 text-[14px] font-medium transition-colors duration-200 ${
                     isActive(item.href)
                       ? "bg-bg-2 text-ink"
                       : "text-ink-2 hover:bg-bg-2 hover:text-ink"
@@ -115,7 +115,7 @@ export function Sidebar({
                   href={item.href}
                   onClick={onNavigate}
                   aria-current={isActive(item.href) ? "page" : undefined}
-                  className={`rounded-md border border-dashed border-line px-3 py-2 text-[13px] font-medium transition-colors duration-200 ${
+                  className={`rounded-md border border-dashed border-line px-3 py-2.5 text-[13px] font-medium transition-colors duration-200 ${
                     isActive(item.href)
                       ? "bg-bg-2 text-ink"
                       : "text-ink-3 hover:bg-bg-2 hover:text-ink-2"

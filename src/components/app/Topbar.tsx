@@ -37,7 +37,7 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
             type="button"
             onClick={onMenuClick}
             aria-label="Open navigation"
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-ink-2 transition-colors duration-200 hover:bg-bg-2 hover:text-ink lg:hidden"
+            className="-ml-1 grid h-10 w-10 shrink-0 place-items-center rounded-md text-ink-2 transition-colors duration-200 hover:bg-bg-2 hover:text-ink lg:hidden"
           >
             <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5" aria-hidden>
               <path
@@ -53,7 +53,7 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
           {titleFor(pathname)}
         </h1>
       </div>
-      <Badge tone="default" className="capitalize">
+      <Badge tone="default" className="shrink-0 whitespace-nowrap capitalize">
         {org.plan} plan
       </Badge>
     </header>

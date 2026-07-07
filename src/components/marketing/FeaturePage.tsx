@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PageShell } from "./PageShell";
-import { FEATURE_VISUALS } from "./feature-visuals";
+import { FeatureVisual } from "./feature-visuals";
 import { getFeature, FEATURES } from "@/lib/marketing/features";
 import {
   WordReveal,
@@ -19,15 +19,14 @@ import { PillCTA, Eyebrow } from "@/components/landing/ui";
 
 export function FeaturePage({ slug }: { slug: string }) {
   const f = getFeature(slug);
-  const Visual = FEATURE_VISUALS[f.visual];
   const related = FEATURES.filter((x) => x.slug !== slug).slice(0, 3);
 
   return (
     <PageShell>
       {/* hero */}
       <section className="mesh-field mesh-anim grain relative isolate overflow-hidden border-b border-line">
-        <div className="relative z-10 mx-auto max-w-[1340px] px-6 pb-16 pt-24 sm:px-8 sm:pb-20 sm:pt-28">
-          <Reveal>
+        <div className="relative z-10 mx-auto max-w-[1340px] px-6 pb-14 pt-20 sm:px-8 sm:pb-20 sm:pt-28">
+          <Reveal y={14}>
             <Eyebrow className="text-signal">{f.eyebrow}</Eyebrow>
           </Reveal>
           <WordReveal
@@ -35,15 +34,15 @@ export function FeaturePage({ slug }: { slug: string }) {
             text={f.title}
             accent={f.accent}
             accentClass="italic text-gradient-signal"
-            className="display display-tight mt-5 max-w-[22ch] text-balance text-[clamp(2.6rem,6vw,4.8rem)]"
-            delay={80}
+            className="display display-tight mt-5 max-w-[22ch] text-balance text-[clamp(2.3rem,6.5vw,4.8rem)]"
+            delay={90}
           />
-          <Reveal delay={200}>
-            <p className="mt-6 max-w-[54ch] text-[18px] leading-relaxed text-ink-3">
+          <Reveal delay={260}>
+            <p className="mt-6 max-w-[54ch] text-[17px] leading-relaxed text-ink-3 sm:text-[18px]">
               {f.blurb}
             </p>
           </Reveal>
-          <Reveal delay={300}>
+          <Reveal delay={360}>
             <div className="mt-9">
               <PillCTA href="/dashboard">Get started free</PillCTA>
             </div>
@@ -52,20 +51,20 @@ export function FeaturePage({ slug }: { slug: string }) {
       </section>
 
       {/* the product visual, pushed in by the scroll camera */}
-      <section className="mx-auto max-w-[1340px] px-6 pt-16 sm:px-8 sm:pt-20">
+      <section className="mx-auto max-w-[1340px] px-6 pt-14 sm:px-8 sm:pt-20">
         <ScrollScale from={0.92} className="flex justify-center">
           <Tilt max={5} className="w-full max-w-[560px]">
-            <Visual />
+            <FeatureVisual visual={f.visual} />
           </Tilt>
         </ScrollScale>
       </section>
 
       {/* benefits */}
-      <section className="mx-auto max-w-[1340px] px-6 py-16 sm:px-8 sm:py-20">
-        <Stagger className="grid gap-5 md:grid-cols-3">
+      <section className="mx-auto max-w-[1340px] px-6 py-14 sm:px-8 sm:py-20">
+        <Stagger className="grid gap-4 sm:gap-5 md:grid-cols-3">
           {f.benefits.map((b) => (
             <StaggerItem key={b.title} className="h-full">
-              <div className="card-interactive flex h-full flex-col rounded-card border border-line bg-white p-7">
+              <div className="card-interactive flex h-full flex-col rounded-card border border-line bg-white p-6 sm:p-7">
                 <h2 className="text-[18px] font-medium tracking-tight text-ink">
                   {b.title}
                 </h2>
@@ -79,7 +78,7 @@ export function FeaturePage({ slug }: { slug: string }) {
 
         {/* the honest capability note */}
         <Reveal delay={100}>
-          <div className="mt-10 flex items-start gap-3.5 rounded-card border border-line bg-bg-3 p-6 sm:p-7">
+          <div className="mt-8 flex items-start gap-3.5 rounded-card border border-line bg-bg-3 p-5 sm:mt-10 sm:p-7">
             <span
               aria-hidden
               className="mt-0.5 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-signal-soft text-signal-deep"
@@ -94,7 +93,7 @@ export function FeaturePage({ slug }: { slug: string }) {
                 />
               </svg>
             </span>
-            <div>
+            <div className="min-w-0">
               <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-3">
                 How it actually behaves
               </p>
@@ -107,11 +106,11 @@ export function FeaturePage({ slug }: { slug: string }) {
       </section>
 
       {/* related features */}
-      <section className="mx-auto max-w-[1340px] px-6 pb-16 sm:px-8 sm:pb-20">
+      <section className="mx-auto max-w-[1340px] px-6 pb-14 sm:px-8 sm:pb-20">
         <Reveal>
           <Eyebrow className="text-signal">Keep exploring</Eyebrow>
         </Reveal>
-        <Stagger className="mt-6 grid gap-4 sm:grid-cols-3">
+        <Stagger className="mt-6 grid gap-4 md:grid-cols-3">
           {related.map((r) => (
             <StaggerItem key={r.slug}>
               <Link
@@ -137,18 +136,22 @@ export function FeaturePage({ slug }: { slug: string }) {
       </section>
 
       {/* closing CTA */}
-      <section className="mx-auto max-w-[1340px] px-6 pb-24 sm:px-8 sm:pb-28">
-        <div className="mesh-field grain relative overflow-hidden rounded-[22px] border border-line px-8 py-16 text-center sm:px-12 sm:py-20">
-          <Reveal>
-            <h2 className="display display-tight mx-auto max-w-[22ch] text-[clamp(2.2rem,5vw,3.8rem)]">
-              Bring your own agent to the next meeting.
-            </h2>
-            <p className="mx-auto mt-6 max-w-[52ch] text-[18px] leading-relaxed text-ink-3">
+      <section className="mx-auto max-w-[1340px] px-6 pb-20 sm:px-8 sm:pb-28">
+        <div className="mesh-field grain relative overflow-hidden rounded-[22px] border border-line px-6 py-14 text-center sm:px-12 sm:py-20">
+          <WordReveal
+            as="h2"
+            text="Bring your own agent to the next"
+            accent="meeting."
+            accentClass="italic text-gradient-signal"
+            className="display display-tight mx-auto max-w-[22ch] text-balance text-[clamp(2rem,5vw,3.8rem)]"
+          />
+          <Reveal delay={140}>
+            <p className="mx-auto mt-6 max-w-[52ch] text-[17px] leading-relaxed text-ink-3 sm:text-[18px]">
               No bot to invite, nothing to install for the room — it starts
               working the first time you join.
             </p>
           </Reveal>
-          <Reveal delay={120}>
+          <Reveal delay={240}>
             <div className="mt-9 flex justify-center">
               <PillCTA href="/dashboard">Get started free</PillCTA>
             </div>

@@ -6,8 +6,9 @@ import {
   AnimatePresence,
   useInView,
   useReducedMotion,
+  type Variants,
 } from "framer-motion";
-import { Reveal } from "./motion";
+import { Reveal, Tilt, WordReveal } from "./motion";
 import { Eyebrow } from "./ui";
 
 /* ================================================================== */
@@ -53,18 +54,30 @@ function useWallClock() {
 
 export function NotesEnhanceDemo() {
   return (
-    <section id="demo" className="px-3 py-24 sm:px-5 sm:py-32">
+    /* overflow-hidden: the clay paper stack behind the notepad reaches
+       -left-4 (16px) past the widget — wider than the px-3 gutter at 320px,
+       so without the clip it drags the page into horizontal scroll */
+    <section id="demo" className="overflow-hidden px-3 py-24 sm:px-5 sm:py-32">
       <div className="mx-auto max-w-[1340px]">
-        <Reveal className="text-center">
-          <Eyebrow>Show, don&apos;t tell</Eyebrow>
-          <h2 className="display mx-auto mt-4 max-w-[20ch] text-[clamp(2.2rem,5.5vw,4rem)]">
-            Your shorthand, returned as minutes.
-          </h2>
-          <p className="mx-auto mt-5 max-w-[48ch] text-[17px] leading-relaxed text-ink-3">
-            Jot whatever you catch on the call. Your agent turns the mess into
-            clean, structured, shareable notes — headings, owners, next steps.
-          </p>
-        </Reveal>
+        <div className="text-center">
+          <Reveal>
+            <Eyebrow>Show, don&apos;t tell</Eyebrow>
+          </Reveal>
+          <WordReveal
+            as="h2"
+            text="Your shorthand, returned as"
+            accent="minutes."
+            accentClass="italic text-gradient-signal"
+            className="display mx-auto mt-4 max-w-[20ch] text-balance text-[clamp(2rem,5.5vw,4rem)]"
+            delay={80}
+          />
+          <Reveal delay={160}>
+            <p className="mx-auto mt-5 max-w-[48ch] text-[17px] leading-relaxed text-ink-3">
+              Jot whatever you catch on the call. Your agent turns the mess into
+              clean, structured, shareable notes — headings, owners, next steps.
+            </p>
+          </Reveal>
+        </div>
 
         <Reveal delay={120}>
           <div className="mt-16 flex justify-center sm:mt-20">
@@ -161,6 +174,8 @@ export function NotesWidget() {
 
   return (
     <div ref={ref} className="relative w-full max-w-[460px]">
+      {/* the whole composition answers the pointer with a whisper of tilt */}
+      <Tilt max={3} className="relative">
               {/* clay "stacked paper" cards behind */}
               <div
                 aria-hidden
@@ -173,8 +188,10 @@ export function NotesWidget() {
                 style={{ background: PAPER_MID }}
               />
 
-              {/* the notepad */}
-              <div className="relative flex min-h-[540px] flex-col rounded-[26px] border border-line bg-[#fbfbf8] shadow-[0_50px_120px_-44px_rgba(40,40,20,0.5)]">
+              {/* the notepad — height is FIXED at lg so the raw ⇄ enhanced swap
+                  never resizes the card (it sits centered in the pinned hero,
+                  where growth pushes it under the fixed header) */}
+              <div className="relative flex min-h-[540px] flex-col rounded-[26px] border border-line bg-[#fbfbf8] shadow-[0_50px_120px_-44px_rgba(40,40,20,0.5)] lg:h-[590px]">
                 {/* header */}
                 <div className="px-6 pt-6">
                   <h3 className="text-[22px] font-semibold tracking-tight text-ink-display">
@@ -236,10 +253,15 @@ export function NotesWidget() {
                         transition={{ duration: 0.3 }}
                         className="absolute inset-0 flex items-center justify-center bg-[#fbfbf8]/70 backdrop-blur-[2px]"
                       >
-                        <span className="inline-flex items-center gap-2.5 rounded-full border border-line bg-white px-4 py-2.5 text-[14px] font-medium text-ink-2 shadow-lg">
+                        <motion.span
+                          initial={reduce ? false : { scale: 0.92, y: 6 }}
+                          animate={reduce ? undefined : { scale: 1, y: 0 }}
+                          transition={{ type: "spring", stiffness: 320, damping: 24 }}
+                          className="inline-flex items-center gap-2.5 rounded-full border border-line bg-white px-4 py-2.5 text-[14px] font-medium text-ink-2 shadow-lg"
+                        >
                           <Sparkle spinning={!reduce} />
                           Enhancing notes…
-                        </span>
+                        </motion.span>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -257,7 +279,8 @@ export function NotesWidget() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={reduce ? undefined : { opacity: 0, y: -8 }}
                         whileHover={reduce ? undefined : { y: -2 }}
-                        className="flex w-full items-center justify-center gap-2 rounded-full bg-pill py-3.5 text-[15px] font-medium text-white shadow-[0_18px_40px_-18px_rgba(20,20,10,0.7)]"
+                        whileTap={reduce ? undefined : { scale: 0.98 }}
+                        className="flex w-full items-center justify-center gap-2 rounded-full bg-pill py-3.5 text-[15px] font-medium text-white shadow-[0_18px_40px_-18px_rgba(20,20,10,0.7)] transition-shadow duration-300 hover:shadow-[0_24px_48px_-18px_rgba(20,20,10,0.8)]"
                       >
                         <Sparkle />
                         Generate notes
@@ -279,8 +302,9 @@ export function NotesWidget() {
                 </div>
               </div>
 
-      {/* two-person stacked video PiP */}
-      <PiPCall reduce={reduce} />
+        {/* two-person stacked video PiP */}
+        <PiPCall reduce={reduce} />
+      </Tilt>
     </div>
   );
 }
@@ -329,7 +353,7 @@ function Toggle({
             key={it.key}
             type="button"
             onClick={() => onChoose(it.key)}
-            className={`relative rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
+            className={`relative min-h-[40px] rounded-full px-4 py-2 text-[13px] font-medium transition-colors ${
               on ? "text-white" : "text-ink-3 hover:text-ink-2"
             }`}
           >
@@ -386,9 +410,14 @@ function RawNotes({
 
 /* ---------------- enhanced (after) ---------------- */
 
-const itemV = {
-  hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0 },
+const itemV: Variants = {
+  hidden: { opacity: 0, y: 12, filter: "blur(4px)" },
+  show: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] },
+  },
 };
 
 function EnhancedNotes({ reduce }: { reduce: boolean | null }) {
@@ -397,7 +426,7 @@ function EnhancedNotes({ reduce }: { reduce: boolean | null }) {
       variants={reduce ? undefined : { show: { transition: { staggerChildren: 0.09 } } }}
       initial={reduce ? false : "hidden"}
       animate="show"
-      className="space-y-5"
+      className="space-y-3.5"
     >
       <motion.div variants={reduce ? undefined : itemV} className="flex flex-wrap gap-2">
         <Tag tone="decision">2 decisions</Tag>
@@ -464,7 +493,7 @@ function Block({
 }) {
   return (
     <motion.section variants={reduce ? undefined : itemV}>
-      <h4 className="flex items-center gap-2 text-[15px] font-semibold tracking-tight text-ink-display">
+      <h4 className="flex items-center gap-2 text-[14px] font-semibold tracking-tight text-ink-display">
         <span
           className={`inline-block h-2 w-2 rounded-full ${
             kind === "risk" ? "bg-signal-deep" : "bg-signal"
@@ -472,11 +501,11 @@ function Block({
         />
         {heading}
       </h4>
-      <ul className="mt-2 space-y-1.5 pl-4">
+      <ul className="mt-1.5 space-y-1.5 pl-4">
         {items.map((it, i) => (
           <li
             key={i}
-            className="relative text-[15px] leading-relaxed text-ink-2 before:absolute before:-left-4 before:top-[0.65em] before:h-1.5 before:w-1.5 before:-translate-y-1/2 before:rounded-full before:bg-line-2 [&_b]:font-semibold [&_b]:text-ink-display"
+            className="relative text-[14px] leading-normal text-ink-2 before:absolute before:-left-4 before:top-[0.65em] before:h-1.5 before:w-1.5 before:-translate-y-1/2 before:rounded-full before:bg-line-2 [&_b]:font-semibold [&_b]:text-ink-display"
           >
             {it}
           </li>
@@ -495,14 +524,14 @@ function ActionBlock({
 }) {
   return (
     <motion.section variants={reduce ? undefined : itemV}>
-      <h4 className="text-[15px] font-semibold tracking-tight text-ink-display">
+      <h4 className="text-[14px] font-semibold tracking-tight text-ink-display">
         Next steps
       </h4>
-      <ul className="mt-2 space-y-2">
+      <ul className="mt-1.5 space-y-1.5">
         {items.map((it, i) => (
           <li
             key={i}
-            className="flex items-start gap-2.5 text-[15px] leading-relaxed text-ink-2 [&_b]:font-semibold [&_b]:text-ink-display"
+            className="flex items-start gap-2.5 text-[14px] leading-normal text-ink-2 [&_b]:font-semibold [&_b]:text-ink-display"
           >
             <span className="mt-[3px] flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px] border border-signal/40 bg-signal-soft">
               <span className="h-1.5 w-1.5 rounded-[2px] bg-signal" />

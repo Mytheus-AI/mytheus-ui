@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 /* Mini live demos for the five "How it works" stages. Each one is a small,
    honest re-enactment of the product moment (Appendix A1 of the 4-July brief):
@@ -66,7 +66,7 @@ function useTypewriter(full: string, active: boolean, still: boolean) {
 
 function DemoFrame({ children }: { children: ReactNode }) {
   return (
-    <div className="relative flex min-h-[248px] flex-col justify-center overflow-hidden rounded-card border border-line bg-white p-5 shadow-[0_30px_60px_-42px_rgba(40,30,20,0.4)] sm:p-6">
+    <div className="relative flex min-h-[248px] flex-col justify-center overflow-hidden rounded-card border border-line bg-white p-4 shadow-[0_30px_60px_-42px_rgba(40,30,20,0.4)] sm:p-6">
       {children}
     </div>
   );
@@ -151,6 +151,54 @@ function CheckDot({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
+/** One-shot expanding "commit" ring: mounts when `fire` flips true, blooms
+    outward once, gone by the time the loop rewinds. Token colors only;
+    transform/opacity so it costs nothing. Parent must be `relative`. */
+function PulseRing({
+  fire,
+  radius = "rounded-2xl",
+  delay = 0,
+}: {
+  fire: boolean;
+  radius?: string;
+  delay?: number;
+}) {
+  const reduce = useReducedMotion();
+  if (reduce) return null;
+  return (
+    <AnimatePresence>
+      {fire && (
+        <motion.span
+          aria-hidden
+          className={`pointer-events-none absolute inset-0 border-2 border-signal ${radius}`}
+          initial={{ opacity: 0.5, scale: 1 }}
+          animate={{ opacity: 0, scale: 1.07 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.9, ease: "easeOut", delay: delay / 1000 }}
+        />
+      )}
+    </AnimatePresence>
+  );
+}
+
+/** The small pulsing "live" dot used in demo headers. */
+function LiveDot({ active }: { active: boolean }) {
+  const reduce = useReducedMotion();
+  return (
+    <motion.span
+      aria-hidden
+      className="h-1.5 w-1.5 rounded-full bg-signal"
+      initial={false}
+      animate={active && !reduce ? { opacity: [1, 0.3, 1] } : { opacity: 1 }}
+      transition={
+        active && !reduce
+          ? { duration: 1.4, repeat: Infinity, ease: "easeInOut" }
+          : { duration: 0.3 }
+      }
+    />
+  );
+}
+
 /* ================================================================== */
 /*  01 — Capture: the transcript streams; one line becomes a note.     */
 /* ================================================================== */
@@ -225,7 +273,7 @@ export function CaptureDemo({ still = false }: { still?: boolean }) {
       </div>
 
       {/* the line resolves into a role-relevant note — a spring landing
-          with a one-shot radar pulse as it commits */}
+          with a one-shot bloom ring as it commits */}
       <motion.div
         className="mt-4"
         initial={false}
@@ -240,21 +288,8 @@ export function CaptureDemo({ still = false }: { still?: boolean }) {
             : { type: "spring", stiffness: 260, damping: 24 }
         }
       >
-        <motion.div
-          className="rounded-2xl border border-signal/25 bg-signal-soft/50 p-4"
-          initial={false}
-          animate={
-            noted && !reduce && !still
-              ? {
-                  boxShadow: [
-                    "0 0 0 0px rgba(217,119,87,0.35)",
-                    "0 0 0 14px rgba(217,119,87,0)",
-                  ],
-                }
-              : { boxShadow: "0 0 0 0px rgba(217,119,87,0)" }
-          }
-          transition={{ duration: 1.1, ease: "easeOut" }}
-        >
+        <div className="relative rounded-2xl border border-signal/25 bg-signal-soft/50 p-3.5 sm:p-4">
+          <PulseRing fire={noted && !still} delay={140} />
           <p className="text-[13.5px] font-medium leading-snug text-ink-display">
             Launch at risk if the pricing decision slips past April.
           </p>
@@ -263,56 +298,90 @@ export function CaptureDemo({ still = false }: { still?: boolean }) {
               <CheckDot className="h-3.5 w-3.5" /> Role-relevant note · yours only
             </p>
           </Enter>
-        </motion.div>
+        </div>
       </motion.div>
     </DemoFrame>
   );
 }
 
 /* ================================================================== */
-/*  02 — Label: chips snap onto the moment it's said.                  */
+/*  02 — Label: the line streams in live, then chips snap on.          */
 /* ================================================================== */
 
-const LABEL_TIMES = [900, 1800];
+const LABEL_TIMES = [300, 1550, 2450];
+
+type LabelWord = { w: string; hl?: 1 | 2; end?: string };
+const LABEL_WORDS: LabelWord[] = [
+  { w: "Okay" },
+  { w: "—" },
+  { w: "lock", hl: 1 },
+  { w: "the", hl: 1 },
+  { w: "price", hl: 1 },
+  { w: "at", hl: 1 },
+  { w: "$49", hl: 1, end: "," },
+  { w: "and" },
+  { w: "I’ll", hl: 2 },
+  { w: "own", hl: 2 },
+  { w: "the", hl: 2 },
+  { w: "rework", hl: 2, end: "." },
+];
 
 export function LabelDemo({ still = false }: { still?: boolean }) {
   const phase = usePhases(LABEL_TIMES, still, 3200);
 
   return (
     <DemoFrame>
-      <span className="kicker text-[10px] text-ink-3">Live transcript</span>
+      <div className="flex items-center justify-between">
+        <span className="kicker text-[10px] text-ink-3">Live transcript</span>
+        <span className="flex items-center gap-1.5 text-[10.5px] font-medium text-signal-deep">
+          <LiveDot active={!still} />
+          labeling
+        </span>
+      </div>
 
+      {/* the sentence streams in word by word; the phrases light up like a
+          highlighter pass the moment the labels land */}
       <p className="mt-4 text-[15px] leading-relaxed text-ink">
-        <Speaker name="Sarah" /> Okay —{" "}
-        <span
-          className={`rounded-md px-1 transition-colors duration-500 ${
-            phase >= 1 ? "bg-signal-soft text-signal-deep" : ""
-          }`}
-        >
-          lock the price at $49
-        </span>
-        , and{" "}
-        <span
-          className={`rounded-md px-1 transition-colors duration-500 ${
-            phase >= 2 ? "bg-signal-soft text-signal-deep" : ""
-          }`}
-        >
-          I&rsquo;ll own the rework
-        </span>
-        .
+        <Speaker name="Sarah" />{" "}
+        {LABEL_WORDS.map((t, i) => {
+          const lit =
+            t.hl === 1 ? phase >= 2 : t.hl === 2 ? phase >= 3 : false;
+          const joinInside =
+            t.hl !== undefined && LABEL_WORDS[i + 1]?.hl === t.hl;
+          return (
+            <span key={i}>
+              <motion.span
+                className={`${t.hl ? "rounded-[4px] transition-colors duration-500" : ""} ${
+                  lit ? "bg-signal-soft text-signal-deep" : ""
+                }`}
+                initial={false}
+                animate={{ opacity: still || phase >= 1 ? 1 : 0 }}
+                transition={{
+                  duration: 0.25,
+                  delay: !still && phase === 1 ? i * 0.085 : 0,
+                }}
+              >
+                {t.w}
+                {t.end ?? ""}
+                {joinInside ? " " : ""}
+              </motion.span>
+              {joinInside ? "" : " "}
+            </span>
+          );
+        })}
       </p>
 
       {/* chips fly in and dock beneath their phrases */}
       <div className="mt-5 flex flex-wrap items-center gap-2">
-        <Enter show={phase >= 1} y={22}>
+        <Enter show={phase >= 2} y={22}>
           <TagChip>Decision</TagChip>
         </Enter>
-        <Enter show={phase >= 2} y={22} delay={60}>
+        <Enter show={phase >= 3} y={22} delay={60}>
           <TagChip>Action item</TagChip>
         </Enter>
         <span
           className={`text-[11px] text-ink-3 transition-opacity duration-500 ${
-            phase >= 2 ? "opacity-100" : "opacity-0"
+            phase >= 3 ? "opacity-100" : "opacity-0"
           }`}
         >
           labeled the moment it&rsquo;s said
@@ -342,7 +411,7 @@ export function ConfirmDemo({ still = false }: { still?: boolean }) {
 
   return (
     <DemoFrame>
-      <div className="relative rounded-2xl border border-line bg-bg-2/50 p-4">
+      <div className="relative rounded-2xl border border-line bg-bg-2/50 p-3.5 sm:p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
             <span className="kicker text-[10px] text-signal">Decision</span>
@@ -353,29 +422,33 @@ export function ConfirmDemo({ still = false }: { still?: boolean }) {
           <span className="mt-0.5 h-8 w-1 shrink-0 rounded-full bg-priority-low/60" />
         </div>
 
-        <div className="mt-4 flex items-center gap-2">
-          <motion.button
-            type="button"
-            tabIndex={-1}
-            aria-hidden
-            initial={false}
-            animate={
-              confirmed
-                ? { scale: 1 }
-                : phase >= 2 && !reduce
-                  ? { scale: 0.94 }
-                  : { scale: 1 }
-            }
-            transition={{ duration: 0.18, ease: EASE }}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-medium transition-colors duration-300 ${
-              confirmed
-                ? "bg-signal text-white"
-                : "border border-signal/40 bg-white text-signal-deep"
-            }`}
-          >
-            {confirmed && <CheckDot className="h-3.5 w-3.5 bg-white/25" />}
-            {confirmed ? "Confirmed" : "Confirm"}
-          </motion.button>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="relative inline-flex">
+            {/* confirm pulse: a ring blooms off the button the moment it commits */}
+            <PulseRing fire={confirmed && !still} radius="rounded-full" />
+            <motion.button
+              type="button"
+              tabIndex={-1}
+              aria-hidden
+              initial={false}
+              animate={
+                confirmed
+                  ? { scale: 1 }
+                  : phase >= 2 && !reduce
+                    ? { scale: 0.94 }
+                    : { scale: 1 }
+              }
+              transition={{ duration: 0.18, ease: EASE }}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-medium transition-colors duration-300 ${
+                confirmed
+                  ? "bg-signal text-white"
+                  : "border border-signal/40 bg-white text-signal-deep"
+              }`}
+            >
+              {confirmed && <CheckDot className="h-3.5 w-3.5 bg-white/25" />}
+              {confirmed ? "Confirmed" : "Confirm"}
+            </motion.button>
+          </span>
           <span className="rounded-full border border-line bg-white px-3.5 py-1.5 text-[12px] text-ink-2">
             Edit
           </span>
@@ -436,22 +509,67 @@ function MiniAvatar({ initials, ring = false }: { initials: string; ring?: boole
   );
 }
 
+/** Three routing dots pulsing in sequence — "the packet is on its way". */
+function RoutingDots() {
+  const reduce = useReducedMotion();
+  return (
+    <span className="flex items-center gap-1" aria-hidden>
+      {[0, 1, 2].map((i) => (
+        <motion.span
+          key={i}
+          className="h-1.5 w-1.5 rounded-full bg-signal/70"
+          initial={false}
+          animate={reduce ? undefined : { opacity: [0.25, 1, 0.25], y: [0, -2, 0] }}
+          transition={{
+            duration: 0.9,
+            repeat: Infinity,
+            delay: i * 0.15,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
+    </span>
+  );
+}
+
 export function RouteDemo({ still = false }: { still?: boolean }) {
   const phase = usePhases(ROUTE_TIMES, still, 3200);
+  const routed = phase >= 2;
 
   return (
     <DemoFrame>
-      <div className="rounded-2xl border border-line bg-bg-2/50 p-4">
+      <div className="rounded-2xl border border-line bg-bg-2/50 p-3.5 sm:p-4">
         <div className="flex items-center gap-2">
-          <CheckDot className="h-4 w-4" />
-          <p className="text-[13.5px] font-medium text-ink-display">
+          <CheckDot className="h-4 w-4 shrink-0" />
+          <p className="min-w-0 text-[13.5px] font-medium text-ink-display">
             Lock pricing at $49 for Q3
           </p>
+          <span className="ml-auto shrink-0">
+            {routed ? (
+              still ? (
+                <span className="flex items-center gap-1.5 text-[10.5px] font-medium text-signal-deep">
+                  <CheckDot className="h-3 w-3" /> routed
+                </span>
+              ) : (
+                <motion.span
+                  className="flex items-center gap-1.5 text-[10.5px] font-medium text-signal-deep"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, ease: EASE }}
+                >
+                  <CheckDot className="h-3 w-3" /> routed
+                </motion.span>
+              )
+            ) : !still ? (
+              <RoutingDots />
+            ) : null}
+          </span>
         </div>
 
         <Enter show={phase >= 1} className="mt-4">
-          <div className="flex items-center justify-between rounded-xl border border-line bg-white px-3.5 py-2.5">
-            <span className="flex items-center gap-2.5">
+          <div className="relative flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-white px-3.5 py-2.5">
+            <PulseRing fire={phase >= 1 && !still} radius="rounded-xl" />
+            <span className="flex min-w-0 items-center gap-2.5">
               <MiniAvatar initials="SA" ring />
               <span className="text-[13px] font-medium text-ink">Sarah</span>
             </span>
@@ -460,9 +578,10 @@ export function RouteDemo({ still = false }: { still?: boolean }) {
         </Enter>
 
         <Enter show={phase >= 2} className="mt-2.5">
-          <div className="flex items-center justify-between rounded-xl border border-line bg-white px-3.5 py-2.5">
-            <span className="flex items-center gap-2.5">
-              <span className="flex -space-x-2">
+          <div className="relative flex flex-wrap items-center justify-between gap-y-1.5 rounded-xl border border-line bg-white px-3.5 py-2.5">
+            <PulseRing fire={phase >= 2 && !still} radius="rounded-xl" />
+            <span className="flex min-w-0 items-center gap-2.5">
+              <span className="flex shrink-0 -space-x-2">
                 <MiniAvatar initials="PR" />
                 <MiniAvatar initials="DI" />
               </span>
@@ -503,18 +622,41 @@ export function RememberDemo({ still = false }: { still?: boolean }) {
         ).map((m) => (
           <div
             key={m.title}
-            className={`rounded-2xl border p-3.5 pb-12 transition-colors duration-500 ${
+            className={`relative rounded-2xl border p-3.5 pb-12 transition-colors duration-500 ${
               m.from === !moved
                 ? "border-signal/30 bg-signal-soft/40"
                 : "border-line bg-bg-2/50"
             }`}
           >
+            {/* arrival bloom on the destination meeting */}
+            {!m.from && (
+              <PulseRing fire={moved && !still} delay={420} />
+            )}
             <p className="text-[13px] font-medium text-ink-display">{m.title}</p>
             <p className="mt-0.5 font-mono text-[10px] uppercase tracking-wider text-ink-3">
               {m.date}
             </p>
           </div>
         ))}
+
+        {/* the dashed trail the memory travels along, drawn as it crosses */}
+        {!still && !reduce && (
+          <motion.span
+            aria-hidden
+            className="pointer-events-none absolute bottom-[25px] left-[8%] right-[10%] origin-left border-t border-dashed border-signal/40"
+            initial={false}
+            animate={
+              moved
+                ? { scaleX: 1, opacity: [0, 1, 0] }
+                : { scaleX: 0, opacity: 0 }
+            }
+            transition={
+              moved
+                ? { duration: 1.1, ease: EASE }
+                : { duration: 0.3 }
+            }
+          />
+        )}
 
         {/* the decision chip slides from Monday's meeting into Friday's */}
         <motion.span
@@ -527,12 +669,15 @@ export function RememberDemo({ still = false }: { still?: boolean }) {
               : { type: "spring", stiffness: 90, damping: 16 }
           }
         >
-          <TagChip>Pricing locked at $49</TagChip>
+          <TagChip>
+            <span className="sm:hidden">$49 locked</span>
+            <span className="hidden sm:inline">Pricing locked at $49</span>
+          </TagChip>
         </motion.span>
       </div>
 
       <div className="mt-5 flex items-center justify-between border-t border-line pt-3.5">
-        <span className="flex items-center gap-2 text-[11px] text-ink-3">
+        <span className="flex flex-wrap items-center gap-2 text-[11px] text-ink-3">
           <TagChip tone="neutral">→ Next meeting</TagChip>
           <TagChip tone="neutral">Cross-meeting memory</TagChip>
         </span>

@@ -17,15 +17,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <OrgProvider value={mockOrgContext}>
       <div className="min-h-dvh bg-bg">
-        <header className="flex h-16 items-center justify-between border-b border-line bg-surface px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
+        <header className="flex min-h-16 flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-line bg-surface px-4 py-2 sm:px-6 lg:px-8">
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
             <LogoMark size={22} />
             <span className="text-[18px] font-medium tracking-[-0.05em] text-ink">Mytheus</span>
             <Badge tone="warning">Admin console</Badge>
           </div>
           <Link
             href="/dashboard"
-            className="text-[13px] font-medium text-ink-3 transition-colors hover:text-ink-2"
+            className="whitespace-nowrap text-[13px] font-medium text-ink-3 transition-colors hover:text-ink-2"
           >
             Back to app
           </Link>

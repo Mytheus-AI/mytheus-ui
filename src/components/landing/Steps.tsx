@@ -77,6 +77,8 @@ type Card = {
   flow: string;
   title: string;
   body: string;
+  /** one-liner shown in the spine while this stage dwells */
+  hint: string;
   icon: ReactNode;
   tokens: { label: string; clay?: boolean }[];
   visual: (still: boolean) => ReactNode;
@@ -89,6 +91,7 @@ const CARDS: Card[] = [
     flow: "Capture",
     title: "Every word, captured",
     body: "No bot, no recording link — just live, role-relevant notes.",
+    hint: "Your agent listens with your role in mind",
     icon: <MicIcon />,
     tokens: [{ label: "Role-relevant notes" }, { label: "Live transcript" }],
     visual: (still) => <CaptureDemo still={still} />,
@@ -99,6 +102,7 @@ const CARDS: Card[] = [
     flow: "Label",
     title: "Decisions, sorted",
     body: "Decisions, action items, and conflicts labeled the moment they're said.",
+    hint: "Tagged the second it leaves someone's mouth",
     icon: <SortIcon />,
     tokens: [
       { label: "Decision", clay: true },
@@ -113,6 +117,7 @@ const CARDS: Card[] = [
     flow: "Confirm",
     title: "Never committed silently",
     body: "Nothing is saved or assigned without your one-tap confirm.",
+    hint: "One tap — nothing lands silently",
     icon: <ShieldCheckIcon />,
     tokens: [{ label: "One-tap confirm" }],
     visual: (still) => <ConfirmDemo still={still} />,
@@ -123,6 +128,7 @@ const CARDS: Card[] = [
     flow: "Route",
     title: "Sent to the right people",
     body: "Assigned to an owner and shared with anyone who missed it.",
+    hint: "Owner set, absentees briefed",
     icon: <SendIcon />,
     tokens: [{ label: "Owner assigned" }, { label: "Shared with absentees" }],
     visual: (still) => <RouteDemo still={still} />,
@@ -133,6 +139,7 @@ const CARDS: Card[] = [
     flow: "Remember",
     title: "Carried to the next meeting",
     body: "A decision Monday becomes context your agents reuse Friday.",
+    hint: "Monday's call, remembered on Friday",
     icon: <LoopIcon />,
     tokens: [{ label: "→ Next meeting" }, { label: "Cross-meeting memory" }],
     visual: (still) => <RememberDemo still={still} />,
@@ -143,24 +150,33 @@ export function Steps() {
   const reduce = useReducedMotion();
 
   return (
-    <section id="how" className="px-3 py-24 sm:px-5 sm:py-32">
+    <section
+      id="how"
+      className={`px-3 sm:px-5 ${reduce ? "py-24 sm:py-32" : "py-24 sm:py-32 md:py-6"}`}
+    >
       <div className="mx-auto max-w-[1340px]">
-        <ScrubReveal>
-          <Eyebrow>How it works</Eyebrow>
-          <h2 className="display mt-5 max-w-[18ch] text-[clamp(2.2rem,5.5vw,4rem)]">
-            Make meeting follow-through{" "}
-            <span className="text-gradient-signal">self-driving</span>.
-          </h2>
-          <p className="mt-6 max-w-[52ch] text-[17px] leading-relaxed text-ink-3">
-            Conversations become decisions, action items, and context —
-            captured, labeled, and routed to the right people, without anyone
-            taking notes.
-          </p>
-        </ScrubReveal>
+        {/* mobile / reduced-motion header — the pinned scene carries its own */}
+        <div
+          className={`mx-auto max-w-[900px] text-center ${reduce ? "" : "md:hidden"}`}
+        >
+          <ScrubReveal>
+            <Eyebrow>How it works</Eyebrow>
+            <h2 className="display mx-auto mt-5 max-w-[18ch] text-[clamp(2.2rem,5.5vw,4rem)]">
+              Make meeting follow-through{" "}
+              <span className="text-gradient-signal">self-driving</span>.
+            </h2>
+            <p className="mx-auto mt-5 max-w-[52ch] text-[15.5px] leading-relaxed text-ink-3 sm:mt-6 sm:text-[17px]">
+              Conversations become decisions, action items, and context —
+              captured, labeled, and routed to the right people, without anyone
+              taking notes.
+            </p>
+          </ScrubReveal>
+        </div>
 
-        {/* desktop: the pinned sequential scene */}
+        {/* desktop: the pinned sequential scene — heading and stages fitted
+            together inside the pinned viewport */}
         {!reduce && (
-          <PinnedScene count={CARDS.length} className="mt-4 hidden md:block">
+          <PinnedScene count={CARDS.length} className="hidden md:block">
             {({ index, progress, goTo }) => (
               <SceneFrame index={index} progress={progress}>
                 <Spine index={index} progress={progress} goTo={goTo} />
@@ -173,12 +189,14 @@ export function Steps() {
         {/* mobile (and desktop reduced-motion): a calm static stack */}
         <Reveal
           delay={120}
-          className={`mt-14 grid gap-5 ${reduce ? "" : "md:hidden"}`}
+          className={`mt-12 grid gap-4 sm:mt-14 sm:gap-5 ${
+            reduce ? "md:grid-cols-2" : "md:hidden"
+          }`}
         >
           {CARDS.map((c) => (
             <article
               key={c.key}
-              className="rounded-card border border-line bg-white p-6"
+              className="rounded-card border border-line bg-white p-5 sm:p-6"
             >
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-2 text-signal">
@@ -242,9 +260,13 @@ function SceneFrame({
     damping: 30,
     mass: 0.4,
   });
+  /* parallax depth: the watermark drifts sideways against scroll while the
+     content plane counter-drifts a touch — three planes, one scrubber */
+  const wmX = useTransform(cam, [0, 1], ["1.5%", "-3.5%"]);
+  const contentY = useTransform(cam, [0, 1], [10, -10]);
 
   return (
-    <div className="relative flex h-full w-full flex-col justify-center">
+    <div className="relative flex h-full w-full flex-col pb-3 pt-[84px]">
       {/* drifting dot-grid texture, faded out toward the frame edges */}
       <motion.div
         aria-hidden
@@ -269,16 +291,26 @@ function SceneFrame({
         style={{ top: glowTop, left: glowLeft }}
       />
 
-      {/* giant stage-word watermark, crossfading per stage */}
+      {/* giant stage-word watermark — outline only, with a whisper of clay
+          fill, masked so it dissolves into the bg toward its bottom edge
+          instead of smudging over the demo card */}
       <motion.div
         aria-hidden
         className="pointer-events-none absolute -bottom-4 right-0 select-none"
-        style={{ y: wmY }}
+        style={{
+          y: wmY,
+          x: wmX,
+          maskImage:
+            "linear-gradient(to bottom, black 8%, rgba(0,0,0,0.55) 55%, transparent 96%)",
+          WebkitMaskImage:
+            "linear-gradient(to bottom, black 8%, rgba(0,0,0,0.55) 55%, transparent 96%)",
+        }}
       >
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.span
             key={CARDS[index].flow}
-            className="display block whitespace-nowrap text-[clamp(6.5rem,13vw,12rem)] leading-none text-signal/[0.07]"
+            className="display block whitespace-nowrap text-[clamp(6.5rem,13vw,12rem)] leading-none text-signal/[0.03]"
+            style={{ WebkitTextStroke: "1.5px var(--line-2)" }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -289,13 +321,40 @@ function SceneFrame({
         </AnimatePresence>
       </motion.div>
 
+      {/* the heading stays fitted above the stages for the whole pin */}
+      <PinHeading />
+
       {/* the content, riding the camera */}
+      {/* zoom steps: on short laptops the heading + spine + demo card can't
+          all fit under the fixed header — shrink the content plane (layout
+          box included, same trick as the hero widget); self-center keeps the
+          zoomed (now narrower-than-full) grid centered in the frame */}
       <motion.div
-        className="grid w-full items-center gap-10 will-change-transform md:grid-cols-[minmax(0,0.55fr)_minmax(0,1fr)] lg:gap-16"
-        style={{ scale, opacity }}
+        className="grid min-h-0 w-full flex-1 items-center gap-8 self-center will-change-transform md:grid-cols-[minmax(0,0.45fr)_minmax(0,1fr)] lg:grid-cols-[minmax(0,0.55fr)_minmax(0,1fr)] lg:gap-16 [@media(max-height:740px)]:[zoom:0.9] [@media(max-height:660px)]:[zoom:0.8]"
+        style={{ scale, opacity, y: contentY }}
       >
         {children}
       </motion.div>
+    </div>
+  );
+}
+
+/* the in-scene header: centered and pinned with the stages so heading +
+   story always share the viewport (the SceneHeading pattern) */
+function PinHeading() {
+  return (
+    <div className="relative z-20 shrink-0 pb-2 text-center">
+      <Eyebrow>How it works</Eyebrow>
+      <h2 className="display mx-auto mt-2 max-w-[26ch] text-[clamp(1.8rem,3.2vw,2.9rem)]">
+        Make meeting follow-through{" "}
+        <span className="text-gradient-signal">self-driving</span>.
+      </h2>
+      {/* on very short viewports even the zoomed content plane needs the
+          sub-line's two rows back to keep the demo card fully on screen */}
+      <p className="mx-auto mt-2.5 max-w-[64ch] text-[15px] leading-relaxed text-ink-3 [@media(max-height:640px)]:hidden">
+        Conversations become decisions, action items, and context — captured,
+        labeled, and routed to the right people, without anyone taking notes.
+      </p>
     </div>
   );
 }
@@ -314,17 +373,26 @@ function Spine({
   const fill = useSpring(progress, { stiffness: 120, damping: 30, mass: 0.4 });
   const tipTop = useTransform(fill, (v) => `${Math.min(1, Math.max(0, v)) * 100}%`);
 
+  /* how far through the CURRENT stage's dwell we are — feeds the little
+     bar under the active step so the rail is alive while you scroll */
+  const local = useSpring(useTransform(progress, toStageLocal), {
+    stiffness: 200,
+    damping: 32,
+    mass: 0.35,
+  });
+  const dwell = useTransform(local, (v) => `${Math.min(1, Math.max(0, v)) * 100}%`);
+
   return (
     <div>
       {/* the big stage number, ticking like an odometer */}
-      <div className="mb-8 flex items-baseline gap-3">
+      <div className="mb-5 flex items-baseline gap-3 lg:mb-8">
         <Odometer value={index + 1} />
         <span className="font-mono text-sm text-ink-3">/ 05</span>
       </div>
 
       <div className="relative">
         {/* the clay progress line, filling top → down with scroll */}
-        <span aria-hidden className="absolute bottom-3 left-[15px] top-3 w-px bg-line-2">
+        <span aria-hidden className="absolute bottom-3 left-[19px] top-3 w-px bg-line-2">
           <motion.span
             className="absolute inset-0 origin-top bg-signal"
             style={{ scaleY: fill }}
@@ -336,7 +404,7 @@ function Spine({
           />
         </span>
 
-        <ol className="space-y-1.5">
+        <ol className="space-y-1 lg:space-y-1.5">
           {CARDS.map((c, i) => {
             const active = i === index;
             const passed = i < index;
@@ -346,7 +414,7 @@ function Spine({
                   type="button"
                   onClick={() => goTo(i)}
                   aria-current={active ? "step" : undefined}
-                  className="group relative flex w-full items-center gap-4 rounded-2xl py-2.5 pl-1 pr-3 text-left"
+                  className="group relative flex min-h-[44px] w-full items-center gap-4 rounded-2xl py-2 pl-1 pr-3 text-left lg:py-2.5"
                 >
                   <span
                     className={`relative z-10 grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full border font-mono text-[11px] tabular-nums transition-colors duration-500 ${
@@ -369,6 +437,33 @@ function Spine({
                     {c.flow}
                   </span>
                 </button>
+
+                {/* the active step opens a one-line hint + a dwell bar that
+                    fills with the scroll through this stage — the rail stays
+                    alive for the whole dwell. Exactly one step is ever open,
+                    so the spine's total height never changes. */}
+                <AnimatePresence initial={false}>
+                  {active && (
+                    <motion.div
+                      key="hint"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.45, ease: EASE }}
+                      className="overflow-hidden pl-[47px] pr-3"
+                    >
+                      <p className="text-[12.5px] leading-snug text-ink-3">
+                        {c.hint}
+                      </p>
+                      <span className="mb-2 mt-2 block h-[3px] w-full max-w-[160px] overflow-hidden rounded-full bg-line/70">
+                        <motion.span
+                          className="block h-full rounded-full bg-signal"
+                          style={{ width: dwell }}
+                        />
+                      </span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </li>
             );
           })}
@@ -422,8 +517,10 @@ function Stage({
   const demoY = useTransform(local, [0, 1], [8, -8]);
 
   return (
-    /* min-height reserved so the frame never reflows on swap */
-    <div className="flex min-h-[540px] flex-col justify-center">
+    /* min-height reserved so the frame never reflows on swap; capped against
+       the in-pin heading + site header so short laptops never clip the
+       stage — every transcript word stays on screen for its whole dwell */
+    <div className="flex min-h-[clamp(360px,calc(100vh-330px),500px)] flex-col justify-center">
       <StageSwitch index={index}>
         <div className="flex items-center justify-between">
           <span className="kicker text-signal">{card.flow}</span>
@@ -431,19 +528,19 @@ function Stage({
             {card.icon}
           </span>
         </div>
-        <h3 className="mt-3 text-[clamp(1.5rem,2.4vw,2.1rem)] font-medium tracking-tight text-ink-display">
+        <h3 className="mt-2.5 text-[clamp(1.5rem,2.4vw,2.1rem)] font-medium tracking-tight text-ink-display">
           {card.title}
         </h3>
-        <p className="mt-2.5 max-w-[46ch] text-[15.5px] leading-relaxed text-ink-3">
+        <p className="mt-2 max-w-[46ch] text-[15.5px] leading-relaxed text-ink-3">
           {card.body}
         </p>
         <motion.div
-          className="mt-6 will-change-transform"
+          className="mt-4 will-change-transform lg:mt-5"
           style={{ scale: demoScale, y: demoY }}
         >
           {card.visual(false)}
         </motion.div>
-        <Tokens tokens={card.tokens} className="mt-6" />
+        <Tokens tokens={card.tokens} className="mt-4 lg:mt-5" />
       </StageSwitch>
     </div>
   );

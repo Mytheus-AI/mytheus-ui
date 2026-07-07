@@ -26,7 +26,7 @@ export default function BillingPage() {
   const sortedInvoices = [...invoices].sort((a, b) => (a.date < b.date ? 1 : -1));
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-3xl motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
       <p className="kicker">Billing</p>
       <h1 className="mt-2 text-[28px] font-medium tracking-tight text-ink-display">
         Plan &amp; billing
@@ -35,12 +35,12 @@ export default function BillingPage() {
       <div className="mt-8 flex flex-col gap-6">
         {/* Current plan */}
         <Card>
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-[13px] font-medium uppercase tracking-wide text-ink-3">Current plan</p>
               <p className="mt-1 text-[20px] font-medium text-ink-display">{capitalize(plan)}</p>
             </div>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="shrink-0">
               Change plan
             </Button>
           </div>
@@ -72,7 +72,7 @@ export default function BillingPage() {
         {/* Next invoice */}
         <Card>
           <p className="text-[13px] font-medium uppercase tracking-wide text-ink-3">Next invoice</p>
-          <div className="mt-2 flex items-baseline justify-between gap-4">
+          <div className="mt-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
             <p className="text-[20px] font-medium text-ink-display">{formatDate(nextInvoiceDate)}</p>
             <p className="text-[20px] font-medium text-ink-display">
               {currency.format(nextInvoiceAmount)}
@@ -83,8 +83,13 @@ export default function BillingPage() {
         {/* Invoice history */}
         <Card>
           <p className="text-[13px] font-medium uppercase tracking-wide text-ink-3">Invoice history</p>
+          {sortedInvoices.length === 0 ? (
+            <p className="mt-4 text-[13px] text-ink-3">
+              No invoices yet — your first one lands after the current cycle.
+            </p>
+          ) : (
           <div className="mt-4 overflow-x-auto">
-            <table className="w-full border-collapse text-left text-[13px]">
+            <table className="w-full min-w-[420px] border-collapse text-left text-[13px]">
               <thead>
                 <tr className="border-b border-line">
                   <th scope="col" className="py-2 pr-4 font-medium text-ink-3">
@@ -101,8 +106,10 @@ export default function BillingPage() {
               <tbody>
                 {sortedInvoices.map((invoice) => (
                   <tr key={invoice.id} className="border-b border-line-2 last:border-b-0">
-                    <td className="py-3 pr-4 text-ink">{formatDate(invoice.date)}</td>
-                    <td className="py-3 pr-4 text-ink">{currency.format(invoice.amount)}</td>
+                    <td className="whitespace-nowrap py-3 pr-4 text-ink">{formatDate(invoice.date)}</td>
+                    <td className="whitespace-nowrap py-3 pr-4 tabular-nums text-ink">
+                      {currency.format(invoice.amount)}
+                    </td>
                     <td className="py-3 pr-4">
                       <Badge tone={invoice.status === "paid" ? "success" : "default"}>
                         {capitalize(invoice.status)}
@@ -113,6 +120,7 @@ export default function BillingPage() {
               </tbody>
             </table>
           </div>
+          )}
         </Card>
       </div>
     </div>

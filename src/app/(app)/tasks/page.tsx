@@ -32,24 +32,28 @@ function TaskRow({
             aria-checked={done}
             aria-label={done ? `Reopen "${task.title}"` : `Complete "${task.title}"`}
             onClick={onToggle}
-            className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border transition-colors ${
-              done
-                ? "border-signal bg-signal text-white"
-                : "border-line-2 bg-white hover:border-signal/50"
-            }`}
+            className="group/check -my-2 -ml-2 grid h-10 w-10 shrink-0 place-items-center rounded-full"
           >
-            {done && (
-              <svg viewBox="0 0 12 12" className="h-3.5 w-3.5" aria-hidden>
-                <path
-                  d="M2.5 6.2 5 8.5 9.5 3.5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            )}
+            <span
+              className={`grid h-6 w-6 place-items-center rounded-full border transition-colors duration-150 ${
+                done
+                  ? "border-signal bg-signal text-white"
+                  : "border-line-2 bg-surface group-hover/check:border-signal/50"
+              }`}
+            >
+              {done && (
+                <svg viewBox="0 0 12 12" className="h-3.5 w-3.5" aria-hidden>
+                  <path
+                    d="M2.5 6.2 5 8.5 9.5 3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </span>
           </button>
         ) : (
           <Avatar name={task.assignee} size="sm" />
@@ -78,7 +82,7 @@ function TaskRow({
           </p>
         </div>
 
-        <Badge tone={task.priority} className="hidden capitalize sm:inline-flex">
+        <Badge tone={task.priority} className="hidden shrink-0 capitalize sm:inline-flex">
           {task.priority}
         </Badge>
       </div>
@@ -99,7 +103,7 @@ export default function TasksPage() {
   const toggle = (id: string) => setDoneMap((m) => ({ ...m, [id]: !m[id] }));
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-4xl motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
       <p className="kicker text-signal">Tasks</p>
       <h1 className="display mt-2 text-[clamp(1.8rem,4vw,2.4rem)]">My tasks</h1>
       <p className="mt-2 text-[14px] text-ink-3">

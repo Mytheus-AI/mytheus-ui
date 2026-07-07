@@ -10,6 +10,13 @@ This repo renders that experience: a React Server Components-first Next.js 14 Ap
 
 > The split is deliberate: **the server decides what is true; the client decides how it appears.**
 
+> **Current state (2026-07-06):** this README describes the *target* architecture. What exists
+> today is the complete UI surface on mock data — the full marketing site plus every
+> authenticated screen — with auth bypassed and no LiveKit/Socket.io/Clerk/Server Actions wired
+> yet. The actual state lives in [PROGRESS.md](PROGRESS.md) and the route-by-route status in
+> [docs/PAGES.md](docs/PAGES.md); the working tree currently uses **npm** (see
+> [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)), not the pnpm shown below.
+
 ## Contributor docs
 
 Start here when working in this repo:

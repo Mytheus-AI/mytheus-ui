@@ -20,13 +20,17 @@ function MeetingCard({ meeting }: { meeting: Meeting }) {
   const hasBadges = meeting.decisionCount > 0 || meeting.actionCount > 0;
 
   return (
-    <Link href={`/meetings/${meeting.id}`} className="block">
-      <Card className="cursor-pointer transition-colors hover:border-line-2">
+    <Link href={`/meetings/${meeting.id}`} className="block rounded-card">
+      <Card className="cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-line-2 hover:shadow-[0_12px_32px_-24px_rgba(40,30,20,0.4)]">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2">
               <h3 className="truncate text-[15px] font-medium text-ink">{meeting.title}</h3>
-              {meeting.status === "live" ? <Badge tone="danger">Live</Badge> : null}
+              {meeting.status === "live" ? (
+                <Badge tone="danger" className="shrink-0">
+                  Live
+                </Badge>
+              ) : null}
             </div>
             <p className="mt-1 text-[13px] text-ink-3">
               {formatted} &middot; {meeting.durationMinutes} min
@@ -77,7 +81,7 @@ export default function MeetingsPage() {
   ].filter((section) => section.meetings.length > 0);
 
   return (
-    <div>
+    <div className="mx-auto max-w-4xl motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
       <p className="text-[14px] text-ink-3">
         Every meeting your org has run through Mytheus, grouped by what&apos;s happening now, what&apos;s next, and what&apos;s already wrapped.
       </p>

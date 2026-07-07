@@ -10,7 +10,7 @@ import {
   type MotionValue,
 } from "framer-motion";
 import { PillCTA } from "./ui";
-import { WordReveal, Reveal, Magnetic, Float } from "./motion";
+import { WordReveal, Reveal, Float } from "./motion";
 import { NotesWidget } from "./NotesEnhanceDemo";
 
 /* ================================================================== */
@@ -60,16 +60,22 @@ function HeroSequence() {
   // the scroll cue fades the instant you begin
   const cueO = useTransform(scrollYProgress, [0, 0.05], [1, 0]);
 
-  // a gentle camera pull-back as you scroll away into the next section
+  // a gentle camera pull-back + lift as you scroll away into the next section
   const stageScale = useTransform(scrollYProgress, [0.9, 1], [1, 0.97]);
+  const stageY = useTransform(scrollYProgress, [0.9, 1], [0, -24]);
 
   return (
     <section ref={ref} className="relative" style={{ height: "260vh" }}>
       <div className="mesh-field mesh-anim grain sticky top-0 h-screen overflow-hidden">
-        <motion.div className="absolute inset-0" style={{ scale: stageScale }}>
+        <motion.div
+          className="absolute inset-0"
+          style={{ scale: stageScale, y: stageY }}
+        >
           {/* ---- page one — gathers, then exits to the left ---- */}
+          {/* pt-[92px]: the stage centers content BELOW the fixed SiteHeader
+              (pinned-scene rule — see docs/MOTION.md) */}
           <div
-            className={`absolute inset-0 flex items-center ${
+            className={`absolute inset-0 flex items-center pt-[92px] ${
               showTwo ? "pointer-events-none" : ""
             }`}
           >
@@ -78,7 +84,7 @@ function HeroSequence() {
 
           {/* ---- page two — assembles in place on the same stage ---- */}
           <div
-            className={`absolute inset-0 flex items-center ${
+            className={`absolute inset-0 flex items-center pt-[92px] ${
               showTwo ? "" : "pointer-events-none"
             }`}
           >
@@ -86,19 +92,26 @@ function HeroSequence() {
           </div>
         </motion.div>
 
-        {/* ---- scroll cue ---- */}
+        {/* ---- scroll cue — waits for the intro to land, then invites ---- */}
         <motion.div
           aria-hidden
           style={{ opacity: cueO }}
-          className="pointer-events-none absolute inset-x-0 bottom-9 z-30 flex flex-col items-center gap-1.5 text-ink-3"
+          className="pointer-events-none absolute inset-x-0 bottom-9 z-30"
         >
-          <span className="kicker text-[10px]">Scroll</span>
-          <motion.span
-            animate={{ y: [0, 6, 0] }}
-            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 1.5 }}
+            className="flex flex-col items-center gap-1.5 text-ink-3"
           >
-            <ChevronDown />
-          </motion.span>
+            <span className="kicker text-[10px]">Scroll</span>
+            <motion.span
+              animate={{ y: [0, 6, 0] }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <ChevronDown />
+            </motion.span>
+          </motion.div>
         </motion.div>
       </div>
     </section>
@@ -169,10 +182,16 @@ const POSES: {
 function SeqPageOne({ progress }: { progress: MotionValue<number> }) {
   const introO = useTransform(progress, [0, 0.26], [1, 0]);
   const introX = useTransform(progress, [0, 0.34], [0, -90]);
+  // the copy softens out of focus as the cards take the stage
+  const introBlur = useTransform(
+    progress,
+    [0.06, 0.3],
+    ["blur(0px)", "blur(7px)"],
+  );
   return (
     <div className="mx-auto grid w-full max-w-[80rem] items-center gap-10 px-6 sm:px-10 lg:grid-cols-[0.95fr_1.05fr]">
       <motion.div
-        style={{ opacity: introO, x: introX }}
+        style={{ opacity: introO, x: introX, filter: introBlur }}
         className="relative z-10 max-w-[36rem]"
       >
         <Intro />
@@ -184,9 +203,98 @@ function SeqPageOne({ progress }: { progress: MotionValue<number> }) {
   );
 }
 
-function ConvergingCluster({ progress }: { progress: MotionValue<number> }) {
+/* the live data wires of the cluster: dashed guides from the capture
+   window out to each satellite, with clay packets streaming along them
+   (and one deep-clay packet flowing back in — context returns). SMIL
+   animateMotion drives the packets, so they cost nothing on the main
+   thread; under reduced motion only the quiet guides render. */
+const WIRES = [
+  { d: "M 300 190 Q 190 120 100 40", dur: 3.2, delay: 0 }, // → agents
+  { d: "M 300 290 Q 190 360 104 400", dur: 3.8, delay: 0.9 }, // → routed
+  { d: "M 400 290 Q 520 340 616 352", dur: 3.4, delay: 1.6 }, // → memory
+];
+
+function FlowWires({ fade }: { fade?: MotionValue<number> }) {
+  const reduce = useReducedMotion();
   return (
-    <div className="relative mx-auto h-[480px] w-[700px] scale-[0.66] xl:scale-90">
+    <motion.svg
+      viewBox="0 0 700 480"
+      className="absolute inset-0 h-full w-full overflow-visible"
+      style={fade ? { opacity: fade } : undefined}
+      aria-hidden
+    >
+      <defs>
+        <filter id="hero-wire-glow" x="-150%" y="-150%" width="400%" height="400%">
+          <feGaussianBlur stdDeviation="5" />
+        </filter>
+      </defs>
+      {WIRES.map((w, i) => (
+        <g key={i}>
+          <path
+            d={w.d}
+            fill="none"
+            stroke="var(--signal)"
+            strokeOpacity={0.32}
+            strokeWidth={1.8}
+            strokeDasharray="3 8"
+            strokeLinecap="round"
+          />
+          {!reduce && (
+            <>
+              <circle r={10} fill="var(--signal)" opacity={0.4} filter="url(#hero-wire-glow)">
+                <animateMotion
+                  dur={`${w.dur}s`}
+                  begin={`${w.delay}s`}
+                  repeatCount="indefinite"
+                  path={w.d}
+                />
+              </circle>
+              <circle r={4} fill="var(--signal)">
+                <animateMotion
+                  dur={`${w.dur}s`}
+                  begin={`${w.delay}s`}
+                  repeatCount="indefinite"
+                  path={w.d}
+                />
+              </circle>
+              <circle r={1.8} fill="white">
+                <animateMotion
+                  dur={`${w.dur}s`}
+                  begin={`${w.delay}s`}
+                  repeatCount="indefinite"
+                  path={w.d}
+                />
+              </circle>
+            </>
+          )}
+        </g>
+      ))}
+      {/* context flowing back IN along the memory wire */}
+      {!reduce && (
+        <circle r={3.2} fill="var(--signal-deep)">
+          <animateMotion
+            dur="4.6s"
+            begin="2.4s"
+            repeatCount="indefinite"
+            path={WIRES[2].d}
+            keyPoints="1;0"
+            keyTimes="0;1"
+            calcMode="linear"
+          />
+        </circle>
+      )}
+    </motion.svg>
+  );
+}
+
+function ConvergingCluster({ progress }: { progress: MotionValue<number> }) {
+  /* the wires detach as the cards gather into the stack */
+  const wireFade = useTransform(progress, [0.1, 0.26], [1, 0]);
+  return (
+    /* zoom (not transform scale) so text re-lays-out at the target size
+       and stays pixel-crisp instead of going soft under a 0.66 scale */
+    <div className="relative mx-auto h-[480px] w-[700px] [zoom:0.66] xl:[zoom:0.9]">
+      <FlowWires fade={wireFade} />
       {POSES.map((pose) => (
         <ConvergeCard key={pose.key} pose={pose} progress={progress} />
       ))}
@@ -230,7 +338,8 @@ function ConvergeCard({
    one now, so the cards no longer animate individually. */
 function StaticCluster() {
   return (
-    <div className="relative mx-auto h-[480px] w-[700px] scale-[0.66] xl:scale-90">
+    <div className="relative mx-auto h-[480px] w-[700px] [zoom:0.66] xl:[zoom:0.9]">
+      <FlowWires />
       {POSES.map((pose) => (
         <div
           key={pose.key}
@@ -262,12 +371,14 @@ function SeqPageTwo({
   const bodyY = useTransform(progress, [0.62, 0.8], [22, 0]);
   const visO = useTransform(progress, [0.56, 0.86], [0, 1]);
   const visScale = useTransform(progress, [0.56, 0.86], [0.94, 1]);
+  // the widget rises a beat behind the headline — a soft parallax hand-off
+  const visY = useTransform(progress, [0.56, 0.92], [48, 0]);
   return (
     <div className="mx-auto grid w-full max-w-[80rem] items-center gap-10 px-6 sm:px-10 lg:grid-cols-[0.95fr_1.05fr]">
       <div className="relative z-10 max-w-[38rem]">
         <h2
           aria-label="Your shorthand, returned as minutes."
-          className="display display-tight max-w-[16ch] text-balance text-[clamp(2.6rem,6vw,5.2rem)]"
+          className="display display-tight max-w-[16ch] text-balance text-[clamp(2.2rem,6vw,5.2rem)]"
         >
           <span aria-hidden>
             <ScrollLetters
@@ -298,23 +409,24 @@ function SeqPageTwo({
 
         <motion.div
           style={{ opacity: bodyO, y: bodyY }}
-          className="mt-10 flex items-center gap-6"
+          className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4"
         >
-          <Magnetic strength={0.3}>
-            <PillCTA href="/dashboard">Get started free</PillCTA>
-          </Magnetic>
+          <PillCTA href="/dashboard">Get started free</PillCTA>
           <a
             href="#product"
-            className="text-[15px] font-medium text-ink-2 underline-offset-4 transition-colors hover:text-ink hover:underline"
+            className="inline-flex min-h-[44px] items-center text-[15px] font-medium text-ink-2 underline-offset-4 transition-colors hover:text-ink hover:underline"
           >
             See how it works
           </a>
         </motion.div>
       </div>
 
+      {/* zoom steps: on short viewports the 590px card + PiP tiles can't fit
+          between the fixed header and the fold — shrink the whole composition
+          (layout box included) so it stays clear of the navbar */}
       <motion.div
-        style={{ opacity: visO, scale: visScale }}
-        className="relative hidden justify-self-center lg:block"
+        style={{ opacity: visO, scale: visScale, y: visY }}
+        className="relative hidden justify-self-center lg:block [@media(min-height:701px)_and_(max-height:820px)]:[zoom:0.9] [@media(max-height:700px)]:[zoom:0.78]"
       >
         {show && <NotesWidget />}
       </motion.div>
@@ -417,7 +529,7 @@ function RevealWord({
 
 function HeroStatic() {
   return (
-    <section className="mesh-field mesh-anim grain relative isolate overflow-hidden py-16 lg:py-24">
+    <section className="mesh-field mesh-anim grain relative isolate overflow-hidden pb-16 pt-28 sm:pt-32 lg:pb-24 lg:pt-36">
       <div className="relative z-10 flex flex-col gap-20 lg:gap-28">
         {/* page one */}
         <div className="mx-auto grid w-full max-w-[80rem] items-center gap-10 px-6 sm:px-10 lg:grid-cols-[0.95fr_1.05fr]">
@@ -432,7 +544,7 @@ function HeroStatic() {
         {/* page two */}
         <div className="mx-auto grid w-full max-w-[80rem] items-center gap-10 px-6 sm:px-10 lg:grid-cols-[0.95fr_1.05fr]">
           <div className="relative z-10 max-w-[38rem]">
-            <h2 className="display display-tight max-w-[16ch] text-balance text-[clamp(2.6rem,6vw,5.2rem)]">
+            <h2 className="display display-tight max-w-[16ch] text-balance text-[clamp(2.2rem,6vw,5.2rem)]">
               Your shorthand, returned as{" "}
               <span className="italic text-gradient-signal">minutes.</span>
             </h2>
@@ -441,19 +553,18 @@ function HeroStatic() {
               clean, structured, shareable notes &mdash; headings, owners, next
               steps.
             </p>
-            <div className="mt-10 flex items-center gap-6">
-              <Magnetic strength={0.3}>
-                <PillCTA href="/dashboard">Get started free</PillCTA>
-              </Magnetic>
+            <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4">
+              <PillCTA href="/dashboard">Get started free</PillCTA>
               <a
                 href="#product"
-                className="text-[15px] font-medium text-ink-2 underline-offset-4 transition-colors hover:text-ink hover:underline"
+                className="inline-flex min-h-[44px] items-center text-[15px] font-medium text-ink-2 underline-offset-4 transition-colors hover:text-ink hover:underline"
               >
                 See how it works
               </a>
             </div>
           </div>
-          <div className="relative hidden justify-self-center lg:block">
+          {/* the widget is the payoff — mobile gets it too, not just lg */}
+          <div className="relative mt-4 w-full max-w-[460px] justify-self-center pb-8 lg:mt-0 lg:pb-0">
             <NotesWidget />
           </div>
         </div>
@@ -473,7 +584,7 @@ function Intro() {
       <Reveal delay={40} y={14}>
         <a
           href="/features/context-gaps"
-          className="group/pill sheen inline-flex items-center gap-2.5 rounded-pill border border-signal/25 bg-signal-soft/60 py-1.5 pl-3 pr-4 text-[12.5px] font-medium text-signal-deep transition-[border-color,transform] duration-300 hover:-translate-y-0.5 hover:border-signal/50"
+          className="group/pill sheen inline-flex min-h-[40px] items-center gap-2.5 rounded-pill border border-signal/25 bg-signal-soft/60 py-1.5 pl-3 pr-4 text-[12.5px] font-medium text-signal-deep transition-[border-color,transform] duration-300 hover:-translate-y-0.5 hover:border-signal/50"
         >
           <span className="relative flex h-1.5 w-1.5" aria-hidden>
             <span className="absolute h-full w-full animate-ping rounded-full bg-signal/60" />
@@ -494,7 +605,7 @@ function Intro() {
         text="Every meeting,"
         accent="on repeat."
         accentClass="italic text-gradient-signal"
-        className="display display-tight mt-6 max-w-[15ch] text-balance text-[clamp(2.8rem,6.4vw,5.6rem)]"
+        className="display display-tight mt-6 max-w-[15ch] text-balance text-[clamp(2.4rem,6.4vw,5.6rem)]"
         delay={120}
       />
 
@@ -506,13 +617,11 @@ function Intro() {
       </Reveal>
 
       <Reveal delay={380}>
-        <div className="mt-10 flex flex-wrap items-center gap-6">
-          <Magnetic strength={0.3}>
-            <PillCTA href="/dashboard">Get started free</PillCTA>
-          </Magnetic>
+        <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4">
+          <PillCTA href="/dashboard">Get started free</PillCTA>
           <a
             href="#how"
-            className="text-[15px] font-medium text-ink-2 underline-offset-4 transition-colors hover:text-ink hover:underline"
+            className="inline-flex min-h-[44px] items-center text-[15px] font-medium text-ink-2 underline-offset-4 transition-colors hover:text-ink hover:underline"
           >
             See how it works
           </a>

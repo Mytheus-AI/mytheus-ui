@@ -55,7 +55,7 @@ export default function Page() {
                   setSubmitted(false);
                   setEmail("");
                 }}
-                className="mt-7 text-[14px] font-medium text-signal transition-colors hover:text-signal-deep"
+                className="mt-5 inline-flex min-h-10 items-center justify-center px-2 text-[14px] font-medium text-signal transition-colors hover:text-signal-deep"
               >
                 Use a different email
               </button>

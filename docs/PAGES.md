@@ -53,7 +53,9 @@ screen-shaped `bff` endpoint (or resource endpoint) each swaps to.
 
 The org/tenant context is resolved once in `../src/app/(app)/layout.tsx`
 (mock `OrgContext` today, Clerk session later). Screens never re-resolve
-tenancy.
+tenancy. The route group also has a shared `loading.tsx` skeleton
+(`../src/app/(app)/loading.tsx`) so navigations inside the shell never
+flash blank.
 
 ## (admin) - consoles
 

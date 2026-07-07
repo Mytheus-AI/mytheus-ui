@@ -2,6 +2,8 @@
 
 This is `mytheus-ui`, the Next.js 14 web frontend of Mytheus. The one thing to keep in mind on every change: the server decides what is true; the client only decides how it appears. This repo owns no backend data, holds no secrets, and reaches the backend only through `api-gateway`/`bff` (REST) and `realtime-gateway` (WSS).
 
+Current state vs this spec: the full UI surface is built on mock data (marketing site + every authenticated screen), but the plumbing this document describes — Clerk, Socket.io, LiveKit, Server Actions, TanStack/Zustand — is not wired yet; auth is bypassed and everything reads `src/lib/mock/data.ts`. The actual state is tracked in `PROGRESS.md`, the route-by-route status in `docs/PAGES.md`, and the practical setup (npm, not pnpm, for now) in `docs/CONTRIBUTING.md`. The rules below still govern every change; the recipes apply as each piece of plumbing lands.
+
 ## Repo at a glance
 
 - What it is: the web-app container of Mytheus, a multi-tenant meeting-orchestration SaaS where every participant gets a personal AI agent. This repo renders the meeting room (LiveKit video, live captions, the agent sidebar), dashboards, search, settings, billing, and admin consoles.

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { AgentSidebar } from "@/components/sidebar/AgentSidebar";
 import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
@@ -20,12 +21,35 @@ import {
    they'll render into. Controls toggle locally so the room feels inhabited,
    nothing is transmitted anywhere. */
 
+const EASE_OUT: [number, number, number, number] = [0.2, 0.7, 0.2, 1];
+
 export function MeetingRoom({ meeting }: { meeting: Meeting }) {
   const [tab, setTab] = useState<"agent" | "chat">("agent");
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [captionsOn, setCaptionsOn] = useState(true);
   const [panelOpen, setPanelOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
+  const drawerTransition = {
+    duration: reduceMotion ? 0 : 0.15,
+    ease: EASE_OUT,
+  };
+
+  /* Escape closes the mobile agent/chat drawer, and the page scroll locks
+     behind it — same contract as the AppShell nav drawer */
+  useEffect(() => {
+    if (!panelOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPanelOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [panelOpen]);
 
   return (
     /* negative margins mirror the AppShell main padding (px-4 py-6 sm:px-6
@@ -34,7 +58,7 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
       {/* ---- main stage ---- */}
       <div className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
         {/* header */}
-        <div className="flex items-center justify-between gap-3 pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 pb-4">
           <div className="flex min-w-0 items-center gap-3">
             <Badge tone="danger">Live</Badge>
             <h1 className="truncate text-[16px] font-medium tracking-tight text-ink-display">
@@ -168,7 +192,7 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
           </ControlButton>
           <Link
             href={`/meetings/${meeting.id}`}
-            className="ml-2 inline-flex items-center gap-2 rounded-pill bg-priority-high px-5 py-2.5 text-[13px] font-medium text-white transition-transform hover:-translate-y-0.5"
+            className="ml-2 inline-flex items-center gap-2 rounded-pill bg-priority-high px-5 py-2.5 text-[13px] font-medium text-white transition-opacity duration-150 hover:opacity-90"
           >
             <LeaveIcon />
             Leave
@@ -182,19 +206,36 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
       </aside>
 
       {/* ---- right rail as overlay drawer below lg ---- */}
-      {panelOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <button
-            type="button"
-            aria-label="Close agent panel"
-            onClick={() => setPanelOpen(false)}
-            className="absolute inset-0 bg-black/30"
-          />
-          <aside className="absolute inset-y-0 right-0 flex w-[min(380px,92vw)] flex-col border-l border-line bg-bg shadow-[0_24px_60px_-24px_rgba(40,30,20,0.5)]">
-            <RailContent tab={tab} setTab={setTab} onClose={() => setPanelOpen(false)} />
-          </aside>
-        </div>
-      )}
+      <AnimatePresence>
+        {panelOpen && (
+          <div
+            className="fixed inset-0 z-50 lg:hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Agent and chat panel"
+          >
+            <motion.button
+              type="button"
+              aria-label="Close agent panel"
+              onClick={() => setPanelOpen(false)}
+              className="absolute inset-0 bg-black/30"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={drawerTransition}
+            />
+            <motion.aside
+              className="absolute inset-y-0 right-0 flex w-[min(380px,92vw)] flex-col border-l border-line bg-bg shadow-[0_24px_60px_-24px_rgba(40,30,20,0.5)]"
+              initial={{ opacity: 0, x: reduceMotion ? 0 : 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: reduceMotion ? 0 : 20 }}
+              transition={drawerTransition}
+            >
+              <RailContent tab={tab} setTab={setTab} onClose={() => setPanelOpen(false)} />
+            </motion.aside>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -223,8 +264,8 @@ function RailContent({
             type="button"
             onClick={() => setTab(t.key)}
             aria-pressed={tab === t.key}
-            className={`flex-1 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
-              tab === t.key ? "bg-bg-2 text-ink" : "text-ink-3 hover:text-ink-2"
+            className={`min-h-[40px] flex-1 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors duration-150 ${
+              tab === t.key ? "bg-bg-2 text-ink" : "text-ink-3 hover:bg-bg-2/60 hover:text-ink-2"
             }`}
           >
             {t.label}
@@ -235,7 +276,7 @@ function RailContent({
             type="button"
             onClick={onClose}
             aria-label="Close panel"
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-ink-3 transition-colors hover:bg-bg-2 hover:text-ink"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-ink-3 transition-colors duration-150 hover:bg-bg-2 hover:text-ink"
           >
             <CloseIcon />
           </button>
@@ -287,12 +328,12 @@ function ChatPanel() {
           onChange={(e) => setDraft(e.target.value)}
           placeholder="Message the room"
           aria-label="Message the room"
-          className="w-full rounded-pill border border-line bg-white px-4 py-2 text-[13px] text-ink outline-none placeholder:text-ink-3 focus-visible:border-signal"
+          className="min-h-[40px] w-full rounded-pill border border-line bg-surface px-4 py-2 text-[13px] text-ink placeholder:text-ink-3 focus-visible:border-signal"
         />
         <button
           type="submit"
           aria-label="Send"
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-signal text-white transition-colors hover:bg-signal-deep"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-signal text-white transition-colors duration-150 hover:bg-signal-deep"
         >
           <SendIcon />
         </button>

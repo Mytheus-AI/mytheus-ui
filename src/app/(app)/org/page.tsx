@@ -15,7 +15,7 @@ export default function OrgPage() {
     .reduce((n, t) => n + t.members.length, 0);
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-5xl motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
       <p className="kicker text-signal">Organization</p>
       <h1 className="display mt-2 text-[clamp(1.8rem,4vw,2.4rem)]">
         {mockOrgContext.org.name}
@@ -29,7 +29,7 @@ export default function OrgPage() {
       <div className="mt-8 flex flex-col gap-8">
         {mockDepartments.map((dep) => (
           <section key={dep.id}>
-            <h2 className="flex items-center gap-3 text-[18px] font-medium tracking-tight text-ink-display">
+            <h2 className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[18px] font-medium tracking-tight text-ink-display">
               {dep.name}
               <span className="font-mono text-[11px] tabular-nums text-ink-3">
                 {dep.teams.length} team{dep.teams.length === 1 ? "" : "s"}
@@ -50,7 +50,11 @@ export default function OrgPage() {
                           </p>
                           <p className="truncate text-[12px] text-ink-3">{m.role}</p>
                         </div>
-                        {m.lead && <Badge tone="default">Lead</Badge>}
+                        {m.lead && (
+                          <Badge tone="default" className="shrink-0">
+                            Lead
+                          </Badge>
+                        )}
                       </li>
                     ))}
                   </ul>
