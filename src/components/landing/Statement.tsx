@@ -14,7 +14,6 @@ import {
 } from "framer-motion";
 import { PinnedScene, Reveal, MaskReveal, Tilt, WordReveal } from "./motion";
 import { Eyebrow, ArrowRight } from "./ui";
-import { ConnectedGraph } from "./ConnectedGraph";
 import {
   mockTeamCapacity,
   mockSourcedAnswer,
@@ -37,7 +36,8 @@ import {
                           source, decision lineage, dependency.
 
    Scrolling back runs the exchange in reverse — the answer un-happens.
-   The two agent orbs are live ConnectedGraph canvases (pointer-reactive),
+   The two agent orbs are deterministic AgentOrb marks (clay core, orbit
+   rings, bg-melting halo — ConnectedGraph read as loose bubbles at 96px),
    the answer card tilts under the cursor, and the right-edge beat rail
    jumps the camera between beats. Mobile and reduced motion render the
    story as a calm static stack instead. Data is mockTeamCapacity /
@@ -828,6 +828,76 @@ function TailDot({
   );
 }
 
+/* a deliberate, deterministic agent mark — clay core with a glassy glint,
+   two counter-rotating orbit rings with satellites, and a radial halo that
+   melts into the cream bg. Replaces the ConnectedGraph orb at small sizes,
+   where a ~5-node random constellation read as loose bubbles. Everything
+   inside is percentage-sized, so one component works from 36px to 112px. */
+function AgentOrb({
+  className = "",
+  signal = false,
+}: {
+  className?: string;
+  signal?: boolean;
+}) {
+  const reduce = useReducedMotion();
+  const ring = signal ? "border-signal/30" : "border-line-2";
+  return (
+    <div className={`relative ${className}`} aria-hidden>
+      {/* halo — a warm pool with no edge, so the mark sits IN the page */}
+      <div
+        className="absolute -inset-[42%] rounded-full"
+        style={{
+          background:
+            "radial-gradient(closest-side, var(--signal-soft), transparent 72%)",
+        }}
+      />
+
+      {/* breathing glow behind the core */}
+      <motion.div
+        className="absolute inset-[22%] rounded-full bg-signal/25 blur-md"
+        animate={
+          reduce ? undefined : { scale: [1, 1.22, 1], opacity: [0.4, 0.75, 0.4] }
+        }
+        transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      {/* outer orbit — slow, with a satellite riding it */}
+      <motion.div
+        className="absolute inset-0"
+        animate={reduce ? undefined : { rotate: 360 }}
+        transition={{ duration: 16, repeat: Infinity, ease: "linear" }}
+      >
+        <div className={`absolute inset-0 rounded-full border border-dashed ${ring}`} />
+        <span className="absolute left-1/2 top-0 h-[8%] min-h-[3px] w-[8%] min-w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-signal" />
+      </motion.div>
+
+      {/* inner orbit — counter-rotating, quieter */}
+      <motion.div
+        className="absolute inset-[15%]"
+        animate={reduce ? undefined : { rotate: -360 }}
+        transition={{ duration: 24, repeat: Infinity, ease: "linear" }}
+      >
+        <div className="absolute inset-0 rounded-full border border-line-2/70" />
+        <span className="absolute bottom-0 left-1/2 h-[6%] min-h-[2px] w-[6%] min-w-[2px] -translate-x-1/2 translate-y-1/2 rounded-full bg-signal-bright" />
+      </motion.div>
+
+      {/* the core — clay for your agent, warm glass for the peer */}
+      <div
+        className="absolute inset-[30%] rounded-full"
+        style={{
+          background: signal
+            ? "radial-gradient(circle at 32% 30%, var(--signal-bright), var(--signal) 58%, var(--signal-deep))"
+            : "radial-gradient(circle at 32% 30%, white, var(--signal-soft) 58%, var(--signal-bright))",
+          boxShadow: "0 8px 22px -8px rgba(40, 30, 20, 0.35)",
+        }}
+      >
+        <span className="absolute left-[20%] top-[16%] h-[24%] w-[24%] rounded-full bg-white/75 blur-[1px]" />
+      </div>
+    </div>
+  );
+}
+
 /* one of the two live agent orbs, with its nameplate */
 function AgentPost({
   className,
@@ -844,7 +914,7 @@ function AgentPost({
     <div
       className={`absolute top-[50%] flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2 text-center ${className}`}
     >
-      <ConnectedGraph signal={signal} className="h-24 w-24 lg:h-28 lg:w-28" />
+      <AgentOrb signal={signal} className="h-24 w-24 lg:h-28 lg:w-28" />
       <div>
         <p className="text-[14px] font-semibold tracking-tight text-ink-display lg:text-[15px]">
           {label}
@@ -1078,7 +1148,7 @@ function TriggerLine() {
         <p className="min-w-0 flex-1 text-left text-[14px] font-medium text-ink line-clamp-2 sm:line-clamp-1 sm:text-[15px]">
           &ldquo;Let&rsquo;s put the pricing rework on Sarah for Q3.&rdquo;
         </p>
-        <ConnectedGraph signal className="h-9 w-9 shrink-0 sm:h-10 sm:w-10" />
+        <AgentOrb signal className="h-9 w-9 shrink-0 sm:h-10 sm:w-10" />
       </div>
     </MaskReveal>
   );
@@ -1273,7 +1343,7 @@ function AgentExchange() {
 function AgentGlyph({ label, signal = false }: { label: string; signal?: boolean }) {
   return (
     <div className="flex w-[52px] shrink-0 flex-col items-center gap-1.5 text-center sm:w-[76px]">
-      <ConnectedGraph signal={signal} className="h-10 w-10 sm:h-12 sm:w-12" />
+      <AgentOrb signal={signal} className="h-10 w-10 sm:h-12 sm:w-12" />
       <p className="text-[10.5px] font-medium leading-tight tracking-tight text-ink-2 sm:text-[11px]">
         {label}
       </p>
