@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { MaskReveal } from "./motion";
+import { lenis } from "./SmoothScroll";
 import { LogoMark } from "@/components/Logo";
 import { FEATURES } from "@/lib/marketing/features";
 
@@ -92,7 +93,12 @@ export function SiteFooter() {
     setSent(true);
   };
 
-  const toTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
+  /* ride Lenis when it's mounted (landing page) — a native smooth scrollTo
+     fights Lenis's own frame loop and stalls partway up the page */
+  const toTop = () => {
+    if (lenis) lenis.scrollTo(0, { duration: 1.6 });
+    else window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const year = new Date().getFullYear();
 
@@ -248,13 +254,18 @@ export function SiteFooter() {
       <div className="pointer-events-none relative z-[1]">
         <MaskReveal y={160}>
           {/* set in the BRAND face (Refinity, the .wordmark class — same as
-              the loader), not body Geist. -mb measured from Refinity's font
-              metrics: baseline sits 0.135em above the leading-none box
-              bottom, flat letters paint 0.01em below baseline → 0.125em
-              grounds every letter exactly; the y's tail passes below the
-              ground line and is cropped by the footer edge. */}
+              the loader). Bottom-aligned logotype treatment: -mb (from
+              Refinity's metrics: baseline 0.135em above the leading-none box
+              bottom, flat letters paint 0.01em below baseline) grounds every
+              letter's foot exactly on the footer edge, and the y is raised
+              by its tail depth (0.17 − 0.01 em) so its tail tip sits on the
+              SAME ground line as the other letters — whole glyph visible,
+              no gap, one shared bottom edge. */}
           <p className="wordmark text-gradient-signal -mb-[0.125em] select-none whitespace-nowrap text-center text-[clamp(4rem,24vw,23rem)] leading-none tracking-[-0.02em]">
-            Mytheus
+            {/* vertical-align (not translate): a transform on the span would
+                break the parent's background-clip:text and render the y
+                invisible */}
+            M<span className="inline-block align-[0.16em]">y</span>theus
           </p>
         </MaskReveal>
       </div>
