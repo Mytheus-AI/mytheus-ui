@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { MaskReveal, Parallax } from "./motion";
+import { MaskReveal } from "./motion";
 import { LogoMark } from "@/components/Logo";
 import { FEATURES } from "@/lib/marketing/features";
 
@@ -239,17 +239,22 @@ export function SiteFooter() {
         </div>
       </div>
 
-      {/* the centrepiece — a giant clay-gradient wordmark, sitting fully on
-          screen at the very bottom edge. The line box must be tall enough for
-          the "y" descender (leading ≥ 1 + a hair of padding) or MaskReveal's
-          overflow mask clips it — never tighten leading below that here */}
-      <Parallax distance={16} className="pointer-events-none relative z-[1]">
+      {/* the centrepiece — a giant clay-gradient wordmark GROUNDED on the
+          footer's bottom edge: the negative bottom margin pulls the line box
+          down so the BASELINE sits exactly on the edge (every letter touches
+          the ground, no gap) and the footer's overflow-hidden crops the "y"
+          descender below the ground line. No Parallax — it would float the
+          letters off the ground. */}
+      <div className="pointer-events-none relative z-[1]">
         <MaskReveal y={160}>
-          <p className="display text-gradient-signal select-none whitespace-nowrap px-2 pb-[0.04em] text-center text-[clamp(4rem,23.5vw,22rem)] leading-none tracking-[-0.03em]">
+          {/* -mb: measured from Geist's font metrics — baseline sits 0.151em
+              above the leading-none box bottom, flat letters paint 0.016em
+              below baseline → 0.135em grounds every letter exactly */}
+          <p className="display text-gradient-signal -mb-[0.135em] select-none whitespace-nowrap text-center text-[clamp(4rem,24vw,23rem)] leading-none tracking-[-0.03em]">
             Mytheus
           </p>
         </MaskReveal>
-      </Parallax>
+      </div>
     </footer>
   );
 }
