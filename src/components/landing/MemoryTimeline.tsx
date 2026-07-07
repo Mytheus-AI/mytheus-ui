@@ -102,14 +102,15 @@ export function MemoryTimeline() {
   return (
     <section id="memory" className="px-3 py-24 sm:px-5 sm:py-32">
       <div className="mx-auto max-w-[1340px]">
-        {/* heading centered over the chart (it used to hang off the left
-            edge, disconnected from the diagram below) */}
+        {/* heading centered over the chart, and deliberately COMPACT — the
+            heading and the diagram must share one viewport (a full-size
+            display heading pushed the chart below the fold on laptops) */}
         <Reveal className="text-center">
           <Eyebrow>How memory compounds</Eyebrow>
-          <h2 className="display mx-auto mt-5 max-w-[20ch] text-balance text-[clamp(2.1rem,5.5vw,4rem)]">
+          <h2 className="display mx-auto mt-4 max-w-[26ch] text-balance text-[clamp(1.9rem,3.4vw,2.8rem)]">
             A decision on Monday is context on Friday.
           </h2>
-          <p className="mx-auto mt-6 max-w-[54ch] text-[17px] leading-relaxed text-ink-3">
+          <p className="mx-auto mt-3 max-w-[62ch] text-[15.5px] leading-relaxed text-ink-3">
             Every meeting feeds one shared memory. Decisions, owners, and
             promises made early in the week are carried forward automatically —
             so by Friday&apos;s standup, nothing has to be re-explained.
@@ -118,7 +119,7 @@ export function MemoryTimeline() {
 
         <Reveal delay={120}>
           <ScrollScale from={0.96}>
-          <div className="mt-12 grid grid-cols-1 gap-6 sm:mt-14 lg:grid-cols-[300px_1fr]">
+          <div className="mt-8 grid grid-cols-1 gap-6 sm:mt-10 lg:grid-cols-[300px_1fr]">
             {/* ---- left ledger card (the "Initiatives" rail) ----
                  a flex column so it distributes to the graph panel's full
                  height: header top, stats centered, live strip at the base */}

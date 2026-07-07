@@ -247,10 +247,13 @@ export function SiteFooter() {
           letters off the ground. */}
       <div className="pointer-events-none relative z-[1]">
         <MaskReveal y={160}>
-          {/* -mb: measured from Geist's font metrics — baseline sits 0.151em
-              above the leading-none box bottom, flat letters paint 0.016em
-              below baseline → 0.135em grounds every letter exactly */}
-          <p className="display text-gradient-signal -mb-[0.135em] select-none whitespace-nowrap text-center text-[clamp(4rem,24vw,23rem)] leading-none tracking-[-0.03em]">
+          {/* set in the BRAND face (Refinity, the .wordmark class — same as
+              the loader), not body Geist. -mb measured from Refinity's font
+              metrics: baseline sits 0.135em above the leading-none box
+              bottom, flat letters paint 0.01em below baseline → 0.125em
+              grounds every letter exactly; the y's tail passes below the
+              ground line and is cropped by the footer edge. */}
+          <p className="wordmark text-gradient-signal -mb-[0.125em] select-none whitespace-nowrap text-center text-[clamp(4rem,24vw,23rem)] leading-none tracking-[-0.02em]">
             Mytheus
           </p>
         </MaskReveal>
