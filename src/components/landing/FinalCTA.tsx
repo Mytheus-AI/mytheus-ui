@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { PillCTA } from "./ui";
+import { ArrowRight } from "./ui";
 import { WordReveal, MaskReveal, Magnetic, ScrollScale } from "./motion";
 import { FlowField } from "./FlowField";
 
@@ -54,8 +55,16 @@ export function FinalCTA() {
 
           <MaskReveal delay={460} y={44}>
             <div className="mt-10 sm:mt-12">
+              {/* one clean pill, same language as the header CTA — no split
+                  arrow knob, no pulsing */}
               <Magnetic strength={0.3}>
-                <PillCTA href="/dashboard">Get started free</PillCTA>
+                <Link
+                  href="/dashboard"
+                  className="group inline-flex items-center gap-2.5 rounded-pill bg-signal py-4 pl-8 pr-7 text-[16px] font-medium text-white shadow-[0_20px_44px_-18px_rgba(189,93,58,0.85)] transition-[background-color,transform] duration-300 hover:-translate-y-0.5 hover:bg-signal-deep"
+                >
+                  Get started free
+                  <ArrowRight className="h-[18px] w-[18px] transition-transform duration-300 group-hover:translate-x-0.5" />
+                </Link>
               </Magnetic>
             </div>
           </MaskReveal>

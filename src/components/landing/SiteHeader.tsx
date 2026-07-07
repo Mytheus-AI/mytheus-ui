@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 import { LogoMark } from "@/components/Logo";
 import { ArrowRight } from "./ui";
+import { Magnetic } from "./motion";
 import { FEATURES } from "@/lib/marketing/features";
 
 /* The wordmark, floating transparent over the page (links home / back to
@@ -108,28 +109,24 @@ export function SiteHeader() {
         </motion.nav>
 
         <div className="flex items-center gap-2">
-          {/* compact CTA — arrives once the hero's own CTA has scrolled away */}
+          {/* the CTA — pinned in the fixed header for the whole ride. Kept
+              deliberately quiet: solid pill, a subtle magnetic drift toward
+              the cursor, hover lift + arrow nudge. No pulsing. */}
           <motion.div
-            initial={false}
-            animate={
-              reduce
-                ? { opacity: scrolled ? 1 : 0 }
-                : { opacity: scrolled ? 1 : 0, y: scrolled ? 0 : -8 }
-            }
-            transition={{ duration: 0.45, ease: EASE }}
-            className="hidden sm:block"
+            initial={reduce ? false : { opacity: 0, y: -10 }}
+            animate={reduce ? undefined : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: EASE, delay: 0.18 }}
+            className="pointer-events-auto hidden sm:block"
           >
-            <Link
-              href="/dashboard"
-              tabIndex={scrolled ? 0 : -1}
-              aria-hidden={!scrolled}
-              className={`group inline-flex items-center gap-2 rounded-pill bg-signal py-2.5 pl-5 pr-4 text-[14px] font-medium text-white shadow-[0_16px_36px_-18px_rgba(189,93,58,0.8)] transition-[background-color,transform] duration-300 hover:-translate-y-0.5 hover:bg-signal-deep ${
-                scrolled ? "pointer-events-auto" : "pointer-events-none"
-              }`}
-            >
-              Get started free
-              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
-            </Link>
+            <Magnetic strength={0.2}>
+              <Link
+                href="/dashboard"
+                className="group inline-flex items-center gap-2 rounded-pill bg-signal py-2.5 pl-5 pr-4 text-[14px] font-medium text-white shadow-[0_16px_36px_-18px_rgba(189,93,58,0.8)] transition-[background-color,transform] duration-300 hover:-translate-y-0.5 hover:bg-signal-deep"
+              >
+                Get started free
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+              </Link>
+            </Magnetic>
           </motion.div>
 
           {/* mobile menu toggle — the centered nav is desktop-only, so below

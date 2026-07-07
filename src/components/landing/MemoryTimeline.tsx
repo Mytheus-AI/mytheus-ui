@@ -320,13 +320,15 @@ export function MemoryTimeline() {
                         delay: 0.5 + i * 0.14,
                       }}
                     />
-                    {/* NB: framer `x` on SVG text is a transform ADDED to the
-                        x attribute — animate a small relative slide only */}
+                    {/* decision label — plain text, pushed clear of the
+                        diamond and vertically centered on it */}
                     <motion.text
-                      x={l.diamond.x + 16}
-                      y={l.diamond.y + 4}
+                      x={l.diamond.x + 24}
+                      y={l.diamond.y}
+                      dominantBaseline="central"
                       className="font-sans"
                       fontSize={12.5}
+                      fontWeight={500}
                       fill="var(--signal-deep)"
                       initial={{ opacity: 0, x: -8 }}
                       animate={go ? { opacity: 1, x: 0 } : { opacity: 0, x: -8 }}
