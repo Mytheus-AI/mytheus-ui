@@ -88,6 +88,11 @@ const MOMENTS: Moment[] = [
 ];
 
 const N = MOMENTS.length;
+
+// legend chips in the order each kind first appears in the session
+// (Note closes the range — this session happens not to produce one)
+const LEGEND_ORDER: Kind[] = ["decision", "context", "conflict", "action", "note"];
+
 const STEP_MS = 1150; // time each new moment takes to arrive
 const HOLD_MS = 2600; // dwell on the finished session before looping
 const EQ_BARS = [0, 1, 2, 3];
@@ -146,6 +151,12 @@ export function LiveCapture() {
   }, [step, inView, reduce]);
 
   const activeKind = step > 0 ? MOMENTS[step - 1].kind : null;
+
+  // running tally per kind — the legend doubles as the session scoreboard
+  const counts: Partial<Record<Kind, number>> = {};
+  for (const m of MOMENTS.slice(0, step)) {
+    counts[m.kind] = (counts[m.kind] ?? 0) + 1;
+  }
 
   return (
     <section id="product" className="py-24 sm:py-32">
@@ -422,22 +433,46 @@ export function LiveCapture() {
               </div>
             </div>
 
-            {/* footer legend — the full range; the active kind lights up
-                with a small spring pop as its capture lands */}
+            {/* footer legend — a live tally, in the order each kind enters
+                the session: the active kind pops solid, kinds already
+                captured stay warm with their running count, the rest wait */}
             <div className="relative mt-3.5 flex flex-wrap items-center justify-center gap-1.5 px-1">
-              {(Object.keys(KIND_LABEL) as Kind[]).map((k) => {
+              {LEGEND_ORDER.map((k) => {
                 const on = k === activeKind;
+                const n = counts[k] ?? 0;
                 return (
                   <motion.span
                     key={on && !reduce ? `${k}-${step}` : k}
                     initial={on && !reduce ? { scale: 0.82 } : false}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 520, damping: 20 }}
-                    className={`rounded-full px-2.5 py-1 text-[12px] font-medium transition-colors duration-500 ${
-                      on ? "bg-signal text-white" : "border border-line text-ink-3"
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-medium transition-colors duration-500 ${
+                      on
+                        ? "bg-signal text-white"
+                        : n > 0
+                          ? "border border-signal/25 bg-signal-soft/70 text-signal-deep"
+                          : "border border-line text-ink-3"
                     }`}
                   >
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${
+                        on ? "bg-white" : n > 0 ? "bg-signal" : "bg-line-2"
+                      }`}
+                    />
                     {KIND_LABEL[k]}
+                    {n > 0 && (
+                      <motion.span
+                        key={`n-${n}`}
+                        initial={reduce ? false : { scale: 1.45 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                        className={`tabular-nums text-[11px] font-semibold ${
+                          on ? "text-white/90" : "text-signal-deep/80"
+                        }`}
+                      >
+                        {n}
+                      </motion.span>
+                    )}
                   </motion.span>
                 );
               })}
