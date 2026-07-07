@@ -29,7 +29,7 @@ export default function OrgPage() {
       <div className="mt-8 flex flex-col gap-8">
         {mockDepartments.map((dep) => (
           <section key={dep.id}>
-            <h2 className="flex items-center gap-3 text-[18px] font-medium tracking-tight text-ink-display">
+            <h2 className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[18px] font-medium tracking-tight text-ink-display">
               {dep.name}
               <span className="font-mono text-[11px] tabular-nums text-ink-3">
                 {dep.teams.length} team{dep.teams.length === 1 ? "" : "s"}

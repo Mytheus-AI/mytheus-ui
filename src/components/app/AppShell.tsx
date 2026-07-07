@@ -46,8 +46,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     };
   }, [navOpen]);
 
+  /* h-dvh (not min-h-dvh) so <main> is the scroll container: the Topbar
+     hamburger stays reachable on long pages at 320px and the desktop nav
+     column actually stays fixed. MeetingRoom's h-[calc(100dvh-4rem)] relies
+     on main being exactly viewport minus the h-16 Topbar. */
   return (
-    <div className="flex min-h-dvh bg-bg">
+    <div className="flex h-dvh bg-bg">
       <Sidebar className="hidden lg:flex" />
 
       <AnimatePresence>

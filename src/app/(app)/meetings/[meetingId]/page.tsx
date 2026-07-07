@@ -157,7 +157,7 @@ export default function MeetingDetailPage({
                 <Card key={a.id} priorityStrip={a.priority}>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <p
-                      className={`text-[14.5px] font-medium ${
+                      className={`min-w-0 text-[14.5px] font-medium ${
                         a.status === "done" ? "text-ink-3 line-through" : "text-ink"
                       }`}
                     >

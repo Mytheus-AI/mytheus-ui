@@ -42,7 +42,7 @@ export default function OpsPage() {
             data until the ops plane exists.
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <Card className="px-5 py-3.5">
             <p className="kicker text-[9px]">Variable cost / mo</p>
             <p className="mt-1 font-mono text-[20px] tabular-nums text-ink-display">
@@ -82,9 +82,9 @@ export default function OpsPage() {
                 key={t.orgId}
                 className={i < mockTenantOps.length - 1 ? "border-b border-line" : ""}
               >
-                <td className="px-5 py-3.5">
-                  <p className="text-[13.5px] font-medium text-ink">{t.name}</p>
-                  <p className="font-mono text-[10.5px] text-ink-3">{t.orgId}</p>
+                <td className="max-w-[240px] px-5 py-3.5">
+                  <p className="truncate text-[13.5px] font-medium text-ink">{t.name}</p>
+                  <p className="truncate font-mono text-[10.5px] text-ink-3">{t.orgId}</p>
                 </td>
                 <td className="px-5 py-3.5">
                   <Badge

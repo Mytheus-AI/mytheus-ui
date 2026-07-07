@@ -325,8 +325,12 @@ function SceneFrame({
       <PinHeading />
 
       {/* the content, riding the camera */}
+      {/* zoom steps: on short laptops the heading + spine + demo card can't
+          all fit under the fixed header — shrink the content plane (layout
+          box included, same trick as the hero widget); self-center keeps the
+          zoomed (now narrower-than-full) grid centered in the frame */}
       <motion.div
-        className="grid min-h-0 w-full flex-1 items-center gap-8 will-change-transform md:grid-cols-[minmax(0,0.45fr)_minmax(0,1fr)] lg:grid-cols-[minmax(0,0.55fr)_minmax(0,1fr)] lg:gap-16"
+        className="grid min-h-0 w-full flex-1 items-center gap-8 self-center will-change-transform md:grid-cols-[minmax(0,0.45fr)_minmax(0,1fr)] lg:grid-cols-[minmax(0,0.55fr)_minmax(0,1fr)] lg:gap-16 [@media(max-height:740px)]:[zoom:0.9] [@media(max-height:660px)]:[zoom:0.8]"
         style={{ scale, opacity, y: contentY }}
       >
         {children}
@@ -345,7 +349,9 @@ function PinHeading() {
         Make meeting follow-through{" "}
         <span className="text-gradient-signal">self-driving</span>.
       </h2>
-      <p className="mx-auto mt-2.5 max-w-[64ch] text-[15px] leading-relaxed text-ink-3">
+      {/* on very short viewports even the zoomed content plane needs the
+          sub-line's two rows back to keep the demo card fully on screen */}
+      <p className="mx-auto mt-2.5 max-w-[64ch] text-[15px] leading-relaxed text-ink-3 [@media(max-height:640px)]:hidden">
         Conversations become decisions, action items, and context — captured,
         labeled, and routed to the right people, without anyone taking notes.
       </p>

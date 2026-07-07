@@ -295,8 +295,11 @@ function MomentOverlay({ p }: { p: MotionValue<number> }) {
 
       {/* the workload read — bars fill and Sarah's trend line climbs
           into the over-capacity band, all under your scroll */}
+      {/* zoom steps: on short laptops chip + quote + this panel overrun the
+          space under the pinned heading — shrink the panel (layout box
+          included, the hero-widget trick); items-center keeps it centered */}
       <motion.div
-        className="w-full max-w-[780px] rounded-card border border-line bg-white/95 p-4 text-left shadow-[0_40px_80px_-48px_rgba(40,30,20,0.35)] lg:p-5"
+        className="w-full max-w-[780px] rounded-card border border-line bg-white/95 p-4 text-left shadow-[0_40px_80px_-48px_rgba(40,30,20,0.35)] lg:p-5 [@media(max-height:760px)]:[zoom:0.9] [@media(max-height:680px)]:[zoom:0.82]"
         style={{ opacity: panelO, y: panelY }}
       >
         <div className="flex items-center justify-between gap-3">

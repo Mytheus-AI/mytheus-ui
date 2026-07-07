@@ -54,7 +54,10 @@ function useWallClock() {
 
 export function NotesEnhanceDemo() {
   return (
-    <section id="demo" className="px-3 py-24 sm:px-5 sm:py-32">
+    /* overflow-hidden: the clay paper stack behind the notepad reaches
+       -left-4 (16px) past the widget — wider than the px-3 gutter at 320px,
+       so without the clip it drags the page into horizontal scroll */
+    <section id="demo" className="overflow-hidden px-3 py-24 sm:px-5 sm:py-32">
       <div className="mx-auto max-w-[1340px]">
         <div className="text-center">
           <Reveal>

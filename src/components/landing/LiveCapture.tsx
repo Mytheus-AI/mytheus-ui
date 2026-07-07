@@ -101,9 +101,11 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 // ONE slot height, shared by all three columns per breakpoint, so every
 // transcript line sits exactly opposite the capture it produced and the
 // connector beam pings on the right row. Sized to the worst-case wrapped
-// line count of each tier.
+// line count of each tier (capture cards stay two-line up to ~520px wide,
+// so the 360 tier must hold a full two-line card or the panel reflows
+// mid-loop when a wrapped card lands in a shorter ghost slot).
 const SLOT =
-  "min-h-[80px] min-[360px]:min-h-[68px] sm:min-h-[62px] lg:min-h-[78px] xl:min-h-[60px]";
+  "min-h-[80px] min-[360px]:min-h-[76px] sm:min-h-[62px] lg:min-h-[78px] xl:min-h-[60px]";
 
 /* the active line streams in word by word — live captions, as it's said */
 function StreamWords({ text }: { text: string }) {

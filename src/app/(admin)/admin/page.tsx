@@ -97,7 +97,7 @@ export default function AdminOverviewPage() {
           <tbody>
             {tenantsByCreatedDesc.map((tenant) => (
               <tr key={tenant.id} className="border-b border-line last:border-b-0">
-                <td className="px-5 py-3 text-ink">{tenant.name}</td>
+                <td className="max-w-[240px] truncate px-5 py-3 text-ink">{tenant.name}</td>
                 <td className="px-5 py-3">
                   <Badge>{planLabel[tenant.plan]}</Badge>
                 </td>
