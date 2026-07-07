@@ -143,24 +143,33 @@ export function Steps() {
   const reduce = useReducedMotion();
 
   return (
-    <section id="how" className="px-3 py-24 sm:px-5 sm:py-32">
+    <section
+      id="how"
+      className={`px-3 sm:px-5 ${reduce ? "py-24 sm:py-32" : "py-24 sm:py-32 md:py-6"}`}
+    >
       <div className="mx-auto max-w-[1340px]">
-        <ScrubReveal>
-          <Eyebrow>How it works</Eyebrow>
-          <h2 className="display mt-5 max-w-[18ch] text-[clamp(2.2rem,5.5vw,4rem)]">
-            Make meeting follow-through{" "}
-            <span className="text-gradient-signal">self-driving</span>.
-          </h2>
-          <p className="mt-6 max-w-[52ch] text-[17px] leading-relaxed text-ink-3">
-            Conversations become decisions, action items, and context —
-            captured, labeled, and routed to the right people, without anyone
-            taking notes.
-          </p>
-        </ScrubReveal>
+        {/* mobile / reduced-motion header — the pinned scene carries its own */}
+        <div
+          className={`mx-auto max-w-[900px] text-center ${reduce ? "" : "md:hidden"}`}
+        >
+          <ScrubReveal>
+            <Eyebrow>How it works</Eyebrow>
+            <h2 className="display mx-auto mt-5 max-w-[18ch] text-[clamp(2.2rem,5.5vw,4rem)]">
+              Make meeting follow-through{" "}
+              <span className="text-gradient-signal">self-driving</span>.
+            </h2>
+            <p className="mx-auto mt-5 max-w-[52ch] text-[15.5px] leading-relaxed text-ink-3 sm:mt-6 sm:text-[17px]">
+              Conversations become decisions, action items, and context —
+              captured, labeled, and routed to the right people, without anyone
+              taking notes.
+            </p>
+          </ScrubReveal>
+        </div>
 
-        {/* desktop: the pinned sequential scene */}
+        {/* desktop: the pinned sequential scene — heading and stages fitted
+            together inside the pinned viewport */}
         {!reduce && (
-          <PinnedScene count={CARDS.length} className="mt-4 hidden md:block">
+          <PinnedScene count={CARDS.length} className="hidden md:block">
             {({ index, progress, goTo }) => (
               <SceneFrame index={index} progress={progress}>
                 <Spine index={index} progress={progress} goTo={goTo} />
@@ -173,12 +182,14 @@ export function Steps() {
         {/* mobile (and desktop reduced-motion): a calm static stack */}
         <Reveal
           delay={120}
-          className={`mt-14 grid gap-5 ${reduce ? "" : "md:hidden"}`}
+          className={`mt-12 grid gap-4 sm:mt-14 sm:gap-5 ${
+            reduce ? "md:grid-cols-2" : "md:hidden"
+          }`}
         >
           {CARDS.map((c) => (
             <article
               key={c.key}
-              className="rounded-card border border-line bg-white p-6"
+              className="rounded-card border border-line bg-white p-5 sm:p-6"
             >
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-2 text-signal">
@@ -242,9 +253,13 @@ function SceneFrame({
     damping: 30,
     mass: 0.4,
   });
+  /* parallax depth: the watermark drifts sideways against scroll while the
+     content plane counter-drifts a touch — three planes, one scrubber */
+  const wmX = useTransform(cam, [0, 1], ["1.5%", "-3.5%"]);
+  const contentY = useTransform(cam, [0, 1], [10, -10]);
 
   return (
-    <div className="relative flex h-full w-full flex-col justify-center">
+    <div className="relative flex h-full w-full flex-col pb-3 pt-[84px]">
       {/* drifting dot-grid texture, faded out toward the frame edges */}
       <motion.div
         aria-hidden
@@ -273,7 +288,7 @@ function SceneFrame({
       <motion.div
         aria-hidden
         className="pointer-events-none absolute -bottom-4 right-0 select-none"
-        style={{ y: wmY }}
+        style={{ y: wmY, x: wmX }}
       >
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.span
@@ -289,13 +304,34 @@ function SceneFrame({
         </AnimatePresence>
       </motion.div>
 
+      {/* the heading stays fitted above the stages for the whole pin */}
+      <PinHeading />
+
       {/* the content, riding the camera */}
       <motion.div
-        className="grid w-full items-center gap-10 will-change-transform md:grid-cols-[minmax(0,0.55fr)_minmax(0,1fr)] lg:gap-16"
-        style={{ scale, opacity }}
+        className="grid min-h-0 w-full flex-1 items-center gap-8 will-change-transform md:grid-cols-[minmax(0,0.45fr)_minmax(0,1fr)] lg:grid-cols-[minmax(0,0.55fr)_minmax(0,1fr)] lg:gap-16"
+        style={{ scale, opacity, y: contentY }}
       >
         {children}
       </motion.div>
+    </div>
+  );
+}
+
+/* the in-scene header: centered and pinned with the stages so heading +
+   story always share the viewport (the SceneHeading pattern) */
+function PinHeading() {
+  return (
+    <div className="relative z-20 shrink-0 pb-2 text-center">
+      <Eyebrow>How it works</Eyebrow>
+      <h2 className="display mx-auto mt-2 max-w-[26ch] text-[clamp(1.8rem,3.2vw,2.9rem)]">
+        Make meeting follow-through{" "}
+        <span className="text-gradient-signal">self-driving</span>.
+      </h2>
+      <p className="mx-auto mt-2.5 max-w-[64ch] text-[15px] leading-relaxed text-ink-3">
+        Conversations become decisions, action items, and context — captured,
+        labeled, and routed to the right people, without anyone taking notes.
+      </p>
     </div>
   );
 }
@@ -317,14 +353,14 @@ function Spine({
   return (
     <div>
       {/* the big stage number, ticking like an odometer */}
-      <div className="mb-8 flex items-baseline gap-3">
+      <div className="mb-5 flex items-baseline gap-3 lg:mb-8">
         <Odometer value={index + 1} />
         <span className="font-mono text-sm text-ink-3">/ 05</span>
       </div>
 
       <div className="relative">
         {/* the clay progress line, filling top → down with scroll */}
-        <span aria-hidden className="absolute bottom-3 left-[15px] top-3 w-px bg-line-2">
+        <span aria-hidden className="absolute bottom-3 left-[19px] top-3 w-px bg-line-2">
           <motion.span
             className="absolute inset-0 origin-top bg-signal"
             style={{ scaleY: fill }}
@@ -336,7 +372,7 @@ function Spine({
           />
         </span>
 
-        <ol className="space-y-1.5">
+        <ol className="space-y-1 lg:space-y-1.5">
           {CARDS.map((c, i) => {
             const active = i === index;
             const passed = i < index;
@@ -346,7 +382,7 @@ function Spine({
                   type="button"
                   onClick={() => goTo(i)}
                   aria-current={active ? "step" : undefined}
-                  className="group relative flex w-full items-center gap-4 rounded-2xl py-2.5 pl-1 pr-3 text-left"
+                  className="group relative flex min-h-[44px] w-full items-center gap-4 rounded-2xl py-2 pl-1 pr-3 text-left lg:py-2.5"
                 >
                   <span
                     className={`relative z-10 grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full border font-mono text-[11px] tabular-nums transition-colors duration-500 ${
@@ -422,8 +458,10 @@ function Stage({
   const demoY = useTransform(local, [0, 1], [8, -8]);
 
   return (
-    /* min-height reserved so the frame never reflows on swap */
-    <div className="flex min-h-[540px] flex-col justify-center">
+    /* min-height reserved so the frame never reflows on swap; capped against
+       the in-pin heading + site header so short laptops never clip the
+       stage — every transcript word stays on screen for its whole dwell */
+    <div className="flex min-h-[clamp(360px,calc(100vh-330px),500px)] flex-col justify-center">
       <StageSwitch index={index}>
         <div className="flex items-center justify-between">
           <span className="kicker text-signal">{card.flow}</span>
@@ -431,19 +469,19 @@ function Stage({
             {card.icon}
           </span>
         </div>
-        <h3 className="mt-3 text-[clamp(1.5rem,2.4vw,2.1rem)] font-medium tracking-tight text-ink-display">
+        <h3 className="mt-2.5 text-[clamp(1.5rem,2.4vw,2.1rem)] font-medium tracking-tight text-ink-display">
           {card.title}
         </h3>
-        <p className="mt-2.5 max-w-[46ch] text-[15.5px] leading-relaxed text-ink-3">
+        <p className="mt-2 max-w-[46ch] text-[15.5px] leading-relaxed text-ink-3">
           {card.body}
         </p>
         <motion.div
-          className="mt-6 will-change-transform"
+          className="mt-4 will-change-transform lg:mt-5"
           style={{ scale: demoScale, y: demoY }}
         >
           {card.visual(false)}
         </motion.div>
-        <Tokens tokens={card.tokens} className="mt-6" />
+        <Tokens tokens={card.tokens} className="mt-4 lg:mt-5" />
       </StageSwitch>
     </div>
   );

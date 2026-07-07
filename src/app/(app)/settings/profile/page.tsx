@@ -29,7 +29,7 @@ export default function ProfileSettingsPage() {
     };
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+    <div className="mx-auto flex max-w-2xl flex-col gap-6 motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
       <div>
         <p className="kicker mb-2">Settings</p>
         <h1 className="text-[28px] font-medium tracking-tight text-ink-display">Profile</h1>
@@ -40,11 +40,11 @@ export default function ProfileSettingsPage() {
       <Card>
         <div className="mb-5 flex items-center gap-4">
           <Avatar name={name} size="lg" />
-          <div>
-            <p className="text-[15px] font-medium text-ink">{name}</p>
-            <p className="text-[13px] text-ink-3">{email}</p>
+          <div className="min-w-0">
+            <p className="truncate text-[15px] font-medium text-ink">{name}</p>
+            <p className="truncate text-[13px] text-ink-3">{email}</p>
           </div>
-          <Badge tone="default" className="ml-auto capitalize">
+          <Badge tone="default" className="ml-auto shrink-0 capitalize">
             {user.role}
           </Badge>
         </div>

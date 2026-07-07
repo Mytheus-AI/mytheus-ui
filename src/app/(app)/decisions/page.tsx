@@ -25,7 +25,7 @@ export default function DecisionsPage() {
   );
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-4xl motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
       <p className="kicker text-signal">Decisions</p>
       <h1 className="display mt-2 text-[clamp(1.8rem,4vw,2.4rem)]">
         Everything the org decided.
@@ -52,7 +52,7 @@ export default function DecisionsPage() {
                     {d.summary}
                   </p>
                 </div>
-                <Badge tone={d.priority} className="capitalize">
+                <Badge tone={d.priority} className="shrink-0 capitalize">
                   {d.priority}
                 </Badge>
               </div>

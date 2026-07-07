@@ -30,7 +30,7 @@ export default function IntegrationsSettingsPage() {
   };
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+    <div className="mx-auto flex max-w-2xl flex-col gap-6 motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
       <div>
         <p className="kicker mb-2">Settings</p>
         <h1 className="text-[28px] font-medium tracking-tight text-ink-display">
@@ -46,11 +46,11 @@ export default function IntegrationsSettingsPage() {
           const isTracker = integration.key === "jira" || integration.key === "linear";
           return (
             <Card key={integration.key}>
-              <div className="flex items-start gap-4">
+              <div className="flex flex-wrap items-start gap-4">
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-signal-soft font-mono text-[13px] font-bold text-signal-deep">
                   {integration.name.slice(0, 2).toUpperCase()}
                 </span>
-                <div className="min-w-0 flex-1">
+                <div className="min-w-[10rem] flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-[15px] font-medium text-ink">{integration.name}</p>
                     {isOn ? (
@@ -72,6 +72,7 @@ export default function IntegrationsSettingsPage() {
                 <Button
                   variant={isOn ? "outline" : "primary"}
                   size="sm"
+                  className="shrink-0"
                   onClick={() => toggle(integration.key)}
                 >
                   {isOn ? "Disconnect" : "Connect"}

@@ -1,14 +1,19 @@
 "use client";
 
+import { motion, useReducedMotion } from "framer-motion";
 import { PillCTA } from "./ui";
-import { WordReveal, Magnetic, ScrollScale } from "./motion";
+import { WordReveal, MaskReveal, Magnetic, ScrollScale } from "./motion";
 import { FlowField } from "./FlowField";
 
-/* Closing CTA — a big rounded stage echoing the hero: a living gradient mesh,
-   a flowing line of "memory" with a pulse travelling across it, one large
-   statement that develops word by word, and the split-pill CTA. */
+/* Closing CTA — one orchestrated moment: the scroll camera pushes into a
+   living stage (gradient mesh + the flowing memory line), a breathing clay
+   glow swells behind the statement, the statement develops word by word,
+   then the supporting line and the magnetic CTA rise in on its heels.
+   Reduced motion: static glow, instant text, no sweep. */
 
 export function FinalCTA() {
+  const reduce = useReducedMotion();
+
   return (
     <section className="px-3 pb-3 sm:px-5">
       {/* the scroll camera pushes into the closing stage */}
@@ -16,17 +21,50 @@ export function FinalCTA() {
       <div className="mesh-field mesh-anim grain relative isolate overflow-hidden rounded-[28px] border border-line">
         {/* flowing "memory" line + travelling pulse, behind the statement */}
         <FlowField className="absolute inset-0 z-0 opacity-60" />
-        <div className="relative z-10 mx-auto flex max-w-[1340px] flex-col items-center gap-12 px-6 py-28 text-center sm:px-10 sm:py-36">
+
+        {/* ambient clay glow, breathing slowly behind the words */}
+        <motion.div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[min(70vw,30rem)] w-[min(96vw,54rem)] -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            background:
+              "radial-gradient(closest-side, var(--signal-glow), transparent 72%)",
+            opacity: 0.26,
+            filter: "blur(32px)",
+          }}
+          animate={reduce ? undefined : { opacity: [0.18, 0.34, 0.18], scale: [1, 1.07, 1] }}
+          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+        />
+
+        <div className="relative z-10 mx-auto flex max-w-[1340px] flex-col items-center px-5 py-24 text-center sm:px-10 sm:py-32 md:py-36">
           <WordReveal
             as="h2"
             text="Unlimited meeting"
             accent="memory."
             accentClass="text-gradient-signal"
-            className="display display-tight mx-auto max-w-[14ch] text-balance text-[clamp(2.6rem,8vw,6.5rem)]"
+            className="display display-tight mx-auto max-w-[14ch] text-balance text-[clamp(2.5rem,8vw,6.5rem)]"
           />
-          <Magnetic strength={0.3}>
-            <PillCTA href="/dashboard">Get started free</PillCTA>
-          </Magnetic>
+
+          <MaskReveal delay={280} y={36}>
+            <p className="mx-auto mt-6 max-w-[38ch] text-balance text-[15px] leading-relaxed text-ink-3 sm:text-[17px]">
+              Your team&apos;s context, carried forward from your very first
+              meeting — and every one after it.
+            </p>
+          </MaskReveal>
+
+          <MaskReveal delay={460} y={44}>
+            <div className="mt-10 sm:mt-12">
+              <Magnetic strength={0.3}>
+                <PillCTA href="/dashboard">Get started free</PillCTA>
+              </Magnetic>
+            </div>
+          </MaskReveal>
+
+          <MaskReveal delay={620} y={24}>
+            <p className="mt-7 font-mono text-[11px] uppercase tracking-[0.2em] text-ink-3">
+              Free to start · No bot joins your call
+            </p>
+          </MaskReveal>
         </div>
       </div>
       </ScrollScale>

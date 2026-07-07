@@ -202,8 +202,13 @@ export function Loader() {
             className="pointer-events-none absolute inset-0 h-full w-full"
           />
 
-          {/* wordmark + counter, lifted above the field */}
-          <div className="relative z-10 flex flex-col items-center">
+          {/* wordmark + counter, lifted above the field. On the wipe it
+              counter-slides a touch, so the curtain reads as two layers. */}
+          <motion.div
+            className="relative z-10 flex flex-col items-center"
+            exit={reduce ? undefined : { x: "-24vw", opacity: 0.4 }}
+            transition={{ duration: 1, ease: EASE }}
+          >
             {/* soft cream halo keeps the type legible over the threads */}
             <div
               aria-hidden
@@ -227,7 +232,7 @@ export function Loader() {
             >
               000
             </span>
-          </div>
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>

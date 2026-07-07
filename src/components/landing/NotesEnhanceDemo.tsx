@@ -6,8 +6,9 @@ import {
   AnimatePresence,
   useInView,
   useReducedMotion,
+  type Variants,
 } from "framer-motion";
-import { Reveal } from "./motion";
+import { Reveal, Tilt, WordReveal } from "./motion";
 import { Eyebrow } from "./ui";
 
 /* ================================================================== */
@@ -55,16 +56,25 @@ export function NotesEnhanceDemo() {
   return (
     <section id="demo" className="px-3 py-24 sm:px-5 sm:py-32">
       <div className="mx-auto max-w-[1340px]">
-        <Reveal className="text-center">
-          <Eyebrow>Show, don&apos;t tell</Eyebrow>
-          <h2 className="display mx-auto mt-4 max-w-[20ch] text-[clamp(2.2rem,5.5vw,4rem)]">
-            Your shorthand, returned as minutes.
-          </h2>
-          <p className="mx-auto mt-5 max-w-[48ch] text-[17px] leading-relaxed text-ink-3">
-            Jot whatever you catch on the call. Your agent turns the mess into
-            clean, structured, shareable notes — headings, owners, next steps.
-          </p>
-        </Reveal>
+        <div className="text-center">
+          <Reveal>
+            <Eyebrow>Show, don&apos;t tell</Eyebrow>
+          </Reveal>
+          <WordReveal
+            as="h2"
+            text="Your shorthand, returned as"
+            accent="minutes."
+            accentClass="italic text-gradient-signal"
+            className="display mx-auto mt-4 max-w-[20ch] text-balance text-[clamp(2rem,5.5vw,4rem)]"
+            delay={80}
+          />
+          <Reveal delay={160}>
+            <p className="mx-auto mt-5 max-w-[48ch] text-[17px] leading-relaxed text-ink-3">
+              Jot whatever you catch on the call. Your agent turns the mess into
+              clean, structured, shareable notes — headings, owners, next steps.
+            </p>
+          </Reveal>
+        </div>
 
         <Reveal delay={120}>
           <div className="mt-16 flex justify-center sm:mt-20">
@@ -161,6 +171,8 @@ export function NotesWidget() {
 
   return (
     <div ref={ref} className="relative w-full max-w-[460px]">
+      {/* the whole composition answers the pointer with a whisper of tilt */}
+      <Tilt max={3} className="relative">
               {/* clay "stacked paper" cards behind */}
               <div
                 aria-hidden
@@ -236,10 +248,15 @@ export function NotesWidget() {
                         transition={{ duration: 0.3 }}
                         className="absolute inset-0 flex items-center justify-center bg-[#fbfbf8]/70 backdrop-blur-[2px]"
                       >
-                        <span className="inline-flex items-center gap-2.5 rounded-full border border-line bg-white px-4 py-2.5 text-[14px] font-medium text-ink-2 shadow-lg">
+                        <motion.span
+                          initial={reduce ? false : { scale: 0.92, y: 6 }}
+                          animate={reduce ? undefined : { scale: 1, y: 0 }}
+                          transition={{ type: "spring", stiffness: 320, damping: 24 }}
+                          className="inline-flex items-center gap-2.5 rounded-full border border-line bg-white px-4 py-2.5 text-[14px] font-medium text-ink-2 shadow-lg"
+                        >
                           <Sparkle spinning={!reduce} />
                           Enhancing notes…
-                        </span>
+                        </motion.span>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -257,7 +274,8 @@ export function NotesWidget() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={reduce ? undefined : { opacity: 0, y: -8 }}
                         whileHover={reduce ? undefined : { y: -2 }}
-                        className="flex w-full items-center justify-center gap-2 rounded-full bg-pill py-3.5 text-[15px] font-medium text-white shadow-[0_18px_40px_-18px_rgba(20,20,10,0.7)]"
+                        whileTap={reduce ? undefined : { scale: 0.98 }}
+                        className="flex w-full items-center justify-center gap-2 rounded-full bg-pill py-3.5 text-[15px] font-medium text-white shadow-[0_18px_40px_-18px_rgba(20,20,10,0.7)] transition-shadow duration-300 hover:shadow-[0_24px_48px_-18px_rgba(20,20,10,0.8)]"
                       >
                         <Sparkle />
                         Generate notes
@@ -279,8 +297,9 @@ export function NotesWidget() {
                 </div>
               </div>
 
-      {/* two-person stacked video PiP */}
-      <PiPCall reduce={reduce} />
+        {/* two-person stacked video PiP */}
+        <PiPCall reduce={reduce} />
+      </Tilt>
     </div>
   );
 }
@@ -329,7 +348,7 @@ function Toggle({
             key={it.key}
             type="button"
             onClick={() => onChoose(it.key)}
-            className={`relative rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
+            className={`relative min-h-[40px] rounded-full px-4 py-2 text-[13px] font-medium transition-colors ${
               on ? "text-white" : "text-ink-3 hover:text-ink-2"
             }`}
           >
@@ -386,9 +405,14 @@ function RawNotes({
 
 /* ---------------- enhanced (after) ---------------- */
 
-const itemV = {
-  hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0 },
+const itemV: Variants = {
+  hidden: { opacity: 0, y: 12, filter: "blur(4px)" },
+  show: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] },
+  },
 };
 
 function EnhancedNotes({ reduce }: { reduce: boolean | null }) {

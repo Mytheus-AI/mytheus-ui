@@ -7,6 +7,7 @@ import {
   useReducedMotion,
   useScroll,
   useMotionValueEvent,
+  type Variants,
 } from "framer-motion";
 import Link from "next/link";
 import { LogoMark } from "@/components/Logo";
@@ -22,14 +23,24 @@ import { FEATURES } from "@/lib/marketing/features";
 
 const EASE = [0.2, 0.7, 0.2, 1] as const;
 
+/* one dropdown/drawer item — a quick fade-rise, driven by the parent stagger */
+const dropItemV: Variants = {
+  hidden: { opacity: 0, y: 6 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: EASE } },
+};
+
 export function SiteHeader() {
   const reduce = useReducedMotion();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
+  const menuPanelRef = useRef<HTMLElement>(null);
 
   const { scrollY } = useScroll();
   useMotionValueEvent(scrollY, "change", (y) => {
     setScrolled(y > window.innerHeight * 0.75);
+    // the drawer shouldn't chase the page — any scroll dismisses it
+    if (menuOpen) setMenuOpen(false);
   });
 
   useEffect(() => {
@@ -37,8 +48,18 @@ export function SiteHeader() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setMenuOpen(false);
     };
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as Node;
+      if (menuPanelRef.current?.contains(t) || menuBtnRef.current?.contains(t))
+        return;
+      setMenuOpen(false);
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("pointerdown", onDown);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("pointerdown", onDown);
+    };
   }, [menuOpen]);
 
   const pillSurface = scrolled
@@ -114,6 +135,7 @@ export function SiteHeader() {
           {/* mobile menu toggle — the centered nav is desktop-only, so below
               md this is the only way into Features/Pricing/Enterprise */}
           <button
+            ref={menuBtnRef}
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
             aria-expanded={menuOpen}
@@ -133,15 +155,41 @@ export function SiteHeader() {
         </div>
       </div>
 
-      {/* mobile menu panel */}
+      {/* mobile menu panel — items cascade in, one beat apart */}
       <AnimatePresence>
         {menuOpen && (
           <motion.nav
+            ref={menuPanelRef}
             aria-label="Product"
-            initial={reduce ? { opacity: 0 } : { opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={reduce ? { opacity: 0 } : { opacity: 0, y: -6 }}
-            transition={{ duration: 0.25, ease: EASE }}
+            initial="hidden"
+            animate="show"
+            exit="exit"
+            variants={
+              reduce
+                ? {
+                    hidden: { opacity: 0 },
+                    show: { opacity: 1 },
+                    exit: { opacity: 0 },
+                  }
+                : {
+                    hidden: { opacity: 0, y: -8 },
+                    show: {
+                      opacity: 1,
+                      y: 0,
+                      transition: {
+                        duration: 0.25,
+                        ease: EASE,
+                        staggerChildren: 0.05,
+                        delayChildren: 0.05,
+                      },
+                    },
+                    exit: {
+                      opacity: 0,
+                      y: -6,
+                      transition: { duration: 0.2, ease: EASE },
+                    },
+                  }
+            }
             className="pointer-events-auto mx-4 md:hidden"
           >
             <div className="overflow-hidden rounded-[20px] border border-line bg-bg/95 p-3 shadow-[0_40px_80px_-32px_rgba(40,30,20,0.4)] backdrop-blur-md">
@@ -150,23 +198,26 @@ export function SiteHeader() {
                 { href: "/pricing", label: "Pricing" },
                 { href: "/enterprise", label: "Enterprise" },
               ].map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMenuOpen(false)}
-                  className="block rounded-xl px-3.5 py-2.5 text-[15px] font-medium text-ink transition-colors duration-200 hover:bg-bg-2"
-                >
-                  {item.label}
-                </Link>
+                <MenuItem key={item.href} reduce={!!reduce}>
+                  <Link
+                    href={item.href}
+                    onClick={() => setMenuOpen(false)}
+                    className="block rounded-xl px-3.5 py-3 text-[15px] font-medium text-ink transition-colors duration-200 hover:bg-bg-2"
+                  >
+                    {item.label}
+                  </Link>
+                </MenuItem>
               ))}
-              <Link
-                href="/dashboard"
-                onClick={() => setMenuOpen(false)}
-                className="mt-1.5 flex items-center justify-between rounded-xl bg-signal px-3.5 py-2.5 text-[14px] font-medium text-white transition-colors duration-200 hover:bg-signal-deep"
-              >
-                Get started free
-                <span aria-hidden>→</span>
-              </Link>
+              <MenuItem reduce={!!reduce}>
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMenuOpen(false)}
+                  className="mt-1.5 flex items-center justify-between rounded-xl bg-signal px-3.5 py-3 text-[14px] font-medium text-white transition-colors duration-200 hover:bg-signal-deep"
+                >
+                  Get started free
+                  <span aria-hidden>→</span>
+                </Link>
+              </MenuItem>
             </div>
           </motion.nav>
         )}
@@ -175,11 +226,39 @@ export function SiteHeader() {
   );
 }
 
+/* a staggered child of the mobile drawer — fades/rises with its parent */
+function MenuItem({
+  children,
+  reduce,
+}: {
+  children: React.ReactNode;
+  reduce: boolean;
+}) {
+  return (
+    <motion.div
+      variants={
+        reduce
+          ? undefined
+          : {
+              hidden: { opacity: 0, y: -6 },
+              show: {
+                opacity: 1,
+                y: 0,
+                transition: { duration: 0.35, ease: EASE },
+              },
+            }
+      }
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <Link
       href={href}
-      className="rounded-pill px-3.5 py-2 text-[14px] font-medium text-ink-2 transition-colors duration-300 hover:text-ink"
+      className="rounded-pill px-3.5 py-2 text-[14px] font-medium text-ink-2 transition-colors duration-300 hover:bg-bg-2/70 hover:text-ink"
     >
       {children}
     </Link>
@@ -220,7 +299,7 @@ function FeaturesMenu({ reduce }: { reduce: boolean }) {
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 rounded-pill px-3.5 py-2 text-[14px] font-medium text-ink-2 transition-colors duration-300 hover:text-ink"
+        className="flex items-center gap-1.5 rounded-pill px-3.5 py-2 text-[14px] font-medium text-ink-2 transition-colors duration-300 hover:bg-bg-2/70 hover:text-ink"
       >
         Features
         <svg
@@ -236,38 +315,68 @@ function FeaturesMenu({ reduce }: { reduce: boolean }) {
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={reduce ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.98 }}
-            transition={{ duration: 0.25, ease: EASE }}
-            className="absolute left-1/2 top-full z-50 w-[560px] -translate-x-1/2 pt-3"
+            initial="hidden"
+            animate="show"
+            exit="exit"
+            variants={
+              reduce
+                ? {
+                    hidden: { opacity: 0 },
+                    show: { opacity: 1 },
+                    exit: { opacity: 0 },
+                  }
+                : {
+                    hidden: { opacity: 0, y: 8, scale: 0.98 },
+                    show: {
+                      opacity: 1,
+                      y: 0,
+                      scale: 1,
+                      transition: {
+                        duration: 0.25,
+                        ease: EASE,
+                        staggerChildren: 0.018,
+                        delayChildren: 0.04,
+                      },
+                    },
+                    exit: {
+                      opacity: 0,
+                      y: 6,
+                      scale: 0.98,
+                      transition: { duration: 0.2, ease: EASE },
+                    },
+                  }
+            }
+            className="absolute left-1/2 top-full z-50 w-[min(560px,calc(100vw-2rem))] -translate-x-1/2 pt-3"
           >
             <div className="overflow-hidden rounded-[20px] border border-line bg-bg/95 p-3 shadow-[0_40px_80px_-32px_rgba(40,30,20,0.4)] backdrop-blur-md">
               <div className="grid grid-cols-2 gap-0.5">
                 {FEATURES.map((f) => (
-                  <Link
-                    key={f.slug}
-                    href={`/features/${f.slug}`}
-                    onClick={() => setOpen(false)}
-                    className="rounded-xl px-3.5 py-2.5 transition-colors duration-200 hover:bg-bg-2"
-                  >
-                    <span className="block text-[13.5px] font-medium tracking-tight text-ink">
-                      {f.nav}
-                    </span>
-                    <span className="mt-0.5 block truncate text-[11.5px] text-ink-3">
-                      {f.blurb}
-                    </span>
-                  </Link>
+                  <motion.div key={f.slug} variants={reduce ? undefined : dropItemV}>
+                    <Link
+                      href={`/features/${f.slug}`}
+                      onClick={() => setOpen(false)}
+                      className="block rounded-xl px-3.5 py-2.5 transition-colors duration-200 hover:bg-bg-2"
+                    >
+                      <span className="block text-[13.5px] font-medium tracking-tight text-ink">
+                        {f.nav}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[11.5px] text-ink-3">
+                        {f.blurb}
+                      </span>
+                    </Link>
+                  </motion.div>
                 ))}
               </div>
-              <Link
-                href="/features"
-                onClick={() => setOpen(false)}
-                className="mt-1.5 flex items-center justify-between rounded-xl bg-bg-2/70 px-3.5 py-2.5 text-[13px] font-medium text-signal-deep transition-colors duration-200 hover:bg-signal-soft"
-              >
-                All features
-                <span aria-hidden>→</span>
-              </Link>
+              <motion.div variants={reduce ? undefined : dropItemV}>
+                <Link
+                  href="/features"
+                  onClick={() => setOpen(false)}
+                  className="mt-1.5 flex items-center justify-between rounded-xl bg-bg-2/70 px-3.5 py-2.5 text-[13px] font-medium text-signal-deep transition-colors duration-200 hover:bg-signal-soft"
+                >
+                  All features
+                  <span aria-hidden>→</span>
+                </Link>
+              </motion.div>
             </div>
           </motion.div>
         )}

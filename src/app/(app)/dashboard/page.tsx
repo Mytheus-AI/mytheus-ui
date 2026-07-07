@@ -106,13 +106,15 @@ function StatTile({
   href: string;
 }) {
   return (
-    <Link href={href} className="block">
-      <Card className="card-interactive h-full py-4">
-        <p className="kicker text-[9.5px]">{label}</p>
-        <p className="mt-1.5 font-mono text-[28px] leading-none tabular-nums text-ink-display">
+    <Link href={href} className="block min-w-0 rounded-card">
+      <Card className="h-full px-4 py-4 transition-[border-color,box-shadow] duration-150 hover:border-line-2 hover:shadow-[0_12px_32px_-24px_rgba(40,30,20,0.4)] sm:px-5">
+        <p className="kicker truncate text-[9.5px]">{label}</p>
+        <p className="mt-1.5 font-mono text-[24px] leading-none tabular-nums text-ink-display sm:text-[28px]">
           {value}
         </p>
-        <p className="mt-1.5 text-[12px] text-ink-3">{hint}</p>
+        <p className="mt-1.5 truncate text-[12px] text-ink-3" title={hint}>
+          {hint}
+        </p>
       </Card>
     </Link>
   );
@@ -144,7 +146,7 @@ export default function DashboardPage() {
   const nextDue = openActions[0];
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-10">
+    <div className="mx-auto flex max-w-6xl flex-col gap-10 motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
       {/* Welcome */}
       <div>
         <p className="kicker text-signal">DASHBOARD</p>
@@ -157,7 +159,7 @@ export default function DashboardPage() {
       </div>
 
       {/* The day at a glance */}
-      <section aria-label="At a glance" className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <section aria-label="At a glance" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatTile
           label="Live now"
           value={liveMeetings.length}
@@ -194,12 +196,12 @@ export default function DashboardPage() {
             {liveMeetings.map((meeting) => (
               <Card
                 key={meeting.id}
-                className="glow-pulse border-signal/40 bg-signal-soft"
+                className="border-signal/40 bg-signal-soft"
               >
                 <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <Badge tone="danger">Live</Badge>
-                    <div>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Badge tone="danger" className="shrink-0">Live</Badge>
+                    <div className="min-w-0">
                       <p className="text-[16px] font-medium text-ink">{meeting.title}</p>
                       <p className="mt-0.5 text-[13px] text-ink-3">
                         Started {formatMeetingTime(meeting.startTime)} ·{" "}
@@ -207,7 +209,7 @@ export default function DashboardPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex shrink-0 items-center gap-4">
                     <AvatarStack names={meeting.participants} />
                     <LinkButton href={`/meetings/${meeting.id}/room`} size="sm">
                       Join room
@@ -290,7 +292,7 @@ export default function DashboardPage() {
         {upcomingMeetings.length > 0 ? (
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             {upcomingMeetings.map((meeting) => (
-              <Card key={meeting.id} className="card-interactive">
+              <Card key={meeting.id}>
                 <p className="text-[15px] font-medium text-ink">{meeting.title}</p>
                 <p className="mt-1 text-[13px] text-ink-3">
                   {formatMeetingTime(meeting.startTime)} ·{" "}
@@ -326,9 +328,11 @@ export default function DashboardPage() {
             <div className="mt-4 flex flex-col gap-4">
               {recentDecisions.map((decision) => (
                 <Card key={decision.id} priorityStrip={decision.priority}>
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="text-[15px] font-medium text-ink">{decision.title}</p>
-                    <Badge tone={decision.priority}>{priorityLabel(decision.priority)}</Badge>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <p className="min-w-0 text-[15px] font-medium text-ink">{decision.title}</p>
+                    <Badge tone={decision.priority} className="shrink-0 whitespace-nowrap">
+                      {priorityLabel(decision.priority)}
+                    </Badge>
                   </div>
                   <p className="mt-1 line-clamp-2 text-[13px] text-ink-3">
                     {decision.summary}
@@ -359,16 +363,18 @@ export default function DashboardPage() {
             <div className="mt-4 flex flex-col gap-4">
               {openActions.map((action) => (
                 <Card key={action.id} priorityStrip={action.priority}>
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="text-[15px] font-medium text-ink">{action.title}</p>
-                    <Badge tone={action.priority}>{priorityLabel(action.priority)}</Badge>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <p className="min-w-0 text-[15px] font-medium text-ink">{action.title}</p>
+                    <Badge tone={action.priority} className="shrink-0 whitespace-nowrap">
+                      {priorityLabel(action.priority)}
+                    </Badge>
                   </div>
-                  <div className="mt-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
                       <Avatar name={action.assignee} size="sm" />
-                      <span className="text-[13px] text-ink-2">{action.assignee}</span>
+                      <span className="truncate text-[13px] text-ink-2">{action.assignee}</span>
                     </div>
-                    <span className="text-[13px] text-ink-3">
+                    <span className="whitespace-nowrap text-[13px] text-ink-3">
                       Due {formatDueDate(action.dueDate)}
                     </span>
                   </div>

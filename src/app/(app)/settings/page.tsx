@@ -31,7 +31,8 @@ function Toggle({
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-pill transition-colors duration-200 ${
+      /* the ::before pseudo pads the hit area out to ~40px without growing the visual */
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-pill transition-colors duration-200 before:absolute before:-inset-2 before:content-[''] ${
         checked ? "bg-signal" : "bg-bg-3"
       }`}
     >
@@ -55,7 +56,7 @@ export default function SettingsPage() {
   const [weeklyDigest, setWeeklyDigest] = useState(false);
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-8">
+    <div className="mx-auto flex max-w-2xl flex-col gap-8 motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
       <div>
         <p className="kicker mb-2">Settings</p>
         <h1 className="text-[28px] font-medium tracking-tight text-ink-display">
@@ -86,7 +87,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="mt-5 flex items-center gap-4">
+        <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
           <Button variant="primary" onClick={() => setOrgSaved(true)}>
             Save changes
           </Button>
@@ -102,7 +103,7 @@ export default function SettingsPage() {
         <p className="kicker mb-4">Notifications</p>
 
         <div className="flex flex-col divide-y divide-line">
-          <div className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+          <div className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
             <span className="text-[14px] text-ink">Email me meeting summaries</span>
             <Toggle
               label="Email me meeting summaries"
@@ -110,7 +111,7 @@ export default function SettingsPage() {
               onChange={setEmailSummaries}
             />
           </div>
-          <div className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+          <div className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
             <span className="text-[14px] text-ink">Notify me of new action items</span>
             <Toggle
               label="Notify me of new action items"
@@ -118,7 +119,7 @@ export default function SettingsPage() {
               onChange={setNewActionItems}
             />
           </div>
-          <div className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+          <div className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
             <span className="text-[14px] text-ink">Weekly digest</span>
             <Toggle
               label="Weekly digest"

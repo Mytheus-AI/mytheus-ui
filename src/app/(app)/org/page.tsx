@@ -15,7 +15,7 @@ export default function OrgPage() {
     .reduce((n, t) => n + t.members.length, 0);
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-5xl motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
       <p className="kicker text-signal">Organization</p>
       <h1 className="display mt-2 text-[clamp(1.8rem,4vw,2.4rem)]">
         {mockOrgContext.org.name}
@@ -50,7 +50,11 @@ export default function OrgPage() {
                           </p>
                           <p className="truncate text-[12px] text-ink-3">{m.role}</p>
                         </div>
-                        {m.lead && <Badge tone="default">Lead</Badge>}
+                        {m.lead && (
+                          <Badge tone="default" className="shrink-0">
+                            Lead
+                          </Badge>
+                        )}
                       </li>
                     ))}
                   </ul>

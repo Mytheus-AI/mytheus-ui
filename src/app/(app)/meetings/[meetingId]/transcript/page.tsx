@@ -26,9 +26,11 @@ export default function TranscriptPage({
   const chunks = mockTranscriptChunks.filter((c) => c.meetingId === meeting.id);
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-4xl motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
       <p className="kicker text-signal">Transcript</p>
-      <h1 className="display mt-2 text-[clamp(1.8rem,4vw,2.4rem)]">{meeting.title}</h1>
+      <h1 className="display mt-2 break-words text-[clamp(1.8rem,4vw,2.4rem)]">
+        {meeting.title}
+      </h1>
       <p className="mt-2 text-[14px] text-ink-3">
         The final transcript is the durable record — interim captions are never
         stored.

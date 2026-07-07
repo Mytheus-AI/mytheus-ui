@@ -7,15 +7,16 @@ import {
   useInView,
   useReducedMotion,
 } from "framer-motion";
-import { Reveal } from "./motion";
+import { Reveal, WordReveal } from "./motion";
 import { Eyebrow } from "./ui";
 
 /* ================================================================== */
 /*  LiveCapture — "in the room". A fast, self-contained live panel: the  */
-/*  meeting transcript streams in on the left and your agent's structured */
-/*  captures pop out on the right, in sync, one moment at a time. It      */
-/*  auto-plays when scrolled into view (no scroll-jacking), holds the     */
-/*  finished session, then quietly loops. Fixed size — nothing reflows.   */
+/*  meeting transcript streams in on the left and your agent's           */
+/*  structured captures pop out on the right, in sync, one moment at a   */
+/*  time. It auto-plays when scrolled into view (no scroll-jacking),     */
+/*  holds the finished session, then quietly loops. The two columns      */
+/*  reserve their full height up front so the panel never reflows.       */
 /* ================================================================== */
 
 type Kind = "note" | "decision" | "action" | "conflict" | "context";
@@ -116,7 +117,6 @@ export function LiveCapture() {
     return () => window.clearTimeout(id);
   }, [step, inView, reduce]);
 
-  const revealed = MOMENTS.slice(0, step);
   const activeKind = step > 0 ? MOMENTS[step - 1].kind : null;
 
   return (
@@ -124,9 +124,13 @@ export function LiveCapture() {
       <div ref={ref} className="mx-auto max-w-[1100px] px-5 sm:px-7">
         <Reveal className="text-center">
           <Eyebrow>In the room</Eyebrow>
-          <h2 className="display mx-auto mt-4 max-w-[18ch] text-[clamp(2rem,5vw,3.6rem)]">
-            Intelligence, as it&apos;s said.
-          </h2>
+          <WordReveal
+            as="h2"
+            text="Intelligence,"
+            accent="as it's said."
+            accentClass="text-gradient-signal"
+            className="display mx-auto mt-4 max-w-[18ch] text-[clamp(2rem,5vw,3.6rem)]"
+          />
           <p className="mx-auto mt-4 max-w-[48ch] text-[17px] leading-relaxed text-ink-3">
             Your agent turns the live conversation into structured, confirmable
             memory — in real time, one moment at a time.
@@ -134,7 +138,7 @@ export function LiveCapture() {
         </Reveal>
 
         <Reveal delay={120} className="mt-12">
-          <div className="mesh-field mesh-anim grain relative overflow-hidden rounded-[28px] border border-line p-4 pt-3 sm:p-6 sm:pt-4">
+          <div className="mesh-field mesh-anim grain relative overflow-hidden rounded-[28px] border border-line p-3 pt-2.5 sm:p-5 sm:pt-3.5">
             {/* panel header — reads as a live, running session */}
             <div className="relative flex items-center justify-between gap-3 px-1.5 pb-2.5">
               <span className="inline-flex items-center gap-2 rounded-full border border-line bg-white/70 px-3 py-1.5 text-[13px] font-medium text-ink-2 backdrop-blur-sm">
@@ -142,7 +146,12 @@ export function LiveCapture() {
                   <span className="glow-pulse absolute inline-flex h-full w-full rounded-full bg-signal opacity-60" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-signal" />
                 </span>
-                Live · Q3 Launch Sync
+                <span className="whitespace-nowrap">
+                  Live
+                  <span className="hidden min-[420px]:inline">
+                    {" · Q3 Launch Sync"}
+                  </span>
+                </span>
                 <span className="ml-0.5 flex items-end gap-[2px]" aria-hidden>
                   {EQ_BARS.map((b) => (
                     <motion.span
@@ -150,7 +159,9 @@ export function LiveCapture() {
                       className="w-[2px] rounded-full bg-signal"
                       style={{ height: 11, transformOrigin: "bottom" }}
                       animate={
-                        reduce ? { scaleY: 0.45 } : { scaleY: [0.3, 1, 0.5, 0.85, 0.3] }
+                        reduce
+                          ? { scaleY: 0.45 }
+                          : { scaleY: [0.3, 1, 0.5, 0.85, 0.3] }
                       }
                       transition={
                         reduce
@@ -166,7 +177,7 @@ export function LiveCapture() {
                   ))}
                 </span>
               </span>
-              <span className="hidden items-center gap-1.5 text-[12px] font-medium text-ink-3 sm:inline-flex">
+              <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-[12px] font-medium text-ink-3">
                 <motion.span
                   key={`c-${step}`}
                   initial={reduce ? false : { scale: 1.3, color: "var(--signal)" }}
@@ -180,62 +191,89 @@ export function LiveCapture() {
               </span>
             </div>
 
-            {/* the split: transcript streams in -> captures pop out.
-                items-stretch keeps both bordered boxes the same height so the
-                panel stays balanced even though the transcript is more compact
-                than the stacked capture cards. */}
+            {/* the split: transcript streams in -> captures pop out. Every
+                moment has a pre-laid slot (ghost placeholder until it
+                arrives), so the panel is the same size at step 0 and step 5
+                — nothing grows, nothing reflows, at any breakpoint. */}
             <div className="relative grid items-stretch gap-3 lg:grid-cols-[1.05fr_auto_0.95fr] lg:gap-0">
-              {/* LEFT — live transcript, grows top-down as lines arrive */}
+              {/* LEFT — live transcript, lines land in their slots */}
               <div className="rounded-card border border-line bg-white/55 p-4 backdrop-blur-sm sm:p-5">
                 <p className="kicker mb-3 text-ink-3">Transcript</p>
-                <motion.div
-                  layout={!reduce}
-                  className="flex flex-col gap-2"
-                >
-                  <AnimatePresence initial={false}>
-                    {revealed.map((mm, idx) => {
-                      const active = idx === step - 1;
-                      return (
-                        <motion.div
-                          key={mm.said}
-                          layout={!reduce}
-                          initial={reduce ? false : { opacity: 0, x: -14, height: 0 }}
-                          animate={{ opacity: active ? 1 : 0.55, x: 0, height: "auto" }}
-                          exit={reduce ? undefined : { opacity: 0, x: -14, height: 0 }}
-                          transition={{ duration: 0.45, ease: EASE }}
-                          className="flex items-start gap-2.5"
-                        >
-                          <span
-                            className={`mt-0.5 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full text-[11px] font-medium ${
-                              mm.agent
-                                ? "border border-dashed border-signal bg-signal-soft text-signal-deep"
-                                : "bg-white text-ink-2 ring-1 ring-line"
-                            }`}
-                          >
-                            {mm.initial}
-                          </span>
-                          <div className="min-w-0">
-                            <span className="flex items-center gap-1.5 text-[11px] font-medium text-ink-3">
-                              {mm.who}
-                              {mm.agent && (
-                                <span className="rounded-full bg-signal-soft px-1.5 py-px text-[9px] uppercase tracking-wide text-signal-deep">
-                                  agent
+                <div className="flex flex-col gap-2.5">
+                  {MOMENTS.map((mm, idx) => {
+                    const revealed = idx < step;
+                    const active = idx === step - 1;
+                    return (
+                      // slot heights reserve the worst-case wrapped line count
+                      // per breakpoint tier, so a landing line never grows the
+                      // panel (3 lines <360px, 2 lines to sm and again around
+                      // lg where the column narrows, 1 line elsewhere)
+                      <div
+                        key={mm.said}
+                        className="min-h-[76px] min-[360px]:min-h-[58px] sm:min-h-[42px] lg:min-h-[58px] xl:min-h-[42px]"
+                      >
+                        <AnimatePresence initial={false} mode="wait">
+                          {revealed ? (
+                            <motion.div
+                              key="line"
+                              initial={reduce ? false : { opacity: 0, x: -14 }}
+                              animate={{ opacity: active ? 1 : 0.55, x: 0 }}
+                              transition={{ duration: 0.45, ease: EASE }}
+                              className="flex items-start gap-2.5"
+                            >
+                              <span
+                                className={`mt-0.5 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full text-[11px] font-medium ${
+                                  mm.agent
+                                    ? "border border-dashed border-signal bg-signal-soft text-signal-deep"
+                                    : "bg-white text-ink-2 ring-1 ring-line"
+                                }`}
+                              >
+                                {mm.initial}
+                              </span>
+                              <div className="min-w-0">
+                                <span className="flex items-center gap-1.5 text-[11px] font-medium text-ink-3">
+                                  {mm.who}
+                                  {mm.agent && (
+                                    <span className="rounded-full bg-signal-soft px-1.5 py-px text-[9px] uppercase tracking-wide text-signal-deep">
+                                      agent
+                                    </span>
+                                  )}
                                 </span>
-                              )}
-                            </span>
-                            <p className="text-[14px] leading-snug text-ink-2">
-                              {mm.said}
-                            </p>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </AnimatePresence>
-                </motion.div>
+                                <p className="text-[14px] leading-snug text-ink-2">
+                                  {mm.said}
+                                </p>
+                              </div>
+                            </motion.div>
+                          ) : (
+                            <motion.div
+                              key="ghost"
+                              exit={reduce ? undefined : { opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="flex items-center gap-2.5 pt-1"
+                              aria-hidden
+                            >
+                              <span className="h-6 w-6 flex-none rounded-full border border-dashed border-line-2" />
+                              <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+                                <span className="h-1.5 w-14 rounded-full bg-line-2/70" />
+                                <span
+                                  className="h-1.5 rounded-full bg-line-2/50"
+                                  style={{ width: `${58 + (idx % 3) * 13}%` }}
+                                />
+                              </span>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* MIDDLE — flow indicator: a dot pings across on each capture */}
-              <div className="relative hidden w-12 lg:block lg:self-stretch" aria-hidden>
+              <div
+                className="relative hidden w-12 lg:block lg:self-stretch"
+                aria-hidden
+              >
                 <div className="absolute left-1/2 top-1/2 h-px w-8 -translate-x-1/2 -translate-y-1/2 bg-line-2" />
                 {!reduce && step > 0 && (
                   <motion.span
@@ -248,60 +286,78 @@ export function LiveCapture() {
                 )}
               </div>
 
-              {/* RIGHT — structured captures, color-coded by kind */}
+              {/* RIGHT — structured captures land in their slots */}
               <div className="rounded-card border border-line bg-white/55 p-4 backdrop-blur-sm sm:p-5">
                 <p className="kicker mb-3 text-signal">Captured</p>
-                <motion.div
-                  layout={!reduce}
-                  className="flex flex-col gap-2"
-                >
-                  <AnimatePresence initial={false}>
-                    {revealed.map((mm, idx) => {
-                      const accent = KIND_ACCENT[mm.kind];
-                      const active = idx === step - 1;
-                      return (
-                        <motion.div
-                          key={mm.captured}
-                          layout={!reduce}
-                          initial={
-                            reduce ? false : { opacity: 0, y: 12, scale: 0.96 }
-                          }
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={
-                            reduce ? undefined : { opacity: 0, y: -8, scale: 0.96 }
-                          }
-                          transition={{
-                            duration: 0.5,
-                            ease: EASE,
-                            delay: reduce ? 0 : 0.28,
-                          }}
-                          className="relative flex items-stretch gap-2.5 rounded-xl border border-line bg-white p-3 shadow-[0_18px_36px_-26px_rgba(40,30,20,0.4)]"
-                        >
-                          <span
-                            className={`w-1 flex-none rounded-full ${accent.bar}`}
-                          />
-                          <div className="min-w-0">
-                            <span className={`kicker ${accent.label}`}>
-                              {KIND_LABEL[mm.kind]}
-                            </span>
-                            <p className="mt-1 text-[14px] font-medium leading-snug text-ink">
-                              {mm.captured}
-                            </p>
-                          </div>
-                          {active && !reduce && (
-                            <motion.span
+                <div className="flex flex-col gap-2.5">
+                  {MOMENTS.map((mm, idx) => {
+                    const revealed = idx < step;
+                    const accent = KIND_ACCENT[mm.kind];
+                    const active = idx === step - 1;
+                    return (
+                      <div
+                        key={mm.captured}
+                        className="min-h-[80px] sm:min-h-[66px] lg:min-h-[84px] xl:min-h-[66px]"
+                      >
+                        <AnimatePresence initial={false} mode="wait">
+                          {revealed ? (
+                            <motion.div
+                              key="card"
+                              initial={
+                                reduce ? false : { opacity: 0, y: 10, scale: 0.97 }
+                              }
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              transition={{
+                                duration: 0.5,
+                                ease: EASE,
+                                delay: reduce ? 0 : 0.28,
+                              }}
+                              className="relative flex h-full items-stretch gap-2.5 rounded-xl border border-line bg-white p-2.5 shadow-[0_18px_36px_-26px_rgba(40,30,20,0.4)] sm:p-3"
+                            >
+                              <span
+                                className={`w-1 flex-none rounded-full ${accent.bar}`}
+                              />
+                              <div className="min-w-0">
+                                <span className={`kicker ${accent.label}`}>
+                                  {KIND_LABEL[mm.kind]}
+                                </span>
+                                <p className="mt-0.5 text-[14px] font-medium leading-snug text-ink">
+                                  {mm.captured}
+                                </p>
+                              </div>
+                              {active && !reduce && (
+                                <motion.span
+                                  aria-hidden
+                                  className="pointer-events-none absolute inset-0 rounded-xl ring-2 ring-signal"
+                                  initial={{ opacity: 0.7 }}
+                                  animate={{ opacity: 0 }}
+                                  transition={{ duration: 0.9, ease: "easeOut" }}
+                                />
+                              )}
+                            </motion.div>
+                          ) : (
+                            <motion.div
+                              key="ghost"
+                              exit={reduce ? undefined : { opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="flex h-full items-stretch gap-2.5 rounded-xl border border-dashed border-line-2 p-2.5 sm:p-3"
                               aria-hidden
-                              className="pointer-events-none absolute inset-0 rounded-xl ring-2 ring-signal"
-                              initial={{ opacity: 0.7 }}
-                              animate={{ opacity: 0 }}
-                              transition={{ duration: 0.9, ease: "easeOut" }}
-                            />
+                            >
+                              <span className="w-1 flex-none rounded-full bg-line-2/60" />
+                              <span className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
+                                <span className="h-1.5 w-16 rounded-full bg-line-2/70" />
+                                <span
+                                  className="h-1.5 rounded-full bg-line-2/50"
+                                  style={{ width: `${52 + ((idx + 1) % 3) * 15}%` }}
+                                />
+                              </span>
+                            </motion.div>
                           )}
-                        </motion.div>
-                      );
-                    })}
-                  </AnimatePresence>
-                </motion.div>
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
@@ -313,9 +369,7 @@ export function LiveCapture() {
                   <span
                     key={k}
                     className={`rounded-full px-2.5 py-1 text-[12px] font-medium transition-colors duration-500 ${
-                      on
-                        ? "bg-signal text-white"
-                        : "border border-line text-ink-3"
+                      on ? "bg-signal text-white" : "border border-line text-ink-3"
                     }`}
                   >
                     {KIND_LABEL[k]}

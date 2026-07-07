@@ -20,6 +20,8 @@ import { Eyebrow, PillCTA } from "./ui";
 /*  touch. Reduced motion: no tour, instant swaps / instant toggle.     */
 /* ================================================================== */
 
+const EASE = [0.16, 1, 0.3, 1] as const;
+
 type QA = { q: string; a: ReactNode };
 
 const FAQS: QA[] = [
@@ -98,7 +100,7 @@ export function FAQ() {
         <Reveal>
           <div className="lg:sticky lg:top-28">
             <Eyebrow>Answers</Eyebrow>
-            <h2 className="display mt-5 max-w-[14ch] text-[clamp(2.2rem,5vw,3.6rem)]">
+            <h2 className="display mt-5 max-w-[14ch] text-[clamp(2.1rem,5vw,3.6rem)]">
               Questions, before you ask them.
             </h2>
             <p className="mt-6 max-w-[42ch] text-[17px] leading-relaxed text-ink-3">
@@ -230,7 +232,7 @@ function FAQSpotlight() {
             initial={reduce ? false : { opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             exit={reduce ? undefined : { opacity: 0, y: -10 }}
-            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.45, ease: EASE }}
           >
             0{active + 1}
           </motion.span>
@@ -245,7 +247,7 @@ function FAQSpotlight() {
             exit={
               reduce ? undefined : { opacity: 0, y: -12, filter: "blur(4px)" }
             }
-            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.4, ease: EASE }}
           >
             <span className="kicker text-signal">Answer 0{active + 1}</span>
             <h3 className="mt-3 max-w-[24ch] text-[1.35rem] font-medium tracking-tight text-ink-display">
@@ -274,66 +276,93 @@ function FAQAccordion() {
       {FAQS.map((item, i) => {
         const isOpen = open === i;
         return (
-                <li key={item.q}>
-                  <button
-                    type="button"
-                    aria-expanded={isOpen}
-                    onClick={() => setOpen(isOpen ? -1 : i)}
-                    onFocus={() => setOpen(i)}
-                    className="group flex w-full items-center gap-4 py-6 text-left"
-                  >
-                    <span
-                      className={`flex-1 text-[clamp(1.05rem,1.6vw,1.3rem)] font-medium tracking-tight transition-colors ${
-                        isOpen ? "text-ink-display" : "text-ink-2 group-hover:text-ink-display"
-                      }`}
-                    >
-                      {item.q}
-                    </span>
-                    {/* plus → × : the row's "there's more here" affordance */}
-                    <motion.span
-                      aria-hidden
-                      animate={{ rotate: isOpen ? 45 : 0 }}
-                      transition={
-                        reduce
-                          ? { duration: 0 }
-                          : { type: "spring", stiffness: 300, damping: 22 }
-                      }
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-colors duration-300 ${
-                        isOpen
-                          ? "border-signal bg-signal text-white"
-                          : "border-line text-ink-3 group-hover:border-line-2 group-hover:text-ink-2"
-                      }`}
-                    >
-                      <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4">
-                        <path
-                          d="M8 3.5v9M3.5 8h9"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </motion.span>
-                  </button>
+          <li key={item.q}>
+            {/* NB: no onFocus toggle here — focus fires on tap *before*
+                click, which would open-then-close the row in one tap */}
+            <button
+              type="button"
+              aria-expanded={isOpen}
+              onClick={() => setOpen(isOpen ? -1 : i)}
+              className="group flex min-h-[56px] w-full items-center gap-4 py-5 text-left"
+            >
+              <span
+                className={`flex-1 text-[clamp(1.05rem,1.6vw,1.3rem)] font-medium tracking-tight transition-colors ${
+                  isOpen
+                    ? "text-ink-display"
+                    : "text-ink-2 group-hover:text-ink-display"
+                }`}
+              >
+                {item.q}
+              </span>
+              {/* plus → × : the row's "there's more here" affordance */}
+              <motion.span
+                aria-hidden
+                animate={{ rotate: isOpen ? 45 : 0 }}
+                transition={
+                  reduce
+                    ? { duration: 0 }
+                    : { type: "spring", stiffness: 300, damping: 22 }
+                }
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-colors duration-300 ${
+                  isOpen
+                    ? "border-signal bg-signal text-white"
+                    : "border-line text-ink-3 group-hover:border-line-2 group-hover:text-ink-2"
+                }`}
+              >
+                <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4">
+                  <path
+                    d="M8 3.5v9M3.5 8h9"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </motion.span>
+            </button>
 
-                  <AnimatePresence initial={false}>
-                    {isOpen && (
-                      <motion.div
-                        key="body"
-                        initial={reduce ? false : { height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={reduce ? undefined : { height: 0, opacity: 0 }}
-                        transition={{
-                          height: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
-                          opacity: { duration: 0.3, delay: isOpen ? 0.1 : 0 },
-                        }}
-                        className="overflow-hidden"
-                      >
-                        <p className="max-w-[58ch] pb-7 pr-12 text-[16px] leading-relaxed text-ink-3 [&_em]:font-medium [&_em]:not-italic [&_em]:text-signal-deep">
-                          {item.a}
-                        </p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+            <AnimatePresence initial={false}>
+              {isOpen && (
+                <motion.div
+                  key="body"
+                  initial={reduce ? false : { height: 0, opacity: 0 }}
+                  animate={{
+                    height: "auto",
+                    opacity: 1,
+                    transition: {
+                      height: { duration: 0.45, ease: EASE },
+                      opacity: { duration: 0.35, ease: "easeOut", delay: 0.08 },
+                    },
+                  }}
+                  exit={
+                    reduce
+                      ? undefined
+                      : {
+                          height: 0,
+                          opacity: 0,
+                          transition: {
+                            /* fade first, then collapse — no text squash */
+                            height: { duration: 0.34, ease: EASE, delay: 0.04 },
+                            opacity: { duration: 0.18, ease: "easeIn" },
+                          },
+                        }
+                  }
+                  className="overflow-hidden"
+                >
+                  <motion.p
+                    initial={reduce ? false : { y: 10 }}
+                    animate={{ y: 0, transition: { duration: 0.45, ease: EASE } }}
+                    exit={
+                      reduce
+                        ? undefined
+                        : { y: 6, transition: { duration: 0.25, ease: EASE } }
+                    }
+                    className="max-w-[58ch] pb-7 pr-10 text-[16px] leading-relaxed text-ink-3 [&_em]:font-medium [&_em]:not-italic [&_em]:text-signal-deep"
+                  >
+                    {item.a}
+                  </motion.p>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </li>
         );
       })}

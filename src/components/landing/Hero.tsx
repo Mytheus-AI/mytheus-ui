@@ -60,13 +60,17 @@ function HeroSequence() {
   // the scroll cue fades the instant you begin
   const cueO = useTransform(scrollYProgress, [0, 0.05], [1, 0]);
 
-  // a gentle camera pull-back as you scroll away into the next section
+  // a gentle camera pull-back + lift as you scroll away into the next section
   const stageScale = useTransform(scrollYProgress, [0.9, 1], [1, 0.97]);
+  const stageY = useTransform(scrollYProgress, [0.9, 1], [0, -24]);
 
   return (
     <section ref={ref} className="relative" style={{ height: "260vh" }}>
       <div className="mesh-field mesh-anim grain sticky top-0 h-screen overflow-hidden">
-        <motion.div className="absolute inset-0" style={{ scale: stageScale }}>
+        <motion.div
+          className="absolute inset-0"
+          style={{ scale: stageScale, y: stageY }}
+        >
           {/* ---- page one — gathers, then exits to the left ---- */}
           <div
             className={`absolute inset-0 flex items-center ${
@@ -86,19 +90,26 @@ function HeroSequence() {
           </div>
         </motion.div>
 
-        {/* ---- scroll cue ---- */}
+        {/* ---- scroll cue — waits for the intro to land, then invites ---- */}
         <motion.div
           aria-hidden
           style={{ opacity: cueO }}
-          className="pointer-events-none absolute inset-x-0 bottom-9 z-30 flex flex-col items-center gap-1.5 text-ink-3"
+          className="pointer-events-none absolute inset-x-0 bottom-9 z-30"
         >
-          <span className="kicker text-[10px]">Scroll</span>
-          <motion.span
-            animate={{ y: [0, 6, 0] }}
-            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 1.5 }}
+            className="flex flex-col items-center gap-1.5 text-ink-3"
           >
-            <ChevronDown />
-          </motion.span>
+            <span className="kicker text-[10px]">Scroll</span>
+            <motion.span
+              animate={{ y: [0, 6, 0] }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <ChevronDown />
+            </motion.span>
+          </motion.div>
         </motion.div>
       </div>
     </section>
@@ -169,10 +180,16 @@ const POSES: {
 function SeqPageOne({ progress }: { progress: MotionValue<number> }) {
   const introO = useTransform(progress, [0, 0.26], [1, 0]);
   const introX = useTransform(progress, [0, 0.34], [0, -90]);
+  // the copy softens out of focus as the cards take the stage
+  const introBlur = useTransform(
+    progress,
+    [0.06, 0.3],
+    ["blur(0px)", "blur(7px)"],
+  );
   return (
     <div className="mx-auto grid w-full max-w-[80rem] items-center gap-10 px-6 sm:px-10 lg:grid-cols-[0.95fr_1.05fr]">
       <motion.div
-        style={{ opacity: introO, x: introX }}
+        style={{ opacity: introO, x: introX, filter: introBlur }}
         className="relative z-10 max-w-[36rem]"
       >
         <Intro />
@@ -262,12 +279,14 @@ function SeqPageTwo({
   const bodyY = useTransform(progress, [0.62, 0.8], [22, 0]);
   const visO = useTransform(progress, [0.56, 0.86], [0, 1]);
   const visScale = useTransform(progress, [0.56, 0.86], [0.94, 1]);
+  // the widget rises a beat behind the headline — a soft parallax hand-off
+  const visY = useTransform(progress, [0.56, 0.92], [48, 0]);
   return (
     <div className="mx-auto grid w-full max-w-[80rem] items-center gap-10 px-6 sm:px-10 lg:grid-cols-[0.95fr_1.05fr]">
       <div className="relative z-10 max-w-[38rem]">
         <h2
           aria-label="Your shorthand, returned as minutes."
-          className="display display-tight max-w-[16ch] text-balance text-[clamp(2.6rem,6vw,5.2rem)]"
+          className="display display-tight max-w-[16ch] text-balance text-[clamp(2.2rem,6vw,5.2rem)]"
         >
           <span aria-hidden>
             <ScrollLetters
@@ -298,14 +317,14 @@ function SeqPageTwo({
 
         <motion.div
           style={{ opacity: bodyO, y: bodyY }}
-          className="mt-10 flex items-center gap-6"
+          className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4"
         >
           <Magnetic strength={0.3}>
             <PillCTA href="/dashboard">Get started free</PillCTA>
           </Magnetic>
           <a
             href="#product"
-            className="text-[15px] font-medium text-ink-2 underline-offset-4 transition-colors hover:text-ink hover:underline"
+            className="inline-flex min-h-[44px] items-center text-[15px] font-medium text-ink-2 underline-offset-4 transition-colors hover:text-ink hover:underline"
           >
             See how it works
           </a>
@@ -313,7 +332,7 @@ function SeqPageTwo({
       </div>
 
       <motion.div
-        style={{ opacity: visO, scale: visScale }}
+        style={{ opacity: visO, scale: visScale, y: visY }}
         className="relative hidden justify-self-center lg:block"
       >
         {show && <NotesWidget />}
@@ -417,7 +436,7 @@ function RevealWord({
 
 function HeroStatic() {
   return (
-    <section className="mesh-field mesh-anim grain relative isolate overflow-hidden py-16 lg:py-24">
+    <section className="mesh-field mesh-anim grain relative isolate overflow-hidden pb-16 pt-28 sm:pt-32 lg:pb-24 lg:pt-36">
       <div className="relative z-10 flex flex-col gap-20 lg:gap-28">
         {/* page one */}
         <div className="mx-auto grid w-full max-w-[80rem] items-center gap-10 px-6 sm:px-10 lg:grid-cols-[0.95fr_1.05fr]">
@@ -432,7 +451,7 @@ function HeroStatic() {
         {/* page two */}
         <div className="mx-auto grid w-full max-w-[80rem] items-center gap-10 px-6 sm:px-10 lg:grid-cols-[0.95fr_1.05fr]">
           <div className="relative z-10 max-w-[38rem]">
-            <h2 className="display display-tight max-w-[16ch] text-balance text-[clamp(2.6rem,6vw,5.2rem)]">
+            <h2 className="display display-tight max-w-[16ch] text-balance text-[clamp(2.2rem,6vw,5.2rem)]">
               Your shorthand, returned as{" "}
               <span className="italic text-gradient-signal">minutes.</span>
             </h2>
@@ -441,19 +460,20 @@ function HeroStatic() {
               clean, structured, shareable notes &mdash; headings, owners, next
               steps.
             </p>
-            <div className="mt-10 flex items-center gap-6">
+            <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4">
               <Magnetic strength={0.3}>
                 <PillCTA href="/dashboard">Get started free</PillCTA>
               </Magnetic>
               <a
                 href="#product"
-                className="text-[15px] font-medium text-ink-2 underline-offset-4 transition-colors hover:text-ink hover:underline"
+                className="inline-flex min-h-[44px] items-center text-[15px] font-medium text-ink-2 underline-offset-4 transition-colors hover:text-ink hover:underline"
               >
                 See how it works
               </a>
             </div>
           </div>
-          <div className="relative hidden justify-self-center lg:block">
+          {/* the widget is the payoff — mobile gets it too, not just lg */}
+          <div className="relative mt-4 w-full max-w-[460px] justify-self-center pb-8 lg:mt-0 lg:pb-0">
             <NotesWidget />
           </div>
         </div>
@@ -473,7 +493,7 @@ function Intro() {
       <Reveal delay={40} y={14}>
         <a
           href="/features/context-gaps"
-          className="group/pill sheen inline-flex items-center gap-2.5 rounded-pill border border-signal/25 bg-signal-soft/60 py-1.5 pl-3 pr-4 text-[12.5px] font-medium text-signal-deep transition-[border-color,transform] duration-300 hover:-translate-y-0.5 hover:border-signal/50"
+          className="group/pill sheen inline-flex min-h-[40px] items-center gap-2.5 rounded-pill border border-signal/25 bg-signal-soft/60 py-1.5 pl-3 pr-4 text-[12.5px] font-medium text-signal-deep transition-[border-color,transform] duration-300 hover:-translate-y-0.5 hover:border-signal/50"
         >
           <span className="relative flex h-1.5 w-1.5" aria-hidden>
             <span className="absolute h-full w-full animate-ping rounded-full bg-signal/60" />
@@ -494,7 +514,7 @@ function Intro() {
         text="Every meeting,"
         accent="on repeat."
         accentClass="italic text-gradient-signal"
-        className="display display-tight mt-6 max-w-[15ch] text-balance text-[clamp(2.8rem,6.4vw,5.6rem)]"
+        className="display display-tight mt-6 max-w-[15ch] text-balance text-[clamp(2.4rem,6.4vw,5.6rem)]"
         delay={120}
       />
 
@@ -506,13 +526,13 @@ function Intro() {
       </Reveal>
 
       <Reveal delay={380}>
-        <div className="mt-10 flex flex-wrap items-center gap-6">
+        <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4">
           <Magnetic strength={0.3}>
             <PillCTA href="/dashboard">Get started free</PillCTA>
           </Magnetic>
           <a
             href="#how"
-            className="text-[15px] font-medium text-ink-2 underline-offset-4 transition-colors hover:text-ink hover:underline"
+            className="inline-flex min-h-[44px] items-center text-[15px] font-medium text-ink-2 underline-offset-4 transition-colors hover:text-ink hover:underline"
           >
             See how it works
           </a>

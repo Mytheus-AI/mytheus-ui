@@ -129,7 +129,7 @@ export function SiteFooter() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label={s.label}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-bg/70 transition-[transform,border-color,color] duration-300 hover:-translate-y-0.5 hover:border-signal hover:text-bg"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-bg/70 transition-[transform,border-color,color] duration-300 hover:-translate-y-0.5 hover:border-signal hover:text-bg motion-reduce:hover:translate-y-0"
                 >
                   <svg viewBox="0 0 16 16" className="h-[18px] w-[18px]" fill="currentColor" aria-hidden>
                     <path d={s.path} />
@@ -168,7 +168,7 @@ export function SiteFooter() {
               <>
                 <form
                   onSubmit={onSubmit}
-                  className="mt-5 flex items-center justify-between rounded-pill border border-white/15 bg-white/5 py-1.5 pl-5 pr-1.5 backdrop-blur-sm transition-[transform,box-shadow,border-color,background-color] duration-300 focus-within:-translate-y-0.5 focus-within:border-signal/50 focus-within:bg-white/10 focus-within:shadow-[0_18px_42px_-24px_rgba(217,119,87,0.7)]"
+                  className="mt-5 flex items-center justify-between rounded-pill border border-white/15 bg-white/5 py-1.5 pl-5 pr-1.5 backdrop-blur-sm transition-[transform,box-shadow,border-color,background-color] duration-300 focus-within:-translate-y-0.5 focus-within:border-signal/50 focus-within:bg-white/10 focus-within:shadow-[0_18px_42px_-24px_var(--signal-glow)] motion-reduce:focus-within:translate-y-0"
                 >
                   <input
                     type="email"
@@ -182,7 +182,7 @@ export function SiteFooter() {
                   <button
                     type="submit"
                     disabled={!valid}
-                    className="shrink-0 rounded-pill bg-signal px-4 py-2 text-sm font-medium text-white transition-[transform,background-color,box-shadow,opacity] duration-300 hover:-translate-y-0.5 hover:bg-signal-bright hover:shadow-[0_12px_24px_-12px_rgba(217,119,87,0.9)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:bg-signal disabled:hover:shadow-none"
+                    className="shrink-0 rounded-pill bg-signal px-4 py-2 text-sm font-medium text-white transition-[transform,background-color,box-shadow,opacity] duration-300 hover:-translate-y-0.5 hover:bg-signal-bright hover:shadow-[0_12px_24px_-12px_var(--signal-glow)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:bg-signal disabled:hover:shadow-none motion-reduce:hover:translate-y-0"
                   >
                     Join
                   </button>
@@ -202,12 +202,12 @@ export function SiteFooter() {
               <p className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-bg/40">
                 {col.title}
               </p>
-              <ul className="mt-4 space-y-2.5">
+              <ul className="mt-4 space-y-1.5">
                 {col.links.map((l) => (
                   <li key={l.label}>
                     <Link
                       href={l.href}
-                      className="relative inline-block text-[13.5px] leading-snug text-bg/60 transition-colors hover:text-bg after:absolute after:-bottom-0.5 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-signal after:transition-transform after:duration-300 after:ease-out hover:after:scale-x-100"
+                      className="relative inline-block py-1 text-[13.5px] leading-snug text-bg/60 transition-colors duration-300 hover:text-bg after:absolute after:bottom-0.5 after:left-0 after:h-px after:w-full after:origin-right after:scale-x-0 after:bg-signal after:transition-transform after:duration-300 after:ease-out hover:after:origin-left hover:after:scale-x-100 motion-reduce:after:transition-none"
                     >
                       {l.label}
                     </Link>
@@ -226,12 +226,12 @@ export function SiteFooter() {
           <button
             type="button"
             onClick={toTop}
-            className="group order-1 inline-flex items-center gap-1.5 text-xs font-medium text-bg/60 transition-colors hover:text-bg sm:order-2"
+            className="group order-1 inline-flex min-h-[40px] items-center gap-1.5 text-xs font-medium text-bg/60 transition-colors hover:text-bg sm:order-2"
           >
             Back to top
             <span
               aria-hidden
-              className="transition-transform duration-300 group-hover:-translate-y-0.5"
+              className="transition-transform duration-300 group-hover:-translate-y-0.5 motion-reduce:group-hover:translate-y-0"
             >
               ↑
             </span>
@@ -239,11 +239,13 @@ export function SiteFooter() {
         </div>
       </div>
 
-      {/* the centrepiece — a giant clay-gradient wordmark, bottom-anchored and
-          gently bleeding off the edge */}
-      <Parallax distance={16} className="pointer-events-none relative z-[1] -mb-[1.2vw]">
+      {/* the centrepiece — a giant clay-gradient wordmark, sitting fully on
+          screen at the very bottom edge. The line box must be tall enough for
+          the "y" descender (leading ≥ 1 + a hair of padding) or MaskReveal's
+          overflow mask clips it — never tighten leading below that here */}
+      <Parallax distance={16} className="pointer-events-none relative z-[1]">
         <MaskReveal y={160}>
-          <p className="display text-gradient-signal select-none px-2 text-center text-[clamp(5rem,27vw,24rem)] leading-[0.82] tracking-[-0.045em]">
+          <p className="display text-gradient-signal select-none whitespace-nowrap px-2 pb-[0.04em] text-center text-[clamp(4rem,23.5vw,22rem)] leading-none tracking-[-0.03em]">
             Mytheus
           </p>
         </MaskReveal>

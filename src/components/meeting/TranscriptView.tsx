@@ -72,7 +72,7 @@ export function TranscriptView({ chunks }: { chunks: TranscriptChunk[] }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search the transcript"
-            className="w-full rounded-pill border border-line bg-white py-2.5 pl-10 pr-4 text-[13.5px] text-ink outline-none placeholder:text-ink-3 focus-visible:border-signal"
+            className="min-h-[44px] w-full rounded-pill border border-line bg-surface py-2.5 pl-10 pr-4 text-[13.5px] text-ink placeholder:text-ink-3 focus-visible:border-signal"
           />
         </label>
         <div className="flex flex-wrap items-center gap-3">
