@@ -203,9 +203,98 @@ function SeqPageOne({ progress }: { progress: MotionValue<number> }) {
   );
 }
 
-function ConvergingCluster({ progress }: { progress: MotionValue<number> }) {
+/* the live data wires of the cluster: dashed guides from the capture
+   window out to each satellite, with clay packets streaming along them
+   (and one deep-clay packet flowing back in — context returns). SMIL
+   animateMotion drives the packets, so they cost nothing on the main
+   thread; under reduced motion only the quiet guides render. */
+const WIRES = [
+  { d: "M 300 190 Q 190 120 100 40", dur: 3.2, delay: 0 }, // → agents
+  { d: "M 300 290 Q 190 360 104 400", dur: 3.8, delay: 0.9 }, // → routed
+  { d: "M 400 290 Q 520 340 616 352", dur: 3.4, delay: 1.6 }, // → memory
+];
+
+function FlowWires({ fade }: { fade?: MotionValue<number> }) {
+  const reduce = useReducedMotion();
   return (
-    <div className="relative mx-auto h-[480px] w-[700px] scale-[0.66] xl:scale-90">
+    <motion.svg
+      viewBox="0 0 700 480"
+      className="absolute inset-0 h-full w-full overflow-visible"
+      style={fade ? { opacity: fade } : undefined}
+      aria-hidden
+    >
+      <defs>
+        <filter id="hero-wire-glow" x="-150%" y="-150%" width="400%" height="400%">
+          <feGaussianBlur stdDeviation="5" />
+        </filter>
+      </defs>
+      {WIRES.map((w, i) => (
+        <g key={i}>
+          <path
+            d={w.d}
+            fill="none"
+            stroke="var(--signal)"
+            strokeOpacity={0.32}
+            strokeWidth={1.8}
+            strokeDasharray="3 8"
+            strokeLinecap="round"
+          />
+          {!reduce && (
+            <>
+              <circle r={10} fill="var(--signal)" opacity={0.4} filter="url(#hero-wire-glow)">
+                <animateMotion
+                  dur={`${w.dur}s`}
+                  begin={`${w.delay}s`}
+                  repeatCount="indefinite"
+                  path={w.d}
+                />
+              </circle>
+              <circle r={4} fill="var(--signal)">
+                <animateMotion
+                  dur={`${w.dur}s`}
+                  begin={`${w.delay}s`}
+                  repeatCount="indefinite"
+                  path={w.d}
+                />
+              </circle>
+              <circle r={1.8} fill="white">
+                <animateMotion
+                  dur={`${w.dur}s`}
+                  begin={`${w.delay}s`}
+                  repeatCount="indefinite"
+                  path={w.d}
+                />
+              </circle>
+            </>
+          )}
+        </g>
+      ))}
+      {/* context flowing back IN along the memory wire */}
+      {!reduce && (
+        <circle r={3.2} fill="var(--signal-deep)">
+          <animateMotion
+            dur="4.6s"
+            begin="2.4s"
+            repeatCount="indefinite"
+            path={WIRES[2].d}
+            keyPoints="1;0"
+            keyTimes="0;1"
+            calcMode="linear"
+          />
+        </circle>
+      )}
+    </motion.svg>
+  );
+}
+
+function ConvergingCluster({ progress }: { progress: MotionValue<number> }) {
+  /* the wires detach as the cards gather into the stack */
+  const wireFade = useTransform(progress, [0.1, 0.26], [1, 0]);
+  return (
+    /* zoom (not transform scale) so text re-lays-out at the target size
+       and stays pixel-crisp instead of going soft under a 0.66 scale */
+    <div className="relative mx-auto h-[480px] w-[700px] [zoom:0.66] xl:[zoom:0.9]">
+      <FlowWires fade={wireFade} />
       {POSES.map((pose) => (
         <ConvergeCard key={pose.key} pose={pose} progress={progress} />
       ))}
@@ -249,7 +338,8 @@ function ConvergeCard({
    one now, so the cards no longer animate individually. */
 function StaticCluster() {
   return (
-    <div className="relative mx-auto h-[480px] w-[700px] scale-[0.66] xl:scale-90">
+    <div className="relative mx-auto h-[480px] w-[700px] [zoom:0.66] xl:[zoom:0.9]">
+      <FlowWires />
       {POSES.map((pose) => (
         <div
           key={pose.key}
