@@ -93,6 +93,34 @@ const HOLD_MS = 2600; // dwell on the finished session before looping
 const EQ_BARS = [0, 1, 2, 3];
 const EASE = [0.16, 1, 0.3, 1] as const;
 
+// ONE slot height, shared by all three columns per breakpoint, so every
+// transcript line sits exactly opposite the capture it produced and the
+// connector beam pings on the right row. Sized to the worst-case wrapped
+// line count of each tier.
+const SLOT =
+  "min-h-[80px] min-[360px]:min-h-[68px] sm:min-h-[62px] lg:min-h-[78px] xl:min-h-[60px]";
+
+/* the active line streams in word by word — live captions, as it's said */
+function StreamWords({ text }: { text: string }) {
+  const words = text.split(" ");
+  return (
+    <p className="text-[14px] leading-snug text-ink-2">
+      {words.map((w, i) => (
+        <motion.span
+          key={i}
+          className="inline-block"
+          initial={{ opacity: 0, y: 4, filter: "blur(3px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          transition={{ duration: 0.3, ease: EASE, delay: 0.06 + i * 0.05 }}
+        >
+          {w}
+          {i < words.length - 1 ? "\u00A0" : ""}
+        </motion.span>
+      ))}
+    </p>
+  );
+}
+
 export function LiveCapture() {
   const reduce = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
@@ -191,27 +219,31 @@ export function LiveCapture() {
               </span>
             </div>
 
-            {/* the split: transcript streams in -> captures pop out. Every
-                moment has a pre-laid slot (ghost placeholder until it
-                arrives), so the panel is the same size at step 0 and step 5
-                — nothing grows, nothing reflows, at any breakpoint. */}
-            <div className="relative grid items-stretch gap-3 lg:grid-cols-[1.05fr_auto_0.95fr] lg:gap-0">
+            {/* session progress — fills a notch per capture, drains on loop */}
+            <div className="relative mx-1.5 mb-3 h-[3px] overflow-hidden rounded-full bg-line/60">
+              <motion.div
+                className="h-full rounded-full bg-signal"
+                initial={false}
+                animate={{ width: `${(step / N) * 100}%` }}
+                transition={{ duration: 0.5, ease: EASE }}
+              />
+            </div>
+
+            {/* the split: transcript streams in -> captures pop out. All
+                three columns share the SAME slot heights (SLOT), so every
+                line sits exactly opposite the capture it produced and the
+                beam pings on that row. Pre-laid ghost slots keep the panel
+                pixel-constant from step 0 to step N. */}
+            <div className="relative grid items-stretch gap-3 lg:grid-cols-[1.05fr_44px_0.95fr] lg:gap-0">
               {/* LEFT — live transcript, lines land in their slots */}
               <div className="rounded-card border border-line bg-white/55 p-4 backdrop-blur-sm sm:p-5">
                 <p className="kicker mb-3 text-ink-3">Transcript</p>
-                <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-2">
                   {MOMENTS.map((mm, idx) => {
                     const revealed = idx < step;
                     const active = idx === step - 1;
                     return (
-                      // slot heights reserve the worst-case wrapped line count
-                      // per breakpoint tier, so a landing line never grows the
-                      // panel (3 lines <360px, 2 lines to sm and again around
-                      // lg where the column narrows, 1 line elsewhere)
-                      <div
-                        key={mm.said}
-                        className="min-h-[76px] min-[360px]:min-h-[58px] sm:min-h-[42px] lg:min-h-[58px] xl:min-h-[42px]"
-                      >
+                      <div key={mm.said} className={`${SLOT} flex`}>
                         <AnimatePresence initial={false} mode="wait">
                           {revealed ? (
                             <motion.div
@@ -219,10 +251,10 @@ export function LiveCapture() {
                               initial={reduce ? false : { opacity: 0, x: -14 }}
                               animate={{ opacity: active ? 1 : 0.55, x: 0 }}
                               transition={{ duration: 0.45, ease: EASE }}
-                              className="flex items-start gap-2.5"
+                              className="flex min-w-0 flex-1 items-center gap-2.5"
                             >
                               <span
-                                className={`mt-0.5 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full text-[11px] font-medium ${
+                                className={`inline-flex h-6 w-6 flex-none items-center justify-center rounded-full text-[11px] font-medium ${
                                   mm.agent
                                     ? "border border-dashed border-signal bg-signal-soft text-signal-deep"
                                     : "bg-white text-ink-2 ring-1 ring-line"
@@ -239,9 +271,13 @@ export function LiveCapture() {
                                     </span>
                                   )}
                                 </span>
-                                <p className="text-[14px] leading-snug text-ink-2">
-                                  {mm.said}
-                                </p>
+                                {active && !reduce ? (
+                                  <StreamWords text={mm.said} />
+                                ) : (
+                                  <p className="text-[14px] leading-snug text-ink-2">
+                                    {mm.said}
+                                  </p>
+                                )}
                               </div>
                             </motion.div>
                           ) : (
@@ -249,7 +285,7 @@ export function LiveCapture() {
                               key="ghost"
                               exit={reduce ? undefined : { opacity: 0 }}
                               transition={{ duration: 0.2 }}
-                              className="flex items-center gap-2.5 pt-1"
+                              className="flex min-w-0 flex-1 items-center gap-2.5"
                               aria-hidden
                             >
                               <span className="h-6 w-6 flex-none rounded-full border border-dashed border-line-2" />
@@ -269,55 +305,76 @@ export function LiveCapture() {
                 </div>
               </div>
 
-              {/* MIDDLE — flow indicator: a dot pings across on each capture */}
+              {/* MIDDLE — one connector per row: the hairline brightens and a
+                  dot beams across the moment its row's capture lands */}
               <div
-                className="relative hidden w-12 lg:block lg:self-stretch"
+                className="hidden py-4 sm:py-5 lg:flex lg:flex-col"
                 aria-hidden
               >
-                <div className="absolute left-1/2 top-1/2 h-px w-8 -translate-x-1/2 -translate-y-1/2 bg-line-2" />
-                {!reduce && step > 0 && (
-                  <motion.span
-                    key={`beam-${step}`}
-                    className="absolute top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-signal shadow-[0_0_8px_rgba(217,119,87,0.7)]"
-                    initial={{ left: "18%", opacity: 0 }}
-                    animate={{ left: "82%", opacity: [0, 1, 1, 0] }}
-                    transition={{ duration: 0.6, ease: "easeInOut" }}
-                  />
-                )}
+                <p className="kicker mb-3 select-none opacity-0">·</p>
+                <div className="flex flex-1 flex-col gap-2">
+                  {MOMENTS.map((mm, idx) => {
+                    const active = idx === step - 1;
+                    return (
+                      <div key={mm.said} className={`${SLOT} relative`}>
+                        <div
+                          className={`absolute left-1/2 top-1/2 h-px w-7 -translate-x-1/2 -translate-y-1/2 transition-colors duration-500 ${
+                            idx < step ? "bg-signal/40" : "bg-line-2"
+                          }`}
+                        />
+                        {active && !reduce && (
+                          <motion.span
+                            key={`beam-${step}`}
+                            className="absolute top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-signal shadow-[0_0_8px_rgba(217,119,87,0.7)]"
+                            initial={{ left: "8%", opacity: 0 }}
+                            animate={{ left: "80%", opacity: [0, 1, 1, 0] }}
+                            transition={{
+                              duration: 0.55,
+                              ease: "easeInOut",
+                              delay: 0.25,
+                            }}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* RIGHT — structured captures land in their slots */}
               <div className="rounded-card border border-line bg-white/55 p-4 backdrop-blur-sm sm:p-5">
                 <p className="kicker mb-3 text-signal">Captured</p>
-                <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-2">
                   {MOMENTS.map((mm, idx) => {
                     const revealed = idx < step;
                     const accent = KIND_ACCENT[mm.kind];
                     const active = idx === step - 1;
                     return (
-                      <div
-                        key={mm.captured}
-                        className="min-h-[80px] sm:min-h-[66px] lg:min-h-[84px] xl:min-h-[66px]"
-                      >
+                      <div key={mm.captured} className={`${SLOT} flex`}>
                         <AnimatePresence initial={false} mode="wait">
                           {revealed ? (
                             <motion.div
                               key="card"
                               initial={
-                                reduce ? false : { opacity: 0, y: 10, scale: 0.97 }
+                                reduce ? false : { opacity: 0, y: 14, scale: 0.94 }
                               }
                               animate={{ opacity: 1, y: 0, scale: 1 }}
-                              transition={{
-                                duration: 0.5,
-                                ease: EASE,
-                                delay: reduce ? 0 : 0.28,
-                              }}
-                              className="relative flex h-full items-stretch gap-2.5 rounded-xl border border-line bg-white p-2.5 shadow-[0_18px_36px_-26px_rgba(40,30,20,0.4)] sm:p-3"
+                              transition={
+                                reduce
+                                  ? { duration: 0.5, ease: EASE }
+                                  : {
+                                      type: "spring",
+                                      stiffness: 380,
+                                      damping: 26,
+                                      delay: 0.5,
+                                    }
+                              }
+                              className="relative flex min-w-0 flex-1 items-stretch gap-2.5 rounded-xl border border-line bg-white p-2.5 shadow-[0_18px_36px_-26px_rgba(40,30,20,0.4)] sm:p-3"
                             >
                               <span
                                 className={`w-1 flex-none rounded-full ${accent.bar}`}
                               />
-                              <div className="min-w-0">
+                              <div className="min-w-0 self-center">
                                 <span className={`kicker ${accent.label}`}>
                                   {KIND_LABEL[mm.kind]}
                                 </span>
@@ -329,9 +386,13 @@ export function LiveCapture() {
                                 <motion.span
                                   aria-hidden
                                   className="pointer-events-none absolute inset-0 rounded-xl ring-2 ring-signal"
-                                  initial={{ opacity: 0.7 }}
-                                  animate={{ opacity: 0 }}
-                                  transition={{ duration: 0.9, ease: "easeOut" }}
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: [0, 0.7, 0] }}
+                                  transition={{
+                                    duration: 1.1,
+                                    ease: "easeOut",
+                                    delay: 0.5,
+                                  }}
                                 />
                               )}
                             </motion.div>
@@ -340,7 +401,7 @@ export function LiveCapture() {
                               key="ghost"
                               exit={reduce ? undefined : { opacity: 0 }}
                               transition={{ duration: 0.2 }}
-                              className="flex h-full items-stretch gap-2.5 rounded-xl border border-dashed border-line-2 p-2.5 sm:p-3"
+                              className="flex min-w-0 flex-1 items-stretch gap-2.5 rounded-xl border border-dashed border-line-2 p-2.5 sm:p-3"
                               aria-hidden
                             >
                               <span className="w-1 flex-none rounded-full bg-line-2/60" />
@@ -361,19 +422,23 @@ export function LiveCapture() {
               </div>
             </div>
 
-            {/* footer legend — the full range; the active kind lights up */}
-            <div className="relative mt-4 flex flex-wrap items-center justify-center gap-1.5 px-1">
+            {/* footer legend — the full range; the active kind lights up
+                with a small spring pop as its capture lands */}
+            <div className="relative mt-3.5 flex flex-wrap items-center justify-center gap-1.5 px-1">
               {(Object.keys(KIND_LABEL) as Kind[]).map((k) => {
                 const on = k === activeKind;
                 return (
-                  <span
-                    key={k}
+                  <motion.span
+                    key={on && !reduce ? `${k}-${step}` : k}
+                    initial={on && !reduce ? { scale: 0.82 } : false}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 520, damping: 20 }}
                     className={`rounded-full px-2.5 py-1 text-[12px] font-medium transition-colors duration-500 ${
                       on ? "bg-signal text-white" : "border border-line text-ink-3"
                     }`}
                   >
                     {KIND_LABEL[k]}
-                  </span>
+                  </motion.span>
                 );
               })}
             </div>
