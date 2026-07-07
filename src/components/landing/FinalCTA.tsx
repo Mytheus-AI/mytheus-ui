@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight } from "./ui";
-import { WordReveal, MaskReveal, Magnetic, ScrollScale } from "./motion";
+import { WordReveal, MaskReveal, ScrollScale } from "./motion";
 import { FlowField } from "./FlowField";
 
 /* Closing CTA — one orchestrated moment: the scroll camera pushes into a
@@ -19,7 +19,10 @@ export function FinalCTA() {
     <section className="px-3 pb-3 sm:px-5">
       {/* the scroll camera pushes into the closing stage */}
       <ScrollScale from={0.95}>
-      <div className="mesh-field mesh-anim grain relative isolate overflow-hidden rounded-[28px] border border-line">
+      {/* overflow-clip (not hidden): a hidden overflow is still a scroll
+          container, so the browser can scroll the panel internally when it
+          reveals the focused CTA mid-entrance — clip can never scroll */}
+      <div className="mesh-field mesh-anim grain relative isolate overflow-clip rounded-[28px] border border-line">
         {/* flowing "memory" line + travelling pulse, behind the statement */}
         <FlowField className="absolute inset-0 z-0 opacity-60" />
 
@@ -56,16 +59,14 @@ export function FinalCTA() {
           <MaskReveal delay={460} y={44}>
             <div className="mt-10 sm:mt-12">
               {/* one clean pill, same language as the header CTA — no split
-                  arrow knob, no pulsing */}
-              <Magnetic strength={0.3}>
-                <Link
-                  href="/dashboard"
-                  className="group inline-flex items-center gap-2.5 rounded-pill bg-signal py-4 pl-8 pr-7 text-[16px] font-medium text-white shadow-[0_20px_44px_-18px_rgba(189,93,58,0.85)] transition-[background-color,transform] duration-300 hover:-translate-y-0.5 hover:bg-signal-deep"
-                >
-                  Get started free
-                  <ArrowRight className="h-[18px] w-[18px] transition-transform duration-300 group-hover:translate-x-0.5" />
-                </Link>
-              </Magnetic>
+                  arrow knob, no pulsing, no magnetic drift */}
+              <Link
+                href="/dashboard"
+                className="group inline-flex items-center gap-2.5 rounded-pill bg-signal py-4 pl-8 pr-7 text-[16px] font-medium text-white shadow-[0_20px_44px_-18px_rgba(189,93,58,0.85)] transition-colors duration-300 hover:bg-signal-deep"
+              >
+                Get started free
+                <ArrowRight className="h-[18px] w-[18px] transition-transform duration-300 group-hover:translate-x-0.5" />
+              </Link>
             </div>
           </MaskReveal>
 

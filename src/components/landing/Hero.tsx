@@ -10,7 +10,7 @@ import {
   type MotionValue,
 } from "framer-motion";
 import { PillCTA } from "./ui";
-import { WordReveal, Reveal, Magnetic, Float } from "./motion";
+import { WordReveal, Reveal, Float } from "./motion";
 import { NotesWidget } from "./NotesEnhanceDemo";
 
 /* ================================================================== */
@@ -411,9 +411,7 @@ function SeqPageTwo({
           style={{ opacity: bodyO, y: bodyY }}
           className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4"
         >
-          <Magnetic strength={0.3}>
-            <PillCTA href="/dashboard">Get started free</PillCTA>
-          </Magnetic>
+          <PillCTA href="/dashboard">Get started free</PillCTA>
           <a
             href="#product"
             className="inline-flex min-h-[44px] items-center text-[15px] font-medium text-ink-2 underline-offset-4 transition-colors hover:text-ink hover:underline"
@@ -556,9 +554,7 @@ function HeroStatic() {
               steps.
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4">
-              <Magnetic strength={0.3}>
-                <PillCTA href="/dashboard">Get started free</PillCTA>
-              </Magnetic>
+              <PillCTA href="/dashboard">Get started free</PillCTA>
               <a
                 href="#product"
                 className="inline-flex min-h-[44px] items-center text-[15px] font-medium text-ink-2 underline-offset-4 transition-colors hover:text-ink hover:underline"
@@ -622,9 +618,7 @@ function Intro() {
 
       <Reveal delay={380}>
         <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4">
-          <Magnetic strength={0.3}>
-            <PillCTA href="/dashboard">Get started free</PillCTA>
-          </Magnetic>
+          <PillCTA href="/dashboard">Get started free</PillCTA>
           <a
             href="#how"
             className="inline-flex min-h-[44px] items-center text-[15px] font-medium text-ink-2 underline-offset-4 transition-colors hover:text-ink hover:underline"

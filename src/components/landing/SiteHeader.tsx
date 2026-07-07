@@ -12,7 +12,6 @@ import {
 import Link from "next/link";
 import { LogoMark } from "@/components/Logo";
 import { ArrowRight } from "./ui";
-import { Magnetic } from "./motion";
 import { FEATURES } from "@/lib/marketing/features";
 
 /* The wordmark, floating transparent over the page (links home / back to
@@ -118,15 +117,13 @@ export function SiteHeader() {
             transition={{ duration: 0.6, ease: EASE, delay: 0.18 }}
             className="pointer-events-auto hidden sm:block"
           >
-            <Magnetic strength={0.2}>
-              <Link
-                href="/dashboard"
-                className="group inline-flex items-center gap-2 rounded-pill bg-signal py-2.5 pl-5 pr-4 text-[14px] font-medium text-white shadow-[0_16px_36px_-18px_rgba(189,93,58,0.8)] transition-[background-color,transform] duration-300 hover:-translate-y-0.5 hover:bg-signal-deep"
-              >
-                Get started free
-                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
-              </Link>
-            </Magnetic>
+            <Link
+              href="/dashboard"
+              className="group inline-flex items-center gap-2 rounded-pill bg-signal py-2.5 pl-5 pr-4 text-[14px] font-medium text-white shadow-[0_16px_36px_-18px_rgba(189,93,58,0.8)] transition-colors duration-300 hover:bg-signal-deep"
+            >
+              Get started free
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+            </Link>
           </motion.div>
 
           {/* mobile menu toggle — the centered nav is desktop-only, so below

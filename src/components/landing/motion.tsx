@@ -327,7 +327,7 @@ export function WordReveal({
       {all.map((item, i) => (
         <span
           key={`${item.w}-${i}`}
-          className="inline-block overflow-hidden align-bottom"
+          className="inline-block overflow-clip align-bottom"
           style={{ paddingBottom: "0.22em", marginBottom: "-0.22em" }}
         >
           <motion.span
@@ -367,8 +367,10 @@ export function MaskReveal({
 }) {
   const reduce = useReducedMotion();
   if (reduce) return <div className={className}>{children}</div>;
+  // clip, not hidden: hidden masks are scrollable by focus/scrollIntoView
+  // while the child is still translated, which permanently offsets them
   return (
-    <span className="block overflow-hidden">
+    <span className="block overflow-clip">
       <motion.div
         className={className}
         initial={{ y, opacity: 0 }}
