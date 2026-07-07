@@ -828,11 +828,13 @@ function TailDot({
   );
 }
 
-/* a deliberate, deterministic agent mark — clay core with a glassy glint,
-   two counter-rotating orbit rings with satellites, and a radial halo that
-   melts into the cream bg. Replaces the ConnectedGraph orb at small sizes,
-   where a ~5-node random constellation read as loose bubbles. Everything
-   inside is percentage-sized, so one component works from 36px to 112px. */
+/* the agent core — a 3D gyroscope. Three orbit rings on different axes
+   (flat, pitched, yawed) spin at different speeds with satellites riding
+   them, a conic radar sweep turns behind everything, a pulse ring emits
+   from the core every few seconds, and the clay heart breathes under a
+   glassy glint. Deterministic and percentage-sized (36px → 112px), with
+   a radial halo that melts into the cream bg — no hard edges anywhere.
+   Reduced motion: the gyroscope holds still, tilted and complete. */
 function AgentOrb({
   className = "",
   signal = false,
@@ -841,16 +843,30 @@ function AgentOrb({
   signal?: boolean;
 }) {
   const reduce = useReducedMotion();
-  const ring = signal ? "border-signal/30" : "border-line-2";
   return (
-    <div className={`relative ${className}`} aria-hidden>
+    <div
+      className={`relative ${className}`}
+      style={{ perspective: 320 }}
+      aria-hidden
+    >
       {/* halo — a warm pool with no edge, so the mark sits IN the page */}
       <div
-        className="absolute -inset-[42%] rounded-full"
+        className="absolute -inset-[46%] rounded-full"
         style={{
           background:
             "radial-gradient(closest-side, var(--signal-soft), transparent 72%)",
         }}
+      />
+
+      {/* radar sweep — a soft conic blade turning behind the gyroscope */}
+      <motion.div
+        className="absolute -inset-[16%] rounded-full opacity-70"
+        style={{
+          background:
+            "conic-gradient(from 0deg, transparent 0deg, var(--signal-soft) 34deg, transparent 70deg)",
+        }}
+        animate={reduce ? undefined : { rotate: 360 }}
+        transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
       />
 
       {/* breathing glow behind the core */}
@@ -862,28 +878,72 @@ function AgentOrb({
         transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* outer orbit — slow, with a satellite riding it */}
-      <motion.div
-        className="absolute inset-0"
-        animate={reduce ? undefined : { rotate: 360 }}
-        transition={{ duration: 16, repeat: Infinity, ease: "linear" }}
-      >
-        <div className={`absolute inset-0 rounded-full border border-dashed ${ring}`} />
-        <span className="absolute left-1/2 top-0 h-[8%] min-h-[3px] w-[8%] min-w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-signal" />
-      </motion.div>
+      {/* the gyroscope — three rings, three axes, three speeds */}
+      <div className="absolute inset-0" style={{ transformStyle: "preserve-3d" }}>
+        {/* flat ring — slow, dashed, the outer cage */}
+        <motion.div
+          className="absolute inset-[2%]"
+          animate={reduce ? undefined : { rotate: 360 }}
+          transition={{ duration: 16, repeat: Infinity, ease: "linear" }}
+        >
+          <div
+            className={`absolute inset-0 rounded-full border border-dashed ${
+              signal ? "border-signal/35" : "border-line-2"
+            }`}
+          />
+          <span className="absolute left-1/2 top-0 h-[8%] min-h-[3px] w-[8%] min-w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-signal shadow-[0_0_8px_var(--signal-glow)]" />
+        </motion.div>
 
-      {/* inner orbit — counter-rotating, quieter */}
-      <motion.div
-        className="absolute inset-[15%]"
-        animate={reduce ? undefined : { rotate: -360 }}
-        transition={{ duration: 24, repeat: Infinity, ease: "linear" }}
-      >
-        <div className="absolute inset-0 rounded-full border border-line-2/70" />
-        <span className="absolute bottom-0 left-1/2 h-[6%] min-h-[2px] w-[6%] min-w-[2px] -translate-x-1/2 translate-y-1/2 rounded-full bg-signal-bright" />
-      </motion.div>
+        {/* pitched ring — fast; its satellite orbits in an ellipse */}
+        <div
+          className="absolute inset-[8%]"
+          style={{ transform: reduce ? "rotateX(62deg)" : undefined, transformStyle: "preserve-3d" }}
+        >
+          <motion.div
+            className="absolute inset-0"
+            style={{ transformStyle: "preserve-3d", rotateX: 62 }}
+            animate={reduce ? undefined : { rotateZ: -360 }}
+            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+          >
+            <div className="absolute inset-0 rounded-full border border-signal-bright/70" />
+            <span className="absolute bottom-0 left-1/2 h-[7%] min-h-[3px] w-[7%] min-w-[3px] -translate-x-1/2 translate-y-1/2 rounded-full bg-signal-bright" />
+          </motion.div>
+        </div>
+
+        {/* yawed ring — slow counter-spin on the other axis */}
+        <div
+          className="absolute inset-[12%]"
+          style={{ transformStyle: "preserve-3d" }}
+        >
+          <motion.div
+            className="absolute inset-0"
+            style={{ transformStyle: "preserve-3d", rotateY: 64 }}
+            animate={reduce ? undefined : { rotateZ: 360 }}
+            transition={{ duration: 13, repeat: Infinity, ease: "linear" }}
+          >
+            <div className="absolute inset-0 rounded-full border border-line-2/80" />
+            <span className="absolute left-0 top-1/2 h-[6%] min-h-[2px] w-[6%] min-w-[2px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-signal" />
+          </motion.div>
+        </div>
+      </div>
+
+      {/* pulse — the core emits a ring every few seconds */}
+      {!reduce && (
+        <motion.span
+          className="absolute inset-[30%] rounded-full border-2 border-signal/50"
+          animate={{ scale: [1, 2.1], opacity: [0.55, 0] }}
+          transition={{
+            duration: 2.6,
+            repeat: Infinity,
+            ease: "easeOut",
+            repeatDelay: 0.9,
+            delay: signal ? 0 : 1.3,
+          }}
+        />
+      )}
 
       {/* the core — clay for your agent, warm glass for the peer */}
-      <div
+      <motion.div
         className="absolute inset-[30%] rounded-full"
         style={{
           background: signal
@@ -891,9 +951,11 @@ function AgentOrb({
             : "radial-gradient(circle at 32% 30%, white, var(--signal-soft) 58%, var(--signal-bright))",
           boxShadow: "0 8px 22px -8px rgba(40, 30, 20, 0.35)",
         }}
+        animate={reduce ? undefined : { scale: [1, 1.06, 1] }}
+        transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
       >
         <span className="absolute left-[20%] top-[16%] h-[24%] w-[24%] rounded-full bg-white/75 blur-[1px]" />
-      </div>
+      </motion.div>
     </div>
   );
 }
