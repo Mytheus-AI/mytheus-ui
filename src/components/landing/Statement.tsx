@@ -36,8 +36,8 @@ import {
                           source, decision lineage, dependency.
 
    Scrolling back runs the exchange in reverse — the answer un-happens.
-   The two agent orbs are deterministic AgentOrb marks (clay core, orbit
-   rings, bg-melting halo — ConnectedGraph read as loose bubbles at 96px),
+   The two agents are AgentMark tiles (glass app-icon tile + live signal
+   wave — spheres and random constellations both read badly at 96px),
    the answer card tilts under the cursor, and the right-edge beat rail
    jumps the camera between beats. Mobile and reduced motion render the
    story as a calm static stack instead. Data is mockTeamCapacity /
@@ -828,14 +828,18 @@ function TailDot({
   );
 }
 
-/* the agent core — a 3D gyroscope. Three orbit rings on different axes
-   (flat, pitched, yawed) spin at different speeds with satellites riding
-   them, a conic radar sweep turns behind everything, a pulse ring emits
-   from the core every few seconds, and the clay heart breathes under a
-   glassy glint. Deterministic and percentage-sized (36px → 112px), with
-   a radial halo that melts into the cream bg — no hard edges anywhere.
-   Reduced motion: the gyroscope holds still, tilted and complete. */
-function AgentOrb({
+/* the agent mark — NOT a ball: a warm glass tile (app-icon shape, same
+   language as the brand mark) with a live signal wave running through it,
+   a status ping in the corner, and a tile-shaped echo that emits every
+   few seconds. Clay tile = your agent, glass tile = the peer. Percentage
+   -sized, works 36px → 112px; the radial halo melts into the cream bg.
+   Reduced motion: the wave holds still, everything else is static. */
+const WAVE_BACK =
+  "M 0 60 L 12 44 L 24 60 L 36 44 L 48 60 L 60 44 L 72 60 L 84 44 L 96 60 L 108 44 L 120 60 L 132 44 L 144 60";
+const WAVE_FRONT =
+  "M 0 44 L 12 62 L 24 44 L 36 62 L 48 44 L 60 62 L 72 44 L 84 62 L 96 44 L 108 62 L 120 44 L 132 62 L 144 44";
+
+function AgentMark({
   className = "",
   signal = false,
 }: {
@@ -843,119 +847,88 @@ function AgentOrb({
   signal?: boolean;
 }) {
   const reduce = useReducedMotion();
+  const radius = "26%";
   return (
-    <div
-      className={`relative ${className}`}
-      style={{ perspective: 320 }}
-      aria-hidden
-    >
+    <div className={`relative ${className}`} aria-hidden>
       {/* halo — a warm pool with no edge, so the mark sits IN the page */}
       <div
-        className="absolute -inset-[46%] rounded-full"
+        className="absolute -inset-[42%] rounded-full"
         style={{
           background:
             "radial-gradient(closest-side, var(--signal-soft), transparent 72%)",
         }}
       />
 
-      {/* radar sweep — a soft conic blade turning behind the gyroscope */}
-      <motion.div
-        className="absolute -inset-[16%] rounded-full opacity-70"
-        style={{
-          background:
-            "conic-gradient(from 0deg, transparent 0deg, var(--signal-soft) 34deg, transparent 70deg)",
-        }}
-        animate={reduce ? undefined : { rotate: 360 }}
-        transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-      />
-
-      {/* breathing glow behind the core */}
-      <motion.div
-        className="absolute inset-[22%] rounded-full bg-signal/25 blur-md"
-        animate={
-          reduce ? undefined : { scale: [1, 1.22, 1], opacity: [0.4, 0.75, 0.4] }
-        }
-        transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
-      />
-
-      {/* the gyroscope — three rings, three axes, three speeds */}
-      <div className="absolute inset-0" style={{ transformStyle: "preserve-3d" }}>
-        {/* flat ring — slow, dashed, the outer cage */}
-        <motion.div
-          className="absolute inset-[2%]"
-          animate={reduce ? undefined : { rotate: 360 }}
-          transition={{ duration: 16, repeat: Infinity, ease: "linear" }}
-        >
-          <div
-            className={`absolute inset-0 rounded-full border border-dashed ${
-              signal ? "border-signal/35" : "border-line-2"
-            }`}
-          />
-          <span className="absolute left-1/2 top-0 h-[8%] min-h-[3px] w-[8%] min-w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-signal shadow-[0_0_8px_var(--signal-glow)]" />
-        </motion.div>
-
-        {/* pitched ring — fast; its satellite orbits in an ellipse */}
-        <div
-          className="absolute inset-[8%]"
-          style={{ transform: reduce ? "rotateX(62deg)" : undefined, transformStyle: "preserve-3d" }}
-        >
-          <motion.div
-            className="absolute inset-0"
-            style={{ transformStyle: "preserve-3d", rotateX: 62 }}
-            animate={reduce ? undefined : { rotateZ: -360 }}
-            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-          >
-            <div className="absolute inset-0 rounded-full border border-signal-bright/70" />
-            <span className="absolute bottom-0 left-1/2 h-[7%] min-h-[3px] w-[7%] min-w-[3px] -translate-x-1/2 translate-y-1/2 rounded-full bg-signal-bright" />
-          </motion.div>
-        </div>
-
-        {/* yawed ring — slow counter-spin on the other axis */}
-        <div
-          className="absolute inset-[12%]"
-          style={{ transformStyle: "preserve-3d" }}
-        >
-          <motion.div
-            className="absolute inset-0"
-            style={{ transformStyle: "preserve-3d", rotateY: 64 }}
-            animate={reduce ? undefined : { rotateZ: 360 }}
-            transition={{ duration: 13, repeat: Infinity, ease: "linear" }}
-          >
-            <div className="absolute inset-0 rounded-full border border-line-2/80" />
-            <span className="absolute left-0 top-1/2 h-[6%] min-h-[2px] w-[6%] min-w-[2px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-signal" />
-          </motion.div>
-        </div>
-      </div>
-
-      {/* pulse — the core emits a ring every few seconds */}
+      {/* tile echo — the outline emits outward every few seconds */}
       {!reduce && (
         <motion.span
-          className="absolute inset-[30%] rounded-full border-2 border-signal/50"
-          animate={{ scale: [1, 2.1], opacity: [0.55, 0] }}
+          className="absolute inset-0 border-2 border-signal/45"
+          style={{ borderRadius: radius }}
+          animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
           transition={{
-            duration: 2.6,
+            duration: 2.4,
             repeat: Infinity,
             ease: "easeOut",
             repeatDelay: 0.9,
-            delay: signal ? 0 : 1.3,
+            delay: signal ? 0 : 1.2,
           }}
         />
       )}
 
-      {/* the core — clay for your agent, warm glass for the peer */}
+      {/* the tile */}
       <motion.div
-        className="absolute inset-[30%] rounded-full"
+        className="absolute inset-0 overflow-hidden"
         style={{
+          borderRadius: radius,
           background: signal
-            ? "radial-gradient(circle at 32% 30%, var(--signal-bright), var(--signal) 58%, var(--signal-deep))"
-            : "radial-gradient(circle at 32% 30%, white, var(--signal-soft) 58%, var(--signal-bright))",
-          boxShadow: "0 8px 22px -8px rgba(40, 30, 20, 0.35)",
+            ? "linear-gradient(135deg, var(--signal-bright), var(--signal) 52%, var(--signal-deep))"
+            : "linear-gradient(135deg, white, var(--signal-soft) 78%)",
+          border: signal ? "1px solid transparent" : "1px solid var(--line)",
+          boxShadow: "0 14px 30px -14px rgba(40, 30, 20, 0.4)",
         }}
-        animate={reduce ? undefined : { scale: [1, 1.06, 1] }}
-        transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
+        animate={reduce ? undefined : { scale: [1, 1.04, 1] }}
+        transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
       >
-        <span className="absolute left-[20%] top-[16%] h-[24%] w-[24%] rounded-full bg-white/75 blur-[1px]" />
+        {/* glass sheen across the top */}
+        <span
+          className="absolute inset-x-0 top-0 h-[46%]"
+          style={{
+            background:
+              "linear-gradient(to bottom, rgba(255,255,255,0.4), transparent)",
+          }}
+        />
+
+        {/* the live signal wave — two layers scrolling at different speeds */}
+        <svg viewBox="0 0 96 96" className="absolute inset-0 h-full w-full">
+          <motion.path
+            d={WAVE_BACK}
+            fill="none"
+            stroke={signal ? "rgba(255,255,255,0.45)" : "var(--signal-bright)"}
+            strokeWidth={3}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity={0.6}
+            animate={reduce ? undefined : { x: [0, -48] }}
+            transition={{ duration: 3.2, repeat: Infinity, ease: "linear" }}
+          />
+          <motion.path
+            d={WAVE_FRONT}
+            fill="none"
+            stroke={signal ? "white" : "var(--signal)"}
+            strokeWidth={4}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            animate={reduce ? undefined : { x: [0, -48] }}
+            transition={{ duration: 1.9, repeat: Infinity, ease: "linear" }}
+          />
+        </svg>
       </motion.div>
+
+      {/* status ping — live, in the corner */}
+      <span className="absolute right-[-5%] top-[-5%] h-[22%] min-h-[9px] w-[22%] min-w-[9px]">
+        <span className="glow-pulse absolute inset-0 rounded-full bg-signal opacity-60" />
+        <span className="absolute inset-[22%] rounded-full bg-signal ring-2 ring-bg" />
+      </span>
     </div>
   );
 }
@@ -976,7 +949,7 @@ function AgentPost({
     <div
       className={`absolute top-[50%] flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2 text-center ${className}`}
     >
-      <AgentOrb signal={signal} className="h-24 w-24 lg:h-28 lg:w-28" />
+      <AgentMark signal={signal} className="h-24 w-24 lg:h-28 lg:w-28" />
       <div>
         <p className="text-[14px] font-semibold tracking-tight text-ink-display lg:text-[15px]">
           {label}
@@ -1210,7 +1183,7 @@ function TriggerLine() {
         <p className="min-w-0 flex-1 text-left text-[14px] font-medium text-ink line-clamp-2 sm:line-clamp-1 sm:text-[15px]">
           &ldquo;Let&rsquo;s put the pricing rework on Sarah for Q3.&rdquo;
         </p>
-        <AgentOrb signal className="h-9 w-9 shrink-0 sm:h-10 sm:w-10" />
+        <AgentMark signal className="h-9 w-9 shrink-0 sm:h-10 sm:w-10" />
       </div>
     </MaskReveal>
   );
@@ -1405,7 +1378,7 @@ function AgentExchange() {
 function AgentGlyph({ label, signal = false }: { label: string; signal?: boolean }) {
   return (
     <div className="flex w-[52px] shrink-0 flex-col items-center gap-1.5 text-center sm:w-[76px]">
-      <AgentOrb signal={signal} className="h-10 w-10 sm:h-12 sm:w-12" />
+      <AgentMark signal={signal} className="h-10 w-10 sm:h-12 sm:w-12" />
       <p className="text-[10.5px] font-medium leading-tight tracking-tight text-ink-2 sm:text-[11px]">
         {label}
       </p>
