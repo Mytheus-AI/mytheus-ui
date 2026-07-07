@@ -77,6 +77,8 @@ type Card = {
   flow: string;
   title: string;
   body: string;
+  /** one-liner shown in the spine while this stage dwells */
+  hint: string;
   icon: ReactNode;
   tokens: { label: string; clay?: boolean }[];
   visual: (still: boolean) => ReactNode;
@@ -89,6 +91,7 @@ const CARDS: Card[] = [
     flow: "Capture",
     title: "Every word, captured",
     body: "No bot, no recording link — just live, role-relevant notes.",
+    hint: "Your agent listens with your role in mind",
     icon: <MicIcon />,
     tokens: [{ label: "Role-relevant notes" }, { label: "Live transcript" }],
     visual: (still) => <CaptureDemo still={still} />,
@@ -99,6 +102,7 @@ const CARDS: Card[] = [
     flow: "Label",
     title: "Decisions, sorted",
     body: "Decisions, action items, and conflicts labeled the moment they're said.",
+    hint: "Tagged the second it leaves someone's mouth",
     icon: <SortIcon />,
     tokens: [
       { label: "Decision", clay: true },
@@ -113,6 +117,7 @@ const CARDS: Card[] = [
     flow: "Confirm",
     title: "Never committed silently",
     body: "Nothing is saved or assigned without your one-tap confirm.",
+    hint: "One tap — nothing lands silently",
     icon: <ShieldCheckIcon />,
     tokens: [{ label: "One-tap confirm" }],
     visual: (still) => <ConfirmDemo still={still} />,
@@ -123,6 +128,7 @@ const CARDS: Card[] = [
     flow: "Route",
     title: "Sent to the right people",
     body: "Assigned to an owner and shared with anyone who missed it.",
+    hint: "Owner set, absentees briefed",
     icon: <SendIcon />,
     tokens: [{ label: "Owner assigned" }, { label: "Shared with absentees" }],
     visual: (still) => <RouteDemo still={still} />,
@@ -133,6 +139,7 @@ const CARDS: Card[] = [
     flow: "Remember",
     title: "Carried to the next meeting",
     body: "A decision Monday becomes context your agents reuse Friday.",
+    hint: "Monday's call, remembered on Friday",
     icon: <LoopIcon />,
     tokens: [{ label: "→ Next meeting" }, { label: "Cross-meeting memory" }],
     visual: (still) => <RememberDemo still={still} />,
@@ -284,16 +291,26 @@ function SceneFrame({
         style={{ top: glowTop, left: glowLeft }}
       />
 
-      {/* giant stage-word watermark, crossfading per stage */}
+      {/* giant stage-word watermark — outline only, with a whisper of clay
+          fill, masked so it dissolves into the bg toward its bottom edge
+          instead of smudging over the demo card */}
       <motion.div
         aria-hidden
         className="pointer-events-none absolute -bottom-4 right-0 select-none"
-        style={{ y: wmY, x: wmX }}
+        style={{
+          y: wmY,
+          x: wmX,
+          maskImage:
+            "linear-gradient(to bottom, black 8%, rgba(0,0,0,0.55) 55%, transparent 96%)",
+          WebkitMaskImage:
+            "linear-gradient(to bottom, black 8%, rgba(0,0,0,0.55) 55%, transparent 96%)",
+        }}
       >
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.span
             key={CARDS[index].flow}
-            className="display block whitespace-nowrap text-[clamp(6.5rem,13vw,12rem)] leading-none text-signal/[0.07]"
+            className="display block whitespace-nowrap text-[clamp(6.5rem,13vw,12rem)] leading-none text-signal/[0.03]"
+            style={{ WebkitTextStroke: "1.5px var(--line-2)" }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -350,6 +367,15 @@ function Spine({
   const fill = useSpring(progress, { stiffness: 120, damping: 30, mass: 0.4 });
   const tipTop = useTransform(fill, (v) => `${Math.min(1, Math.max(0, v)) * 100}%`);
 
+  /* how far through the CURRENT stage's dwell we are — feeds the little
+     bar under the active step so the rail is alive while you scroll */
+  const local = useSpring(useTransform(progress, toStageLocal), {
+    stiffness: 200,
+    damping: 32,
+    mass: 0.35,
+  });
+  const dwell = useTransform(local, (v) => `${Math.min(1, Math.max(0, v)) * 100}%`);
+
   return (
     <div>
       {/* the big stage number, ticking like an odometer */}
@@ -405,6 +431,33 @@ function Spine({
                     {c.flow}
                   </span>
                 </button>
+
+                {/* the active step opens a one-line hint + a dwell bar that
+                    fills with the scroll through this stage — the rail stays
+                    alive for the whole dwell. Exactly one step is ever open,
+                    so the spine's total height never changes. */}
+                <AnimatePresence initial={false}>
+                  {active && (
+                    <motion.div
+                      key="hint"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.45, ease: EASE }}
+                      className="overflow-hidden pl-[47px] pr-3"
+                    >
+                      <p className="text-[12.5px] leading-snug text-ink-3">
+                        {c.hint}
+                      </p>
+                      <span className="mb-2 mt-2 block h-[3px] w-full max-w-[160px] overflow-hidden rounded-full bg-line/70">
+                        <motion.span
+                          className="block h-full rounded-full bg-signal"
+                          style={{ width: dwell }}
+                        />
+                      </span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </li>
             );
           })}
