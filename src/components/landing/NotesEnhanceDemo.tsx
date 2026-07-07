@@ -185,8 +185,10 @@ export function NotesWidget() {
                 style={{ background: PAPER_MID }}
               />
 
-              {/* the notepad */}
-              <div className="relative flex min-h-[540px] flex-col rounded-[26px] border border-line bg-[#fbfbf8] shadow-[0_50px_120px_-44px_rgba(40,40,20,0.5)]">
+              {/* the notepad — height is FIXED at lg so the raw ⇄ enhanced swap
+                  never resizes the card (it sits centered in the pinned hero,
+                  where growth pushes it under the fixed header) */}
+              <div className="relative flex min-h-[540px] flex-col rounded-[26px] border border-line bg-[#fbfbf8] shadow-[0_50px_120px_-44px_rgba(40,40,20,0.5)] lg:h-[590px]">
                 {/* header */}
                 <div className="px-6 pt-6">
                   <h3 className="text-[22px] font-semibold tracking-tight text-ink-display">
@@ -421,7 +423,7 @@ function EnhancedNotes({ reduce }: { reduce: boolean | null }) {
       variants={reduce ? undefined : { show: { transition: { staggerChildren: 0.09 } } }}
       initial={reduce ? false : "hidden"}
       animate="show"
-      className="space-y-5"
+      className="space-y-3.5"
     >
       <motion.div variants={reduce ? undefined : itemV} className="flex flex-wrap gap-2">
         <Tag tone="decision">2 decisions</Tag>
@@ -488,7 +490,7 @@ function Block({
 }) {
   return (
     <motion.section variants={reduce ? undefined : itemV}>
-      <h4 className="flex items-center gap-2 text-[15px] font-semibold tracking-tight text-ink-display">
+      <h4 className="flex items-center gap-2 text-[14px] font-semibold tracking-tight text-ink-display">
         <span
           className={`inline-block h-2 w-2 rounded-full ${
             kind === "risk" ? "bg-signal-deep" : "bg-signal"
@@ -496,11 +498,11 @@ function Block({
         />
         {heading}
       </h4>
-      <ul className="mt-2 space-y-1.5 pl-4">
+      <ul className="mt-1.5 space-y-1.5 pl-4">
         {items.map((it, i) => (
           <li
             key={i}
-            className="relative text-[15px] leading-relaxed text-ink-2 before:absolute before:-left-4 before:top-[0.65em] before:h-1.5 before:w-1.5 before:-translate-y-1/2 before:rounded-full before:bg-line-2 [&_b]:font-semibold [&_b]:text-ink-display"
+            className="relative text-[14px] leading-normal text-ink-2 before:absolute before:-left-4 before:top-[0.65em] before:h-1.5 before:w-1.5 before:-translate-y-1/2 before:rounded-full before:bg-line-2 [&_b]:font-semibold [&_b]:text-ink-display"
           >
             {it}
           </li>
@@ -519,14 +521,14 @@ function ActionBlock({
 }) {
   return (
     <motion.section variants={reduce ? undefined : itemV}>
-      <h4 className="text-[15px] font-semibold tracking-tight text-ink-display">
+      <h4 className="text-[14px] font-semibold tracking-tight text-ink-display">
         Next steps
       </h4>
-      <ul className="mt-2 space-y-2">
+      <ul className="mt-1.5 space-y-1.5">
         {items.map((it, i) => (
           <li
             key={i}
-            className="flex items-start gap-2.5 text-[15px] leading-relaxed text-ink-2 [&_b]:font-semibold [&_b]:text-ink-display"
+            className="flex items-start gap-2.5 text-[14px] leading-normal text-ink-2 [&_b]:font-semibold [&_b]:text-ink-display"
           >
             <span className="mt-[3px] flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px] border border-signal/40 bg-signal-soft">
               <span className="h-1.5 w-1.5 rounded-[2px] bg-signal" />

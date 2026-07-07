@@ -72,8 +72,10 @@ function HeroSequence() {
           style={{ scale: stageScale, y: stageY }}
         >
           {/* ---- page one — gathers, then exits to the left ---- */}
+          {/* pt-[92px]: the stage centers content BELOW the fixed SiteHeader
+              (pinned-scene rule — see docs/MOTION.md) */}
           <div
-            className={`absolute inset-0 flex items-center ${
+            className={`absolute inset-0 flex items-center pt-[92px] ${
               showTwo ? "pointer-events-none" : ""
             }`}
           >
@@ -82,7 +84,7 @@ function HeroSequence() {
 
           {/* ---- page two — assembles in place on the same stage ---- */}
           <div
-            className={`absolute inset-0 flex items-center ${
+            className={`absolute inset-0 flex items-center pt-[92px] ${
               showTwo ? "" : "pointer-events-none"
             }`}
           >
@@ -331,9 +333,12 @@ function SeqPageTwo({
         </motion.div>
       </div>
 
+      {/* zoom steps: on short viewports the 590px card + PiP tiles can't fit
+          between the fixed header and the fold — shrink the whole composition
+          (layout box included) so it stays clear of the navbar */}
       <motion.div
         style={{ opacity: visO, scale: visScale, y: visY }}
-        className="relative hidden justify-self-center lg:block"
+        className="relative hidden justify-self-center lg:block [@media(min-height:701px)_and_(max-height:820px)]:[zoom:0.9] [@media(max-height:700px)]:[zoom:0.78]"
       >
         {show && <NotesWidget />}
       </motion.div>
