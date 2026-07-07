@@ -1,33 +1,38 @@
-# Mytheus — Landing Page (start here)
+# Mytheus — Web UI (start here)
 
-This is the **actual state** README for the `web/` app as it exists today: a standalone
-Next.js 14 marketing **landing page** for Mytheus. If you're a new session or teammate picking
-this up, read this first, then `PROGRESS.md` for the full detail.
+This is the **actual state** README for the `web/` app as it exists today: the full Mytheus UI
+surface on mock data — the marketing site (landing + pricing + 12 feature pages + legal/company
+pages) **and** every authenticated screen (dashboard, meeting room + agent sidebar, transcript,
+decisions, tasks, org, search, settings, billing, admin/ops). If you're a new session or
+teammate picking this up, read this first, then `PROGRESS.md` for the full detail.
 
-> Two other docs in this folder — `README.md` and `system.md` — describe the *full* `reprise-ui`
-> product (meeting room, agent sidebar, dashboards, billing, admin). That is the **spec / future
-> phases**, NOT what's built here yet. This `web/` app is the landing page only.
+> Two other docs in this folder — `README.md` and `system.md` — describe the *wired* `reprise-ui`
+> product (Clerk, Socket.io, LiveKit, Server Actions). That plumbing is **not built yet**: every
+> screen here renders from `src/lib/mock/data.ts` and auth is bypassed. Route-by-route status:
+> `docs/PAGES.md`.
 
 ## Run it
 
 ```bash
 npm install
 npm run dev      # http://localhost:3000   (predev auto-cleans a stale prod .next)
-npm run build    # production build (15 static routes)
+npm run build    # production build (56 static pages)
 npm run lint
 npm run clean    # manually clear a stale prod .next if dev 404s on chunks
 ```
 
 Requires Node 20+. Stack: **Next.js 14.2.35** (App Router, TypeScript) · **Tailwind 3.4** ·
 **framer-motion 12** · React 18. No Clerk / TanStack / Zustand / shadcn yet — those arrive with
-the authenticated app.
+the real plumbing.
 
 ## Status
 
-✅ **Complete and shipping-green.** `tsc --noEmit` clean, `next lint` clean, `next build` clean
-(15 static pages, `/` = 168 kB First Load JS), every animation reduced-motion-guarded, no dead
-links. As of 2026-06-30 the 8 secondary marketing/legal pages are **real** (no longer "Coming
-soon") and the hero live-capture card was redesigned. Details + build-gotchas in `PROGRESS.md`.
+✅ **Complete on mock data and shipping-green** (last verified 2026-07-06): `tsc --noEmit`
+clean, `next lint` clean, `next build` clean (56 static pages), every animation
+reduced-motion-guarded, zero horizontal overflow down to 320px across the landing page, no
+dead links. Latest work: the six-agent responsive + motion pass (THE RELAY pinned scene with
+the LoadTrend chart, calm slot-based LiveCapture, new loader/hero choreography, inside-app
+polish). Details + build gotchas in `PROGRESS.md`.
 
 ## The 30-second map
 
@@ -41,16 +46,19 @@ soon") and the hero live-capture card was redesigned. Details + build-gotchas in
   integrations. Sells: own meetings · a personal AI agent per participant · **agents that
   collaborate across meetings** (the differentiator).
 - **Page:** `src/app/(marketing)/page.tsx` composes the sections (two-act hero → in-the-room
-  capture → statement → steps → memory timeline → FAQ → CTA → footer). The hero is a pinned two-act
-  stage: a live "Q3 GTM sync" capture card gathers + exits left, then page two assembles "Your
-  shorthand, returned as minutes." letter-by-letter with the live `NotesWidget` (the old
-  notes-enhance section now lives inside the hero). Atoms (`PillCTA`, `OutlinePill`, icons) in
-  `src/components/landing/ui.tsx`; living graph in `ConnectedGraph.tsx`; motion in `motion.tsx`.
-- **Routes:** grouped into `(marketing)` / `(auth)`, with empty `(app)`/`(admin)`/`api`
-  placeholders for the future authenticated shell. The secondary marketing/legal routes
-  (enterprise, students + verify, blog, careers, privacy, terms, security) are **real pages** built
-  on a shared `src/components/marketing/` shell (`PageShell` / `PageHero` / `Prose`); only the two
-  auth routes are still "Coming soon" (`ComingSoon.tsx`). Plus a real on-brand `not-found.tsx`.
+  capture → THE RELAY statement → pinned steps → memory timeline → FAQ → CTA → footer). The two
+  signature scroll pieces are the hero (live capture card gathers + exits, page two assembles
+  letter-by-letter with the `NotesWidget`) and the Statement relay (4-beat scroll-scrubbed
+  `PinnedScene` — heading inside the pin, packet exchange between agents, animated `LoadTrend`
+  capacity chart). LiveCapture deliberately does NOT scroll-pin — it auto-plays in view with a
+  height-stable slot layout. Atoms in `src/components/landing/ui.tsx`; living graph in
+  `ConnectedGraph.tsx`; motion primitives in `motion.tsx` (catalog: `docs/MOTION.md`).
+- **Routes:** grouped into `(marketing)` / `(auth)` / `(app)` / `(admin)` — all built (the app
+  and admin shells on mock data; see `docs/PAGES.md`). The secondary marketing/legal routes
+  (enterprise, students + verify, blog, careers, privacy, terms, security) are real pages on the
+  shared `src/components/marketing/` shell (`PageShell` / `PageHero` / `Prose`); `/sign-in` and
+  `/sign-up` currently redirect to `/dashboard` (auth bypass). Plus a real on-brand
+  `not-found.tsx`.
 - **Orphaned:** six old "hand-set machine" components (`ColorBlocks`, `LiveSimulation`,
   `LogoGrid`, `ScrollStory`, `TypographyBreak`, `WorksEverywhere`) are kept but no longer
   imported — see `PROGRESS.md`.
