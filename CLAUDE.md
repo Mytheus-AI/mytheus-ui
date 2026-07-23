@@ -167,3 +167,16 @@ This repo consumes contracts; it must stay compatible with them and must not red
 - Conventional commits: `feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs:`.
 - CI must pass on every PR: lint, format check (Prettier), typecheck, Vitest, `next build`, Playwright (including a11y), per-PR preview deploy.
 - Commits and PRs in this project must NOT include a `Co-Authored-By` footer.
+
+## Progress documentation - single home
+
+Every record of work done - after a session, a feature, a fix, or a band step - lands in ONE place: `mytheus-docs/work-done-till-now/`. Not in this repo.
+
+- One file per plan band, covering every repo that band touches: `work-done-till-now/01-plan-0-scaffold-and-contracts.md`, then `02-plan-1-2-...`, and so on. Add to the current band's file; start a new file only when a new band starts.
+- Write it comprehensively enough that another person, or their coding agent, can pick the work up cold: what was built, what was verified and by which exact command, and **why** each decision was taken. Record every deviation from the plan together with its rationale. A deviation with no recorded reason is a bug, not a decision.
+- Read `mytheus-docs/work-done-till-now/README.md` first. It holds the required structure and the writing conventions.
+- Do NOT create or extend a per-repo progress log. `PROGRESS.md` in this repo is historical: leave it in place, do not add to it, and fold anything new into the band file. The contributor references under `docs/` (DESIGN-SYSTEM, MOTION, PAGES, MOCK-DATA, CONTRIBUTING) stay where they are - they are reference material, not a progress log.
+- That folder **records**; it never **defines**. A new or changed name, number, or decision still goes canon-first (`_canon/`), then an ADR, then the reader docs. Cite them from the band file.
+- Do not overcomplicate. Build the optimal, professional, simple working version first, and add complexity only when something concrete requires it.
+-if documentartion repo is not found then update it here in previus.md also and always make sure for the main docsumentaion in mythaeus-docs be always updated with previus,md if found later
+
