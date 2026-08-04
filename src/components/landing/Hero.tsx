@@ -5,19 +5,21 @@ import {
   motion,
   useScroll,
   useTransform,
+  useMotionValue,
   useMotionValueEvent,
   useReducedMotion,
   type MotionValue,
 } from "framer-motion";
 import { PillCTA } from "./ui";
-import { WordReveal, Reveal, Float } from "./motion";
+import { WordReveal, Reveal } from "./motion";
 import { NotesWidget } from "./NotesEnhanceDemo";
 
 /* ================================================================== */
 /*  Hero — a scroll-driven, two-page filmstrip pinned to the viewport.  */
-/*  Page one (the live "Q3 GTM sync" capture) slides out to the LEFT    */
-/*  and exits as you scroll, while page two (the memory the agent       */
-/*  leaves behind) arrives from the RIGHT onto the same screen.         */
+/*  Page one (the live "Q3 Planning" capture, sitting at the centre of   */
+/*  its own meeting timeline) slides out to the LEFT and exits as you   */
+/*  scroll, while page two (the memory the agent leaves behind)         */
+/*  arrives from the RIGHT onto the same screen.                        */
 /*  Fully scroll-reversible. Reduced-motion / mobile = stacked.         */
 /* ================================================================== */
 
@@ -57,8 +59,12 @@ function HeroSequence() {
   const [showTwo, setShowTwo] = useState(false);
   useMotionValueEvent(p, "change", (v) => setShowTwo(v > 0.5));
 
-  // the scroll cue fades the instant you begin
-  const cueO = useTransform(scrollYProgress, [0, 0.05], [1, 0]);
+  // the scroll cue fades the instant you begin. this is a state flip, not a
+  // scroll-linked opacity: framer hands a `style` MotionValue to a native
+  // ViewTimeline, and inside this sticky/pinned section that timeline samples
+  // wrong deep in the scroll — the cue would drift back into view over page two
+  const [cueOut, setCueOut] = useState(false);
+  useMotionValueEvent(scrollYProgress, "change", (v) => setCueOut(v > 0.02));
 
   // a gentle camera pull-back + lift as you scroll away into the next section
   const stageScale = useTransform(scrollYProgress, [0.9, 1], [1, 0.97]);
@@ -95,18 +101,21 @@ function HeroSequence() {
         {/* ---- scroll cue — waits for the intro to land, then invites ---- */}
         <motion.div
           aria-hidden
-          style={{ opacity: cueO }}
+          animate={{ opacity: cueOut ? 0 : 1 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
           className="pointer-events-none absolute inset-x-0 bottom-9 z-30"
         >
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 1.5 }}
-            className="flex flex-col items-center gap-1.5 text-ink-3"
+            className="flex items-center justify-center gap-2 text-ink-3"
           >
-            <span className="kicker text-[10px]">Scroll</span>
+            <span className="text-[13px] font-medium tracking-tight">
+              See your agent in action
+            </span>
             <motion.span
-              animate={{ y: [0, 6, 0] }}
+              animate={{ y: [0, 5, 0] }}
               transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
             >
               <ChevronDown />
@@ -118,67 +127,7 @@ function HeroSequence() {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  The cluster of cards + per-card converge interpolation             */
-/* ------------------------------------------------------------------ */
-
-type Pose = { x: number; y: number; r: number; s: number };
-
-const POSES: {
-  key: string;
-  z: number;
-  home: Pose;
-  stack: Pose;
-  node: ReactNode;
-}[] = [
-  {
-    key: "sunburst",
-    z: 10,
-    home: { x: 70, y: -158, r: 5, s: 1 },
-    stack: { x: 36, y: -32, r: -11, s: 0.9 },
-    node: <SunburstPanel />,
-  },
-  {
-    key: "clay",
-    z: 10,
-    home: { x: -300, y: 86, r: -8, s: 1 },
-    stack: { x: -44, y: 32, r: 11, s: 0.9 },
-    node: <ClayPanel />,
-  },
-  {
-    key: "note",
-    z: 30,
-    home: { x: 0, y: 0, r: -1.5, s: 1 },
-    stack: { x: -16, y: 0, r: -5, s: 0.9 },
-    node: <NoteWindow />,
-  },
-  /* satellites — small product truths orbiting the capture window. Each one
-     teases a section further down the page (agents, routing, memory), so the
-     hero itself invites the scroll. */
-  {
-    key: "agents",
-    z: 40,
-    home: { x: -256, y: -218, r: -6, s: 1 },
-    stack: { x: -38, y: -52, r: 8, s: 0.88 },
-    node: <AgentsSatellite />,
-  },
-  {
-    key: "routed",
-    z: 40,
-    home: { x: -252, y: 168, r: -7, s: 1 },
-    stack: { x: -56, y: 54, r: -14, s: 0.88 },
-    node: <RoutedSatellite />,
-  },
-  {
-    key: "memory",
-    z: 35,
-    home: { x: 272, y: 118, r: 6, s: 1 },
-    stack: { x: 48, y: 40, r: 10, s: 0.88 },
-    node: <MemorySatellite />,
-  },
-];
-
-/* ---- page one (sequence): intro fades + drifts, cards gather then fly left ---- */
+/* ---- page one (sequence): intro fades + drifts, the orbit exits left ---- */
 function SeqPageOne({ progress }: { progress: MotionValue<number> }) {
   const introO = useTransform(progress, [0, 0.26], [1, 0]);
   const introX = useTransform(progress, [0, 0.34], [0, -90]);
@@ -189,7 +138,7 @@ function SeqPageOne({ progress }: { progress: MotionValue<number> }) {
     ["blur(0px)", "blur(7px)"],
   );
   return (
-    <div className="mx-auto grid w-full max-w-[80rem] items-center gap-10 px-6 sm:px-10 lg:grid-cols-[0.95fr_1.05fr]">
+    <div className="mx-auto grid w-full max-w-[80rem] items-center gap-10 px-6 sm:px-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
       <motion.div
         style={{ opacity: introO, x: introX, filter: introBlur }}
         className="relative z-10 max-w-[36rem]"
@@ -197,164 +146,350 @@ function SeqPageOne({ progress }: { progress: MotionValue<number> }) {
         <Intro />
       </motion.div>
       <div className="relative hidden lg:block">
-        <ConvergingCluster progress={progress} />
+        <MeetingOrbit progress={progress} />
       </div>
     </div>
   );
 }
 
-/* the live data wires of the cluster: dashed guides from the capture
-   window out to each satellite, with clay packets streaming along them
-   (and one deep-clay packet flowing back in — context returns). SMIL
-   animateMotion drives the packets, so they cost nothing on the main
-   thread; under reduced motion only the quiet guides render. */
-const WIRES = [
-  { d: "M 300 190 Q 190 120 100 40", dur: 3.2, delay: 0 }, // → agents
-  { d: "M 300 290 Q 190 360 104 400", dur: 3.8, delay: 0.9 }, // → routed
-  { d: "M 400 290 Q 520 340 616 352", dur: 3.4, delay: 1.6 }, // → memory
+/* ================================================================== */
+/*  Meeting orbit — the graphic that argues the product without words. */
+/*  Today's meeting sits at the centre; the meetings behind it recede   */
+/*  along a curved track that runs *behind* the window, and the next    */
+/*  one waits ahead of it. One clay thread carries a decision out of    */
+/*  Q2 Planning and into today — meetings happen, the agent remembers,    */
+/*  the context moves forward.                                          */
+/* ================================================================== */
+
+const STAGE_W = 820;
+const STAGE_H = 560;
+/* every chip hangs off its dot; the dot is DOT_INSET in from the chip's edge
+   nearest the window, so past meetings read leftward and the next one right */
+const DOT_INSET = 22;
+
+type Pt = [number, number];
+
+/** Catmull-Rom → cubic Bézier, one string per segment: a smooth curve that
+    passes through every point, so a node dot is always exactly on the track —
+    and so the highlighted half can reuse a segment's exact control points
+    instead of drawing a second, subtly different curve over it. */
+function smoothSegments(pts: Pt[]) {
+  const segs: string[] = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] ?? pts[i];
+    const [x1, y1] = pts[i];
+    const [x2, y2] = pts[i + 1];
+    const p3 = pts[i + 2] ?? pts[i + 1];
+    const c1x = x1 + (x2 - p0[0]) / 6;
+    const c1y = y1 + (y2 - p0[1]) / 6;
+    const c2x = x2 - (p3[0] - x1) / 6;
+    const c2y = y2 - (p3[1] - y1) / 6;
+    segs.push(
+      `C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${x2} ${y2}`,
+    );
+  }
+  return segs;
+}
+
+const moveTo = (p: Pt) => `M ${p[0]} ${p[1]}`;
+
+type OrbitNodeSpec = {
+  key: string;
+  title: string;
+  meta: string;
+  at: Pt;
+  icon: ReactNode;
+  scale: number;
+  fade: number;
+  delay: number;
+  source?: boolean;
+  future?: boolean;
+};
+
+/* chronological, oldest first — the centre of the track is today's meeting,
+   which is the window itself, so it needs no chip of its own */
+const ORBIT_NODES: OrbitNodeSpec[] = [
+  {
+    key: "monday",
+    title: "Monday sync",
+    meta: "3 decisions",
+    at: [196, 92],
+    icon: <TickGlyph />,
+    scale: 0.88,
+    fade: 0.7,
+    delay: 1.0,
+  },
+  {
+    key: "client",
+    title: "Client call",
+    meta: "2 actions",
+    at: [152, 238],
+    icon: <ActionGlyph />,
+    scale: 0.94,
+    fade: 0.82,
+    delay: 0.85,
+  },
+  {
+    key: "q2",
+    title: "Q2 Planning",
+    meta: "Pricing · $49",
+    at: [190, 384],
+    icon: <DiamondGlyph />,
+    scale: 1,
+    fade: 1,
+    delay: 0.7,
+    source: true,
+  },
+  {
+    key: "next",
+    title: "Next meeting",
+    meta: "Context ready",
+    at: [660, 310],
+    icon: <ClockGlyph />,
+    scale: 0.95,
+    fade: 0.9,
+    delay: 1.3,
+    future: true,
+  },
 ];
 
-function FlowWires({ fade }: { fade?: MotionValue<number> }) {
+const HUB: Pt = [410, 458]; // where the track passes behind the window
+
+const TRACK_PTS: Pt[] = [
+  ORBIT_NODES[0].at,
+  ORBIT_NODES[1].at,
+  ORBIT_NODES[2].at,
+  HUB,
+  ORBIT_NODES[3].at,
+];
+const SEGS = smoothSegments(TRACK_PTS);
+
+/* the whole orbit, hairline — it still has to read as one curve where it
+   passes behind the window */
+const TRACK = [moveTo(TRACK_PTS[0]), ...SEGS].join(" ");
+
+/* the highlighted thread: everything already decided, running down the track
+   from Monday and breaking off at Q2 Planning straight into today's window.
+   Segments 0-1 are the track's own, so the two curves coincide exactly. */
+const MEMORY_LINE = [
+  moveTo(TRACK_PTS[0]),
+  SEGS[0],
+  SEGS[1],
+  "C 206 312, 226 275, 272 275",
+].join(" ");
+
+/* ahead of today: still dotted, and carrying context out to the next one */
+const AHEAD_LINE = [moveTo(HUB), SEGS[3]].join(" ");
+
+function MeetingOrbit({ progress }: { progress?: MotionValue<number> }) {
+  // static callers (mobile / reduced motion) sit at p = 0 — every transform
+  // below resolves to its home value, so one component serves both paths
+  const parked = useMotionValue(0);
+  const p = progress ?? parked;
+
+  // 0 → 0.3 : the orbit collapses toward the window
+  // 0.3 → 0.55 : the whole stage leaves to the left
+  const exitX = useTransform(p, [0.3, 0.55], [0, -960]);
+  const exitO = useTransform(p, [0.36, 0.52], [1, 0]);
+  const cardScale = useTransform(p, [0, 0.3], [1, 0.92]);
+  const trackO = useTransform(p, [0.06, 0.24], [1, 0]);
+
+  return (
+    <motion.div style={{ x: exitX, opacity: exitO }} className="relative">
+      {/* zoom (not transform scale) so text re-lays-out at the target size
+          and stays pixel-crisp instead of going soft under a 0.6 scale */}
+      <div
+        className="relative mx-auto [zoom:0.6] xl:[zoom:0.77]"
+        style={{ width: STAGE_W, height: STAGE_H }}
+      >
+        {/* the warm bloom that holds the composition together */}
+        <div
+          aria-hidden
+          className="absolute left-1/2 top-1/2 h-[460px] w-[460px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(217,119,87,0.18), rgba(217,119,87,0.06) 45%, transparent 72%)",
+          }}
+        />
+
+        <OrbitTrack fade={trackO} />
+
+        {ORBIT_NODES.map((n) => (
+          <OrbitNode key={n.key} node={n} progress={p} />
+        ))}
+
+        {/* today — the one large meeting interface, centred on its own track.
+            The centring lives on a plain wrapper: a motion transform on the
+            same element would overwrite the -translate-x/y utilities. */}
+        <div className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
+          <motion.div style={{ scale: cardScale }}>
+            <NoteWindow />
+          </motion.div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/* the track itself: a hairline curve, a bead of dots riding it, the clay
+   memory thread arriving from Q2 Planning, and the faint one leaving for the
+   next meeting. SMIL drives the packets, so they cost nothing on the main
+   thread; under reduced motion only the quiet geometry renders. */
+function OrbitTrack({ fade }: { fade: MotionValue<number> }) {
   const reduce = useReducedMotion();
   return (
     <motion.svg
-      viewBox="0 0 700 480"
-      className="absolute inset-0 h-full w-full overflow-visible"
-      style={fade ? { opacity: fade } : undefined}
+      viewBox={`0 0 ${STAGE_W} ${STAGE_H}`}
+      className="absolute inset-0 z-10 h-full w-full overflow-visible"
+      style={{ opacity: fade }}
       aria-hidden
     >
       <defs>
-        <filter id="hero-wire-glow" x="-150%" y="-150%" width="400%" height="400%">
+        <filter id="orbit-glow" x="-150%" y="-150%" width="400%" height="400%">
           <feGaussianBlur stdDeviation="5" />
         </filter>
+        <linearGradient id="orbit-track" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="var(--signal)" stopOpacity="0.12" />
+          <stop offset="0.45" stopColor="var(--signal)" stopOpacity="0.4" />
+          <stop offset="1" stopColor="var(--signal)" stopOpacity="0.14" />
+        </linearGradient>
+        {/* the thread fades out at the oldest end and lands at full clay */}
+        <linearGradient
+          id="orbit-memory"
+          gradientUnits="userSpaceOnUse"
+          x1={196}
+          y1={92}
+          x2={236}
+          y2={300}
+        >
+          <stop offset="0" stopColor="var(--signal)" stopOpacity="0.18" />
+          <stop offset="0.45" stopColor="var(--signal)" stopOpacity="0.85" />
+          <stop offset="1" stopColor="var(--signal-deep)" stopOpacity="1" />
+        </linearGradient>
       </defs>
-      {WIRES.map((w, i) => (
-        <g key={i}>
-          <path
-            d={w.d}
-            fill="none"
-            stroke="var(--signal)"
-            strokeOpacity={0.32}
-            strokeWidth={1.8}
-            strokeDasharray="3 8"
-            strokeLinecap="round"
-          />
-          {!reduce && (
-            <>
-              <circle r={10} fill="var(--signal)" opacity={0.4} filter="url(#hero-wire-glow)">
-                <animateMotion
-                  dur={`${w.dur}s`}
-                  begin={`${w.delay}s`}
-                  repeatCount="indefinite"
-                  path={w.d}
-                />
-              </circle>
-              <circle r={4} fill="var(--signal)">
-                <animateMotion
-                  dur={`${w.dur}s`}
-                  begin={`${w.delay}s`}
-                  repeatCount="indefinite"
-                  path={w.d}
-                />
-              </circle>
-              <circle r={1.8} fill="white">
-                <animateMotion
-                  dur={`${w.dur}s`}
-                  begin={`${w.delay}s`}
-                  repeatCount="indefinite"
-                  path={w.d}
-                />
-              </circle>
-            </>
-          )}
-        </g>
-      ))}
-      {/* context flowing back IN along the memory wire */}
+
+      {/* the whole orbit, hairline — including the stretch behind the window */}
+      <path d={TRACK} fill="none" stroke="url(#orbit-track)" strokeWidth={1.6} />
+
+      {/* ahead of today: beads, not a line — nothing has happened there yet */}
+      <path
+        d={AHEAD_LINE}
+        fill="none"
+        stroke="var(--signal)"
+        strokeOpacity={0.5}
+        strokeWidth={3.2}
+        strokeLinecap="round"
+        strokeDasharray="0.01 24"
+      />
       {!reduce && (
-        <circle r={3.2} fill="var(--signal-deep)">
-          <animateMotion
-            dur="4.6s"
-            begin="2.4s"
-            repeatCount="indefinite"
-            path={WIRES[2].d}
-            keyPoints="1;0"
-            keyTimes="0;1"
-            calcMode="linear"
-          />
+        /* context leaving today for whatever is booked next */
+        <circle r={3.4} fill="var(--signal)" opacity={0.8}>
+          <animateMotion dur="3.4s" begin="4.2s" repeatCount="indefinite" path={AHEAD_LINE} />
         </circle>
+      )}
+
+      {/* the memory thread — drawn in once, then travelled forever */}
+      <motion.path
+        d={MEMORY_LINE}
+        fill="none"
+        stroke="url(#orbit-memory)"
+        strokeWidth={2.6}
+        strokeLinecap="round"
+        initial={reduce ? undefined : { pathLength: 0 }}
+        animate={reduce ? undefined : { pathLength: 1 }}
+        transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 1.05 }}
+      />
+      {!reduce && (
+        <>
+          <circle r={9} fill="var(--signal)" opacity={0.45} filter="url(#orbit-glow)">
+            <animateMotion dur="5s" begin="2.5s" repeatCount="indefinite" path={MEMORY_LINE} />
+          </circle>
+          <circle r={4} fill="var(--signal)">
+            <animateMotion dur="5s" begin="2.5s" repeatCount="indefinite" path={MEMORY_LINE} />
+          </circle>
+          <circle r={1.7} fill="white">
+            <animateMotion dur="5s" begin="2.5s" repeatCount="indefinite" path={MEMORY_LINE} />
+          </circle>
+        </>
       )}
     </motion.svg>
   );
 }
 
-function ConvergingCluster({ progress }: { progress: MotionValue<number> }) {
-  /* the wires detach as the cards gather into the stack */
-  const wireFade = useTransform(progress, [0.1, 0.26], [1, 0]);
-  return (
-    /* zoom (not transform scale) so text re-lays-out at the target size
-       and stays pixel-crisp instead of going soft under a 0.66 scale */
-    <div className="relative mx-auto h-[480px] w-[700px] [zoom:0.66] xl:[zoom:0.9]">
-      <FlowWires fade={wireFade} />
-      {POSES.map((pose) => (
-        <ConvergeCard key={pose.key} pose={pose} progress={progress} />
-      ))}
-    </div>
-  );
-}
-
-function ConvergeCard({
-  pose,
+/* one meeting on the track: a dot sitting exactly on the curve, wearing the
+   icon for what came out of it, with its label reading away from the window */
+function OrbitNode({
+  node,
   progress,
 }: {
-  pose: (typeof POSES)[number];
+  node: OrbitNodeSpec;
   progress: MotionValue<number>;
 }) {
-  // 0 → 0.3 : the spread "home" poses gather into the centre stack
-  // 0.3 → 0.55 : the whole stack slides left and fades out (vanishes)
-  const x = useTransform(
-    progress,
-    [0, 0.3, 0.55],
-    [pose.home.x, pose.stack.x, -900],
-  );
-  const y = useTransform(progress, [0, 0.3], [pose.home.y, pose.stack.y]);
-  const rotate = useTransform(
-    progress,
-    [0, 0.3, 0.55],
-    [pose.home.r, pose.stack.r, pose.stack.r - 10],
-  );
-  const scale = useTransform(progress, [0, 0.3], [pose.home.s, pose.stack.s]);
-  const opacity = useTransform(progress, [0.4, 0.54], [1, 0]);
-  return (
-    <div
-      className="absolute inset-0 grid place-items-center"
-      style={{ zIndex: pose.z }}
-    >
-      <motion.div style={{ x, y, rotate, scale, opacity }}>{pose.node}</motion.div>
-    </div>
-  );
-}
+  const reduce = useReducedMotion();
+  // gather toward the centre before the stage leaves
+  const x = useTransform(progress, [0, 0.3], [0, (STAGE_W / 2 - node.at[0]) * 0.5]);
+  const y = useTransform(progress, [0, 0.3], [0, (STAGE_H / 2 - node.at[1]) * 0.5]);
+  const scale = useTransform(progress, [0, 0.3], [node.scale, node.scale * 0.72]);
+  const opacity = useTransform(progress, [0.04, 0.26], [node.fade, 0]);
 
-/* the card cluster held at its spread "home" poses — the whole page slides as
-   one now, so the cards no longer animate individually. */
-function StaticCluster() {
+  // past meetings sit left of the window and read outward; the next one sits
+  // right of it. Either way the dot is the edge nearest today.
+  const past = node.at[0] < STAGE_W / 2;
+
+  const tone = node.source
+    ? "border-signal/35 bg-white shadow-[0_22px_44px_-22px_rgba(189,93,58,0.55)]"
+    : node.future
+      ? "border-dashed border-line-2 bg-white/70 shadow-[0_14px_30px_-24px_rgba(40,30,20,0.4)]"
+      : "border-line bg-white/90 shadow-[0_18px_38px_-24px_rgba(40,30,20,0.45)]";
+
+  const dot = node.source
+    ? "bg-signal text-white"
+    : node.future
+      ? "border border-dashed border-signal/45 bg-white text-signal"
+      : "bg-signal-soft text-signal-deep";
+
   return (
-    <div className="relative mx-auto h-[480px] w-[700px] [zoom:0.66] xl:[zoom:0.9]">
-      <FlowWires />
-      {POSES.map((pose) => (
-        <div
-          key={pose.key}
-          className="absolute inset-0 grid place-items-center"
-          style={{ zIndex: pose.z }}
+    /* pinned so the dot lands exactly on the curve, whichever side it hangs from */
+    <div
+      className="absolute z-20 -translate-y-1/2"
+      style={
+        past
+          ? { right: STAGE_W - node.at[0] - DOT_INSET, top: node.at[1] }
+          : { left: node.at[0] - DOT_INSET, top: node.at[1] }
+      }
+    >
+      <motion.div
+        initial={reduce ? false : { opacity: 0, y: 12, filter: "blur(5px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: node.delay }}
+      >
+        <motion.div
+          style={{
+            x,
+            y,
+            scale,
+            opacity,
+            transformOrigin: past
+              ? `calc(100% - ${DOT_INSET}px) center`
+              : `${DOT_INSET}px center`,
+          }}
+          className={`flex items-center gap-2.5 rounded-2xl border py-2 backdrop-blur-sm ${
+            past ? "flex-row-reverse pl-4 pr-2 text-right" : "pl-2 pr-4"
+          } ${tone}`}
         >
-          <div
-            style={{
-              transform: `translate(${pose.home.x}px, ${pose.home.y}px) rotate(${pose.home.r}deg)`,
-            }}
-          >
-            {pose.node}
-          </div>
-        </div>
-      ))}
+          <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full ${dot}`}>
+            {node.icon}
+          </span>
+          <span className="whitespace-nowrap">
+            <span className="block text-[14px] font-semibold leading-tight tracking-tight text-ink-display">
+              {node.title}
+            </span>
+            <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">
+              {node.meta}
+            </span>
+          </span>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }
@@ -374,7 +509,7 @@ function SeqPageTwo({
   // the widget rises a beat behind the headline — a soft parallax hand-off
   const visY = useTransform(progress, [0.56, 0.92], [48, 0]);
   return (
-    <div className="mx-auto grid w-full max-w-[80rem] items-center gap-10 px-6 sm:px-10 lg:grid-cols-[0.95fr_1.05fr]">
+    <div className="mx-auto grid w-full max-w-[80rem] items-center gap-10 px-6 sm:px-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
       <div className="relative z-10 max-w-[38rem]">
         <h2
           aria-label="Your shorthand, returned as minutes."
@@ -532,17 +667,17 @@ function HeroStatic() {
     <section className="mesh-field mesh-anim grain relative isolate overflow-hidden pb-16 pt-28 sm:pt-32 lg:pb-24 lg:pt-36">
       <div className="relative z-10 flex flex-col gap-20 lg:gap-28">
         {/* page one */}
-        <div className="mx-auto grid w-full max-w-[80rem] items-center gap-10 px-6 sm:px-10 lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="mx-auto grid w-full max-w-[80rem] items-center gap-10 px-6 sm:px-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
           <div className="relative z-10 max-w-[36rem]">
             <Intro />
           </div>
           <div className="relative hidden lg:block">
-            <StaticCluster />
+            <MeetingOrbit />
           </div>
         </div>
 
         {/* page two */}
-        <div className="mx-auto grid w-full max-w-[80rem] items-center gap-10 px-6 sm:px-10 lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="mx-auto grid w-full max-w-[80rem] items-center gap-10 px-6 sm:px-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
           <div className="relative z-10 max-w-[38rem]">
             <h2 className="display display-tight max-w-[16ch] text-balance text-[clamp(2.2rem,6vw,5.2rem)]">
               Your shorthand, returned as{" "}
@@ -600,12 +735,14 @@ function Intro() {
         </a>
       </Reveal>
 
+      {/* the accent line rides a touch smaller than the roman lines so the
+          three-line block squares up instead of bulging at the bottom */}
       <WordReveal
         as="h1"
         text="Every meeting,"
         accent="on repeat."
-        accentClass="italic text-gradient-signal"
-        className="display display-tight mt-6 max-w-[15ch] text-balance text-[clamp(2.4rem,6.4vw,5.6rem)]"
+        accentClass="italic text-gradient-signal text-[0.86em]"
+        className="display display-tight mt-4 max-w-[15ch] text-balance text-[clamp(2.4rem,6.4vw,5.6rem)]"
         delay={120}
       />
 
@@ -655,7 +792,7 @@ function NoteWindow() {
   ];
 
   return (
-    <div className="w-[336px] overflow-hidden rounded-[24px] border border-line bg-white/95 shadow-[0_50px_100px_-40px_rgba(40,30,20,0.55),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur-sm">
+    <div className="w-[348px] overflow-hidden rounded-[24px] border border-line bg-white/95 shadow-[0_50px_100px_-40px_rgba(40,30,20,0.55),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur-sm">
       {/* titlebar chrome — reads as a real app window */}
       <div className="flex items-center gap-1.5 border-b border-line/70 px-5 py-3.5">
         <span className="h-3 w-3 rounded-full bg-[#ec6a5e]" />
@@ -669,7 +806,7 @@ function NoteWindow() {
       <div className="px-6 pb-6 pt-5">
         {/* title + meta */}
         <h3 className="text-[clamp(1.5rem,3.2vw,2rem)] font-semibold leading-tight tracking-tight text-ink-display">
-          Q3 GTM sync
+          Q3 Planning
         </h3>
         <div className="mt-3 flex items-center gap-2">
           <span className="inline-flex items-center gap-2 rounded-full border border-line bg-bg-2/60 px-3 py-1.5 text-[12.5px] font-medium text-ink-2">
@@ -690,6 +827,48 @@ function NoteWindow() {
             <LiveTimer reduce={reduce} />
           </span>
         </div>
+
+        {/* where the memory thread lands: the Q2 decision, already in the room
+            before anyone had to look it up */}
+        <motion.div
+          className="mt-3 flex items-center gap-2.5 rounded-2xl border border-signal/25 bg-signal-soft/70 px-3 py-2.5"
+          animate={
+            reduce
+              ? undefined
+              : {
+                  boxShadow: [
+                    "0 0 0 0 rgba(217,119,87,0)",
+                    "0 0 0 0 rgba(217,119,87,0)",
+                    "0 0 0 4px rgba(217,119,87,0.18)",
+                    "0 0 0 0 rgba(217,119,87,0)",
+                  ],
+                }
+          }
+          transition={
+            reduce
+              ? undefined
+              : {
+                  // peaks as the packet on the memory thread lands (5s loop)
+                  duration: 5,
+                  times: [0, 0.9, 0.97, 1],
+                  repeat: Infinity,
+                  ease: "easeOut",
+                  delay: 2.5,
+                }
+          }
+        >
+          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-signal text-white">
+            <DiamondGlyph />
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-[13px] font-medium leading-tight text-ink">
+              Pricing locked at $49
+            </span>
+            <span className="mt-0.5 block font-mono text-[9.5px] uppercase tracking-[0.14em] text-signal-deep">
+              Carried in from Q2 Planning
+            </span>
+          </span>
+        </motion.div>
 
         {/* transcript: settled shorthand already tagged; live line still classifying */}
         <div className="mt-4 min-h-[124px] space-y-3 text-[15px] leading-relaxed">
@@ -715,16 +894,6 @@ function NoteWindow() {
           </div>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-bg-3">
             <div className={`${reduce ? "" : "sheen"} h-full w-[62%] rounded-full bg-signal`} />
-          </div>
-          <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] font-medium text-signal-deep">
-            See it become minutes
-            <motion.span
-              aria-hidden
-              animate={reduce ? undefined : { y: [0, 2, 0] }}
-              transition={reduce ? undefined : { duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <ChevronDown />
-            </motion.span>
           </div>
         </div>
       </div>
@@ -851,138 +1020,55 @@ function Caret() {
   );
 }
 
-/* ================================================================== */
-/*  Satellites — floating product truths around the note window        */
-/* ================================================================== */
+/* ---------------- orbit glyphs — what each meeting left behind ------ */
 
-/** Fade-lift entrance for a satellite, staggered after the hero copy. */
-function SatEnter({ children, delay }: { children: ReactNode; delay: number }) {
-  const reduce = useReducedMotion();
-  if (reduce) return <>{children}</>;
+/* confirmed */
+function TickGlyph() {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 18, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay }}
-    >
-      {children}
-    </motion.div>
+    <svg viewBox="0 0 12 12" className="h-3.5 w-3.5" aria-hidden>
+      <path
+        d="M2.5 6.2 5 8.5 9.5 3.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 
-function SatAvatar({
-  initials,
-  className = "",
-}: {
-  initials: string;
-  className?: string;
-}) {
+/* an action that left the room with an owner */
+function ActionGlyph() {
   return (
-    <span
-      className={`grid h-6 w-6 place-items-center rounded-full border-[1.5px] border-white bg-signal-soft font-mono text-[8.5px] font-bold text-signal-deep ${className}`}
-    >
-      {initials}
-    </span>
+    <svg viewBox="0 0 12 12" className="h-3.5 w-3.5" fill="none" aria-hidden>
+      <path
+        d="M2 6h7m0 0L6.4 3.4M9 6 6.4 8.6"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 
-/* "one agent per person" — the core promise, worn as a badge */
-function AgentsSatellite() {
+/* a decision — the same clay diamond the memory timeline uses further down */
+function DiamondGlyph() {
   return (
-    <SatEnter delay={0.55}>
-      <Float amount={7} duration={7.5}>
-        <div className="flex items-center gap-2.5 rounded-full border border-line bg-white/95 py-2 pl-2.5 pr-4 shadow-[0_24px_48px_-24px_rgba(40,30,20,0.45)] backdrop-blur-sm">
-          <span className="flex -space-x-1.5">
-            <SatAvatar initials="PR" />
-            <SatAvatar initials="MA" />
-            <SatAvatar initials="DI" />
-            <span className="grid h-6 w-6 place-items-center rounded-full border-[1.5px] border-white bg-signal font-mono text-[8.5px] font-bold text-white">
-              +1
-            </span>
-          </span>
-          <span className="whitespace-nowrap text-[12px] font-medium text-ink-2">
-            One agent per person
-          </span>
-        </div>
-      </Float>
-    </SatEnter>
+    <svg viewBox="0 0 12 12" className="h-3 w-3" aria-hidden>
+      <path d="M6 1.4 10.6 6 6 10.6 1.4 6Z" fill="currentColor" />
+    </svg>
   );
 }
 
-/* a decision that already left the room — teases Confirm → Route */
-function RoutedSatellite() {
+/* still ahead */
+function ClockGlyph() {
   return (
-    <SatEnter delay={0.7}>
-      <Float amount={6} duration={8.5}>
-        <div className="w-[212px] rounded-[20px] border border-line bg-white/95 p-4 shadow-[0_30px_60px_-30px_rgba(40,30,20,0.45)] backdrop-blur-sm">
-          <div className="flex items-center justify-between">
-            <span className="kicker text-[9.5px] text-signal">
-              Decision · routed
-            </span>
-            <span className="grid h-5 w-5 place-items-center rounded-full bg-signal text-white">
-              <svg viewBox="0 0 12 12" className="h-3 w-3" aria-hidden>
-                <path
-                  d="M2.5 6.2 5 8.5 9.5 3.5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-          </div>
-          <p className="mt-2 text-[13px] font-semibold leading-snug tracking-tight text-ink-display">
-            Pricing locked at $49
-          </p>
-          <div className="mt-3 flex items-center gap-2 border-t border-line pt-2.5">
-            <SatAvatar initials="SA" />
-            <span className="text-[11px] leading-tight text-ink-3">
-              Sarah owns it · shared with 2
-            </span>
-          </div>
-        </div>
-      </Float>
-    </SatEnter>
-  );
-}
-
-/* a fact carried across meetings — teases the memory timeline below */
-function MemorySatellite() {
-  return (
-    <SatEnter delay={0.85}>
-      <Float amount={8} duration={6.5}>
-        <div className="w-[224px] rounded-[20px] border border-signal/25 bg-signal-soft/85 p-4 shadow-[0_30px_60px_-32px_rgba(189,93,58,0.5)] backdrop-blur-sm">
-          <span className="kicker text-[9.5px] text-signal-deep">
-            Cross-meeting memory
-          </span>
-          <p className="mt-2 text-[12.5px] font-medium leading-snug text-ink">
-            &ldquo;Q2 pricing decision&rdquo; resurfaced for today&rsquo;s sync
-          </p>
-          <p className="mt-2.5 font-mono text-[9.5px] uppercase tracking-wider text-signal-deep">
-            Apr 3 &rarr; Today
-          </p>
-        </div>
-      </Float>
-    </SatEnter>
-  );
-}
-
-/* ================================================================== */
-/*  Backdrop panels                                                    */
-/* ================================================================== */
-
-function SunburstPanel() {
-  return (
-    <div className="h-[300px] w-[320px] overflow-hidden rounded-[26px] shadow-[0_40px_80px_-40px_rgba(189,93,58,0.5)]">
-      <div className="sunburst grain absolute inset-0" />
-    </div>
-  );
-}
-
-function ClayPanel() {
-  return (
-    <div className="h-[260px] w-[180px] rounded-[24px] border border-signal/15 bg-signal-soft shadow-[0_30px_60px_-36px_rgba(189,93,58,0.45)]" />
+    <svg viewBox="0 0 12 12" className="h-3.5 w-3.5" fill="none" aria-hidden>
+      <circle cx="6" cy="6" r="4.4" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M6 3.6V6l1.8 1.2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 

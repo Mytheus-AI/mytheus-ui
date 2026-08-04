@@ -78,6 +78,24 @@ export function FlowField({ className = "" }: { className?: string }) {
         preserveAspectRatio="xMidYMid slice"
         className="h-full w-full"
       >
+        {/* the ribbon lines dissolve into the page at both ends instead of
+            stopping dead at the viewBox edge */}
+        <defs>
+          <linearGradient
+            id="ribbonFade"
+            gradientUnits="userSpaceOnUse"
+            x1="-820"
+            y1="0"
+            x2="820"
+            y2="0"
+          >
+            <stop offset="0" stopColor="currentColor" stopOpacity="0" />
+            <stop offset="0.15" stopColor="currentColor" stopOpacity="1" />
+            <stop offset="0.85" stopColor="currentColor" stopOpacity="1" />
+            <stop offset="1" stopColor="currentColor" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
         {/* the ribbon: parallel flowing lines, fully laid down, breathing
             with a slow vertical drift */}
         <g>
@@ -100,7 +118,7 @@ export function FlowField({ className = "" }: { className?: string }) {
               d={FLOW_PATH}
               transform={`translate(0 ${i * STEP})`}
               fill="none"
-              stroke="currentColor"
+              stroke="url(#ribbonFade)"
               strokeWidth={1.3}
               strokeOpacity={0.5 * (1 - i / LINES)}
               strokeLinecap="round"
@@ -110,12 +128,13 @@ export function FlowField({ className = "" }: { className?: string }) {
 
         {/* comet tube: concentric rings strung behind the orb, following
             together — every ring's position derives from the same scroll
-            value, each a breath further back along the curve */}
+            value, each a breath further back along the curve. Radius and
+            opacity both taper toward the tail, so it reads head-to-tail */}
         {!reduce &&
           Array.from({ length: RINGS }).map((_, i) => (
             <FlowRider key={i} p={p} lag={(RINGS - i) * LAG} leadRef={leadRef}>
               <circle
-                r={28}
+                r={10 + 18 * ((i + 1) / RINGS)}
                 fill="none"
                 stroke="currentColor"
                 strokeWidth={1}

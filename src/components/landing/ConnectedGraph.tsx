@@ -22,6 +22,9 @@ import { useEffect, useRef } from "react";
 /*  stays interactive even inside pointer-events-none containers. Colours   */
 /*  read from the CSS token layer so the graph always matches the theme.    */
 /*                                                                          */
+/*  The rAF loop sleeps whenever the canvas is offscreen or the tab is     */
+/*  hidden, so the O(n²) edge pass never burns frames nobody can see.      */
+/*                                                                          */
 /*  prefers-reduced-motion renders a single calm static frame.             */
 /* ----------------------------------------------------------------------- */
 
@@ -95,10 +98,13 @@ export function ConnectedGraph({
           edge: pick("--signal-deep", "#bd5d3a"),
         }
       : {
-          node: "#b8af9c",
-          nodeBright: "#f4f0e7",
-          edge: "#a59c89",
+          node: pick("--line-2", "#b8af9c"),
+          nodeBright: pick("--bg-2", "#f4f0e7"),
+          edge: pick("--ink-3", "#a59c89"),
         };
+    // the specular glint reads from the token layer too — the paper tone,
+    // so the glass highlight always matches the page it sits on
+    const glint = pick("--bg", "#ffffff");
 
     let width = 0;
     let height = 0;
@@ -200,7 +206,7 @@ export function ConnectedGraph({
       ctx.fill();
 
       // specular highlight — the little glass glint, up and to the left
-      ctx.fillStyle = `rgba(255,255,255,${(0.5 + lit * 0.4) * depth})`;
+      ctx.fillStyle = withAlpha(glint, (0.5 + lit * 0.4) * depth);
       ctx.beginPath();
       ctx.arc(n.x - r * 0.34, n.y - r * 0.34, r * 0.42, 0, Math.PI * 2);
       ctx.fill();
@@ -434,6 +440,24 @@ export function ConnectedGraph({
       raf = requestAnimationFrame(loop);
     };
 
+    // the graph sleeps offscreen: the O(n²) edge pass only runs while the
+    // canvas is actually in the viewport AND the tab is visible. Scrolling
+    // away (or backgrounding the tab) parks the rAF loop entirely; scrolling
+    // back picks it up where it left off.
+    let onscreen = true;
+    let running = false;
+    const syncLoop = () => {
+      const shouldRun = onscreen && !document.hidden;
+      if (shouldRun && !running) {
+        running = true;
+        raf = requestAnimationFrame(loop);
+      } else if (!shouldRun && running) {
+        running = false;
+        cancelAnimationFrame(raf);
+      }
+    };
+    const onVisibility = () => syncLoop();
+
     // pointer is tracked on the window and hit-tested against the canvas rect,
     // so the graph stays interactive even inside pointer-events-none parents.
     const inside = (e: PointerEvent) => {
@@ -502,15 +526,26 @@ export function ConnectedGraph({
       window.addEventListener("pointercancel", onUp, { passive: true });
     }
 
+    let io: IntersectionObserver | null = null;
     if (reduced) {
+      // one calm static frame — no loop, so nothing to pause/resume
       draw();
     } else {
-      raf = requestAnimationFrame(loop);
+      // the observer's initial callback starts the loop (if visible), so no
+      // frame is ever requested for a graph that mounts offscreen
+      io = new IntersectionObserver(([entry]) => {
+        onscreen = entry?.isIntersecting ?? true;
+        syncLoop();
+      });
+      io.observe(canvas);
+      document.addEventListener("visibilitychange", onVisibility);
     }
 
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
+      io?.disconnect();
+      document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerdown", onDown);
       window.removeEventListener("pointerup", onUp);

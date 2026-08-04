@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   motion,
   useInView,
@@ -9,7 +9,7 @@ import {
   useSpring,
   useTransform,
 } from "framer-motion";
-import { Reveal, CountUp, ScrollScale } from "./motion";
+import { Reveal, CountUp, ScrollScale, WordReveal } from "./motion";
 import { Eyebrow } from "./ui";
 
 /* ================================================================== */
@@ -53,7 +53,7 @@ const LANES = [
     x2: 690,
     y: 218,
     diamond: { x: 690, y: 241 },
-    decision: "Tier set · Pro $29",
+    decision: "Tier set · Pro $49",
   },
   {
     label: "Customer call",
@@ -87,6 +87,10 @@ export function MemoryTimeline() {
   const inView = useInView(svgRef, { once: true, margin: "0px 0px -15% 0px" });
   const go = reduce ? true : inView;
 
+  /* hover-spotlight: following one decision's thread across the week —
+     opacity/color only (zero geometry), so it's reduced-motion-safe */
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+
   /* scroll-linked thread draw — the lines lay themselves down as the
      diagram travels up the viewport, each thread a beat behind the last */
   const { scrollYProgress } = useScroll({
@@ -106,14 +110,17 @@ export function MemoryTimeline() {
             heading and the diagram must share one viewport (a full-size
             display heading pushed the chart below the fold on laptops) */}
         <Reveal className="text-center">
-          <Eyebrow>How memory compounds</Eyebrow>
-          <h2 className="display mx-auto mt-4 max-w-[26ch] text-balance text-[clamp(1.9rem,3.4vw,2.8rem)]">
-            A decision on Monday is context on Friday.
-          </h2>
+          {/* the third act-marker: in the room → between meetings → over a week */}
+          <Eyebrow>Over a week</Eyebrow>
+          <WordReveal
+            as="h2"
+            text="A decision on Monday is"
+            accent="context on Friday."
+            accentClass="text-signal-deep"
+            className="display mx-auto mt-4 max-w-[26ch] text-balance text-[clamp(1.9rem,3.4vw,2.8rem)]"
+          />
           <p className="mx-auto mt-3 max-w-[62ch] text-[15.5px] leading-relaxed text-ink-3">
-            Every meeting feeds one shared memory. Decisions, owners, and
-            promises made early in the week are carried forward automatically —
-            so by Friday&apos;s standup, nothing has to be re-explained.
+            One shared memory. Nothing gets re-explained.
           </p>
         </Reveal>
 
@@ -163,7 +170,7 @@ export function MemoryTimeline() {
             {/* ---- right (md+): the roadmap diagram ---- */}
             <div
               ref={panelRef}
-              className="mesh-field relative hidden overflow-hidden rounded-card border border-line p-2 md:block"
+              className="mesh-field grain relative hidden overflow-hidden rounded-card border border-line p-2 md:block"
             >
               <svg
                 ref={svgRef}
@@ -213,48 +220,74 @@ export function MemoryTimeline() {
                 />
 
                 {/* ---- threads (drawn under the bars, BY scroll) ---- */}
-                {THREADS.map((d, i) => (
-                  <g key={`thread-${i}`}>
-                    {/* soft underlay */}
-                    <motion.path
-                      d={d}
-                      fill="none"
-                      stroke="var(--signal)"
-                      strokeWidth={7}
-                      strokeOpacity={0.12}
-                      strokeLinecap="round"
-                      style={reduce ? undefined : { pathLength: draws[i] }}
-                    />
-                    {/* crisp line */}
-                    <motion.path
-                      d={d}
-                      fill="none"
-                      stroke="var(--signal)"
-                      strokeWidth={2}
-                      strokeOpacity={0.75}
-                      strokeLinecap="round"
-                      style={reduce ? undefined : { pathLength: draws[i] }}
-                    />
-                    {/* traveling pulse (skipped under reduced motion) */}
-                    {!reduce && (
-                      <circle r={3.2} fill="var(--signal-deep)">
-                        <animateMotion
-                          dur={`${3.2 + i * 0.5}s`}
-                          begin={`${1.6 + i * 0.2}s`}
-                          repeatCount="indefinite"
-                          path={d}
-                          keyPoints="0;1"
-                          keyTimes="0;1"
-                          calcMode="linear"
-                        />
-                      </circle>
-                    )}
-                  </g>
-                ))}
+                {THREADS.map((d, i) => {
+                  const spotlit = hoveredIdx === i;
+                  const dimmed = hoveredIdx !== null && hoveredIdx !== i;
+                  return (
+                    <g
+                      key={`thread-${i}`}
+                      className="cursor-default"
+                      pointerEvents="visiblePainted"
+                      onMouseEnter={() => setHoveredIdx(i)}
+                      onMouseLeave={() => setHoveredIdx(null)}
+                      style={{
+                        opacity: dimmed ? 0.25 : 1,
+                        transition: "opacity 150ms var(--ease-out)",
+                      }}
+                    >
+                      {/* soft underlay */}
+                      <motion.path
+                        d={d}
+                        fill="none"
+                        stroke="var(--signal)"
+                        strokeWidth={7}
+                        strokeLinecap="round"
+                        style={{
+                          ...(reduce ? undefined : { pathLength: draws[i] }),
+                          strokeOpacity: spotlit ? 0.22 : 0.12,
+                          transition: "stroke-opacity 150ms var(--ease-out)",
+                        }}
+                      />
+                      {/* crisp line */}
+                      <motion.path
+                        d={d}
+                        fill="none"
+                        stroke="var(--signal)"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        style={{
+                          ...(reduce ? undefined : { pathLength: draws[i] }),
+                          strokeOpacity: spotlit ? 1 : 0.75,
+                          transition: "stroke-opacity 150ms var(--ease-out)",
+                        }}
+                      />
+                      {/* traveling pulse (skipped under reduced motion) */}
+                      {!reduce && (
+                        <circle r={3.2} fill="var(--signal-deep)">
+                          <animateMotion
+                            dur={`${3.2 + i * 0.5}s`}
+                            begin={`${1.6 + i * 0.2}s`}
+                            repeatCount="indefinite"
+                            path={d}
+                            keyPoints="0;1"
+                            keyTimes="0;1"
+                            calcMode="linear"
+                          />
+                        </circle>
+                      )}
+                    </g>
+                  );
+                })}
 
                 {/* ---- meeting bars + decision diamonds ---- */}
                 {LANES.map((l, i) => (
-                  <g key={l.label}>
+                  <g
+                    key={l.label}
+                    className="cursor-default"
+                    pointerEvents="visiblePainted"
+                    onMouseEnter={() => setHoveredIdx(i)}
+                    onMouseLeave={() => setHoveredIdx(null)}
+                  >
                     <text
                       x={l.x1}
                       y={l.y - 10}
@@ -321,7 +354,8 @@ export function MemoryTimeline() {
                       }}
                     />
                     {/* decision label — plain text, pushed clear of the
-                        diamond and vertically centered on it */}
+                        diamond and vertically centered on it; recedes to ink
+                        while a sibling decision's thread is spotlit */}
                     <motion.text
                       x={l.diamond.x + 24}
                       y={l.diamond.y}
@@ -329,7 +363,13 @@ export function MemoryTimeline() {
                       className="font-sans"
                       fontSize={12.5}
                       fontWeight={500}
-                      fill="var(--signal-deep)"
+                      style={{
+                        fill:
+                          hoveredIdx !== null && hoveredIdx !== i
+                            ? "var(--ink-3)"
+                            : "var(--signal-deep)",
+                        transition: "fill 150ms var(--ease-out)",
+                      }}
                       initial={{ opacity: 0, x: -8 }}
                       animate={go ? { opacity: 1, x: 0 } : { opacity: 0, x: -8 }}
                       transition={{ duration: 0.5, delay: 0.65 + i * 0.14 }}
@@ -449,7 +489,7 @@ export function MemoryTimeline() {
 
 function MobileWeek({ reduce }: { reduce: boolean }) {
   return (
-    <div className="mesh-field relative overflow-hidden rounded-card border border-line p-5 md:hidden">
+    <div className="mesh-field grain relative overflow-hidden rounded-card border border-line p-5 md:hidden">
       <div className="relative pl-8">
         {/* the memory rail */}
         <motion.span

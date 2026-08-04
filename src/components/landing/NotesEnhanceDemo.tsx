@@ -195,7 +195,7 @@ export function NotesWidget() {
                 {/* header */}
                 <div className="px-6 pt-6">
                   <h3 className="text-[22px] font-semibold tracking-tight text-ink-display">
-                    Q3 GTM sync
+                    Q3 Planning
                   </h3>
                   <div className="mt-3 flex items-center gap-3">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-bg-2 px-2.5 py-1 text-[12px] font-medium text-ink-2">

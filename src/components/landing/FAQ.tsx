@@ -8,7 +8,7 @@ import {
   useReducedMotion,
 } from "framer-motion";
 import { Reveal } from "./motion";
-import { Eyebrow, PillCTA } from "./ui";
+import { PillCTA } from "./ui";
 
 /* ================================================================== */
 /*  FAQ — the objection-handling band, just before the final CTA.      */
@@ -99,13 +99,13 @@ export function FAQ() {
         {/* left — the pitch + escape hatch */}
         <Reveal>
           <div className="lg:sticky lg:top-28">
-            <Eyebrow>Answers</Eyebrow>
-            <h2 className="display mt-5 max-w-[14ch] text-[clamp(2.1rem,5vw,3.6rem)]">
+            {/* no eyebrow: the heading already says "Questions" */}
+            <h2 className="display max-w-[14ch] text-[clamp(2.1rem,5vw,3.6rem)]">
               Questions, before you ask them.
             </h2>
             <p className="mt-6 max-w-[42ch] text-[17px] leading-relaxed text-ink-3">
-              The honest answers to what teams ask first — about the bot,
-              your privacy, and where your meetings actually live.
+              What teams ask first — about the bot, your privacy, and where
+              meetings live.
             </p>
             <div className="mt-9">
               <PillCTA href="/dashboard">Get started free</PillCTA>
@@ -164,9 +164,21 @@ function FAQSpotlight() {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* question rail — hover/focus shows the answer, no click needed */}
+      {/* question rail — hover/focus shows the answer, no click needed;
+          ArrowUp/ArrowDown drive it from the keyboard too */}
       <div className="flex flex-col justify-center">
-        <ul className="flex flex-col gap-1">
+        <ul
+          className="flex flex-col gap-1"
+          onKeyDown={(e) => {
+            if (e.key === "ArrowDown") {
+              e.preventDefault();
+              setActive((a) => (a + 1) % FAQS.length);
+            } else if (e.key === "ArrowUp") {
+              e.preventDefault();
+              setActive((a) => (a - 1 + FAQS.length) % FAQS.length);
+            }
+          }}
+        >
           {FAQS.map((qa, i) => {
             const isActive = i === active;
             return (
@@ -213,9 +225,38 @@ function FAQSpotlight() {
             );
           })}
         </ul>
-        <p className="mt-5 px-4 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-3">
-          Hover a question — or just watch
-        </p>
+        {/* hint + live tour counter — the copy answers whoever is driving */}
+        <div className="mt-5 flex items-baseline justify-between gap-4 px-4">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-3">
+            {reduce ? (
+              <>Hover a question</>
+            ) : (
+              <>
+                Hover a question —{" "}
+                <span className="relative inline-block">
+                  <span
+                    className={`transition-opacity duration-150 ${
+                      hovered ? "opacity-0" : "opacity-100"
+                    }`}
+                  >
+                    or just watch
+                  </span>
+                  <span
+                    aria-hidden={!hovered}
+                    className={`absolute inset-y-0 left-0 whitespace-nowrap transition-opacity duration-150 ${
+                      hovered ? "opacity-100" : "opacity-0"
+                    }`}
+                  >
+                    you&rsquo;re driving
+                  </span>
+                </span>
+              </>
+            )}
+          </p>
+          <span className="font-mono text-[10px] tabular-nums tracking-[0.18em] text-ink-3">
+            0{active + 1} / 06
+          </span>
+        </div>
       </div>
 
       {/* answer panel — a persistent stage the answers crossfade through */}
@@ -253,10 +294,34 @@ function FAQSpotlight() {
             <h3 className="mt-3 max-w-[24ch] text-[1.35rem] font-medium tracking-tight text-ink-display">
               {item.q}
             </h3>
-            <p className="mt-4 max-w-[52ch] text-[16px] leading-relaxed text-ink-3 [&_em]:font-medium [&_em]:not-italic [&_em]:text-signal-deep">
+            {/* pb-12 keeps long answers clear of the "Next" whisper */}
+            <p className="mt-4 max-w-[52ch] pb-12 text-[16px] leading-relaxed text-ink-3 [&_em]:font-medium [&_em]:not-italic [&_em]:text-signal-deep">
               {item.a}
             </p>
           </motion.div>
+        </AnimatePresence>
+
+        {/* "next up" whisper — only while the tour drives (touring is never
+            true under reduced motion); vanishes the instant you take over */}
+        <AnimatePresence mode="wait" initial={false}>
+          {touring && (
+            <motion.div
+              aria-hidden
+              key={`next-${active}`}
+              className="absolute inset-x-8 bottom-0 border-t border-line py-3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+            >
+              <div className="flex items-baseline gap-3">
+                <span className="kicker shrink-0">Next</span>
+                <span className="min-w-0 flex-1 truncate text-[12.5px] text-ink-3">
+                  {FAQS[(active + 1) % FAQS.length].q}
+                </span>
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
     </div>

@@ -229,13 +229,16 @@ export const mockTeamCapacity: TeammateCapacity[] = [
 
 export type SourcedAnswer = {
   quote: string;
-  source: { meeting: string; date: string }; // human-readable; maps to meeting_id later
+  /** human-readable; maps to meeting_id later. `date` is omitted on the landing
+      page, which derives it from today via `useLandingTime` — a baked date
+      would silently age out of the story. */
+  source: { meeting: string; date?: string };
   lineage: string[];                          // FOLLOWS_FROM chain, oldest → newest
 };
 
 export const mockSourcedAnswer: SourcedAnswer = {
-  quote: "Pricing was locked at $49 in the Q2 planning call — Sarah already owns the rework.",
-  source: { meeting: "Q2 Planning", date: "Apr 3" },
+  quote: "Pricing was locked at $49 in the Q2 Planning call — Sarah already owns the rework.",
+  source: { meeting: "Q2 Planning" },
   lineage: ["Q2 Planning", "Q3 Planning"],
 };
 
@@ -381,7 +384,11 @@ export type AgentSidebarCard =
   | { kind: "stakeholder"; person: string; reason: string }
   | { kind: "dependency"; text: string };
 
-/* one continuous story: the $49 pricing decision in Q3 planning */
+/* one continuous story: the $49 pricing decision in Q3 Planning.
+   The landing page names exactly two meetings — "Q3 Planning" (today) and
+   "Q2 Planning" (where the $49 lock came from). Keep any new landing copy on
+   those two names and on $49; they previously drifted to "Q3 GTM sync",
+   "Q3 Launch Sync", "Q2 review" and a contradictory "Pro $29". */
 export const mockAgentSidebar: AgentSidebarCard[] = [
   {
     kind: "note",
@@ -408,7 +415,7 @@ export const mockAgentSidebar: AgentSidebarCard[] = [
   },
   {
     kind: "context",
-    text: "Pricing was locked at $49 in the Q2 planning call — Sarah already owns the rework.",
+    text: "Pricing was locked at $49 in the Q2 Planning call — Sarah already owns the rework.",
     source: "Sarah's agent · Q2 Planning · Apr 3",
   },
   {

@@ -202,6 +202,19 @@ export function Loader() {
             className="pointer-events-none absolute inset-0 h-full w-full"
           />
 
+          {/* the collapsed clay line, carried onto the curtain's trailing
+              edge — as the panel wipes right it sweeps the screen and
+              "draws" the hero open. Under reduce the panel just fades. */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 left-0 w-[2.5px]"
+            style={{
+              background:
+                "linear-gradient(to bottom, transparent, var(--signal) 20%, var(--signal-bright) 50%, var(--signal) 80%, transparent)",
+              boxShadow: "0 0 24px 2px var(--signal-glow)",
+            }}
+          />
+
           {/* wordmark + counter, lifted above the field. On the wipe it
               counter-slides a touch, so the curtain reads as two layers. */}
           <motion.div
@@ -218,10 +231,10 @@ export function Loader() {
                   "radial-gradient(closest-side, var(--bg) 38%, transparent 78%)",
               }}
             />
-            <LogoMark
-              size={40}
-              className={`relative mb-3 ${reduce ? "" : "logo-breathe"}`}
-            />
+            {/* logo-breathe is applied unconditionally: the reduced-motion CSS
+                block already kills the animation, and branching on the hook
+                here desyncs SSR and a reduced-motion client (hydration error) */}
+            <LogoMark size={40} className="relative mb-3 logo-breathe" />
             <span className="wordmark relative text-[clamp(2.6rem,8vw,4.2rem)] font-normal leading-none tracking-[-0.02em] text-ink">
               Mytheus
             </span>

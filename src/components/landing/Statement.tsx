@@ -19,12 +19,13 @@ import {
   mockSourcedAnswer,
   type TeammateCapacity,
 } from "@/lib/mock/data";
+import { useLandingTime } from "@/lib/mock/time";
 
 /* Statement — "between meetings" as THE RELAY: a scroll-pinned, continuously
    scrubbed single shot. The pin lasts four viewport-heights and scroll drives
    every frame of the story — no cuts, no stage swaps:
 
-     beat 1 (the moment)  Q3 planning hands Sarah the pricing rework; the
+     beat 1 (the moment)  Q3 Planning hands Sarah the pricing rework; the
                           capacity bars fill under your scroll and Sarah's
                           96% flares red — the reason an agent must ask.
      beat 2 (the ask)     the scene widens into the agent network; a query
@@ -106,9 +107,7 @@ export function Statement() {
         />
         <Reveal delay={160}>
           <p className="mx-auto mt-5 max-w-[50ch] text-[17px] leading-relaxed text-ink-3">
-            When yours needs context, it asks another participant&apos;s agent —
-            and the answer comes back sourced, from the exact meeting it
-            happened in.
+            Yours asks another agent, and the answer comes back cited.
           </p>
         </Reveal>
       </div>
@@ -183,6 +182,18 @@ function RelayScene({
         }}
       />
 
+      {/* static grain, pooled behind the stage like the dot grid */}
+      <div
+        aria-hidden
+        className="grain pointer-events-none absolute inset-0"
+        style={{
+          maskImage:
+            "radial-gradient(70% 66% at 50% 48%, black 24%, transparent 74%)",
+          WebkitMaskImage:
+            "radial-gradient(70% 66% at 50% 48%, black 24%, transparent 74%)",
+        }}
+      />
+
       {/* the glow that rides the exchange */}
       <motion.div
         aria-hidden
@@ -203,7 +214,7 @@ function RelayScene({
         <AnswerReveal p={cam} />
       </motion.div>
 
-      <BeatRail index={index} goTo={goTo} />
+      <BeatRail index={index} goTo={goTo} p={cam} />
     </div>
   );
 }
@@ -229,8 +240,7 @@ function SceneHeading({ p }: { p: MotionValue<number> }) {
         className="display mx-auto mt-2 max-w-[32ch] text-[clamp(1.9rem,3.4vw,3.1rem)]"
       />
       <p className="mx-auto mt-2.5 max-w-[64ch] text-[16px] leading-relaxed text-ink-3">
-        When yours needs context, it asks another participant&apos;s agent — and
-        the answer comes back sourced, from the exact meeting it happened in.
+        Yours asks another agent, and the answer comes back cited.
       </p>
       <motion.span
         className="mt-2.5 flex items-center justify-center gap-2"
@@ -283,12 +293,12 @@ function MomentOverlay({ p }: { p: MotionValue<number> }) {
           animate={{ opacity: [1, 0.35, 1] }}
           transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
         />
-        <span className="kicker text-[10px] text-ink-3">Q3 planning · live</span>
+        <span className="kicker text-[10px] text-ink-3">Q3 Planning · live</span>
       </motion.span>
 
       <motion.p
         className="display max-w-[28ch] text-[clamp(1.4rem,2.5vw,2.15rem)] leading-tight text-ink-display"
-        style={{ opacity: quoteO, y: quoteY }}
+        style={{ opacity: quoteO, y: quoteY, textIndent: "-0.45ch" }}
       >
         &ldquo;Let&rsquo;s put the pricing rework on Sarah for Q3.&rdquo;
       </motion.p>
@@ -600,7 +610,8 @@ function ContextStrip({ p }: { p: MotionValue<number> }) {
       style={{ opacity, y, x: "-50%" }}
     >
       <span className="min-w-0 truncate rounded-full border border-line bg-white/90 px-4 py-1.5 text-[13px] font-medium text-ink-2">
-        &ldquo;Let&rsquo;s put the pricing rework on Sarah for Q3.&rdquo;
+        <span className="-ml-[0.45ch]">&ldquo;</span>Let&rsquo;s put the pricing
+        rework on Sarah for Q3.&rdquo;
       </span>
       <span className="shrink-0 rounded-full border border-priority-high/25 bg-priority-high-soft px-3.5 py-1.5 text-[12px] font-semibold text-priority-high">
         Sarah · 96% over capacity
@@ -614,6 +625,7 @@ function ContextStrip({ p }: { p: MotionValue<number> }) {
 /* ------------------------------------------------------------------ */
 
 function NetworkStage({ p }: { p: MotionValue<number> }) {
+  const time = useLandingTime();
   const opacity = useTransform(p, [0.2, 0.28, 0.84, 0.96], [0, 1, 1, 0.22]);
   const rise = useTransform(p, [0.2, 0.3], [40, 0]);
 
@@ -722,8 +734,8 @@ function NetworkStage({ p }: { p: MotionValue<number> }) {
           pricing decision?&rdquo;
         </RelayLabel>
         <RelayLabel p={p} win={[0.56, 0.77]} className="top-[89%]">
-          <span className="text-signal-deep">sourced answer</span> · Q2 Planning
-          · Apr 3
+          <span className="text-signal-deep">sourced answer</span> ·{" "}
+          {mockSourcedAnswer.source.meeting} · {time.prevPlanningDate}
         </RelayLabel>
       </div>
     </motion.div>
@@ -1015,6 +1027,7 @@ function RelayLabel({
 /* ------------------------------------------------------------------ */
 
 function AnswerReveal({ p }: { p: MotionValue<number> }) {
+  const time = useLandingTime();
   const opacity = useTransform(p, [0.76, 0.83], [0, 1]);
   const y = useTransform(p, [0.76, 0.86], [70, 0]);
   const scale = useTransform(p, [0.76, 0.86], [0.92, 1]);
@@ -1034,7 +1047,8 @@ function AnswerReveal({ p }: { p: MotionValue<number> }) {
               Answer · delivered to your agent
             </p>
             <p className="mt-3 text-left text-[clamp(1.3rem,2.2vw,1.75rem)] font-medium leading-snug tracking-tight text-ink-display">
-              &ldquo;{mockSourcedAnswer.quote}&rdquo;
+              <span className="-ml-[0.45ch]">&ldquo;</span>
+              {mockSourcedAnswer.quote}&rdquo;
             </p>
 
             <motion.div
@@ -1056,7 +1070,7 @@ function AnswerReveal({ p }: { p: MotionValue<number> }) {
                 </span>
                 <span className="kicker text-ink-3">
                   Sourced · {mockSourcedAnswer.source.meeting} ·{" "}
-                  {mockSourcedAnswer.source.date}
+                  {time.prevPlanningDate}
                 </span>
               </span>
 
@@ -1113,42 +1127,76 @@ function LineageStep({
 /*  The beat rail — right edge, jumps the camera between beats         */
 /* ------------------------------------------------------------------ */
 
-function BeatRail({ index, goTo }: { index: number; goTo: (i: number) => void }) {
+/** 0→1 within the current beat's scroll window (sawtooth over the pin). */
+function toBeatLocal(v: number) {
+  const s = Math.min(v, 0.9999) * BEATS.length;
+  return s - Math.floor(s);
+}
+
+function BeatRail({
+  index,
+  goTo,
+  p,
+}: {
+  index: number;
+  goTo: (i: number) => void;
+  p: MotionValue<number>;
+}) {
+  /* how far through the CURRENT beat's dwell we are — the active label
+     settles in with the scroll instead of cutting on (same sawtooth as
+     Steps' toStageLocal); scrubbing back re-runs it in reverse */
+  const local = useTransform(p, toBeatLocal);
+  const labelO = useTransform(local, [0.02, 0.18], [0, 1]);
+
   return (
     <div className="absolute right-2 top-1/2 z-30 hidden -translate-y-1/2 lg:block xl:right-6">
-      <ol className="flex flex-col items-end gap-5">
-        {BEATS.map((b, i) => {
-          const active = i === index;
-          return (
-            <li key={b.key}>
-              <button
-                type="button"
-                onClick={() => goTo(i)}
-                aria-current={active ? "step" : undefined}
-                aria-label={b.label}
-                className="group flex items-center gap-3 py-0.5"
-              >
-                <span
-                  className={`kicker text-[10px] transition-all duration-300 ${
-                    active
-                      ? "text-signal-deep opacity-100"
-                      : "text-ink-3 opacity-0 group-hover:opacity-70 group-focus-visible:opacity-70"
-                  }`}
+      <div className="relative">
+        {/* the clay spine behind the dots, filling top → down with scroll */}
+        <span
+          aria-hidden
+          className="absolute bottom-2 right-[3.5px] top-2 w-px bg-line-2"
+        >
+          <motion.span
+            className="absolute inset-0 origin-top bg-signal"
+            style={{ scaleY: p }}
+          />
+        </span>
+
+        <ol className="flex flex-col items-end gap-5">
+          {BEATS.map((b, i) => {
+            const active = i === index;
+            return (
+              <li key={b.key}>
+                <button
+                  type="button"
+                  onClick={() => goTo(i)}
+                  aria-current={active ? "step" : undefined}
+                  aria-label={b.label}
+                  className="group flex items-center gap-3 py-0.5"
                 >
-                  {b.label}
-                </span>
-                <span
-                  className={`h-2 w-2 rounded-full transition-all duration-300 ${
-                    active
-                      ? "scale-125 bg-signal shadow-[0_0_10px_var(--signal-glow)]"
-                      : "bg-line-2 group-hover:bg-signal/50"
-                  }`}
-                />
-              </button>
-            </li>
-          );
-        })}
-      </ol>
+                  <motion.span
+                    className={`kicker text-[10px] ${
+                      active
+                        ? "text-signal-deep transition-colors duration-300"
+                        : "text-ink-3 opacity-0 transition-all duration-300 group-hover:opacity-70 group-focus-visible:opacity-70"
+                    }`}
+                    style={active ? { opacity: labelO } : undefined}
+                  >
+                    {b.label}
+                  </motion.span>
+                  <span
+                    className={`relative h-2 w-2 rounded-full transition-all duration-300 ${
+                      active
+                        ? "scale-125 bg-signal shadow-[0_0_10px_var(--signal-glow)]"
+                        : "bg-line-2 group-hover:bg-signal/50"
+                    }`}
+                  />
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
     </div>
   );
 }
@@ -1181,7 +1229,7 @@ function TriggerLine() {
       <div className="flex items-center gap-3 rounded-2xl border border-line bg-white/90 px-4 py-3 shadow-[0_24px_48px_-32px_rgba(40,30,20,0.35)] sm:gap-4 sm:px-5">
         <span className="kicker shrink-0 text-[10px] text-ink-3">
           <span className="sm:hidden">Live</span>
-          <span className="hidden sm:inline">Q3 planning · live</span>
+          <span className="hidden sm:inline">Q3 Planning · live</span>
         </span>
         <p className="min-w-0 flex-1 text-left text-[14px] font-medium text-ink line-clamp-2 sm:line-clamp-1 sm:text-[15px]">
           &ldquo;Let&rsquo;s put the pricing rework on Sarah for Q3.&rdquo;
@@ -1390,11 +1438,13 @@ function AgentGlyph({ label, signal = false }: { label: string; signal?: boolean
 }
 
 function SourcedCard() {
+  const time = useLandingTime();
   return (
     <MaskReveal delay={250} y={56}>
       <div className="card-interactive rounded-card border border-line bg-white p-5 shadow-[0_40px_80px_-32px_rgba(40,30,20,0.25)] sm:p-6">
         <p className="text-left text-[clamp(1.05rem,1.8vw,1.3rem)] font-medium leading-snug tracking-tight text-ink-display">
-          &ldquo;{mockSourcedAnswer.quote}&rdquo;
+          <span className="-ml-[0.45ch]">&ldquo;</span>
+          {mockSourcedAnswer.quote}&rdquo;
         </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -1413,7 +1463,7 @@ function SourcedCard() {
             </span>
             <span className="kicker text-ink-3">
               Sourced · {mockSourcedAnswer.source.meeting} ·{" "}
-              {mockSourcedAnswer.source.date}
+              {time.prevPlanningDate}
             </span>
           </span>
 

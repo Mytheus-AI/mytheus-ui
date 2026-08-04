@@ -85,6 +85,39 @@ Rules every pinned scene must follow (learned the hard way):
 - **Clear the fixed header.** The pinned viewport sits under the fixed
   `SiteHeader`; pad the scene (`pt-[92px]` in `Statement.tsx`) or docked
   content will collide with it.
+- **Always spring `progress` before deriving anything from it — never feed
+  the raw `PinnedScene` progress straight into `useTransform`.** Discovered
+  the hard way building (then rebuilding) a section between Hero and
+  FeatureCards: a component that re-renders on `index` changes (any
+  `StageSwitch` consumer does) and derives `useTransform(progress, ...)`
+  directly off the raw value can visibly desync from it — confirmed via a
+  live on-screen numeric readout of the raw value next to the actual
+  DOM-computed opacity, which disagreed by a wide, consistent margin at
+  exactly the scroll position where two overlapping fades should have
+  handed off cleanly. `Statement.tsx`'s `RelayScene` already does this
+  right (`const cam = useSpring(progress, {...})`, every transform derives
+  from `cam`) — that's the pattern to copy, not a stylistic choice.
+- **A `height: count*100vh` pinned container's scroll-driven progress spans
+  only `(count-1)` viewport-heights of real scroll, not `count`** — the
+  sticky child un-sticks and rides out normally for the final viewport
+  before the wrapper's true DOM bottom. Anything OUTSIDE the scene that
+  needs to know "has this pinned section visually finished" (e.g. a shared
+  header's light/dark mode) must account for that extra viewport, or it
+  will act as if the section is still active a full screen-height after it
+  visually isn't. `SiteHeader.tsx`'s `overDark` threshold logic has the
+  worked formula and the reasoning in its own comment.
+- **Consider skipping `PinnedScene` entirely for shorter sections.** It's
+  the right tool for a true cinematic set-piece (Statement, Steps), but it
+  is scroll-jacking with real geometry to get right, as above. A short
+  sequence (a handful of scroll-revealed panels, say) is often better served
+  by a NORMAL, natural-height section: independent `whileInView` reveals per
+  item (what `Reveal`/`MaskReveal` already do) plus, if something needs to
+  visually connect across the whole section, a single `useScroll({ target,
+  offset: ["start center", "end center"] })` progress (the same
+  non-pinned pattern `Parallax`/`ScrollScale` already use) driving ONE
+  derived value — never a cascade of interdependent transforms. See
+  `NetworkFlow.tsx` for a worked example: it deliberately has zero
+  `PinnedScene` usage.
 
 ### Continuous and pointer
 

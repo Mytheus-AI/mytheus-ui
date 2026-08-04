@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { MaskReveal } from "./motion";
 import { lenis } from "./SmoothScroll";
 import { LogoMark } from "@/components/Logo";
@@ -84,6 +85,7 @@ const SOCIALS: { label: string; href: string; path: string }[] = [
 ];
 
 export function SiteFooter() {
+  const reduce = useReducedMotion();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -113,6 +115,11 @@ export function SiteFooter() {
           background:
             "radial-gradient(75% 95% at 50% 100%, var(--signal-glow), transparent 72%)",
         }}
+      />
+      {/* machined clay hairline where the cream page meets the dark slab */}
+      <span
+        aria-hidden
+        className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-signal/40 to-transparent"
       />
 
       <div className="relative z-10 mx-auto max-w-[1340px] px-6 pb-8 pt-20 sm:px-10 sm:pt-24">
@@ -151,54 +158,83 @@ export function SiteFooter() {
             <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-bg/40">
               Stay in the loop
             </p>
-            {sent ? (
-              <div className="mt-5 flex items-start gap-3 rounded-card border border-signal/40 bg-signal/15 px-5 py-4">
-                <span
-                  aria-hidden
-                  className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-signal text-white"
+            {/* the swap crossfades (150ms, 4px lift) instead of snapping;
+                the check draws itself — the confirmation's one attention
+                moment. Reduced motion: opacity-only, instant, static path. */}
+            <AnimatePresence mode="wait" initial={false}>
+              {sent ? (
+                <motion.div
+                  key="sent"
+                  initial={reduce ? { opacity: 0 } : { opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={reduce ? { opacity: 0 } : { opacity: 0, y: -4 }}
+                  transition={{ duration: reduce ? 0 : 0.15, ease: "easeOut" }}
+                  className="mt-5 flex items-start gap-3 rounded-card border border-signal/40 bg-signal/15 px-5 py-4"
                 >
-                  <svg viewBox="0 0 20 20" className="h-3 w-3" fill="none" aria-hidden>
-                    <path
-                      d="M4 10.5l3.5 3.5L16 5.5"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </span>
-                <p className="text-sm text-bg/80">
-                  You&rsquo;re on the list. We&rsquo;ll be in touch.
-                </p>
-              </div>
-            ) : (
-              <>
-                <form
-                  onSubmit={onSubmit}
-                  className="mt-5 flex items-center justify-between rounded-pill border border-white/15 bg-white/5 py-1.5 pl-5 pr-1.5 backdrop-blur-sm transition-[transform,box-shadow,border-color,background-color] duration-300 focus-within:-translate-y-0.5 focus-within:border-signal/50 focus-within:bg-white/10 focus-within:shadow-[0_18px_42px_-24px_var(--signal-glow)] motion-reduce:focus-within:translate-y-0"
-                >
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@work.com"
-                    aria-label="Email address"
-                    className="w-full bg-transparent text-[15px] text-bg outline-none placeholder:text-bg/40"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!valid}
-                    className="shrink-0 rounded-pill bg-signal px-4 py-2 text-sm font-medium text-white transition-[transform,background-color,box-shadow,opacity] duration-300 hover:-translate-y-0.5 hover:bg-signal-bright hover:shadow-[0_12px_24px_-12px_var(--signal-glow)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:bg-signal disabled:hover:shadow-none motion-reduce:hover:translate-y-0"
+                  <span
+                    aria-hidden
+                    className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-signal text-white"
                   >
-                    Join
-                  </button>
-                </form>
-                <p className="mt-3 text-xs text-bg/40">
-                  Product news, no noise. Unsubscribe anytime.
-                </p>
-              </>
-            )}
+                    <svg viewBox="0 0 20 20" className="h-3 w-3" fill="none" aria-hidden>
+                      <motion.path
+                        d="M4 10.5l3.5 3.5L16 5.5"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        initial={reduce ? false : { pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={
+                          reduce
+                            ? { duration: 0 }
+                            : {
+                                duration: 0.4,
+                                ease: [0.16, 1, 0.3, 1],
+                                delay: 0.15,
+                              }
+                        }
+                      />
+                    </svg>
+                  </span>
+                  <p className="text-sm text-bg/80">
+                    You&rsquo;re on the list. We&rsquo;ll be in touch.
+                  </p>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="capture"
+                  initial={reduce ? { opacity: 0 } : { opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={reduce ? { opacity: 0 } : { opacity: 0, y: -4 }}
+                  transition={{ duration: reduce ? 0 : 0.15, ease: "easeOut" }}
+                >
+                  <form
+                    onSubmit={onSubmit}
+                    className="mt-5 flex items-center justify-between rounded-pill border border-white/15 bg-white/5 py-1.5 pl-5 pr-1.5 backdrop-blur-sm transition-[transform,box-shadow,border-color,background-color] duration-300 focus-within:-translate-y-0.5 focus-within:border-signal/50 focus-within:bg-white/10 focus-within:shadow-[0_18px_42px_-24px_var(--signal-glow)] motion-reduce:focus-within:translate-y-0"
+                  >
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@work.com"
+                      aria-label="Email address"
+                      className="w-full bg-transparent text-[15px] text-bg outline-none placeholder:text-bg/40"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!valid}
+                      className="shrink-0 rounded-pill bg-signal px-4 py-2 text-sm font-medium text-white transition-[transform,background-color,box-shadow,opacity] duration-300 hover:-translate-y-0.5 hover:bg-signal-bright hover:shadow-[0_12px_24px_-12px_var(--signal-glow)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:bg-signal disabled:hover:shadow-none motion-reduce:hover:translate-y-0"
+                    >
+                      Join
+                    </button>
+                  </form>
+                  <p className="mt-3 text-xs text-bg/40">
+                    Product news, no noise. Unsubscribe anytime.
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 

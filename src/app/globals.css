@@ -50,6 +50,9 @@
 
   --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   --ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* clay CTA shadow — the ONLY place this rgba may appear */
+  --shadow-cta: 0 20px 44px -18px rgba(189, 93, 58, 0.85);
 }
 
 html {
@@ -173,25 +176,6 @@ body {
     border-radius: 50%;
     background: radial-gradient(circle, var(--signal-glow) 0%, transparent 68%);
     filter: blur(28px);
-  }
-
-  /* warm "sunburst" — colorful radiating backdrop panel behind the hero
-     note card. Conic rays in clay tones over a deep base, with a soft
-     centre highlight. Pair with .grain for texture. */
-  .sunburst {
-    background:
-      radial-gradient(80% 80% at 70% 18%, rgba(255, 255, 255, 0.45) 0%, transparent 42%),
-      conic-gradient(
-        from 210deg at 78% 12%,
-        #bd5d3a 0deg,
-        #d97757 38deg,
-        #e8a489 74deg,
-        #c98a6a 120deg,
-        #8f4a30 176deg,
-        #bd5d3a 232deg,
-        #e8a489 300deg,
-        #bd5d3a 360deg
-      );
   }
 
   /* soft abstract gradient field — the hero "dunes" backdrop */
@@ -514,5 +498,15 @@ body {
   }
   .card-interactive:hover {
     transform: none;
+  }
+  /* CTA arrow slot-swap freezes to a single static arrow — the twin is
+     hidden (not un-transformed) so the arrow never doubles up */
+  .cta-arrow-swap,
+  .cta-arrow-swap * {
+    transition: none !important;
+    transform: none !important;
+  }
+  .cta-arrow-twin {
+    visibility: hidden;
   }
 }

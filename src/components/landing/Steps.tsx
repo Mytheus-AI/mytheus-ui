@@ -9,8 +9,13 @@ import {
   useTransform,
   type MotionValue,
 } from "framer-motion";
-import { PinnedScene, StageSwitch, ScrubReveal, Reveal } from "./motion";
-import { Eyebrow } from "./ui";
+import {
+  PinnedScene,
+  StageSwitch,
+  ScrubReveal,
+  Reveal,
+  WordReveal,
+} from "./motion";
 import {
   CaptureDemo,
   LabelDemo,
@@ -27,10 +32,13 @@ import {
    stage inside the pinned frame changes (StageSwitch). On top of the swap
    sits a scroll-linked cinematic layer (SceneFrame): a camera push into the
    frame at the start of the pin and a gentle pull-back at the end, a
-   drifting dot-grid texture + traveling clay glow behind the content, a
-   giant stage-word watermark that crossfades per stage, and a slow push-in
-   on each demo card during its dwell. Mobile and reduced-motion render the
-   five stages as a calm static stack instead. */
+   drifting dot-grid texture + traveling clay glow behind the content, and a
+   slow push-in on each demo card during its dwell. Mobile and reduced-motion
+   render the five stages as a calm static stack instead.
+
+   The section is deliberately label-light: no section eyebrow, no per-stage
+   kicker and no stage-word watermark. The left rail names the active stage;
+   everything else would be the same word again in the same viewport. */
 
 function MicIcon({ className = "h-5 w-5" }: { className?: string }) {
   return (
@@ -90,7 +98,7 @@ const CARDS: Card[] = [
     n: "01",
     flow: "Capture",
     title: "Every word, captured",
-    body: "No bot, no recording link — just live, role-relevant notes.",
+    body: "No bot joins the call — and no two people get the same notes.",
     hint: "Your agent listens with your role in mind",
     icon: <MicIcon />,
     tokens: [{ label: "Role-relevant notes" }, { label: "Live transcript" }],
@@ -101,7 +109,7 @@ const CARDS: Card[] = [
     n: "02",
     flow: "Label",
     title: "Decisions, sorted",
-    body: "Decisions, action items, and conflicts labeled the moment they're said.",
+    body: "Nothing is left for you to categorize afterwards.",
     hint: "Tagged the second it leaves someone's mouth",
     icon: <SortIcon />,
     tokens: [
@@ -116,8 +124,8 @@ const CARDS: Card[] = [
     n: "03",
     flow: "Confirm",
     title: "Never committed silently",
-    body: "Nothing is saved or assigned without your one-tap confirm.",
-    hint: "One tap — nothing lands silently",
+    body: "The agent proposes. You decide what becomes real.",
+    hint: "The agent waits for your tap",
     icon: <ShieldCheckIcon />,
     tokens: [{ label: "One-tap confirm" }],
     visual: (still) => <ConfirmDemo still={still} />,
@@ -127,7 +135,7 @@ const CARDS: Card[] = [
     n: "04",
     flow: "Route",
     title: "Sent to the right people",
-    body: "Assigned to an owner and shared with anyone who missed it.",
+    body: "Nobody has to chase anyone for a status update.",
     hint: "Owner set, absentees briefed",
     icon: <SendIcon />,
     tokens: [{ label: "Owner assigned" }, { label: "Shared with absentees" }],
@@ -138,7 +146,7 @@ const CARDS: Card[] = [
     n: "05",
     flow: "Remember",
     title: "Carried to the next meeting",
-    body: "A decision Monday becomes context your agents reuse Friday.",
+    body: "It resurfaces on its own, without anyone searching for it.",
     hint: "Monday's call, remembered on Friday",
     icon: <LoopIcon />,
     tokens: [{ label: "→ Next meeting" }, { label: "Cross-meeting memory" }],
@@ -160,16 +168,12 @@ export function Steps() {
           className={`mx-auto max-w-[900px] text-center ${reduce ? "" : "md:hidden"}`}
         >
           <ScrubReveal>
-            <Eyebrow>How it works</Eyebrow>
-            <h2 className="display mx-auto mt-5 max-w-[18ch] text-[clamp(2.2rem,5.5vw,4rem)]">
-              Make meeting follow-through{" "}
-              <span className="text-gradient-signal">self-driving</span>.
+            {/* no eyebrow: the numbered 01–05 cards below already say
+                "how it works" — see PinHeading for the same call */}
+            <h2 className="display mx-auto max-w-[18ch] text-[clamp(2.2rem,5.5vw,4rem)]">
+              Follow-through, without{" "}
+              <span className="text-gradient-signal">the follow-up</span>.
             </h2>
-            <p className="mx-auto mt-5 max-w-[52ch] text-[15.5px] leading-relaxed text-ink-3 sm:mt-6 sm:text-[17px]">
-              Conversations become decisions, action items, and context —
-              captured, labeled, and routed to the right people, without anyone
-              taking notes.
-            </p>
           </ScrubReveal>
         </div>
 
@@ -178,7 +182,7 @@ export function Steps() {
         {!reduce && (
           <PinnedScene count={CARDS.length} className="hidden md:block">
             {({ index, progress, goTo }) => (
-              <SceneFrame index={index} progress={progress}>
+              <SceneFrame progress={progress}>
                 <Spine index={index} progress={progress} goTo={goTo} />
                 <Stage index={index} progress={progress} />
               </SceneFrame>
@@ -231,12 +235,12 @@ function toStageLocal(v: number) {
 
 /* ---------------- the cinematic frame around the pinned scene ---------------- */
 
+/* takes no `index` — the frame is pure scroll-driven texture now that the
+   per-stage watermark is gone; the stage itself is the `children` */
 function SceneFrame({
-  index,
   progress,
   children,
 }: {
-  index: number;
   progress: MotionValue<number>;
   children: ReactNode;
 }) {
@@ -253,16 +257,8 @@ function SceneFrame({
   const glowTop = useTransform(cam, [0, 1], ["-14%", "56%"]);
   const glowLeft = useTransform(cam, [0, 1], ["60%", "38%"]);
 
-  /* the watermark rises through each stage's dwell; the crossfade at the
-     swap masks the sawtooth reset */
-  const wmY = useSpring(useTransform(progress, (v) => 30 - toStageLocal(v) * 60), {
-    stiffness: 180,
-    damping: 30,
-    mass: 0.4,
-  });
-  /* parallax depth: the watermark drifts sideways against scroll while the
-     content plane counter-drifts a touch — three planes, one scrubber */
-  const wmX = useTransform(cam, [0, 1], ["1.5%", "-3.5%"]);
+  /* parallax depth: the content plane counter-drifts against the grid and
+     glow — two planes, one scrubber (the watermark was the third) */
   const contentY = useTransform(cam, [0, 1], [10, -10]);
 
   return (
@@ -284,6 +280,18 @@ function SceneFrame({
         }}
       />
 
+      {/* static grain, pooled behind the stage like the dot grid */}
+      <div
+        aria-hidden
+        className="grain pointer-events-none absolute inset-0"
+        style={{
+          maskImage:
+            "radial-gradient(72% 68% at 58% 46%, black 26%, transparent 76%)",
+          WebkitMaskImage:
+            "radial-gradient(72% 68% at 58% 46%, black 26%, transparent 76%)",
+        }}
+      />
+
       {/* a soft clay glow that migrates through the scene with scroll */}
       <motion.div
         aria-hidden
@@ -291,35 +299,10 @@ function SceneFrame({
         style={{ top: glowTop, left: glowLeft }}
       />
 
-      {/* giant stage-word watermark — outline only, with a whisper of clay
-          fill, masked so it dissolves into the bg toward its bottom edge
-          instead of smudging over the demo card */}
-      <motion.div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-4 right-0 select-none"
-        style={{
-          y: wmY,
-          x: wmX,
-          maskImage:
-            "linear-gradient(to bottom, black 8%, rgba(0,0,0,0.55) 55%, transparent 96%)",
-          WebkitMaskImage:
-            "linear-gradient(to bottom, black 8%, rgba(0,0,0,0.55) 55%, transparent 96%)",
-        }}
-      >
-        <AnimatePresence mode="popLayout" initial={false}>
-          <motion.span
-            key={CARDS[index].flow}
-            className="display block whitespace-nowrap text-[clamp(6.5rem,13vw,12rem)] leading-none text-signal/[0.03]"
-            style={{ WebkitTextStroke: "1.5px var(--line-2)" }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.6, ease: EASE }}
-          >
-            {CARDS[index].flow}
-          </motion.span>
-        </AnimatePresence>
-      </motion.div>
+      {/* (the giant stage-word watermark used to sit here, bottom-right. It
+          was the fifth place the stage name appeared in one viewport — the
+          left rail's active item still names the stage, and the section
+          reads quieter without it.) */}
 
       {/* the heading stays fitted above the stages for the whole pin */}
       <PinHeading />
@@ -341,20 +324,25 @@ function SceneFrame({
 
 /* the in-scene header: centered and pinned with the stages so heading +
    story always share the viewport (the SceneHeading pattern) */
+/* Deliberately eyebrow + h2 only — no sub-line, no scroll hint:
+   - every claim a sub could make is already owned by one of the five stage
+     bodies rendered a few hundred px below (Capture owns "no bot / no notes",
+     Confirm owns "nothing saved silently", Remember owns Monday→Friday), so a
+     sub here can only restate a stage or go vague;
+   - Statement, the first pinned scene on the page, already teaches the scroll
+     interaction, and repeating the instruction reads as hand-holding.
+   The freed height also relieves a pin that was already fighting for it
+   (see the max-height zoom steps on the content plane below). */
 function PinHeading() {
   return (
     <div className="relative z-20 shrink-0 pb-2 text-center">
-      <Eyebrow>How it works</Eyebrow>
-      <h2 className="display mx-auto mt-2 max-w-[26ch] text-[clamp(1.8rem,3.2vw,2.9rem)]">
-        Make meeting follow-through{" "}
-        <span className="text-gradient-signal">self-driving</span>.
-      </h2>
-      {/* on very short viewports even the zoomed content plane needs the
-          sub-line's two rows back to keep the demo card fully on screen */}
-      <p className="mx-auto mt-2.5 max-w-[64ch] text-[15px] leading-relaxed text-ink-3 [@media(max-height:640px)]:hidden">
-        Conversations become decisions, action items, and context — captured,
-        labeled, and routed to the right people, without anyone taking notes.
-      </p>
+      <WordReveal
+        as="h2"
+        text="Follow-through, without"
+        accent="the follow-up."
+        accentClass="text-gradient-signal"
+        className="display mx-auto max-w-[26ch] text-[clamp(1.8rem,3.2vw,2.9rem)]"
+      />
     </div>
   );
 }
@@ -522,15 +510,19 @@ function Stage({
        stage — every transcript word stays on screen for its whole dwell */
     <div className="flex min-h-[clamp(360px,calc(100vh-330px),500px)] flex-col justify-center">
       <StageSwitch index={index}>
-        <div className="flex items-center justify-between">
-          <span className="kicker text-signal">{card.flow}</span>
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-signal-soft text-signal-deep">
+        {/* No "CAPTURE" kicker: the left rail's active item already names the
+            stage, and the title says it again ("Every word, captured"). The
+            glyph rides the title line — on its own row it read as orphaned
+            once the kicker beside it went. (The mobile cards keep their
+            "01 CAPTURE" row: no rail there to carry the stage name.) */}
+        <div className="flex items-center justify-between gap-5">
+          <h3 className="text-[clamp(1.5rem,2.4vw,2.1rem)] font-medium tracking-tight text-ink-display">
+            {card.title}
+          </h3>
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-signal-soft text-signal-deep">
             {card.icon}
           </span>
         </div>
-        <h3 className="mt-2.5 text-[clamp(1.5rem,2.4vw,2.1rem)] font-medium tracking-tight text-ink-display">
-          {card.title}
-        </h3>
         <p className="mt-2 max-w-[46ch] text-[15.5px] leading-relaxed text-ink-3">
           {card.body}
         </p>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   motion,
   AnimatePresence,
@@ -9,6 +9,7 @@ import {
 } from "framer-motion";
 import { Reveal, WordReveal } from "./motion";
 import { Eyebrow } from "./ui";
+import { useLandingTime, type LandingTime } from "@/lib/mock/time";
 
 /* ================================================================== */
 /*  LiveCapture — "in the room". A fast, self-contained live panel: the  */
@@ -40,6 +41,8 @@ const KIND_ACCENT: Record<Kind, { bar: string; label: string }> = {
 };
 
 type Moment = {
+  /** stable across the date swap — the `said`/`captured` strings are not */
+  id: string;
   who: string;
   initial: string;
   agent?: boolean;
@@ -48,46 +51,58 @@ type Moment = {
   captured: string;
 };
 
-const MOMENTS: Moment[] = [
-  {
-    who: "Maya",
-    initial: "M",
-    said: "Let's lock the Q3 launch — I'm proposing August 12.",
-    kind: "decision",
-    captured: "Q3 launch targeted for August 12.",
-  },
-  {
-    who: "Raj's agent",
-    initial: "R",
-    agent: true,
-    said: "Raj's out — QA needs two extra days after code freeze.",
-    kind: "context",
-    captured: "From Raj's agent: QA needs +2 days after freeze.",
-  },
-  {
-    who: "Priya",
-    initial: "P",
-    said: "Then the 12th is too tight — QA would still be running.",
-    kind: "conflict",
-    captured: "Aug 12 conflicts with the QA window.",
-  },
-  {
-    who: "Maya",
-    initial: "M",
-    said: "Good catch — let's move the launch to August 14.",
-    kind: "decision",
-    captured: "Launch moved to August 14.",
-  },
-  {
-    who: "Maya",
-    initial: "M",
-    said: "I'll update the launch checklist by Friday.",
-    kind: "action",
-    captured: "Maya: update checklist — due Fri.",
-  },
-];
+/* The session is a live meeting, so its launch date is derived from today
+   (see lib/mock/time) rather than written down — a baked "August 12" reads
+   as stale next month and as an error once it is in the past. */
+function buildMoments(t: LandingTime): Moment[] {
+  return [
+    {
+      id: "propose",
+      who: "Maya",
+      initial: "M",
+      said: `Let's lock the Q3 launch — I'm proposing ${t.launchLong}.`,
+      kind: "decision",
+      captured: `Q3 launch targeted for ${t.launchLong}.`,
+    },
+    {
+      id: "qa",
+      who: "Raj's agent",
+      initial: "R",
+      agent: true,
+      said: "Raj's out — QA needs two extra days after code freeze.",
+      kind: "context",
+      captured: "From Raj's agent: QA needs +2 days after freeze.",
+    },
+    {
+      id: "conflict",
+      who: "Priya",
+      initial: "P",
+      said: `Then the ${t.launchOrdinal} is too tight — QA would still be running.`,
+      kind: "conflict",
+      captured: `${t.launchShort} conflicts with the QA window.`,
+    },
+    {
+      id: "move",
+      who: "Maya",
+      initial: "M",
+      said: `Good catch — let's move the launch to ${t.movedLong}.`,
+      kind: "decision",
+      captured: `Launch moved to ${t.movedLong}.`,
+    },
+    {
+      id: "checklist",
+      who: "Maya",
+      initial: "M",
+      said: "I'll update the launch checklist by Friday.",
+      kind: "action",
+      captured: "Maya: update checklist — due Fri.",
+    },
+  ];
+}
 
-const N = MOMENTS.length;
+/* the moment count never varies with the date, so the loop timing can stay
+   a module constant */
+const N = 5;
 
 // legend chips in the order each kind first appears in the session
 // (Note closes the range — this session happens not to produce one)
@@ -133,6 +148,10 @@ export function LiveCapture() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { margin: "-15% 0px -15% 0px" });
 
+  /* dates come from today, not from the source — see lib/mock/time */
+  const time = useLandingTime();
+  const MOMENTS = useMemo(() => buildMoments(time), [time]);
+
   // `step` = how many moments have arrived (0..N). step-1 is the latest.
   const [step, setStep] = useState(0);
 
@@ -172,9 +191,8 @@ export function LiveCapture() {
             accentClass="text-gradient-signal"
             className="display mx-auto mt-4 max-w-[18ch] text-[clamp(2rem,5vw,3.6rem)]"
           />
-          <p className="mx-auto mt-4 max-w-[48ch] text-[17px] leading-relaxed text-ink-3">
-            Your agent turns the live conversation into structured, confirmable
-            memory — in real time, one moment at a time.
+          <p className="mx-auto mt-4 max-w-[52ch] text-[17px] leading-relaxed text-ink-3">
+            Decisions, actions and conflicts — caught as they&apos;re spoken.
           </p>
         </Reveal>
 
@@ -190,7 +208,7 @@ export function LiveCapture() {
                 <span className="whitespace-nowrap">
                   Live
                   <span className="hidden min-[420px]:inline">
-                    {" · Q3 Launch Sync"}
+                    {" · Q3 Planning"}
                   </span>
                 </span>
                 <span className="ml-0.5 flex items-end gap-[2px]" aria-hidden>
@@ -256,7 +274,7 @@ export function LiveCapture() {
                     const revealed = idx < step;
                     const active = idx === step - 1;
                     return (
-                      <div key={mm.said} className={`${SLOT} flex`}>
+                      <div key={mm.id} className={`${SLOT} flex`}>
                         <AnimatePresence initial={false} mode="wait">
                           {revealed ? (
                             <motion.div
@@ -329,7 +347,7 @@ export function LiveCapture() {
                   {MOMENTS.map((mm, idx) => {
                     const active = idx === step - 1;
                     return (
-                      <div key={mm.said} className={`${SLOT} relative`}>
+                      <div key={mm.id} className={`${SLOT} relative`}>
                         <div
                           className={`absolute left-1/2 top-1/2 h-px w-7 -translate-x-1/2 -translate-y-1/2 transition-colors duration-500 ${
                             idx < step ? "bg-signal/40" : "bg-line-2"
@@ -363,7 +381,7 @@ export function LiveCapture() {
                     const accent = KIND_ACCENT[mm.kind];
                     const active = idx === step - 1;
                     return (
-                      <div key={mm.captured} className={`${SLOT} flex`}>
+                      <div key={mm.id} className={`${SLOT} flex`}>
                         <AnimatePresence initial={false} mode="wait">
                           {revealed ? (
                             <motion.div

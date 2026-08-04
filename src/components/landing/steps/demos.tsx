@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useLandingTime } from "@/lib/mock/time";
 
 /* Mini live demos for the five "How it works" stages. Each one is a small,
    honest re-enactment of the product moment (Appendix A1 of the 4-July brief):
@@ -484,8 +485,10 @@ export function ConfirmDemo({ still = false }: { still?: boolean }) {
         </p>
       </Enter>
 
+      {/* the footer carries the Edit path — the "nothing lands silently"
+          guarantee is already the stage title, body and spine hint */}
       <p className="mt-4 border-t border-line pt-3.5 text-[11px] text-ink-3">
-        One-tap confirm — nothing is saved or assigned silently.
+        Edit anything before you confirm it.
       </p>
     </DemoFrame>
   );
@@ -609,15 +612,18 @@ const REMEMBER_TIMES = [900];
 export function RememberDemo({ still = false }: { still?: boolean }) {
   const phase = usePhases(REMEMBER_TIMES, still, 2800);
   const reduce = useReducedMotion();
+  const time = useLandingTime();
   const moved = phase >= 1;
 
   return (
     <DemoFrame>
       <div className="relative grid grid-cols-2 gap-3">
+        {/* both dates trail today (see lib/mock/time) — a baked "Apr 3 → Jul 2"
+            stops reading as "last quarter → this one" within a few months */}
         {(
           [
-            { title: "Q2 Planning", date: "Apr 3", from: true },
-            { title: "Q3 Planning", date: "Jul 2", from: false },
+            { title: "Q2 Planning", date: time.prevPlanningDate, from: true },
+            { title: "Q3 Planning", date: time.thisPlanningDate, from: false },
           ] as const
         ).map((m) => (
           <div
@@ -676,12 +682,13 @@ export function RememberDemo({ still = false }: { still?: boolean }) {
         </motion.span>
       </div>
 
-      <div className="mt-5 flex items-center justify-between border-t border-line pt-3.5">
-        <span className="flex flex-wrap items-center gap-2 text-[11px] text-ink-3">
-          <TagChip tone="neutral">→ Next meeting</TagChip>
-          <TagChip tone="neutral">Cross-meeting memory</TagChip>
-        </span>
-      </div>
+      {/* a sentence, not chips — the "→ Next meeting" / "Cross-meeting memory"
+          chips are already the stage's Tokens strip directly below this card,
+          and the two rows rendered as an identical pair. Matches the footer
+          pattern of the Label / Confirm / Route demos. */}
+      <p className="mt-5 border-t border-line pt-3.5 text-[11px] text-ink-3">
+        Three months apart, and nobody re-opens it.
+      </p>
     </DemoFrame>
   );
 }

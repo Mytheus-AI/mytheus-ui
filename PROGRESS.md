@@ -6,14 +6,71 @@
 >
 > **Owner:** Yash V Maurya · **Scope now:** the full public site (landing + pricing +
 > 12 feature pages) **and** the authenticated app shell (every doc-20 screen, mock data).
-> **Last verified (2026-07-06):** `tsc --noEmit` clean · `next lint` clean · `next build`
-> clean (**56 static pages**) · zero horizontal overflow at 320px and 390px across the whole
-> landing page (full-scroll iframe probe). Contributor docs live in `docs/` (DESIGN-SYSTEM,
-> MOTION, PAGES, MOCK-DATA, CONTRIBUTING).
+> **Last verified (2026-07-24):** `tsc --noEmit` clean · `next lint` clean across the whole
+> project. Contributor docs live in `docs/` (DESIGN-SYSTEM, MOTION, PAGES, MOCK-DATA,
+> CONTRIBUTING).
 
 ---
 
-## 2026-07-06 — six-agent responsive + motion pass (latest)
+## 2026-07-24 — Hero rebuilt; new NetworkFlow interstitial (two rebuilds); landing cleanup pass
+
+**Hero** (`Hero.tsx`) simplified across several rounds of direct user feedback down to: a
+full-viewport clay→cream gradient wash (deep near-black top `#631f0f` → a lighter `#e2916f`
+at the headline → `--signal-bright`/`--signal-soft`/`--bg`), the H1 "The room / *remembers.*",
+a handwritten beat ("even the meeting you missed."), two CTA pills, and a bottom scroll cue —
+full stop. Two things that were tried and explicitly cut: a literal answer-card payoff under
+a "What did you decide last Tuesday?" question-style headline, and a timezone-chip strip
+(inspired by an Andrei Gorskikh portfolio reference the user shared) — both shipped, both
+removed on direct feedback. The flanking arc rings from that same reference survived. The
+entire product "bento" demo cluster that used to live under the Hero statement (live-notes /
+memory / decision / ask-bar cards) was deleted outright, not hidden — nothing in the deleted
+~500 lines is reproduced elsewhere yet. `WordReveal`'s per-word masks (`motion.tsx`) gained
+horizontal clipping compensation (they only had vertical before) — a site-wide fix for
+italic-accent glyphs (trailing "?", "y", ".") getting shaved at word-mask edges.
+
+**NetworkFlow** (`NetworkFlow.tsx`, new file, mounted between `Hero` and `FeatureCards` via
+a `<div data-dark-zone>` wrapper in `page.tsx`) is the cinematic cut the user asked for
+straight after the Hero scroll — "the screen turns black" — built TWICE:
+
+1. First version: a `PinnedScene`-driven 4-beat scene with `ConnectedGraph` (an existing
+   canvas node/edge component) as an animated dot-network backdrop. Functionally shipped and
+   fully debugged (see `docs/MOTION.md`'s "learned the hard way" list for the three real bugs
+   this produced and their fixes — sticky-pin scroll-math for a shared header's light/dark
+   threshold, and a raw-vs-springed-progress desync bug). Then the user rejected the
+   backdrop itself outright: *"the neural network thingy made that balls... I don't like
+   it."*
+2. Current version: same cinematic beat (hard cut to `#0d0b08` right after Hero, dissolving
+   to the site's cream via a static bottom gradient — no scroll-driven color math at all this
+   time), but the content is now 4 concrete product-UI mockup panels — Live capture, Decision
+   confirmed, Carried forward, Ask anything — connected by a single hand-drawn thread down the
+   left edge, each revealing independently via ordinary `whileInView` as it scrolls into
+   place. Deliberately NOT built with `PinnedScene` this round — see the new rules added to
+   `docs/MOTION.md` this session. Explicit user constraint driving the panel design: **no
+   AI-generated, stock, or literal `<img>` imagery anywhere** — every visual is coded
+   HTML/CSS/SVG matching the exact card-chrome craft level already established in
+   `Statement.tsx` / `steps/demos.tsx` (rounded-card white surfaces, mono `kicker` labels,
+   checkmark badges, avatar-initial chips).
+
+**Landing-page cleanup pass** (user: "check the whole landing page... remove the unnecessary
+you feel, and just do it"): a conservative audit of `FeatureCards`/`LiveCapture`, `Statement`,
+`Steps` (+ `steps/demos.tsx`), `MemoryTimeline`, `FAQ`, `FinalCTA`, `SiteFooter`, `SiteHeader`.
+One real fix landed — `LiveCapture.tsx`'s connector-beam glow used a raw `rgba(217,119,87,…)`
+literal instead of the `--signal-glow` token every sibling glow effect uses. Everything else
+(dead code, broken links, placeholder copy, "cross-meeting memory" appearing in three
+different sections) was checked and found to be either clean or a deliberate structural
+reinforcement, not clutter. **Flagged, not deleted:** `NotesEnhanceDemo.tsx` (678 lines,
+zero importers anywhere in `src/`) — an apparently-orphaned component from an earlier
+redesign pass; worth a deliberate decision on whether to delete or keep parked.
+
+Both this session's rebuilds were built by parallel background agents from detailed specs,
+per explicit user request — and in both cases the agents' own "tsc/lint clean" reports were
+NOT sufficient on their own; a manual screenshot-based scroll-through (recreated CDP harness,
+`shot.js`, in the session scratchpad) caught every real bug listed above. Worth remembering
+for any future delegated visual/motion work on this codebase.
+
+---
+
+## 2026-07-06 — six-agent responsive + motion pass
 
 Executed the "every segment responsive + crazier animations + inside-UI polish" brief with
 **six parallel agents under exclusive file ownership** (shared files — `motion.tsx`, `ui.tsx`,
