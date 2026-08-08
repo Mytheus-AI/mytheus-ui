@@ -28,7 +28,18 @@ const isPublicRoute = createRouteMatcher([
   "/features(.*)",
   "/pricing(.*)",
   "/security(.*)",
-  "/legal(.*)",
+  // `/privacy` and `/terms` are the pages that actually exist. The list previously said
+  // `/legal(.*)`, which matches no route in this app, so both were protected and returned 404
+  // to a signed-out visitor - the two documents that MUST be publicly reachable, and both
+  // linked from the site footer.
+  "/privacy(.*)",
+  "/terms(.*)",
+  // Acquisition page plus its verification step. Gating these means the campaign they exist
+  // for cannot convert: a signed-out visitor is exactly the intended audience.
+  "/students(.*)",
+  // Kept for routes that do not exist yet. Each is a marketing surface that will be public the
+  // day it lands, and being here early costs nothing because a matcher for an absent route
+  // matches nothing.
   "/contact(.*)",
   "/changelog(.*)",
   "/docs(.*)",
