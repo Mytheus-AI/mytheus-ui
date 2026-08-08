@@ -3,7 +3,9 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { LinkButton } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { mockMeetings, type Meeting } from "@/lib/mock/data";
+import { mockMeetings } from "@/lib/mock/data";
+import type { MeetingView } from "@/lib/api/present";
+import type { ArmStatus } from "@/lib/api/types";
 import {
   MOCK_NOW,
   daysFromNow,
@@ -35,8 +37,21 @@ function AvatarStack({ names }: { names: string[] }) {
   );
 }
 
-function MeetingRow({ meeting }: { meeting: Meeting }) {
+function MeetingRow({ meeting }: { meeting: MeetingView }) {
   const live = meeting.status === "live";
+  // Both are absent on real data until later bands: duration comes from transcription
+  // (Plan 3-4) and the participant list needs joined user records with display names. The
+  // row shows what it has instead of rendering "0 attendees", which would state a
+  // fabricated fact as a measured one.
+  const attendees = meeting.participants?.length;
+  const duration = meeting.durationMinutes;
+  const subtitle = live
+    ? [`Started ${formatClock(meeting.startTime)}`, duration ? formatDuration(duration) : null]
+        .filter(Boolean)
+        .join(" · ")
+    : attendees !== undefined
+      ? `${attendees} attendee${attendees === 1 ? "" : "s"}`
+      : formatClock(meeting.startTime);
   return (
     <li
       className={`flex min-w-0 items-center gap-3 px-5 py-3 sm:gap-4 ${
@@ -51,9 +66,12 @@ function MeetingRow({ meeting }: { meeting: Meeting }) {
             <p className="font-mono text-[12.5px] tabular-nums text-ink-2">
               {formatClock(meeting.startTime)}
             </p>
-            <p className="mt-0.5 font-mono text-[10.5px] text-ink-3">
-              {formatDuration(meeting.durationMinutes)}
-            </p>
+            {/* Omitted rather than shown as "0m": duration arrives with transcription. */}
+            {duration !== undefined ? (
+              <p className="mt-0.5 font-mono text-[10.5px] text-ink-3">
+                {formatDuration(duration)}
+              </p>
+            ) : null}
           </>
         )}
       </div>
@@ -65,16 +83,14 @@ function MeetingRow({ meeting }: { meeting: Meeting }) {
         <p className="truncate text-[14px] font-medium text-ink transition-colors duration-150 group-hover:text-signal-deep">
           {meeting.title}
         </p>
-        <p className="mt-0.5 truncate text-[12.5px] text-ink-3">
-          {live
-            ? `Started ${formatClock(meeting.startTime)} · ${formatDuration(meeting.durationMinutes)}`
-            : `${meeting.participants.length} attendee${meeting.participants.length === 1 ? "" : "s"}`}
-        </p>
+        <p className="mt-0.5 truncate text-[12.5px] text-ink-3">{subtitle}</p>
       </Link>
 
-      <div className="hidden shrink-0 md:block">
-        <AvatarStack names={meeting.participants} />
-      </div>
+      {meeting.participants?.length ? (
+        <div className="hidden shrink-0 md:block">
+          <AvatarStack names={meeting.participants} />
+        </div>
+      ) : null}
 
       <div className="shrink-0">
         {live ? (
@@ -98,16 +114,40 @@ function MeetingRow({ meeting }: { meeting: Meeting }) {
   );
 }
 
-export function TodaysMeetings({ className = "" }: { className?: string }) {
-  const today = mockMeetings
-    .filter(
-      (m) => m.status !== "past" && isSameUTCDay(new Date(m.startTime), MOCK_NOW),
-    )
-    .sort((a, b) => a.startTime.localeCompare(b.startTime));
+export function TodaysMeetings({
+  className = "",
+  meetings,
+  status,
+}: {
+  className?: string;
+  /** Real `bff` data when supplied. Falls back to the mock so any caller that has not been
+   *  reconciled yet keeps rendering exactly as before. */
+  meetings?: MeetingView[];
+  /** The arm status from `GET /bff/dashboard`. `degraded` is NOT the same as empty: one means
+   *  the panel failed to load, the other that there is nothing scheduled, and showing
+   *  "nothing on the calendar" for a failed read is the specific mistake the status prevents. */
+  status?: ArmStatus;
+}) {
+  const source: MeetingView[] = meetings ?? mockMeetings;
+  // Real data is already filtered and ordered by the server (`upcoming_meetings`, ascending
+  // with NULLs last), so re-filtering it against MOCK_NOW would hide everything. Only the
+  // mock needs the local day filter.
+  const isReal = meetings !== undefined;
+  const now = isReal ? new Date() : MOCK_NOW;
 
-  const tomorrow = mockMeetings
-    .filter((m) => m.status === "upcoming" && daysFromNow(m.startTime) === 1)
-    .sort((a, b) => a.startTime.localeCompare(b.startTime))[0];
+  const today = isReal
+    ? source
+    : source
+        .filter((m) => m.status !== "past" && isSameUTCDay(new Date(m.startTime), now))
+        .sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+  const tomorrow = isReal
+    ? undefined
+    : source
+        .filter((m) => m.status === "upcoming" && daysFromNow(m.startTime) === 1)
+        .sort((a, b) => a.startTime.localeCompare(b.startTime))[0];
+
+  const degraded = status === "degraded";
 
   return (
     <section
@@ -132,7 +172,15 @@ export function TodaysMeetings({ className = "" }: { className?: string }) {
         </Link>
       </div>
 
-      {today.length > 0 ? (
+      {degraded ? (
+        <div className="mt-3 flex-1 border-t border-line p-5">
+          <EmptyState
+            className="py-10"
+            title="Could not load your meetings"
+            description="This panel failed to load. The rest of the dashboard is unaffected; reload to try again."
+          />
+        </div>
+      ) : today.length > 0 ? (
         <ul className="mt-3 flex-1 divide-y divide-line border-t border-line">
           {today.map((meeting) => (
             <MeetingRow key={meeting.id} meeting={meeting} />
