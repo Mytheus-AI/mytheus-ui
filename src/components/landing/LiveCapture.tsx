@@ -356,7 +356,7 @@ export function LiveCapture() {
                         {active && !reduce && (
                           <motion.span
                             key={`beam-${step}`}
-                            className="absolute top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-signal shadow-[0_0_8px_rgba(217,119,87,0.7)]"
+                            className="absolute top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-signal shadow-[0_0_8px_rgba(194,92,54,0.7)]"
                             initial={{ left: "8%", opacity: 0 }}
                             animate={{ left: "80%", opacity: [0, 1, 1, 0] }}
                             transition={{

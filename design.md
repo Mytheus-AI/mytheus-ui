@@ -15,7 +15,7 @@
 
 **Components read tokens, never raw values.** Every colour, radius, easing, and
 type style is a named token surfaced as a CSS custom property and a Tailwind class.
-A component that hard-codes `#d97757` or `0.82` line-height is a bug, even if it
+A component that hard-codes `#c25c36` or `0.82` line-height is a bug, even if it
 looks right today — it won't survive a theme change. The only sanctioned raw hex in
 the whole UI are the **three macOS window-chrome dots** in mockups (`#ec6a5e` /
 `#f4bf4f` / `#61c454`) and subtle multi-stop shadow `rgba()`s. Everything else is a token.
@@ -84,37 +84,60 @@ graph). It replaced the old `Orb` and appears as a faint backdrop across the sit
 Defined in `:root` in `globals.css`, surfaced as Tailwind colours in
 `tailwind.config.ts`. **One canvas family, one ink family, one signal.**
 
-### Surfaces (warm cream)
+### Surfaces (warm paper)
 | Token | Value | Tailwind | Use |
 | --- | --- | --- | --- |
-| `--bg` | `#faf9f5` | `bg-bg` | page canvas |
-| `--bg-2` | `#f3f1ea` | `bg-bg-2` | subtle fills, chips, inset rows |
-| `--bg-3` | `#ede9de` | `bg-bg-3` | section bands / card fills |
-| `--surface` | `#ffffff` | `bg-surface` / `bg-white` | raised cards, app-window mockups |
+| `--bg` | `#f6f2e9` | `bg-bg` | page canvas |
+| `--bg-2` | `#eee7d9` | `bg-bg-2` | subtle fills, chips, inset rows |
+| `--bg-3` | `#e4dcc9` | `bg-bg-3` | section bands / card fills |
+| `--surface` | `#fffdf8` | `bg-surface` / `bg-white` | raised cards, app-window mockups |
+| `--on-signal` | `#ffffff` | (in CSS) | type sitting on a signal fill |
+
+### The mesh ground
+The hero and the big stage panels are painted by `.mesh-field`, which reads these
+and nothing else. They exist because the mesh used to hard-code its stops — which
+meant a palette change repainted the type and left the canvas exactly as it was.
+**No component may hard-code a ground colour.**
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `--mesh-1` | `#ece5d4` | warm pool, lower right |
+| `--mesh-2` | `#e6ddc9` | deeper pool, lower left |
+| `--mesh-signal` | `rgba(194,92,54,.13)` | the signal bloom, centre |
+| `--mesh-top` | `#f6f2e9` | linear wash, top |
+| `--mesh-bottom` | `#ece6d6` | linear wash, bottom |
 
 ### Inks (warm near-blacks — never pure black on text)
 | Token | Value | Tailwind | Use |
 | --- | --- | --- | --- |
-| `--ink` | `#1c1a15` | `text-ink` | strongest — wordmark, key numerals |
-| `--ink-display` | `#26231d` | `text-ink-display` | big display headings |
-| `--ink-2` | `#423e36` | `text-ink-2` | strong body, nav |
-| `--ink-3` | `#6f6a5f` | `text-ink-3` | muted body, captions, eyebrows |
+| `--ink` | `#14120d` | `text-ink` | strongest — wordmark, key numerals |
+| `--ink-display` | `#1c1913` | `text-ink-display` | big display headings |
+| `--ink-2` | `#383328` | `text-ink-2` | strong body, nav |
+| `--ink-3` | `#6a6355` | `text-ink-3` | muted body, captions, eyebrows |
 
 ### Hairlines
 | Token | Value | Tailwind | Use |
 | --- | --- | --- | --- |
-| `--line` | `#e7e2d6` | `border-line` | default warm hairline |
-| `--line-2` | `#d8d2c3` | `border-line-2` / `bg-line-2` | stronger divider, dot separators |
+| `--line` | `#ded5c0` | `border-line` | default warm hairline |
+| `--line-2` | `#c9bfa6` | `border-line-2` / `bg-line-2` | stronger divider, dot separators |
 
-### The ONE signal — Claude clay / coral
+### The ONE signal — deep clay
 | Token | Value | Tailwind | Use |
 | --- | --- | --- | --- |
-| `--signal` | `#d97757` | `bg-signal` / `text-signal` | the accent + primary CTA fill |
-| `--signal-deep` | `#bd5d3a` | `text-signal-deep` | hover, accent text on light, gradient anchor |
-| `--signal-bright` | `#e8a489` | `text-signal-bright` | gradient highlight, glints |
-| `--signal-soft` | `#f5e5dc` | `bg-signal-soft` | tinted pills/tags, soft fills |
-| `--signal-glow` | `rgba(217,119,87,.5)` | (in shadows) | glow halos |
-| `--pill` | `#26231d` | `bg-pill` | warm near-black dark chips / icon buttons |
+| `--signal` | `#c25c36` | `bg-signal` / `text-signal` | the accent + primary CTA fill |
+| `--signal-deep` | `#9f4526` | `text-signal-deep` | hover, accent text on light, gradient anchor |
+| `--signal-bright` | `#e08f69` | `text-signal-bright` | gradient highlight, glints |
+| `--signal-soft` | `#f1dfd2` | `bg-signal-soft` | tinted pills/tags, soft fills |
+| `--signal-glow` | `rgba(194,92,54,.5)` | (in shadows) | glow halos |
+| `--pill` | `#1c1913` | `bg-pill` | warm near-black dark chips / icon buttons |
+
+### CTA shadows
+Every primary CTA reads one of these rather than re-typing the clay rgba.
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `--shadow-cta` | `0 20px 44px -18px rgba(159,69,38,.85)` | full-size CTA pills |
+| `--shadow-cta-sm` | `0 16px 36px -18px rgba(159,69,38,.8)` | the compact header pill |
 
 ### Colour rules
 1. **Single-signal discipline.** Clay is the *only* hue. It marks the one thing that

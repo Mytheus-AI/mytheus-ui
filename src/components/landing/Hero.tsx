@@ -1,5 +1,6 @@
 "use client";
 
+import { appHref } from "@/lib/marketing/app-url";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   motion,
@@ -308,7 +309,7 @@ function MeetingOrbit({ progress }: { progress?: MotionValue<number> }) {
           className="absolute left-1/2 top-1/2 h-[460px] w-[460px] -translate-x-1/2 -translate-y-1/2 rounded-full"
           style={{
             background:
-              "radial-gradient(circle, rgba(217,119,87,0.18), rgba(217,119,87,0.06) 45%, transparent 72%)",
+              "radial-gradient(circle, rgba(194,92,54,0.18), rgba(194,92,54,0.06) 45%, transparent 72%)",
           }}
         />
 
@@ -437,7 +438,7 @@ function OrbitNode({
   const past = node.at[0] < STAGE_W / 2;
 
   const tone = node.source
-    ? "border-signal/35 bg-white shadow-[0_22px_44px_-22px_rgba(189,93,58,0.55)]"
+    ? "border-signal/35 bg-white shadow-[0_22px_44px_-22px_rgba(159,69,38,0.55)]"
     : node.future
       ? "border-dashed border-line-2 bg-white/70 shadow-[0_14px_30px_-24px_rgba(40,30,20,0.4)]"
       : "border-line bg-white/90 shadow-[0_18px_38px_-24px_rgba(40,30,20,0.45)]";
@@ -546,7 +547,7 @@ function SeqPageTwo({
           style={{ opacity: bodyO, y: bodyY }}
           className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4"
         >
-          <PillCTA href="/dashboard">Get started free</PillCTA>
+          <PillCTA href={appHref()}>Get started free</PillCTA>
           <a
             href="#product"
             className="inline-flex min-h-[44px] items-center text-[15px] font-medium text-ink-2 underline-offset-4 transition-colors hover:text-ink hover:underline"
@@ -689,7 +690,7 @@ function HeroStatic() {
               steps.
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4">
-              <PillCTA href="/dashboard">Get started free</PillCTA>
+              <PillCTA href={appHref()}>Get started free</PillCTA>
               <a
                 href="#product"
                 className="inline-flex min-h-[44px] items-center text-[15px] font-medium text-ink-2 underline-offset-4 transition-colors hover:text-ink hover:underline"
@@ -755,7 +756,7 @@ function Intro() {
 
       <Reveal delay={380}>
         <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4">
-          <PillCTA href="/dashboard">Get started free</PillCTA>
+          <PillCTA href={appHref()}>Get started free</PillCTA>
           <a
             href="#how"
             className="inline-flex min-h-[44px] items-center text-[15px] font-medium text-ink-2 underline-offset-4 transition-colors hover:text-ink hover:underline"
@@ -837,10 +838,10 @@ function NoteWindow() {
               ? undefined
               : {
                   boxShadow: [
-                    "0 0 0 0 rgba(217,119,87,0)",
-                    "0 0 0 0 rgba(217,119,87,0)",
-                    "0 0 0 4px rgba(217,119,87,0.18)",
-                    "0 0 0 0 rgba(217,119,87,0)",
+                    "0 0 0 0 rgba(194,92,54,0)",
+                    "0 0 0 0 rgba(194,92,54,0)",
+                    "0 0 0 4px rgba(194,92,54,0.18)",
+                    "0 0 0 0 rgba(194,92,54,0)",
                   ],
                 }
           }
@@ -914,7 +915,7 @@ function ListeningOrb({ reduce }: { reduce: boolean }) {
         />
       )}
       <motion.span
-        className="relative h-2 w-2 rounded-full bg-signal shadow-[0_0_0_3px_rgba(217,119,87,0.16)]"
+        className="relative h-2 w-2 rounded-full bg-signal shadow-[0_0_0_3px_rgba(194,92,54,0.16)]"
         animate={reduce ? undefined : { scale: [1, 1.18, 1] }}
         transition={reduce ? undefined : { duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
       />

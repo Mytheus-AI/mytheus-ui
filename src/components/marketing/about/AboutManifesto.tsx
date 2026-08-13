@@ -209,7 +209,7 @@ export function AboutManifesto() {
               <div className="mt-10 flex flex-col items-center gap-5 sm:mt-12 sm:flex-row sm:gap-7">
                 <Link
                   href="/"
-                  className="group inline-flex items-center gap-2.5 rounded-pill bg-signal py-4 pl-8 pr-7 text-[16px] font-medium text-white shadow-[0_20px_44px_-18px_rgba(189,93,58,0.85)] transition-colors duration-300 hover:bg-signal-deep"
+                  className="group inline-flex items-center gap-2.5 rounded-pill bg-signal py-4 pl-8 pr-7 text-[16px] font-medium text-white shadow-[var(--shadow-cta)] transition-colors duration-300 hover:bg-signal-deep"
                 >
                   Explore Mytheus
                   <ArrowRight className="h-[18px] w-[18px] transition-transform duration-300 group-hover:translate-x-0.5" />

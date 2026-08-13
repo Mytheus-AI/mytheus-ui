@@ -63,7 +63,7 @@ export function PillCTA({
   return (
     <Link
       href={href}
-      className={`group inline-flex items-center gap-2.5 rounded-pill bg-signal py-4 pl-7 pr-6 text-[15px] font-medium tracking-tight text-white shadow-[0_20px_44px_-18px_rgba(189,93,58,0.85)] transition-colors duration-300 hover:bg-signal-deep ${className}`}
+      className={`group inline-flex items-center gap-2.5 rounded-pill bg-signal py-4 pl-7 pr-6 text-[15px] font-medium tracking-tight text-white shadow-[var(--shadow-cta)] transition-colors duration-300 hover:bg-signal-deep ${className}`}
     >
       {children}
       <ArrowRight className="h-[18px] w-[18px] transition-transform duration-300 group-hover:translate-x-0.5" />

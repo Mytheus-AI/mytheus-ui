@@ -30,8 +30,8 @@ const RAW = [
 ];
 
 /* stacked-paper sheets behind the notepad — clay, matching the theme */
-const PAPER_BACK = "var(--signal-bright)"; /* #e8a489 */
-const PAPER_MID = "var(--signal-soft)"; /* #f5e5dc */
+const PAPER_BACK = "var(--signal-bright)"; /* #e08f69 */
+const PAPER_MID = "var(--signal-soft)"; /* #f1dfd2 */
 
 /* A live wall-clock (HH:MM, 24h) that ticks with the real current time so the
    meeting reads as happening right now. Renders a stable placeholder on the

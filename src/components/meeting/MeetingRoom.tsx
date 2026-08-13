@@ -94,7 +94,7 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
                   className="absolute inset-0"
                   style={{
                     background:
-                      "radial-gradient(80% 90% at 50% 30%, rgba(217,119,87,0.18), transparent 70%)",
+                      "radial-gradient(80% 90% at 50% 30%, rgba(194,92,54,0.18), transparent 70%)",
                   }}
                 />
               ) : null}

@@ -1,5 +1,6 @@
 "use client";
 
+import { appHref } from "@/lib/marketing/app-url";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   motion,
@@ -108,7 +109,7 @@ export function FAQ() {
               meetings live.
             </p>
             <div className="mt-9">
-              <PillCTA href="/dashboard">Get started free</PillCTA>
+              <PillCTA href={appHref()}>Get started free</PillCTA>
             </div>
             <p className="mt-5 text-[13px] text-ink-3">
               Still curious?{" "}

@@ -93,9 +93,9 @@ export function ConnectedGraph({
       styles.getPropertyValue(name).trim() || fallback;
     const palette = signal
       ? {
-          node: pick("--signal", "#d97757"),
-          nodeBright: pick("--signal-bright", "#e8a489"),
-          edge: pick("--signal-deep", "#bd5d3a"),
+          node: pick("--signal", "#c25c36"),
+          nodeBright: pick("--signal-bright", "#e08f69"),
+          edge: pick("--signal-deep", "#9f4526"),
         }
       : {
           node: pick("--line-2", "#b8af9c"),

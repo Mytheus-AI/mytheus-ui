@@ -3,36 +3,49 @@
 @tailwind utilities;
 
 /* ================================================================== */
-/*  Mytheus — "Playex-style" system (Claude-light themed)              */
-/*  Cool near-white monochrome. Huge tight grotesk type. Soft pills    */
-/*  and big rounded cards. One signal: lilac — expressed as glossy 3D  */
-/*  orbs and glows, the way Playex uses its green. Calm, premium.      */
+/*  Mytheus — the token layer, and the only place a colour is chosen.  */
+/*  Warm paper canvas. Huge tight grotesk type. Soft pills and big     */
+/*  rounded cards. One signal: deep clay — carried by the CTA fills,   */
+/*  the accent words, and the bloom in the mesh ground. Calm, premium. */
+/*  See design.md; if the two disagree, this file wins.                */
 /* ================================================================== */
 
 :root {
-  /* Claude light theme — warm cream canvas */
-  --bg: #faf9f5;
-  --bg-2: #f3f1ea;
-  --bg-3: #ede9de; /* warm cream — sections / card fills */
-  --surface: #ffffff;
+  /* Warm paper canvas — more pigment than cream, so the ground reads as
+     paper rather than beige and the ink has something to bite against */
+  --bg: #f6f2e9;
+  --bg-2: #eee7d9;
+  --bg-3: #e4dcc9; /* warm paper — sections / card fills */
+  --surface: #fffdf8;
+  --on-signal: #ffffff; /* type that sits on a signal fill */
 
   /* Inks — warm near-blacks / browns, never pure on text */
-  --ink: #1c1a15; /* strongest — wordmark */
-  --ink-display: #26231d; /* big display headings */
-  --ink-2: #423e36; /* nav / strong body */
-  --ink-3: #6f6a5f; /* muted body */
-  --line: #e7e2d6; /* warm hairline */
-  --line-2: #d8d2c3;
+  --ink: #14120d; /* strongest — wordmark */
+  --ink-display: #1c1913; /* big display headings */
+  --ink-2: #383328; /* nav / strong body */
+  --ink-3: #6a6355; /* muted body */
+  --line: #ded5c0; /* warm hairline */
+  --line-2: #c9bfa6;
 
-  /* The one signal — Claude clay / coral */
-  --signal: #d97757;
-  --signal-deep: #bd5d3a;
-  --signal-bright: #e8a489;
-  --signal-soft: #f5e5dc;
-  --signal-glow: rgba(217, 119, 87, 0.5);
+  /* The one signal — deep clay */
+  --signal: #c25c36;
+  --signal-deep: #9f4526;
+  --signal-bright: #e08f69;
+  --signal-soft: #f1dfd2;
+  --signal-glow: rgba(194, 92, 54, 0.5);
+
+  /* The mesh ground (hero + big stage panels). These exist so the canvas
+     moves with the palette — .mesh-field used to hard-code its stops, which
+     meant a theme change repainted the type and left the page looking the
+     same. Nothing else may hard-code a ground colour. */
+  --mesh-1: #ece5d4; /* warm pool, lower right */
+  --mesh-2: #e6ddc9; /* deeper pool, lower left */
+  --mesh-signal: rgba(194, 92, 54, 0.13); /* the signal bloom, centre */
+  --mesh-top: #f6f2e9;
+  --mesh-bottom: #ece6d6;
 
   /* Warm near-black pills (dark accents / icon buttons) */
-  --pill: #26231d;
+  --pill: #1c1913;
 
   /* Priority color language (frozen): red = act now, yellow = attention,
      blue = info. Warm-tuned so they sit on the cream canvas. */
@@ -51,8 +64,11 @@
   --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   --ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* clay CTA shadow — the ONLY place this rgba may appear */
-  --shadow-cta: 0 20px 44px -18px rgba(189, 93, 58, 0.85);
+  /* clay CTA shadows — the ONLY place this rgba may appear. `-sm` is the
+     compact header pill; every CTA reads one of these rather than
+     re-typing the colour. */
+  --shadow-cta: 0 20px 44px -18px rgba(159, 69, 38, 0.85);
+  --shadow-cta-sm: 0 16px 36px -18px rgba(159, 69, 38, 0.8);
 }
 
 html {
@@ -85,7 +101,7 @@ body {
 
 ::selection {
   background: var(--signal);
-  color: #fff;
+  color: var(--on-signal);
 }
 
 :focus-visible {
@@ -151,7 +167,7 @@ body {
 
   /* soft pill surface used by nav + secondary buttons */
   .pill-surface {
-    background-image: linear-gradient(180deg, #ffffff, #fbfbfb);
+    background-image: linear-gradient(180deg, var(--surface), var(--bg));
     border: 1px solid var(--line);
   }
 
@@ -181,10 +197,10 @@ body {
   /* soft abstract gradient field — the hero "dunes" backdrop */
   .mesh-field {
     background:
-      radial-gradient(58% 52% at 72% 62%, #f0ece1 0%, transparent 70%),
-      radial-gradient(52% 60% at 24% 74%, #ece6d9 0%, transparent 70%),
-      radial-gradient(42% 44% at 56% 40%, rgba(217, 119, 87, 0.13) 0%, transparent 72%),
-      linear-gradient(180deg, #faf9f5 0%, #f1eee5 100%);
+      radial-gradient(58% 52% at 72% 62%, var(--mesh-1) 0%, transparent 70%),
+      radial-gradient(52% 60% at 24% 74%, var(--mesh-2) 0%, transparent 70%),
+      radial-gradient(42% 44% at 56% 40%, var(--mesh-signal) 0%, transparent 72%),
+      linear-gradient(180deg, var(--mesh-top) 0%, var(--mesh-bottom) 100%);
   }
 
   /* living mesh — the gradient slowly breathes/drifts so big stage panels
@@ -211,7 +227,7 @@ body {
     transform: translateY(-5px);
     border-color: var(--line-2);
     box-shadow:
-      0 32px 64px -34px rgba(189, 93, 58, 0.3),
+      0 32px 64px -34px rgba(159, 69, 38, 0.3),
       inset 0 1px 0 rgba(255, 255, 255, 0.7);
   }
 

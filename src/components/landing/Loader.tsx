@@ -47,7 +47,7 @@ export function Loader() {
     const pick = (name: string, fb: string) =>
       styles.getPropertyValue(name).trim() || fb;
     const ink = toRgb(pick("--ink-3", "#6f6a5f"));
-    const clay = toRgb(pick("--signal", "#d97757"));
+    const clay = toRgb(pick("--signal", "#c25c36"));
 
     let w = 0;
     let h = 0;
