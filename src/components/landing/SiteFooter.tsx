@@ -3,33 +3,23 @@
 import { useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { MaskReveal } from "./motion";
 import { lenis } from "./SmoothScroll";
 import { LogoMark } from "@/components/Logo";
 import { FEATURES } from "@/lib/marketing/features";
 
-/* Footer — a dramatic warm-dark stage that closes the cream site: a warm clay
-   horizon glow, tidy link columns + a working email capture, and a giant
-   clay-gradient "Mytheus" wordmark as the centrepiece. Reduced-motion safe
-   (reveals / gradient all guard). */
+/* Footer — a plain warm-dark slab that closes the cream site: brand, a working
+   email capture, four link columns, and a bottom bar. Nothing theatrical: the
+   giant clay wordmark and the horizon glow that lit it were cut deliberately,
+   so this is the quiet end of the page rather than a second climax. */
 
-/* five tidy columns — the feature pages split into what the agents do vs.
-   what the platform provides, so no single column becomes a wall of links */
-const AGENT_SLUGS = [
-  "personal-agent",
-  "live-notes",
-  "smart-questions",
-  "decisions",
-  "action-items",
-  "context-gaps",
-  "proactive-insights",
-];
-
+/* four columns. The feature pages used to get two columns of their own (seven
+   agent links plus five platform ones) which read as a wall — the headline
+   four plus "All features" carry the same job in one column. */
 const featureLinks = (slugs: string[]) =>
-  FEATURES.filter((f) => slugs.includes(f.slug)).map((f) => ({
-    label: f.nav,
-    href: `/features/${f.slug}`,
-  }));
+  slugs.flatMap((slug) => {
+    const f = FEATURES.find((x) => x.slug === slug);
+    return f ? [{ label: f.nav, href: `/features/${f.slug}` }] : [];
+  });
 
 const COLS: { title: string; links: { label: string; href: string }[] }[] = [
   {
@@ -43,13 +33,14 @@ const COLS: { title: string; links: { label: string; href: string }[] }[] = [
     ],
   },
   {
-    title: "Your agent",
-    links: featureLinks(AGENT_SLUGS),
-  },
-  {
-    title: "Platform",
+    title: "Features",
     links: [
-      ...featureLinks(["transcription", "search", "knowledge-graph", "integrations"]),
+      ...featureLinks([
+        "personal-agent",
+        "live-notes",
+        "decisions",
+        "action-items",
+      ]),
       { label: "All features", href: "/features" },
     ],
   },
@@ -107,22 +98,15 @@ export function SiteFooter() {
 
   return (
     <footer className="relative isolate overflow-hidden rounded-t-[2.5rem] bg-pill text-bg">
-      {/* warm horizon glow rising behind the giant wordmark */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[60%]"
-        style={{
-          background:
-            "radial-gradient(75% 95% at 50% 100%, var(--signal-glow), transparent 72%)",
-        }}
-      />
-      {/* machined clay hairline where the cream page meets the dark slab */}
+      {/* machined clay hairline where the cream page meets the dark slab —
+          the one remaining flourish, and it earns its place by marking the
+          seam between the two grounds */}
       <span
         aria-hidden
         className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-signal/40 to-transparent"
       />
 
-      <div className="relative z-10 mx-auto max-w-[1340px] px-6 pb-8 pt-20 sm:px-10 sm:pt-24">
+      <div className="relative z-10 mx-auto max-w-[1340px] px-6 pb-10 pt-16 sm:px-10 sm:pt-20">
         {/* band one — brand story left, email capture right */}
         <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between">
           {/* brand + socials */}
@@ -239,7 +223,7 @@ export function SiteFooter() {
         </div>
 
         {/* band two — the link columns, airy and even */}
-        <div className="mt-14 grid grid-cols-2 gap-x-8 gap-y-10 border-t border-white/10 pt-10 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="mt-12 grid grid-cols-2 gap-x-8 gap-y-10 border-t border-white/10 pt-10 sm:grid-cols-4">
           {COLS.map((col) => (
             <div key={col.title}>
               <p className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-bg/40">
@@ -262,7 +246,7 @@ export function SiteFooter() {
         </div>
 
         {/* bottom bar */}
-        <div className="mt-16 flex flex-col items-center gap-4 border-t border-white/10 pt-6 sm:flex-row sm:justify-between">
+        <div className="mt-12 flex flex-col items-center gap-4 border-t border-white/10 pt-6 sm:flex-row sm:justify-between">
           <p className="order-2 text-xs text-bg/45 sm:order-1">
             © {year} Mytheus. All rights reserved.
           </p>
@@ -280,31 +264,6 @@ export function SiteFooter() {
             </span>
           </button>
         </div>
-      </div>
-
-      {/* the centrepiece — a giant clay-gradient wordmark GROUNDED on the
-          footer's bottom edge: the negative bottom margin pulls the line box
-          down so the BASELINE sits exactly on the edge (every letter touches
-          the ground, no gap) and the footer's overflow-hidden crops the "y"
-          descender below the ground line. No Parallax — it would float the
-          letters off the ground. */}
-      <div className="pointer-events-none relative z-[1]">
-        <MaskReveal y={160}>
-          {/* set in the BRAND face (Refinity, the .wordmark class — same as
-              the loader). Bottom-aligned logotype treatment: -mb (from
-              Refinity's metrics: baseline 0.135em above the leading-none box
-              bottom, flat letters paint 0.01em below baseline) grounds every
-              letter's foot exactly on the footer edge, and the y is raised
-              by its tail depth (0.17 − 0.01 em) so its tail tip sits on the
-              SAME ground line as the other letters — whole glyph visible,
-              no gap, one shared bottom edge. */}
-          <p className="wordmark text-gradient-signal -mb-[0.125em] select-none whitespace-nowrap text-center text-[clamp(4rem,24vw,23rem)] leading-none tracking-[-0.02em]">
-            {/* vertical-align (not translate): a transform on the span would
-                break the parent's background-clip:text and render the y
-                invisible */}
-            M<span className="inline-block align-[0.16em]">y</span>theus
-          </p>
-        </MaskReveal>
       </div>
     </footer>
   );
