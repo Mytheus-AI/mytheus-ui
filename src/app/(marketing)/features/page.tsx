@@ -1,3 +1,4 @@
+import { appHref } from "@/lib/marketing/app-url";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageShell } from "@/components/marketing/PageShell";
@@ -78,7 +79,7 @@ export default function Page() {
           </Reveal>
           <Reveal delay={300}>
             <div className="mt-9">
-              <PillCTA href="/dashboard">Get started free</PillCTA>
+              <PillCTA href={appHref()}>Get started free</PillCTA>
             </div>
           </Reveal>
         </div>
@@ -170,7 +171,7 @@ export default function Page() {
           </Reveal>
           <Reveal delay={120}>
             <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <PillCTA href="/dashboard">Get started free</PillCTA>
+              <PillCTA href={appHref()}>Get started free</PillCTA>
               <Link
                 href="/pricing"
                 className="link-underline text-[15px] font-medium text-ink-2"

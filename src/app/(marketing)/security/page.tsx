@@ -1,3 +1,4 @@
+import { appHref } from "@/lib/marketing/app-url";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { PageShell } from "@/components/marketing/PageShell";
@@ -295,7 +296,7 @@ export default function Page() {
                 </p>
               </div>
               <div className="flex-none">
-                <PillCTA href="/dashboard">Get started free</PillCTA>
+                <PillCTA href={appHref()}>Get started free</PillCTA>
               </div>
             </div>
           </Reveal>

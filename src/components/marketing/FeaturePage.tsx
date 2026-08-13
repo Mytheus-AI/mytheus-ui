@@ -1,3 +1,4 @@
+import { appHref } from "@/lib/marketing/app-url";
 import Link from "next/link";
 import { PageShell } from "./PageShell";
 import { FeatureVisual } from "./feature-visuals";
@@ -44,7 +45,7 @@ export function FeaturePage({ slug }: { slug: string }) {
           </Reveal>
           <Reveal delay={360}>
             <div className="mt-9">
-              <PillCTA href="/dashboard">Get started free</PillCTA>
+              <PillCTA href={appHref()}>Get started free</PillCTA>
             </div>
           </Reveal>
         </div>
@@ -153,7 +154,7 @@ export function FeaturePage({ slug }: { slug: string }) {
           </Reveal>
           <Reveal delay={240}>
             <div className="mt-9 flex justify-center">
-              <PillCTA href="/dashboard">Get started free</PillCTA>
+              <PillCTA href={appHref()}>Get started free</PillCTA>
             </div>
           </Reveal>
         </div>

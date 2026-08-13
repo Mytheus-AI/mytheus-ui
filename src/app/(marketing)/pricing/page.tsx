@@ -1,3 +1,4 @@
+import { appHref } from "@/lib/marketing/app-url";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageShell } from "@/components/marketing/PageShell";
@@ -32,7 +33,7 @@ const PLANS: Plan[] = [
     price: "$0",
     priceSub: "for small teams trying it out",
     tagline: "Your own meeting agent, for real meetings — not a demo.",
-    cta: { label: "Get started free", href: "/dashboard" },
+    cta: { label: "Get started free", href: appHref() },
     bullets: [
       "Up to 5 seats",
       "300 meeting minutes per seat / month",
@@ -47,7 +48,7 @@ const PLANS: Plan[] = [
     price: "$25",
     priceSub: "per seat / month",
     tagline: "The full experience for teams that live in meetings.",
-    cta: { label: "Start with Pro", href: "/dashboard" },
+    cta: { label: "Start with Pro", href: appHref() },
     highlight: true,
     bullets: [
       "Up to 100 seats",
@@ -157,7 +158,7 @@ export default function Page() {
               <div
                 className={`relative flex h-full flex-col rounded-card border bg-white p-7 sm:p-8 ${
                   p.highlight
-                    ? "border-signal/50 shadow-[0_40px_80px_-48px_rgba(189,93,58,0.55)]"
+                    ? "border-signal/50 shadow-[0_40px_80px_-48px_rgba(159,69,38,0.55)]"
                     : "border-line"
                 }`}
               >
@@ -261,7 +262,7 @@ export default function Page() {
           </Reveal>
           <Reveal delay={120}>
             <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <PillCTA href="/dashboard">Get started free</PillCTA>
+              <PillCTA href={appHref()}>Get started free</PillCTA>
               <Link
                 href="/enterprise"
                 className="link-underline text-[15px] font-medium text-ink-2"

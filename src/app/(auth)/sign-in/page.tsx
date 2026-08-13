@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
+import { appHref } from "@/lib/marketing/app-url";
 
-/* Auth bypass (4-July Part 4a): accounts aren't wired yet, so logging in
-   drops you straight into the app. */
-// TODO(auth): replace with the real Clerk <SignIn /> screen once keys land.
+/* Auth lives in the product app (`mytheus-web`), not here. This route only
+   exists so old links and bookmarks pointing at /sign-in still land somewhere
+   real - it hands off to the app's own entry, which owns the sign-in flow. */
 export default function Page() {
-  redirect("/dashboard");
+  redirect(appHref());
 }

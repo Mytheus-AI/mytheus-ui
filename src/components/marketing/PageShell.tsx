@@ -1,3 +1,4 @@
+import { appHref } from "@/lib/marketing/app-url";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { OutlinePill } from "@/components/landing/ui";
@@ -39,7 +40,7 @@ export function PageShell({ children }: { children: ReactNode }) {
             >
               Log in
             </Link>
-            <OutlinePill href="/dashboard" className="whitespace-nowrap">
+            <OutlinePill href={appHref()} className="whitespace-nowrap">
               Get started
             </OutlinePill>
           </nav>

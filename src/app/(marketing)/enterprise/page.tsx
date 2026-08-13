@@ -1,3 +1,4 @@
+import { appHref } from "@/lib/marketing/app-url";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
@@ -172,7 +173,7 @@ export default function Page() {
         eyebrow="Enterprise"
         title="Mytheus for your whole organization."
         blurb="Give every team a personal meeting agent — with the security, control, and shared memory a large organization needs."
-        ctaHref="/dashboard"
+        ctaHref={appHref()}
         ctaLabel="Talk to sales"
       />
 
@@ -298,7 +299,7 @@ export default function Page() {
           </Reveal>
           <Reveal delay={120}>
             <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <PillCTA href="/dashboard">Talk to sales</PillCTA>
+              <PillCTA href={appHref()}>Talk to sales</PillCTA>
               <a
                 href="mailto:enterprise@reprise.ai"
                 className="link-underline text-[15px] font-medium text-ink-2"

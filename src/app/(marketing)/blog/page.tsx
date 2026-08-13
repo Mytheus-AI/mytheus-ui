@@ -1,3 +1,4 @@
+import { appHref } from "@/lib/marketing/app-url";
 import type { Metadata } from "next";
 import { PageShell } from "@/components/marketing/PageShell";
 import { PageHero } from "@/components/marketing/PageHero";
@@ -186,7 +187,7 @@ export default function Page() {
                 and see what your agents remember.
               </p>
               <div className="mt-8">
-                <PillCTA href="/dashboard">Get started free</PillCTA>
+                <PillCTA href={appHref()}>Get started free</PillCTA>
               </div>
             </div>
           </div>
