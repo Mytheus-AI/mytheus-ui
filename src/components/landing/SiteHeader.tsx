@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { appHref } from "@/lib/marketing/app-url";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AnimatePresence,
   motion,
@@ -29,16 +30,40 @@ const dropItemV: Variants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: EASE } },
 };
 
+/* Where the header gives up, as a fraction of the viewport. NOT the header's
+   own height: the footer is shorter than one screen, so its top edge never
+   climbs into the header band and a header-height threshold would never fire.
+   At 0.75 the header retires as the closing CTA fills the screen and stays
+   gone through the footer — the end of the page reads as an ending. */
+const RETIRE_AT = 0.75;
+
 export function SiteHeader() {
   const reduce = useReducedMotion();
   const [scrolled, setScrolled] = useState(false);
+  const [atFooter, setAtFooter] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuBtnRef = useRef<HTMLButtonElement>(null);
   const menuPanelRef = useRef<HTMLElement>(null);
+  const footerRef = useRef<HTMLElement | null>(null);
+
+  /* the header is ink-on-cream; parked over the dark footer slab it reads as
+     a foreign object stuck to the glass. Measure the real footer rather than
+     a hard-coded offset, so this keeps working as the page length changes. */
+  const syncFooter = useCallback(() => {
+    const top = footerRef.current?.getBoundingClientRect().top;
+    setAtFooter(top !== undefined && top <= window.innerHeight * RETIRE_AT);
+  }, []);
+
+  useEffect(() => {
+    footerRef.current = document.querySelector("footer");
+    // a page can be restored mid-scroll, so settle the state on mount too
+    syncFooter();
+  }, [syncFooter]);
 
   const { scrollY } = useScroll();
   useMotionValueEvent(scrollY, "change", (y) => {
     setScrolled(y > window.innerHeight * 0.75);
+    syncFooter();
     // the drawer shouldn't chase the page — any scroll dismisses it
     if (menuOpen) setMenuOpen(false);
   });
@@ -63,12 +88,37 @@ export function SiteHeader() {
   }, [menuOpen]);
 
   const pillSurface = scrolled
-    ? "bg-bg/75 shadow-[0_10px_30px_-18px_rgba(40,30,20,0.4)] backdrop-blur-md"
+    ? "bg-bg/90 shadow-[0_10px_30px_-18px_rgba(40,30,20,0.4)] backdrop-blur-md"
     : "bg-transparent";
 
+  /* `visibility` (not just opacity) so the faded-out header is neither
+     clickable nor focusable — it is inherited, so the children's
+     pointer-events-auto can't resurrect it. Its transition is delayed by the
+     fade duration on the way out and instant on the way back in. */
+  const dur = reduce ? 0 : 300;
+  const retire = {
+    opacity: atFooter ? 0 : 1,
+    transform: atFooter ? "translateY(-24px)" : "translateY(0)",
+    visibility: atFooter ? ("hidden" as const) : ("visible" as const),
+    transition: `opacity ${dur}ms var(--ease-out), transform ${dur}ms var(--ease-out), visibility 0s linear ${atFooter ? dur : 0}ms`,
+  };
+
   return (
-    <header className="pointer-events-none fixed inset-x-0 top-0 z-50">
-      <div className="mx-auto flex max-w-[1380px] items-center justify-between px-6 py-5 sm:px-8">
+    <header
+      className="pointer-events-none fixed inset-x-0 top-0 z-50"
+      style={retire}
+    >
+      {/* the scrim — page content has to pass under a fixed header somewhere,
+          and a hard collision with the pills reads as a bug. This dissolves
+          whatever is arriving into the ground colour just before it reaches
+          them. Fades in with the pills, so the hero stays untouched. */}
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute inset-x-0 top-0 h-[132px] bg-gradient-to-b from-bg via-bg/80 to-transparent transition-opacity duration-500 ${
+          scrolled ? "opacity-100" : "opacity-0"
+        }`}
+      />
+      <div className="relative mx-auto flex max-w-[1380px] items-center justify-between px-6 py-5 sm:px-8">
         <motion.div
           initial={reduce ? false : { opacity: 0, y: -10 }}
           animate={reduce ? undefined : { opacity: 1, y: 0 }}
@@ -118,8 +168,8 @@ export function SiteHeader() {
             className="pointer-events-auto hidden sm:block"
           >
             <Link
-              href="/dashboard"
-              className="group inline-flex items-center gap-2 rounded-pill bg-signal py-2.5 pl-5 pr-4 text-[14px] font-medium text-white shadow-[0_16px_36px_-18px_rgba(189,93,58,0.8)] transition-colors duration-300 hover:bg-signal-deep"
+              href={appHref()}
+              className="group inline-flex items-center gap-2 rounded-pill bg-signal py-2.5 pl-5 pr-4 text-[14px] font-medium text-white shadow-[var(--shadow-cta-sm)] transition-colors duration-300 hover:bg-signal-deep"
             >
               Get started free
               <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
@@ -135,7 +185,7 @@ export function SiteHeader() {
             aria-expanded={menuOpen}
             aria-label={menuOpen ? "Close menu" : "Open menu"}
             className={`pointer-events-auto grid h-10 w-10 place-items-center rounded-pill text-ink transition-[background-color,box-shadow] duration-500 md:hidden ${
-              scrolled || menuOpen ? "bg-bg/75 shadow-[0_10px_30px_-18px_rgba(40,30,20,0.4)] backdrop-blur-md" : "bg-transparent"
+              scrolled || menuOpen ? "bg-bg/90 shadow-[0_10px_30px_-18px_rgba(40,30,20,0.4)] backdrop-blur-md" : "bg-transparent"
             }`}
           >
             <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5" aria-hidden>
@@ -204,7 +254,7 @@ export function SiteHeader() {
               ))}
               <MenuItem reduce={!!reduce}>
                 <Link
-                  href="/dashboard"
+                  href={appHref()}
                   onClick={() => setMenuOpen(false)}
                   className="mt-1.5 flex items-center justify-between rounded-xl bg-signal px-3.5 py-3 text-[14px] font-medium text-white transition-colors duration-200 hover:bg-signal-deep"
                 >
