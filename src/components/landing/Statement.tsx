@@ -115,7 +115,7 @@ export function Statement() {
       {/* desktop: the pinned relay — one continuous scroll-scrubbed shot,
           heading and stage fitted together inside the pinned viewport */}
       {!reduce && (
-        <PinnedScene count={BEATS.length} className="hidden md:block">
+        <PinnedScene count={BEATS.length} stageVh={70} className="hidden md:block">
           {({ index, progress, goTo }) => (
             <RelayScene index={index} progress={progress} goTo={goTo} />
           )}

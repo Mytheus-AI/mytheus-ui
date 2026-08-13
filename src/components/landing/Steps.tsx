@@ -180,7 +180,7 @@ export function Steps() {
         {/* desktop: the pinned sequential scene — heading and stages fitted
             together inside the pinned viewport */}
         {!reduce && (
-          <PinnedScene count={CARDS.length} className="hidden md:block">
+          <PinnedScene count={CARDS.length} stageVh={70} className="hidden md:block">
             {({ index, progress, goTo }) => (
               <SceneFrame progress={progress}>
                 <Spine index={index} progress={progress} goTo={goTo} />

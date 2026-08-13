@@ -559,17 +559,23 @@ export function CountUp({
 /* ================================================================== */
 
 /**
- * PinnedScene — pins a section for `count` viewport-heights and hands the
- * render prop the active stage index, the raw scene progress (as a
- * MotionValue, so scroll-linked styling never re-renders React), and a
- * `goTo(i)` that glides to a stage (through Lenis when it's driving).
+ * PinnedScene — pins a section for `count` stages and hands the render prop
+ * the active stage index, the raw scene progress (as a MotionValue, so
+ * scroll-linked styling never re-renders React), and a `goTo(i)` that glides
+ * to a stage (through Lenis when it's driving).
  * Under reduced motion it renders the children once, unpinned, at index 0 —
  * callers should branch to a static layout before that matters.
+ *
+ * `stageVh` is how many viewport-heights of scroll each stage costs. The
+ * first 100vh is spent pinning rather than advancing, so a scene actually
+ * travels `count * stageVh - 100` vh: keep it comfortably above 100 or the
+ * scene has no room to move.
  */
 export function PinnedScene({
   count,
   children,
   className = "",
+  stageVh = 100,
 }: {
   count: number;
   children: (scene: {
@@ -578,6 +584,7 @@ export function PinnedScene({
     goTo: (i: number) => void;
   }) => ReactNode;
   className?: string;
+  stageVh?: number;
 }) {
   const reduce = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
@@ -614,7 +621,7 @@ export function PinnedScene({
   }
 
   return (
-    <div ref={ref} className={className} style={{ height: `${count * 100}vh` }}>
+    <div ref={ref} className={className} style={{ height: `${count * stageVh}vh` }}>
       <div className="sticky top-0 flex h-screen flex-col justify-center overflow-hidden">
         {children({ index, progress: scrollYProgress, goTo })}
       </div>
