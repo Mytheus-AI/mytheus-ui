@@ -15,14 +15,16 @@
  * keeps the room working today and makes this code reviewable now rather than after the
  * gateway is deployed somewhere reachable.
  *
- * WHAT THIS DELIBERATELY DOES NOT DO. It does not re-hydrate finals from `core-api` on
- * reconnect. The gateway replays nothing to a reconnecting client - finals are durable and are
- * meant to be re-read from `core-api`'s REST read model - so the correct behaviour on reconnect
- * is a REST re-hydrate through `captions.hydrate()`. That endpoint (`GET /meetings/:id/
- * transcript`, §3.8 step 2) is not built yet, so the seam is here and wired to nothing: on
- * reconnect this currently resumes appending to whatever it already had. The consequence is
- * bounded and worth stating plainly - captions spoken during a disconnect are missing from the
- * strip until the transcript view lands - and it is a missing endpoint, not a design choice.
+ * RE-HYDRATES ON EVERY (RE)CONNECT. The gateway replays nothing to a reconnecting client, by
+ * design - finals are durable and are meant to be re-read from `core-api`'s REST read model -
+ * so without this a socket drop silently loses every caption spoken during it. On each
+ * `connect`, and therefore on every automatic reconnect too, this re-reads the durable finals
+ * through `/api/meeting-transcript` and merges them in. `applyCaption` is idempotent on
+ * `chunkId`, so a final that arrives from both the hydrate and the socket renders once.
+ *
+ * Merged rather than replacing state: a naive `setCaptions(hydrate(...))` would discard any
+ * caption that arrived between the fetch starting and finishing, which on a busy meeting is a
+ * real window. Folding the fetched finals into whatever is current keeps both.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -76,7 +78,26 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
     });
     socketRef.current = socket;
 
+    const rehydrate = async () => {
+      try {
+        const response = await fetch(
+          `/api/meeting-transcript?meeting_id=${encodeURIComponent(meetingId)}`,
+        );
+        if (!response.ok) return;
+        const body = (await response.json()) as { items?: CaptionPayload[] };
+        if (cancelled || !body.items?.length) return;
+        setCaptions((prev) =>
+          body.items!.reduce((state, payload) => applyCaption(state, payload), prev),
+        );
+      } catch {
+        // A failed re-hydrate must not break the live stream. The socket keeps delivering new
+        // captions either way; the cost of failing here is only the gap during the disconnect,
+        // which is exactly the state we were already in.
+      }
+    };
+
     const join = () => {
+      void rehydrate();
       socket.emit("join", { meetingId }, (ack: JoinAck) => {
         if (cancelled) return;
         if (ack?.ok) {
