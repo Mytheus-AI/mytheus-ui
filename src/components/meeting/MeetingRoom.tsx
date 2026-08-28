@@ -3,9 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useAuth } from "@clerk/nextjs";
 import { AgentSidebar } from "@/components/sidebar/AgentSidebar";
 import { LiveVideoGrid } from "@/components/meeting/LiveVideoGrid";
+import { LiveCaptions } from "@/components/meeting/LiveCaptions";
 import { useLiveKitRoom } from "@/lib/realtime/useLiveKitRoom";
+import { useMeetingSocket } from "@/lib/realtime/useMeetingSocket";
 import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
 import {
@@ -35,6 +38,20 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
   // "unconfigured" and does no network work at all when it is not, which is every environment
   // today. See `useLiveKitRoom` for why that fallback is deliberate rather than a stub.
   const live = useLiveKitRoom(meeting.id);
+  // The Clerk session token is what the gateway's handshake authenticates and resolves
+  // org_id/user_id from; the browser never derives either itself.
+  const { getToken } = useAuth();
+  const [socketToken, setSocketToken] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void getToken().then((t) => {
+      if (!cancelled) setSocketToken(t);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [getToken]);
+  const socket = useMeetingSocket(meeting.id, socketToken);
   const reduceMotion = useReducedMotion();
   const drawerTransition = {
     duration: reduceMotion ? 0 : 0.15,
@@ -146,30 +163,37 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
         </div>
         )}
 
-        {/* live captions */}
-        {captionsOn && (
-          <div className="mt-3 rounded-card border border-line bg-white/90 px-4 py-3">
-            <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink-3">
-              Live captions
-            </p>
-            <div className="mt-1.5 space-y-1">
-              {mockCaptions.map((c, i) => {
-                const latest = i === mockCaptions.length - 1;
-                return (
-                  <p
-                    key={c.text}
-                    className={`text-[13px] leading-snug ${latest ? "text-ink" : "text-ink-3"}`}
-                  >
-                    <span className="mr-2 font-mono text-[10px] uppercase tracking-wider text-signal-deep">
-                      {c.speaker.split(" ")[0]}
-                    </span>
-                    {c.text}
-                  </p>
-                );
-              })}
+        {/* live captions — the real `caption` socket stream once the gateway is reachable and
+            this socket has joined the room, otherwise the mock strip. Gated on `joined` rather
+            than merely "configured" for the same reason the video grid gates on `connected`: a
+            denied participant check or a dropped gateway should degrade to the mock, not to an
+            empty panel that looks like nobody is speaking. */}
+        {captionsOn &&
+          (socket.status === "joined" ? (
+            <LiveCaptions lines={socket.captions.lines} />
+          ) : (
+            <div className="mt-3 rounded-card border border-line bg-white/90 px-4 py-3">
+              <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink-3">
+                Live captions
+              </p>
+              <div className="mt-1.5 space-y-1">
+                {mockCaptions.map((c, i) => {
+                  const latest = i === mockCaptions.length - 1;
+                  return (
+                    <p
+                      key={c.text}
+                      className={`text-[13px] leading-snug ${latest ? "text-ink" : "text-ink-3"}`}
+                    >
+                      <span className="mr-2 font-mono text-[10px] uppercase tracking-wider text-signal-deep">
+                        {c.speaker.split(" ")[0]}
+                      </span>
+                      {c.text}
+                    </p>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
+          ))}
 
         {/* controls */}
         <div className="mt-3 flex flex-wrap items-center justify-center gap-2.5">
