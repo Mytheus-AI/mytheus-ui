@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { AgentSidebar } from "@/components/sidebar/AgentSidebar";
+import { LiveVideoGrid } from "@/components/meeting/LiveVideoGrid";
+import { useLiveKitRoom } from "@/lib/realtime/useLiveKitRoom";
 import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
 import {
@@ -29,6 +31,10 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
   const [camOn, setCamOn] = useState(true);
   const [captionsOn, setCaptionsOn] = useState(true);
   const [panelOpen, setPanelOpen] = useState(false);
+  // Mints a token and connects the SFU when NEXT_PUBLIC_LIVEKIT_URL is set; reports
+  // "unconfigured" and does no network work at all when it is not, which is every environment
+  // today. See `useLiveKitRoom` for why that fallback is deliberate rather than a stub.
+  const live = useLiveKitRoom(meeting.id);
   const reduceMotion = useReducedMotion();
   const drawerTransition = {
     duration: reduceMotion ? 0 : 0.15,
@@ -78,7 +84,15 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
           </div>
         </div>
 
-        {/* video grid */}
+        {/* video grid — live LiveKit tracks once a room is actually connected, otherwise the
+            mock composition below. `live.status` is "unconfigured" in every environment that
+            exists today, because no LiveKit account exists anywhere in the program yet, so the
+            mock is what renders and the room keeps working exactly as it did. Gating on
+            `connected` rather than merely "configured" also means a failed mint or a dropped
+            SFU degrades to the mock instead of an empty stage. */}
+        {live.status === "connected" && live.room ? (
+          <LiveVideoGrid room={live.room} />
+        ) : (
         <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto sm:grid-cols-2">
           {mockRoomParticipants.map((p) => (
             <div
@@ -130,6 +144,7 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
             </div>
           ))}
         </div>
+        )}
 
         {/* live captions */}
         {captionsOn && (
