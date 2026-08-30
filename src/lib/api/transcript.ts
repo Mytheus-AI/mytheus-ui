@@ -12,34 +12,19 @@
  */
 
 import { ApiError, api } from "@/lib/api/client";
+import type { components as CoreApiSchemas } from "@/lib/api/generated/core-api";
 
-export interface TranscriptChunk {
-  id: string;
-  meeting_id: string;
-  speaker_id: string;
-  start_ms: number;
-  end_ms: number;
-  text: string;
-  is_final: boolean;
-  confidence?: number | null;
-  redacted: boolean;
-}
+type CoreApi = CoreApiSchemas["schemas"];
 
-export interface TranscriptPage {
-  items: TranscriptChunk[];
-  next_cursor: string | null;
-}
+/** One persisted final from `transcript_chunks`. `speaker_id` is the raw diarized label, never
+ *  a resolved user: `meeting_speakers` is what maps it to a person. */
+export type TranscriptChunk = CoreApi["TranscriptChunk"];
 
-export interface MeetingSpeaker {
-  id: string;
-  meeting_id: string;
-  speaker_id: string;
-  user_id: string | null;
-  confidence: number | null;
-  assignment: "manual" | "suggested";
-  created_at: string;
-  updated_at: string;
-}
+export type TranscriptPage = CoreApi["TranscriptPage"];
+
+/** `assignment` is `manual` or `suggested`, and a database trigger makes manual authoritative,
+ *  so there is no value this client could send that would downgrade a human's answer. */
+export type MeetingSpeaker = CoreApi["MeetingSpeaker"];
 
 /** The transcript is bounded at roughly 360 finals per meeting by the capacity model, and the
  *  endpoint caps a page at 500, so a whole meeting normally arrives in one or two pages. This

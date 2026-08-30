@@ -20,31 +20,22 @@
 
 import { auth } from "@clerk/nextjs/server";
 
-/** Mirrors `libs/shared/errors.py: ErrorCode`. Hand-kept until the generated client lands. */
-export type ErrorCode =
-  | "MALFORMED_BODY"
-  | "INVALID_CURSOR"
-  | "AUTH_REQUIRED"
-  | "TOKEN_EXPIRED"
-  | "FORBIDDEN_ROLE"
-  | "CROSS_TENANT_DENIED"
-  | "NOT_FOUND"
-  | "IDEMPOTENCY_KEY_REUSED"
-  | "VERSION_CONFLICT"
-  | "VALIDATION_FAILED"
-  | "RATE_LIMITED"
-  | "QUOTA_EXCEEDED"
-  | "INTERNAL"
-  | "DEPENDENCY_UNAVAILABLE"
-  | "NOT_IMPLEMENTED";
+import type { components as CoreApiSchemas } from "./generated/core-api";
 
-export interface Problem {
-  type: string;
-  title: string;
-  status: number;
-  code: ErrorCode;
-  detail?: string;
-}
+/**
+ * The frozen program-wide error enum, taken from the emitted spec rather than restated.
+ *
+ * This union used to be hand-kept, and it had already drifted: it listed 15 of the 17 codes
+ * the server emits, missing `CONSENT_REQUIRED` and `NOT_A_PARTICIPANT` - which are precisely
+ * the two outcomes `app/api/livekit-token/route.ts` exists to keep apart. A hand-written union
+ * cannot fail when the server adds a code; it just stops covering the branch you needed.
+ *
+ * Every service emits the identical enum, so any one document is authoritative for it.
+ */
+export type ErrorCode = CoreApiSchemas["schemas"]["ErrorCode"];
+
+/** RFC 7807. Callers branch on `code`, never on `title` or `detail`, which are prose. */
+export type Problem = CoreApiSchemas["schemas"]["Problem"];
 
 export class ApiError extends Error {
   readonly status: number;

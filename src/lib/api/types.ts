@@ -1,70 +1,70 @@
 /**
- * Wire types for the `bff` and `core-api` reads.
+ * The wire types this app consumes, assembled from the generated OpenAPI types.
  *
- * Hand-written and matched to the FastAPI response models by name. Replaced by a generated
- * client once the OpenAPI specs are emitted from code (an open gap in the band record); until
- * then this is the one file where wire drift can hide, which is why it is small and separate
- * from every screen.
+ * Nothing here is hand-described any more. Every type below is an alias onto a schema in
+ * `./generated/`, which `npm run generate:api` emits from `mytheus-backend`'s OpenAPI
+ * documents, which that repo in turn emits from its FastAPI apps (ADR-0022). A server change
+ * that this app has not caught up with is now a TypeScript error rather than a silent
+ * mismatch, and `npm run generate:api:check` fails the build if the committed output has gone
+ * stale against the spec.
  *
- * `snake_case` here because that is what the wire carries. Conversion to `camelCase` happens
- * in `present.ts`, so no screen ever has to know which convention it is looking at.
+ * This file exists rather than importing `components["schemas"][...]` at every call site
+ * because that path is unreadable, and because it is the one place to see which server schema
+ * each screen actually depends on.
+ *
+ * WHAT THIS REPLACED, and why it mattered. These were hand-written interfaces "matched to the
+ * FastAPI response models by name", kept in sync by attention. Attention had already lapsed:
+ * the `ErrorCode` union in `client.ts` was missing `CONSENT_REQUIRED` and `NOT_A_PARTICIPANT`,
+ * the two outcomes the meeting-join path exists to tell apart. A hand-written type does not
+ * fail when it falls behind, it just quietly stops describing the server.
+ *
+ * `snake_case` throughout, because that is what the wire carries. Conversion to the view
+ * models happens in `present.ts`, so no screen has to know which convention it is looking at.
  */
+
+import type { components as BffSchemas } from "./generated/bff";
+import type { components as CoreApiSchemas } from "./generated/core-api";
+
+type Bff = BffSchemas["schemas"];
+type CoreApi = CoreApiSchemas["schemas"];
 
 /** Every `bff` panel carries its own status. `empty` and `degraded` are NOT interchangeable:
  *  one means "you have nothing", the other means "we could not load it". They need different
  *  empty states, and guessing from an empty array gets it wrong half the time. */
-export type ArmStatus = "ok" | "degraded" | "empty";
+export type ArmStatus = Bff["MeetingsArm"]["status"];
 
+/**
+ * A panel. Generic for the callers that want to name their item type.
+ *
+ * The server declares one arm shape per panel (`MeetingsArm`, `UnbuiltArm`) rather than one
+ * generic, because OpenAPI has no generics; this is the same contract expressed the way
+ * TypeScript prefers to read it.
+ */
 export interface Arm<T> {
   status: ArmStatus;
   items: T[];
 }
 
-export type MeetingStatus = "scheduled" | "live" | "ended" | "cancelled";
+export type MeetingStatus = CoreApi["Meeting"]["status"];
 
-export interface DashboardMeeting {
-  id: string;
-  title: string | null;
-  status: MeetingStatus;
-  scheduled_start: string | null;
-  scheduled_end: string | null;
-  livekit_room: string | null;
-}
+/** The meetings-panel projection: six columns, not the whole `Meeting` resource. */
+export type DashboardMeeting = Bff["DashboardMeeting"];
 
-export interface DashboardResponse {
-  upcoming_meetings: Arm<DashboardMeeting>;
-  action_items: Arm<unknown>;
-  worklogs: Arm<unknown>;
-  decisions: Arm<unknown>;
-}
+/**
+ * `GET /bff/dashboard`.
+ *
+ * `action_items`, `worklogs` and `decisions` are shaped-but-empty until the agent bands build
+ * the read models behind them, so their item type is deliberately open on the server side too.
+ * That is the honest shape, not a gap in this file.
+ */
+export type DashboardResponse = Bff["Dashboard"];
 
-export interface Participant {
-  user_id: string;
-  role_in_meeting: string | null;
-}
+export type Participant = CoreApi["Participant"];
 
-export interface ApiMeeting {
-  id: string;
-  title: string | null;
-  status: MeetingStatus;
-  scheduled_start: string | null;
-  scheduled_end: string | null;
-  livekit_room: string | null;
-  created_by: string | null;
-  created_at: string;
-  updated_at: string;
-  participants: Participant[];
-}
+/** The full meeting resource from `core-api`, as distinct from the dashboard projection. */
+export type ApiMeeting = CoreApi["Meeting"];
 
 /** Cursor pagination, never offset. `next_cursor` is opaque: build no logic on its contents. */
-export interface MeetingPage {
-  items: ApiMeeting[];
-  next_cursor: string | null;
-}
+export type MeetingPage = CoreApi["MeetingPage"];
 
-export interface ApiTeam {
-  id: string;
-  name: string;
-  department_id: string | null;
-  created_at: string;
-}
+export type ApiTeam = CoreApi["Team"];

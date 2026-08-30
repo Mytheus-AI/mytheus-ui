@@ -1,0 +1,7 @@
+# The generated API types are compared BYTE FOR BYTE by `npm run generate:api:check`.
+# openapi-typescript emits CRLF on Windows and LF on Linux, so without this a checkout under
+# the common global `core.autocrlf=true` makes that check red on one platform and green on the
+# other, for identical content. `mytheus-realtime` lost a whole lint gate to exactly this
+# (Plan 3-4 gap 14). `eol=lf` rather than a bare `text=auto` is the load-bearing part:
+# `text=auto` alone still honours `core.autocrlf` for the working tree.
+src/lib/api/generated/*.ts text eol=lf
