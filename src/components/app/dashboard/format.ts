@@ -1,10 +1,9 @@
 import type { Priority } from "@/lib/mock/data";
 
 /* Shared, dependency-free formatting helpers for the dashboard widgets.
-   The dashboard renders the mock timeline against a fixed "now" — the day
-   mtg_1 is live — so "Today", "Tomorrow" and overdue labels stay coherent
-   and deterministic against src/lib/mock/data.ts. Swap MOCK_NOW for the
-   server clock once /bff/dashboard provides real data. */
+   The mock-backed panels (tasks, decisions, recent meetings) render against a fixed "now" -
+   the day mtg_1 is live - so "Today", "Tomorrow" and overdue labels stay coherent and
+   deterministic against src/lib/mock/data.ts. Real `bff` meetings use the server clock. */
 
 export const MOCK_NOW = new Date("2026-07-01T14:30:00Z");
 
@@ -52,19 +51,13 @@ export function daysFromNow(iso: string): number {
   return Math.round((utcMidnight(new Date(iso)) - utcMidnight(MOCK_NOW)) / DAY_MS);
 }
 
-/** "Due today" / "Due tomorrow" / "Due Jul 5" / "Overdue · Jul 3" */
+/** "Due today" / "Due tomorrow" / "Due Jul 5" / "Overdue, Jul 3" */
 export function dueLabel(iso: string): string {
   const diff = daysFromNow(iso);
-  if (diff < 0) return `Overdue · ${formatShortDate(iso)}`;
+  if (diff < 0) return `Overdue, ${formatShortDate(iso)}`;
   if (diff === 0) return "Due today";
   if (diff === 1) return "Due tomorrow";
   return `Due ${formatShortDate(iso)}`;
-}
-
-/** Monday-anchored start of the week containing `d`, as UTC ms */
-export function startOfWeekUTC(d: Date): number {
-  const dow = (d.getUTCDay() + 6) % 7; // Monday = 0
-  return utcMidnight(d) - dow * DAY_MS;
 }
 
 export function formatDuration(minutes: number): string {
@@ -74,16 +67,54 @@ export function formatDuration(minutes: number): string {
   return rest === 0 ? `${hours} hr` : `${hours} hr ${rest} min`;
 }
 
-export function greetingFor(date: Date): string {
-  const hour = date.getUTCHours();
+export function plural(n: number, one: string, many: string): string {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
+export function greetingForHour(hour: number): string {
   if (hour < 12) return "Good morning";
   if (hour < 17) return "Good afternoon";
   return "Good evening";
 }
 
-/* Frozen priority color language: red = act now, yellow = attention, blue = info. */
-export const priorityDotClass: Record<Priority, string> = {
-  high: "bg-priority-high",
-  medium: "bg-priority-medium",
-  low: "bg-priority-low",
+export function greetingFor(date: Date): string {
+  return greetingForHour(date.getUTCHours());
+}
+
+/** "in 24 min" / "in 2 hr 5 min" / "in 3 days" / "now" */
+export function relativeLabel(msUntil: number): string {
+  if (msUntil <= 0) return "now";
+  const minutes = Math.ceil(msUntil / 60_000);
+  if (minutes < 60) return `in ${minutes} min`;
+  if (minutes < 24 * 60) return `in ${formatDuration(minutes)}`;
+  const days = Math.round(msUntil / DAY_MS);
+  return days <= 1 ? "tomorrow" : `in ${days} days`;
+}
+
+/** The big hero figure: "24:00" under an hour, "2:05:09" under a day, then whole days. */
+export function countdownParts(msUntil: number): { value: string; label: string } {
+  if (msUntil <= 0) return { value: "00:00", label: "starting now" };
+  const total = Math.ceil(msUntil / 1000);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const two = (n: number) => String(n).padStart(2, "0");
+  if (h >= 24) {
+    const days = Math.round(msUntil / DAY_MS);
+    return { value: String(days), label: days === 1 ? "day until start" : "days until start" };
+  }
+  return { value: h > 0 ? `${h}:${two(m)}:${two(s)}` : `${two(m)}:${two(s)}`, label: "until start" };
+}
+
+/** Scheduled length in whole minutes, or undefined when either end is missing or invalid. */
+export function minutesBetween(startIso?: string, endIso?: string): number | undefined {
+  if (!startIso || !endIso) return undefined;
+  const ms = Date.parse(endIso) - Date.parse(startIso);
+  return Number.isFinite(ms) && ms > 0 ? Math.round(ms / 60_000) : undefined;
+}
+
+export const priorityLabel: Record<Priority, string> = {
+  high: "High priority",
+  medium: "Medium priority",
+  low: "Low priority",
 };
