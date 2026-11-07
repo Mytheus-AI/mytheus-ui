@@ -33,7 +33,6 @@ export function RecentDecisions({ className = "" }: { className?: string }) {
           {recent.map((decision) => (
             <Link key={decision.id} href="/decisions" className="block min-w-0 rounded-card">
               <Card
-                priorityStrip={decision.priority}
                 className="h-full transition-[border-color,box-shadow] duration-200 hover:border-line-2 hover:shadow-[0_12px_32px_-24px_rgba(40,30,20,0.4)]"
               >
                 <p className="text-[14.5px] font-medium leading-snug text-ink">

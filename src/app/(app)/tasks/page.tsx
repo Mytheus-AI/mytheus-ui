@@ -23,7 +23,7 @@ function TaskRow({
   onToggle?: () => void;
 }) {
   return (
-    <Card priorityStrip={task.priority} className="py-4">
+    <Card className="py-4">
       <div className="flex items-center gap-3.5">
         {onToggle ? (
           <button

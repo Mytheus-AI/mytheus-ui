@@ -128,7 +128,7 @@ export default function MeetingDetailPage({
           {decisions.length > 0 && (
             <div className="mt-4 flex flex-col gap-3">
               {decisions.map((d) => (
-                <Card key={d.id} priorityStrip={d.priority}>
+                <Card key={d.id}>
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <p className="min-w-0 text-[15px] font-medium text-ink">{d.title}</p>
                     <Badge tone={d.priority} className="shrink-0 capitalize">
@@ -154,7 +154,7 @@ export default function MeetingDetailPage({
           {actions.length > 0 && (
             <div className="mt-4 flex flex-col gap-3">
               {actions.map((a) => (
-                <Card key={a.id} priorityStrip={a.priority}>
+                <Card key={a.id}>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <p
                       className={`min-w-0 text-[14.5px] font-medium ${

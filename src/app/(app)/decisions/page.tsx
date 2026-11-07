@@ -44,7 +44,7 @@ export default function DecisionsPage() {
       ) : (
         <div className="mt-8 flex flex-col gap-4">
           {decisions.map((d) => (
-            <Card key={d.id} priorityStrip={d.priority}>
+            <Card key={d.id}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[16px] font-medium text-ink">{d.title}</p>
