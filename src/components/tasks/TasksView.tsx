@@ -258,9 +258,11 @@ function BoardView({
     { key: "open", label: "Open", items: tasks.filter((t) => !t.done).sort(sortTasks), empty: "Nothing open here." },
     { key: "done", label: "Done", items: tasks.filter((t) => t.done).sort(sortTasks), empty: "Completed tasks collect here." },
   ];
-  /* Under sm the columns become a horizontal snap scroller; from sm they sit side by side. */
+  /* Under sm the columns become a horizontal snap scroller; from sm they sit side by side.
+     `relative`: screen-reader-only labels inside the cards are absolutely positioned; without a
+     positioned ancestor here they escaped this scroller's clipping and widened the whole page. */
   return (
-    <div className="flex items-start gap-4 max-sm:-mx-4 max-sm:snap-x max-sm:snap-mandatory max-sm:overflow-x-auto max-sm:scroll-px-4 max-sm:px-4 max-sm:pb-2 max-sm:[overscroll-behavior-x:contain] max-sm:focus-visible:outline-offset-[-2px] sm:grid sm:grid-cols-2">
+    <div className="relative flex items-start gap-4 max-sm:-mx-4 max-sm:snap-x max-sm:snap-mandatory max-sm:overflow-x-auto max-sm:scroll-px-4 max-sm:px-4 max-sm:pb-2 max-sm:[overscroll-behavior-x:contain] max-sm:focus-visible:outline-offset-[-2px] sm:grid sm:grid-cols-2">
       {columns.map((c) => (
         <section
           key={c.key}

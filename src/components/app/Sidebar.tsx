@@ -20,20 +20,22 @@ import { ADMIN_ITEMS, NAV_SECTIONS, isActive, type NavItem } from "@/components/
    leaves focus on the clicked link or button, which kept the panel open after the pointer had gone. */
 const LABEL_PEEK =
   "w-0 opacity-0 group-hover/sb:w-auto group-hover/sb:opacity-100 group-has-[:focus-visible]/sb:w-auto group-has-[:focus-visible]/sb:opacity-100";
-const TITLE_PEEK = "opacity-0 group-hover/sb:opacity-100 group-has-[:focus-visible]/sb:opacity-100";
 
 /* Collapsed-rail layout, and the classes that restore the full layout while the rail is open. Written
    out in full because Tailwind only generates classes it can read literally. Collapsed, every row
    centres its icon with no gap (a zero-width label still took its gap and pushed icons off-centre),
    section labels take no height (they left uneven holes), and the org block drops its box. */
-const ROW = { open: "gap-3 px-3", rail: "justify-center gap-0 px-0",
-  peek: "group-hover/sb:justify-start group-hover/sb:gap-3 group-hover/sb:px-3 group-has-[:focus-visible]/sb:justify-start group-has-[:focus-visible]/sb:gap-3 group-has-[:focus-visible]/sb:px-3" };
+// Collapsed, each item is a centred 44px square, so the active one reads as a tile, not a slab.
+const ROW = { open: "gap-3 px-3", rail: "mx-auto w-11 justify-center gap-0 px-0",
+  peek: "group-hover/sb:mx-0 group-hover/sb:w-auto group-hover/sb:justify-start group-hover/sb:gap-3 group-hover/sb:px-3 group-has-[:focus-visible]/sb:mx-0 group-has-[:focus-visible]/sb:w-auto group-has-[:focus-visible]/sb:justify-start group-has-[:focus-visible]/sb:gap-3 group-has-[:focus-visible]/sb:px-3" };
 const BRAND = { open: "gap-2.5 px-2.5", rail: "justify-center gap-0 px-0",
   peek: "group-hover/sb:justify-start group-hover/sb:gap-2.5 group-hover/sb:px-2.5 group-has-[:focus-visible]/sb:justify-start group-has-[:focus-visible]/sb:gap-2.5 group-has-[:focus-visible]/sb:px-2.5" };
 const ORG = { open: "gap-2.5 border-line bg-surface px-2.5 py-2", rail: "justify-center gap-0 border-transparent bg-transparent px-0 py-1",
   peek: "group-hover/sb:justify-start group-hover/sb:gap-2.5 group-hover/sb:border-line group-hover/sb:bg-surface group-hover/sb:px-2.5 group-hover/sb:py-2 group-has-[:focus-visible]/sb:justify-start group-has-[:focus-visible]/sb:gap-2.5 group-has-[:focus-visible]/sb:border-line group-has-[:focus-visible]/sb:bg-surface group-has-[:focus-visible]/sb:px-2.5 group-has-[:focus-visible]/sb:py-2" };
-const HEAD = { open: "h-6 pb-2 pt-1", rail: "h-0 py-0",
-  peek: "group-hover/sb:h-6 group-hover/sb:pb-2 group-hover/sb:pt-1 group-has-[:focus-visible]/sb:h-6 group-has-[:focus-visible]/sb:pb-2 group-has-[:focus-visible]/sb:pt-1" };
+// Collapsed, a section label becomes a short hairline between groups (its text stays for screen
+// readers, just transparent); open, it is the label again.
+const HEAD = { open: "h-6 px-3 pb-2 pt-1 text-ink-3", rail: "mx-auto mb-2.5 mt-0.5 h-px w-6 bg-line p-0 text-transparent",
+  peek: "group-hover/sb:mx-0 group-hover/sb:mb-0 group-hover/sb:mt-0 group-hover/sb:h-6 group-hover/sb:w-auto group-hover/sb:bg-transparent group-hover/sb:px-3 group-hover/sb:pb-2 group-hover/sb:pt-1 group-hover/sb:text-ink-3 group-has-[:focus-visible]/sb:mx-0 group-has-[:focus-visible]/sb:mb-0 group-has-[:focus-visible]/sb:mt-0 group-has-[:focus-visible]/sb:h-6 group-has-[:focus-visible]/sb:w-auto group-has-[:focus-visible]/sb:bg-transparent group-has-[:focus-visible]/sb:px-3 group-has-[:focus-visible]/sb:pb-2 group-has-[:focus-visible]/sb:pt-1 group-has-[:focus-visible]/sb:text-ink-3" };
 const FOOT = { open: "gap-2.5 px-2", rail: "justify-center gap-0 px-0",
   peek: "group-hover/sb:justify-start group-hover/sb:gap-2.5 group-hover/sb:px-2 group-has-[:focus-visible]/sb:justify-start group-has-[:focus-visible]/sb:gap-2.5 group-has-[:focus-visible]/sb:px-2" };
 
@@ -57,7 +59,6 @@ export function Sidebar({
   const [holdClosed, setHoldClosed] = useState(false);
   const peekable = railed && !holdClosed;
   const label = railed ? (peekable ? LABEL_PEEK : "w-0 opacity-0") : "";
-  const title = railed ? (peekable ? TITLE_PEEK : "opacity-0") : "";
   const lay = (c: { open: string; rail: string; peek: string }) =>
     railed ? (peekable ? `${c.rail} ${c.peek}` : c.rail) : c.open;
 
@@ -159,9 +160,7 @@ export function Sidebar({
           <div key={section.label ?? "root"} className="mb-4">
             {section.label && (
               <p
-                className={`sb-fade ${lay(HEAD)} px-3 text-[11.5px] font-bold uppercase tracking-[0.06em] text-ink-3 ${
-                  title
-                }`}
+                className={`sb-fade ${lay(HEAD)} text-[11.5px] font-bold uppercase tracking-[0.06em]`}
               >
                 {section.label}
               </p>
@@ -172,9 +171,7 @@ export function Sidebar({
         {user.role === "admin" && (
           <div className="mb-4">
             <p
-              className={`sb-fade ${lay(HEAD)} px-3 text-[11.5px] font-bold uppercase tracking-[0.06em] text-ink-3 ${
-                title
-              }`}
+              className={`sb-fade ${lay(HEAD)} text-[11.5px] font-bold uppercase tracking-[0.06em]`}
             >
               Admin
             </p>
@@ -185,7 +182,16 @@ export function Sidebar({
 
       <div className={`flex items-center ${lay(FOOT)} border-t border-line pt-3`}>
         <Avatar name={user.name} size="sm" />
-        <span className={`sb-fade min-w-0 flex-1 ${label}`}>
+        <span
+          className={`sb-fade min-w-0 ${label} ${
+            // flex-1 would stretch the hidden name and push the avatar off-centre in the rail.
+            railed
+              ? peekable
+                ? "flex-none group-hover/sb:flex-1 group-has-[:focus-visible]/sb:flex-1"
+                : "flex-none"
+              : "flex-1"
+          }`}
+        >
           <span className="block truncate text-[13px] font-semibold text-ink">{user.name}</span>
           <span className="block truncate text-[12px] text-ink-3">{user.email}</span>
         </span>
@@ -193,7 +199,14 @@ export function Sidebar({
           type="button"
           onClick={() => void signOut({ redirectUrl: "/" })}
           aria-label="Sign out"
-          className={`sb-fade grid h-8 w-8 shrink-0 place-items-center rounded-[10px] text-ink-3 transition-colors hover:bg-bg-2 hover:text-ink ${label}`}
+          className={`h-8 w-8 shrink-0 place-items-center rounded-[10px] text-ink-3 transition-colors hover:bg-bg-2 hover:text-ink ${
+            // Takes no space in the collapsed rail, so the avatar can centre.
+            railed
+              ? peekable
+                ? "hidden group-hover/sb:grid group-has-[:focus-visible]/sb:grid"
+                : "hidden"
+              : "grid"
+          }`}
         >
           <SignOut size={18} />
         </button>
