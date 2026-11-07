@@ -1,0 +1,53 @@
+/* Dark values for the Meeting tab's design tokens (src/styles/meeting.css, generated from the
+   non/ meeting design, which is light-only). Hand-maintained, so it survives regenerating that
+   file. Only colours change: radii, fonts and spacing are the design's own. */
+
+.mx-app[data-theme="dark"] .mx-meet {
+  --bgOuter: #141210;
+  --bgApp: #1a1816;
+  --surface: #232120;
+  --surfaceAlt: #2b2826;
+  --navBorder: #34312d;
+  --tabTrack: #2b2826;
+  --ink: #f3f0e8;
+  --inkDeep: #f8f5ee;
+  --body: #d9d4c8;
+  --bodySoft: #cfc9bc;
+  --muted: #8f887c;
+  --mutedAlt: #8f887c;
+  --mutedLabel: #9a9387;
+  --mutedIcon: #7d776c;
+  --mutedDeep: #a9a296;
+  --mutedTime: #a9a296;
+  --warmText: #e3c3ae;
+  --warmText2: #dcc0ae;
+  --warmText3: #ecd6c7;
+  --warmText4: #d9b9a5;
+  --warmLabelOnPeach: #e0bba2;
+  --accent: #e0805f;
+  --accentDeep: #e0805f;
+  --accentDeeper: #f0a285;
+  --green: #9cbb8f;
+  --brown: #d6b07a;
+  --brownDot: #d6b07a;
+  --prioHigh: #ee8a78;
+  --prioHighBg: #3b221d;
+  --prioMid: #e0b062;
+  --prioMidBg: #382d18;
+  --prioLow: #8fb3c8;
+  --prioLowBg: #1f2d35;
+  --chipOrangeBg: #3a2a23;
+  --chipOrangeText: #f0a285;
+  --chipGreenBg: #232e20;
+  --chipGreenText: #9cbb8f;
+  --chipBrownBg: #33291c;
+  --chipBrownText: #d6b07a;
+  --chipNeutralBg: #2b2826;
+  --chipNeutralText: #b8b1a5;
+  --avatarBg: #34312d;
+  --avatarText: #cfc9bc;
+  --grad-hero: linear-gradient(157deg, #4a2e22, #3a2820 40%, #2a2220 75%, #232120);
+  --shadow-card: 0 6px 12px rgba(0, 0, 0, 0.35);
+  --shadow-hero: 0 14px 24px rgba(0, 0, 0, 0.45);
+  --shadow-iconBtn: 0 1px 3px rgba(0, 0, 0, 0.35);
+}

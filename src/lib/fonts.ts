@@ -1,4 +1,4 @@
-import { Hanken_Grotesk, Newsreader } from "next/font/google";
+import { Fraunces, Hanken_Grotesk, Newsreader } from "next/font/google";
 
 /**
  * The signed-in app's type pair, declared here rather than in the root layout so the marketing
@@ -16,6 +16,14 @@ export const newsreader = Newsreader({
   variable: "--font-newsreader",
   display: "swap",
   axes: ["opsz"],
+});
+
+/** The meeting design's wordmark face (`--wordmark` in src/styles/meeting.css). Meeting tab only. */
+export const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  display: "swap",
+  weight: "600",
 });
 
 /** Class string to put on the `.mx-app` root so both font variables resolve beneath it. */
