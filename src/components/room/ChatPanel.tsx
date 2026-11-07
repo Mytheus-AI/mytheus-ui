@@ -1,14 +1,21 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { RoomEvent, type RemoteParticipant, type Room } from "livekit-client";
 import { PaperPlaneRight } from "@phosphor-icons/react";
 import { CollapseSection } from "@/components/call/CollapseSection";
 import { useOrgContext } from "@/lib/org-context";
 import { mockRoomChat, type ChatMessage } from "@/lib/mock/data";
 
-/* In-meeting chat, as the design's "Live Chat" section. Same behaviour as before: seeded from the
-   mock thread, a sent message is appended locally and nothing is transmitted. The design's
-   attachment button, reactions and typing indicator are left out (nothing backs them). */
+/* In-meeting chat, as the design's "Live Chat" section. In a real call it travels over LiveKit's
+   data channel (topic CHAT_TOPIC), so everyone connected sees it; it is not stored, so someone who
+   joins later sees only what is sent after they arrive. The demo fixtures keep their sample
+   thread. The design's attachment button, reactions and typing indicator are left out. */
+
+const CHAT_TOPIC = "mx-chat";
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+const clock = () => new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
 function initials(name: string) {
   return name
@@ -20,9 +27,40 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-export function ChatPanel({ id }: { id?: string }) {
+export function ChatPanel({
+  id,
+  room = null,
+  demo = true,
+}: {
+  id?: string;
+  /** The connected LiveKit room; messages are sent and received over it. */
+  room?: Room | null;
+  /** Demo fixtures show the sample thread; a real meeting starts empty. */
+  demo?: boolean;
+}) {
   const { user } = useOrgContext();
-  const [messages, setMessages] = useState<(ChatMessage & { isNew?: boolean })[]>(mockRoomChat);
+  const [messages, setMessages] = useState<(ChatMessage & { isNew?: boolean })[]>(demo ? mockRoomChat : []);
+  // A real meeting with no connected call has nowhere to send to, so the composer waits.
+  const offline = !demo && !room;
+
+  useEffect(() => {
+    if (!room) return;
+    const onData = (payload: Uint8Array, participant?: RemoteParticipant, _kind?: unknown, topic?: string) => {
+      if (topic !== CHAT_TOPIC) return;
+      try {
+        const { text } = JSON.parse(dec.decode(payload)) as { text?: string };
+        if (!text) return;
+        const from = participant?.name || participant?.identity || "Guest";
+        setMessages((m) => [...m, { id: `ch_${Date.now()}_${m.length}`, from, at: clock(), text, isNew: true }]);
+      } catch {
+        // Not one of our chat messages.
+      }
+    };
+    room.on(RoomEvent.DataReceived, onData);
+    return () => {
+      room.off(RoomEvent.DataReceived, onData);
+    };
+  }, [room]);
   const [draft, setDraft] = useState("");
   const bodyRef = useRef<HTMLDivElement | null>(null);
 
@@ -34,8 +72,13 @@ export function ChatPanel({ id }: { id?: string }) {
   const send = (e: React.FormEvent) => {
     e.preventDefault();
     const text = draft.trim();
-    if (!text) return;
-    setMessages((m) => [...m, { id: `ch_local_${m.length}`, from: user.name, at: "now", text, isNew: true }]);
+    if (!text || offline) return;
+    if (room) {
+      void room.localParticipant
+        .publishData(enc.encode(JSON.stringify({ text })), { reliable: true, topic: CHAT_TOPIC })
+        .catch(() => undefined);
+    }
+    setMessages((m) => [...m, { id: `ch_local_${m.length}`, from: user.name, at: room ? clock() : "now", text, isNew: true }]);
     setDraft("");
   };
 
@@ -67,12 +110,13 @@ export function ChatPanel({ id }: { id?: string }) {
           <form className="composer" onSubmit={send} autoComplete="off">
             <input
               type="text"
-              placeholder="Message everyone"
+              placeholder={offline ? "Chat opens when you are connected" : "Message everyone"}
               aria-label="Message everyone"
+              disabled={offline}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
             />
-            <button type="submit" className="comp-send tap" data-tip="Send" aria-label="Send message">
+            <button type="submit" className="comp-send tap" data-tip="Send" aria-label="Send message" disabled={offline}>
               <PaperPlaneRight size={15} weight="fill" aria-hidden />
             </button>
           </form>

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { resolveCallMeeting } from "@/components/call/resolve-meeting";
 import { MeetingRoom } from "@/components/meeting/MeetingRoom";
 import { mockMeetings } from "@/lib/mock/data";
 import "@/styles/meeting-call.css";
@@ -14,13 +14,12 @@ export function generateStaticParams() {
   return mockMeetings.map((m) => ({ meetingId: m.id }));
 }
 
-export default function MeetingRoomPage({
+export default async function MeetingRoomPage({
   params,
 }: {
   params: { meetingId: string };
 }) {
-  const meeting = mockMeetings.find((m) => m.id === params.meetingId);
-  if (!meeting) notFound();
+  const meeting = await resolveCallMeeting(params.meetingId);
 
   return <MeetingRoom meeting={meeting} />;
 }

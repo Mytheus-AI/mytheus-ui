@@ -52,7 +52,7 @@ function stopAll(stream: MediaStream | null) {
   stream?.getTracks().forEach((t) => t.stop());
 }
 
-export function PreJoin({ meeting }: { meeting: Meeting }) {
+export function PreJoin({ meeting }: { meeting: Meeting & { invited?: number } }) {
   const { user } = useOrgContext();
   const [micOff, setMicOff] = useState(false);
   const [camOff, setCamOff] = useState(false);
@@ -181,7 +181,10 @@ export function PreJoin({ meeting }: { meeting: Meeting }) {
 
   const remember = () => {
     try {
-      sessionStorage.setItem(CALL_PREFS_KEY, JSON.stringify({ micOff, camOff }));
+      sessionStorage.setItem(
+        CALL_PREFS_KEY,
+        JSON.stringify({ micOff, camOff, micId: micValue, camId: camValue }),
+      );
     } catch {
       // Storage blocked: the room simply starts with mic and camera on.
     }
@@ -316,8 +319,8 @@ export function PreJoin({ meeting }: { meeting: Meeting }) {
                               {meeting.title}
                             </h3>
                             <p className="detail-by">
-                              {meeting.durationMinutes} min · {meeting.participants.length}{" "}
-                              {meeting.participants.length === 1 ? "person" : "people"} invited
+                              {meeting.durationMinutes} min · {meeting.invited ?? meeting.participants.length}{" "}
+                              {(meeting.invited ?? meeting.participants.length) === 1 ? "person" : "people"} invited
                             </p>
                             <div className="pv-lobby">
                               <span className="av-stack" style={{ marginTop: 0 }} aria-hidden="true">

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { RoomEvent, Track, type LocalTrackPublication } from "livekit-client";
 import { AgentSidebar, type AgentAttention } from "@/components/sidebar/AgentSidebar";
 import { LiveVideoGrid } from "@/components/meeting/LiveVideoGrid";
 import { LiveCaptions, MockCaptions } from "@/components/meeting/LiveCaptions";
@@ -15,6 +16,7 @@ import { RoomClock } from "@/components/room/RoomClock";
 import { RoomGrid, type RoomLayout, type RoomTile } from "@/components/room/RoomGrid";
 import { RoomPanel, SECTION_IDS } from "@/components/room/RoomPanel";
 import { useNarrow } from "@/components/room/useNarrow";
+import { useOrgContext } from "@/lib/org-context";
 import { useLiveKitRoom } from "@/lib/realtime/useLiveKitRoom";
 import { useMeetingSocket } from "@/lib/realtime/useMeetingSocket";
 import { mockRoomParticipants, mockCaptions, type Meeting } from "@/lib/mock/data";
@@ -26,10 +28,27 @@ import { mockRoomParticipants, mockCaptions, type Meeting } from "@/lib/mock/dat
    the panel as a bottom sheet.
 
    Video is live LiveKit when a room is connected and the mock tiles otherwise; captions are the
-   real socket stream once joined and the mock strip otherwise. Controls toggle locally so the room
-   feels inhabited; nothing is transmitted anywhere. */
+   real socket stream once joined and the mock strip otherwise. Once a real call is connected the
+   mic, camera and screen-share controls drive it: your devices from the pre-join are published,
+   muted and unpublished for real. Before that (or for the demo fixtures) they toggle locally. */
 
-export function MeetingRoom({ meeting }: { meeting: Meeting }) {
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Plain words for why the call would not let you in, keyed by the server's stable code. */
+function joinProblem(code: string | null): string {
+  switch (code) {
+    case "NOT_A_PARTICIPANT":
+      return "You are not on this meeting's participant list, so the call cannot let you in. Ask the host to add you.";
+    case "CONSENT_REQUIRED":
+      return "This workspace needs your recording consent before you can join. Go back to the pre-join and accept it.";
+    case "NOT_FOUND":
+      return "This meeting could not be found. It may have been removed.";
+    default:
+      return "Could not connect to the call. Check your connection and try again.";
+  }
+}
+
+export function MeetingRoom({ meeting }: { meeting: Meeting & { invited?: number } }) {
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [captionsOn, setCaptionsOn] = useState(true);
@@ -38,6 +57,11 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
   const [sideOpen, setSideOpen] = useState(true);
   const [attention, setAttention] = useState<AgentAttention>({ count: 0, conflict: false });
   const [shareUrl, setShareUrl] = useState(`/meetings/${meeting.id}/join`);
+  const [screenOn, setScreenOn] = useState(false);
+  // The devices picked on the pre-join, applied when the real call publishes them.
+  const deviceIds = useRef<{ mic?: string; cam?: string }>({});
+  const realMeeting = UUID.test(meeting.id);
+  const { user } = useOrgContext();
   const narrow = useNarrow();
 
   // Mints a token and connects the SFU when NEXT_PUBLIC_LIVEKIT_URL is set; reports
@@ -67,13 +91,47 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
     try {
       const raw = sessionStorage.getItem(CALL_PREFS_KEY);
       if (!raw) return;
-      const prefs = JSON.parse(raw) as { micOff?: boolean; camOff?: boolean };
+      const prefs = JSON.parse(raw) as { micOff?: boolean; camOff?: boolean; micId?: string; camId?: string };
+      deviceIds.current = { mic: prefs.micId, cam: prefs.camId };
       if (prefs.micOff) setMicOn(false);
       if (prefs.camOff) setCamOn(false);
     } catch {
       // Storage blocked or malformed: start with mic and camera on.
     }
   }, [meeting.id]);
+
+  // A real call follows the controls: publish, mute and unpublish your actual mic, camera and
+  // screen. If the browser refuses (permission denied, no device, share picker cancelled), the
+  // control flips back so it never claims a state the call is not in.
+  useEffect(() => {
+    if (!liveRoom) return;
+    const id = deviceIds.current.mic;
+    liveRoom.localParticipant
+      .setMicrophoneEnabled(micOn, micOn && id ? { deviceId: id } : undefined)
+      .catch(() => setMicOn(false));
+  }, [liveRoom, micOn]);
+  useEffect(() => {
+    if (!liveRoom) return;
+    const id = deviceIds.current.cam;
+    liveRoom.localParticipant
+      .setCameraEnabled(camOn, camOn && id ? { deviceId: id } : undefined)
+      .catch(() => setCamOn(false));
+  }, [liveRoom, camOn]);
+  useEffect(() => {
+    if (!liveRoom) return;
+    liveRoom.localParticipant.setScreenShareEnabled(screenOn).catch(() => setScreenOn(false));
+  }, [liveRoom, screenOn]);
+  // Stopping the share from the browser's own "Stop sharing" bar must update the button too.
+  useEffect(() => {
+    if (!liveRoom) return;
+    const onUnpublished = (pub: LocalTrackPublication) => {
+      if (pub.source === Track.Source.ScreenShare) setScreenOn(false);
+    };
+    liveRoom.on(RoomEvent.LocalTrackUnpublished, onUnpublished);
+    return () => {
+      liveRoom.off(RoomEvent.LocalTrackUnpublished, onUnpublished);
+    };
+  }, [liveRoom]);
 
   // On a phone the panel starts folded so the video gets the screen.
   useEffect(() => {
@@ -139,7 +197,7 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
       liveRoom
         ? live.participants.map((p) => ({
             id: p.identity,
-            name: p.name || p.identity,
+            name: p.name || (p.isLocal ? user.name : "Guest"),
             isLocal: p.isLocal,
             micOn: p.isMicrophoneEnabled,
             speaking: p.isSpeaking,
@@ -152,7 +210,7 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
             micOn: t.micOn,
             speaking: t.speaking,
           })),
-    [liveRoom, live.participants, mockTiles],
+    [liveRoom, live.participants, mockTiles, user.name],
   );
 
   const pin = (id: string | null) => {
@@ -174,7 +232,7 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
         socket.status === "joined" ? (
           <LiveCaptions lines={socket.captions.lines} />
         ) : (
-          <MockCaptions lines={mockCaptions} />
+          realMeeting ? null : <MockCaptions lines={mockCaptions} />
         )
       ) : null}
 
@@ -186,8 +244,12 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
         leaveHref={`/meetings/${meeting.id}`}
         onMic={() => setMicOn((v) => !v)}
         onCam={() => setCamOn((v) => !v)}
-        onCaptions={() => setCaptionsOn((v) => !v)}
+        // A real meeting has captions only when the transcription stream is joined; until then the
+        // button would toggle nothing, so it is not offered.
+        onCaptions={!realMeeting || socket.status === "joined" ? () => setCaptionsOn((v) => !v) : undefined}
         onLayout={() => setLayout((l) => (l === "grid" ? "spotlight" : "grid"))}
+        screenOn={screenOn}
+        onScreen={liveRoom ? () => setScreenOn((v) => !v) : undefined}
       />
     </>
   );
@@ -206,12 +268,28 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
   return (
     <CallToastProvider>
       <div className="mx-meet cx-call">
+        {realMeeting && (live.status === "connecting" || live.status === "reconnecting" || live.status === "error") ? (
+          <div
+            role={live.status === "error" ? "alert" : "status"}
+            className={`fixed left-1/2 top-[72px] z-50 w-[min(560px,calc(100vw-32px))] -translate-x-1/2 rounded-[14px] px-4 py-3 text-[13.5px] font-semibold shadow-[var(--shadow-card)] ${
+              live.status === "error"
+                ? "bg-[var(--prioHighBg)] text-[var(--prioHigh)]"
+                : "bg-[var(--surface)] text-[var(--body)]"
+            }`}
+          >
+            {live.status === "error"
+              ? joinProblem(live.error)
+              : live.status === "reconnecting"
+                ? "Reconnecting to the call..."
+                : "Connecting to the call..."}
+          </div>
+        ) : null}
         <div className="app">
           <CallTopBar
             room={{
               title: meeting.title,
               inCall: people.length,
-              invited: meeting.participants.length,
+              invited: meeting.invited ?? meeting.participants.length,
               shareUrl,
               sideVisible: sideOpen,
               onToggleSide: () => setSideOpen((v) => !v),
@@ -237,9 +315,9 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
                   attention={attention.count}
                   conflict={attention.conflict}
                   peopleCount={people.length}
-                  agent={<AgentSidebar onAttentionChange={onAttention} id={SECTION_IDS.agent} />}
+                  agent={<AgentSidebar onAttentionChange={onAttention} id={SECTION_IDS.agent} demo={!realMeeting} />}
                   people={<PeoplePanel people={people} id={SECTION_IDS.people} />}
-                  chat={<ChatPanel id={SECTION_IDS.chat} />}
+                  chat={<ChatPanel id={SECTION_IDS.chat} room={liveRoom} demo={!realMeeting} />}
                 />
               </section>
             </main>

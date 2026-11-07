@@ -77,7 +77,11 @@ export interface AgentAttention {
 export function AgentSidebar({
   onAttentionChange,
   id,
+  demo = true,
 }: {
+  /** The sample cards are for the demo fixtures. A real meeting shows them only once the agent
+   *  stream exists, so until then it gets an honest empty state rather than invented cards. */
+  demo?: boolean;
   /** Optional. The room uses it for the badge on the collapsed panel rail. */
   onAttentionChange?: (attention: AgentAttention) => void;
   /** Anchor id for the "My agent" section, so the collapsed rail can open the panel at it. */
@@ -108,13 +112,13 @@ export function AgentSidebar({
 
   const isOpen = (cid: CardId) => !closed.has(cid);
 
-  const count =
+  const count = !demo ? 0 :
     (conflict ? 1 : 0) +
     (decision && decisionState === "pending" ? 1 : 0) +
     (suggestion && suggestion.priority !== "low" && isOpen("suggestion") ? 1 : 0) +
     (workload && isOpen("workload") ? 1 : 0) +
     (dependency && isOpen("dependency") ? 1 : 0);
-  const hasConflict = Boolean(conflict);
+  const hasConflict = demo && Boolean(conflict);
   useEffect(() => {
     onAttentionChange?.({ count, conflict: hasConflict });
   }, [count, hasConflict, onAttentionChange]);
@@ -336,6 +340,19 @@ export function AgentSidebar({
   }
   if (context) {
     feed.push({ id: "context", kind: "context", text: context.text, cite: context.source, saveAs: "Context from Sarah's agent" });
+  }
+
+  if (!demo) {
+    return (
+      <div className="reveal" id={id} style={{ animationDelay: ".14s" }}>
+        <CollapseSection title="My agent">
+          <p className="chat-empty">
+            Your agent posts notes, decisions and questions here once live transcription is running for
+            this meeting. Nothing is captured until then.
+          </p>
+        </CollapseSection>
+      </div>
+    );
   }
 
   return (

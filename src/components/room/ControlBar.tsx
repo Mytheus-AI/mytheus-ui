@@ -5,6 +5,7 @@ import {
   ClosedCaptioning,
   Microphone,
   MicrophoneSlash,
+  MonitorArrowUp,
   PhoneDisconnect,
   SquaresFour,
   VideoCamera,
@@ -12,8 +13,9 @@ import {
 } from "@phosphor-icons/react";
 
 /* The design's dark control pill, floating at the bottom of the video frame. It keeps the controls
-   the app can honour: mic, camera, captions, the layout switch, and Leave. The design's share
-   screen, record and raise-hand buttons are left out because nothing behind them exists yet.
+   the app can honour: mic, camera, screen share (only while a real LiveKit call is connected),
+   captions, the layout switch, and Leave. Record and raise hand are left out because nothing
+   behind them exists yet.
    Shortcuts (M, V, C, L) are bound in MeetingRoom and named in the tooltips. */
 
 export function ControlBar({
@@ -26,6 +28,8 @@ export function ControlBar({
   onCam,
   onCaptions,
   onLayout,
+  screenOn = false,
+  onScreen,
 }: {
   micOn: boolean;
   camOn: boolean;
@@ -34,8 +38,12 @@ export function ControlBar({
   leaveHref: string;
   onMic: () => void;
   onCam: () => void;
-  onCaptions: () => void;
+  /** Absent when there are no captions to show, so the button never does nothing. */
+  onCaptions?: () => void;
   onLayout: () => void;
+  /** Present only when a real call is connected, so the button never does nothing. */
+  screenOn?: boolean;
+  onScreen?: () => void;
 }) {
   return (
     <div className="controls" role="toolbar" aria-label="Call controls">
@@ -59,9 +67,22 @@ export function ControlBar({
       >
         {camOn ? <VideoCamera size={18} aria-hidden /> : <VideoCameraSlash size={18} aria-hidden />}
       </button>
+      {onScreen ? (
+        <button
+          type="button"
+          className={`ctl tap${screenOn ? " is-active" : ""}`}
+          data-tip={screenOn ? "Stop sharing" : "Share screen"}
+          aria-label="Share screen"
+          aria-pressed={screenOn}
+          onClick={onScreen}
+        >
+          <MonitorArrowUp size={18} weight={screenOn ? "fill" : "regular"} aria-hidden />
+        </button>
+      ) : null}
 
       <span className="ctl-sep" aria-hidden="true"></span>
 
+      {onCaptions ? (
       <button
         type="button"
         className={`ctl tap${captionsOn ? " is-active" : ""}`}
@@ -72,6 +93,7 @@ export function ControlBar({
       >
         <ClosedCaptioning size={18} weight={captionsOn ? "fill" : "regular"} aria-hidden />
       </button>
+      ) : null}
       <button
         type="button"
         className={`ctl tap${gridOn ? " is-active" : ""}`}
