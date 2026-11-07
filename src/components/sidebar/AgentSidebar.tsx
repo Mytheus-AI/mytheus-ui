@@ -1,70 +1,72 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import {
-  BellRinging,
-  BookmarkSimple,
-  BookOpenText,
-  CalendarBlank,
-  CheckCircle,
-  CheckSquare,
-  Gauge,
-  Info,
-  LinkSimple,
-  Lightbulb,
-  Lock,
-  NotePencil,
-  PushPin,
-  Quotes,
-  Scales,
-  UserPlus,
-  Warning,
-  WarningCircle,
-  Check,
-} from "@phosphor-icons/react";
-import { Avatar } from "@/components/ui/Avatar";
-import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import Link from "next/link";
+import { GearSix, Lock, PushPin, Sparkle, Warning } from "@phosphor-icons/react";
+import { CollapseSection } from "@/components/call/CollapseSection";
+import { useCallToast } from "@/components/call/CallToast";
 import {
   mockAgentSidebar,
   type AgentSidebarCard,
   type SidebarPriority,
 } from "@/lib/mock/data";
 
-/* The agent sidebar - the product's centerpiece, rendered in the frozen
-   9-section order (doc 20 §7): My Notes · Suggestion · Decision · New-task
-   toast · Context-fill · Conflict banner (red, ALWAYS pinned to the top,
-   regardless of arrival order) · Workload warning · Stakeholder suggestion ·
-   Dependency warning · Save-for-later. Static mock cards - no socket stream;
-   the only live behavior is the UX contract: Confirm visibly commits (and is
-   the ONLY thing that commits), Dismiss removes, bookmarks collect into
-   Save-for-later.
+/* The agent sidebar - the product's centerpiece - in the meeting design's shape: a conflict banner
+   pinned above everything, then "My agent" with the Needs-you cards, My notes, Saved for later and
+   the Activity feed.
 
-   Priority is shown with a chip and an icon (frozen colour language: red acts now, amber needs
-   attention, blue informs), never a coloured edge. The conflict is a tinted card with a Conflict
-   chip that sticks to the top of the scroll area; it shrinks to one line once you scroll. */
+   The data is the same frozen 9-section mock (doc 20 §7) and the UX contract is unchanged:
+   Confirm visibly commits (and is the ONLY thing that commits), Dismiss removes, Save for later
+   collects into Saved for later. The conflict is always pinned to the top and cannot be dismissed.
+   Acknowledging a warning only moves it into the Activity feed; nothing is sent anywhere.
 
-// Badge defaults to a roomier size; chips inside cards are tighter.
-const CHIP = "gap-1 !px-2.5 !py-0.5 !text-[11.5px]";
+   Priority uses the frozen language (red acts now, amber attention, blue info) through the kind
+   dot, the label colour and the meta text; the act-now card is also tinted. No coloured edge. */
 
-const PRIORITY_LABEL: Record<SidebarPriority, string> = {
-  high: "Act now",
-  medium: "Attention",
-  low: "Info",
+const PRIORITY_LEVEL: Record<SidebarPriority, 1 | 2 | 3> = { high: 1, medium: 2, low: 3 };
+const PRIORITY_LABEL: Record<SidebarPriority, string> = { high: "act now", medium: "attention", low: "info" };
+
+type FeedKind = "conflict" | "question" | "decision" | "note" | "context" | "action";
+type Resolution = "confirmed" | "saved" | "dismissed" | "acknowledged" | "created";
+
+const KIND_LABEL: Record<FeedKind, string> = {
+  conflict: "Conflict",
+  question: "Question",
+  decision: "Decision",
+  note: "Note",
+  context: "Shared context",
+  action: "Action",
 };
 
-const PRIORITY_ICON = {
-  high: WarningCircle,
-  medium: BellRinging,
-  low: Info,
-} as const;
+const RES_LABEL: Record<Resolution, string> = {
+  confirmed: "Confirmed",
+  saved: "Saved for later",
+  dismissed: "Dismissed",
+  acknowledged: "Acknowledged",
+  created: "Task created",
+};
+
+type FeedEntry = {
+  id: string;
+  kind: FeedKind;
+  text: string;
+  time?: string;
+  cite?: string;
+  resolved?: Resolution;
+  isNew?: boolean;
+  /** The title this entry can be saved under (context fills keep their bookmark). */
+  saveAs?: string;
+};
+
+type CardId = "suggestion" | "decision" | "workload" | "stakeholder" | "dependency";
 
 function pick<K extends AgentSidebarCard["kind"]>(kind: K) {
   return mockAgentSidebar.find((c) => c.kind === kind) as
     | Extract<AgentSidebarCard, { kind: K }>
     | undefined;
 }
+
+const pad = (n: number) => String(n).padStart(2, "0");
 
 export interface AgentAttention {
   /** Items that want the user right now: the open conflict plus anything pending or warning. */
@@ -74,15 +76,29 @@ export interface AgentAttention {
 
 export function AgentSidebar({
   onAttentionChange,
+  id,
+  demo = true,
 }: {
-  /** Optional. The room uses it for the count on the tab, the rail and the control bar. */
+  /** The sample cards are for the demo fixtures. A real meeting shows them only once the agent
+   *  stream exists, so until then it gets an honest empty state rather than invented cards. */
+  demo?: boolean;
+  /** Optional. The room uses it for the badge on the collapsed panel rail. */
   onAttentionChange?: (attention: AgentAttention) => void;
+  /** Anchor id for the "My agent" section, so the collapsed rail can open the panel at it. */
+  id?: string;
 }) {
+  const toast = useCallToast();
   const [decisionState, setDecisionState] = useState<"pending" | "confirmed" | "dismissed">(
     "pending",
   );
   const [saved, setSaved] = useState<string[]>([]);
-  const [compact, setCompact] = useState(false);
+  const [closed, setClosed] = useState<Set<CardId>>(new Set());
+  const [leaving, setLeaving] = useState<Set<CardId>>(new Set());
+  const [log, setLog] = useState<FeedEntry[]>([]);
+  const joinedAt = useRef<number>(0);
+  useEffect(() => {
+    joinedAt.current = Date.now();
+  }, []);
 
   const note = useMemo(() => pick("note"), []);
   const suggestion = useMemo(() => pick("suggestion"), []);
@@ -94,324 +110,393 @@ export function AgentSidebar({
   const stakeholder = useMemo(() => pick("stakeholder"), []);
   const dependency = useMemo(() => pick("dependency"), []);
 
-  const count =
+  const isOpen = (cid: CardId) => !closed.has(cid);
+
+  const count = !demo ? 0 :
     (conflict ? 1 : 0) +
     (decision && decisionState === "pending" ? 1 : 0) +
-    (suggestion && suggestion.priority !== "low" ? 1 : 0) +
-    (workload ? 1 : 0) +
-    (dependency ? 1 : 0);
-  const hasConflict = Boolean(conflict);
+    (suggestion && suggestion.priority !== "low" && isOpen("suggestion") ? 1 : 0) +
+    (workload && isOpen("workload") ? 1 : 0) +
+    (dependency && isOpen("dependency") ? 1 : 0);
+  const hasConflict = demo && Boolean(conflict);
   useEffect(() => {
     onAttentionChange?.({ count, conflict: hasConflict });
   }, [count, hasConflict, onAttentionChange]);
 
+  const now = () => {
+    const secs = joinedAt.current ? Math.floor((Date.now() - joinedAt.current) / 1000) : 0;
+    return `${pad(Math.floor(secs / 60))}:${pad(secs % 60)}`;
+  };
+
   const toggleSave = (title: string) =>
     setSaved((s) => (s.includes(title) ? s.filter((x) => x !== title) : [...s, title]));
 
-  return (
-    <div
-      className="h-full overflow-y-auto"
-      onScroll={(e) => {
-        // Two thresholds so the banner does not flicker at the boundary.
-        const top = e.currentTarget.scrollTop;
-        setCompact((c) => (c ? top > 20 : top > 60));
-      }}
-    >
-      {/* conflict banner - tinted card with a chip, pinned top above everything else */}
-      {conflict && (
-        <div className="sticky top-0 z-10 bg-surface px-3.5 pb-2 pt-3">
-          <div
-            role="alert"
-            className={`rounded-card border border-priority-high/30 bg-priority-high-soft transition-[padding] duration-200 motion-reduce:transition-none ${
-              compact ? "px-3.5 py-2.5" : "p-4"
-            }`}
+  /** Slides a card out, then records what happened to it at the top of the Activity feed. */
+  const resolve = (cid: CardId, entry: Omit<FeedEntry, "id" | "time" | "isNew">, after?: () => void) => {
+    const time = now();
+    setLeaving((s) => new Set(s).add(cid));
+    window.setTimeout(() => {
+      setLeaving((s) => {
+        const next = new Set(s);
+        next.delete(cid);
+        return next;
+      });
+      setClosed((s) => new Set(s).add(cid));
+      after?.();
+      setLog((l) => [{ ...entry, id: `${cid}-${Date.now()}`, time, isNew: true }, ...l]);
+    }, 230);
+  };
+
+  /* Needs-you cards, in the frozen order. */
+  const cards: {
+    id: CardId;
+    kind: string;
+    prio: 1 | 2 | 3;
+    label: string;
+    meta: string;
+    text: ReactNode;
+    sub?: string;
+    acts: ReactNode;
+  }[] = [];
+
+  if (suggestion && isOpen("suggestion")) {
+    const title = "Suggested question";
+    cards.push({
+      id: "suggestion",
+      kind: "question",
+      prio: PRIORITY_LEVEL[suggestion.priority],
+      label: "Suggested question",
+      meta: PRIORITY_LABEL[suggestion.priority],
+      text: suggestion.text,
+      acts: (
+        <>
+          <button
+            type="button"
+            className="nfy-act tap"
+            onClick={() => {
+              navigator.clipboard
+                ?.writeText(suggestion.text)
+                .then(() => toast("Question copied. Paste it into chat."))
+                .catch(() => toast("Could not copy the question"));
+            }}
           >
-            <div className="flex items-center gap-2">
-              <Warning size={16} weight="fill" className="shrink-0 text-priority-high" aria-hidden />
-              <span className="inline-flex items-center rounded-full border border-priority-high/30 bg-surface px-2.5 py-0.5 text-[11.5px] font-bold uppercase tracking-[0.05em] text-priority-high">
-                Conflict
-              </span>
-              <PushPin
-                size={15}
-                weight="fill"
-                className="ml-auto shrink-0 text-ink-3"
-                aria-label="Pinned"
-                role="img"
-              />
-            </div>
-            <p
-              className={`text-[14px] font-medium leading-snug text-ink ${
-                compact ? "mt-1.5 line-clamp-1" : "mt-2.5"
-              }`}
-            >
-              {conflict.text}
-            </p>
-          </div>
-        </div>
-      )}
+            Copy question
+          </button>
+          <button
+            type="button"
+            className={`nfy-act is-quiet tap${saved.includes(title) ? " is-on" : ""}`}
+            aria-pressed={saved.includes(title)}
+            onClick={() => toggleSave(title)}
+          >
+            {saved.includes(title) ? "Saved" : "Save for later"}
+          </button>
+          <button
+            type="button"
+            className="nfy-act is-quiet tap"
+            onClick={() => resolve("suggestion", { kind: "question", text: suggestion.text, resolved: "dismissed" })}
+          >
+            Dismiss
+          </button>
+        </>
+      ),
+    });
+  }
 
-      <div className="flex flex-col gap-2.5 px-3.5 pb-4 pt-2 motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
-        <h3 className="mt-1 text-[12px] font-bold uppercase tracking-[0.06em] text-ink-3">
-          From your agent
-        </h3>
-
-        {/* 1 · my notes */}
-        {note && (
-          <AgentCard
-            icon={<NotePencil size={15} weight="fill" />}
-            label="My notes"
-            chip={
-              <Badge className={CHIP}>
-                <Lock size={12} weight="fill" aria-hidden />
-                Only you
-              </Badge>
+  if (decision && decisionState === "pending" && isOpen("decision")) {
+    cards.push({
+      id: "decision",
+      kind: "decision",
+      prio: 3,
+      label: "Decision detected",
+      meta: "draft, not saved",
+      text: decision.title,
+      sub: decision.detail,
+      acts: (
+        <>
+          <button
+            type="button"
+            className="nfy-act tap"
+            onClick={() =>
+              resolve(
+                "decision",
+                { kind: "decision", text: decision.title, cite: "Saved to the knowledge graph", resolved: "confirmed" },
+                () => {
+                  setDecisionState("confirmed");
+                  toast("Decision confirmed");
+                },
+              )
             }
           >
-            <ul className="mt-2.5 list-disc space-y-2 pl-4 marker:text-ink-3">
-              {note.lines.map((l) => (
-                <li key={l} className="text-[14px] leading-snug text-ink">
-                  {l}
-                </li>
-              ))}
-            </ul>
-          </AgentCard>
-        )}
-
-        {/* 2 · suggestion (priority language) */}
-        {suggestion && (
-          <AgentCard
-            icon={<Lightbulb size={15} weight="fill" />}
-            label="Suggestion"
-            chip={<PriorityChip priority={suggestion.priority} />}
-            onSave={() => toggleSave("Suggested question")}
-            savedNow={saved.includes("Suggested question")}
+            Confirm
+          </button>
+          <button
+            type="button"
+            className={`nfy-act is-quiet tap${saved.includes(decision.title) ? " is-on" : ""}`}
+            aria-pressed={saved.includes(decision.title)}
+            onClick={() => toggleSave(decision.title)}
           >
-            <p className="mt-2.5 text-[14px] leading-snug text-ink">{suggestion.text}</p>
-          </AgentCard>
-        )}
-
-        {/* 3 · decision - the confirm flow */}
-        {decision && decisionState !== "dismissed" && (
-          <AgentCard
-            icon={<Scales size={15} weight="fill" />}
-            label="Decision"
-            chip={<PriorityChip priority="low" />}
-            onSave={() => toggleSave(decision.title)}
-            savedNow={saved.includes(decision.title)}
+            {saved.includes(decision.title) ? "Saved" : "Save for later"}
+          </button>
+          <button
+            type="button"
+            className="nfy-act is-quiet tap"
+            onClick={() =>
+              resolve("decision", { kind: "decision", text: decision.title, resolved: "dismissed" }, () =>
+                setDecisionState("dismissed"),
+              )
+            }
           >
-            <p className="mt-2.5 text-[15px] font-semibold leading-snug text-ink-display">
-              {decision.title}
-            </p>
-            <p className="mt-1 text-[12.5px] text-ink-3">{decision.detail}</p>
+            Dismiss
+          </button>
+        </>
+      ),
+    });
+  }
 
-            {decisionState === "pending" ? (
-              <>
-                <Badge tone="warning" className={`mt-2.5 ${CHIP}`}>
-                  <NotePencil size={12} aria-hidden />
-                  Draft, not saved
-                </Badge>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => setDecisionState("confirmed")}
-                    className="min-h-9 focus-visible:!rounded-pill active:scale-[0.97]"
-                  >
-                    <Check size={14} weight="bold" aria-hidden />
-                    Confirm
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setDecisionState("dismissed")}
-                    className="min-h-9 focus-visible:!rounded-pill active:scale-[0.97]"
-                  >
-                    Dismiss
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <p className="mt-3 flex items-center gap-2 text-[13px] font-semibold text-ink">
-                <Badge tone="success" className={CHIP}>
-                  <CheckCircle size={13} weight="fill" aria-hidden />
-                  Confirmed
-                </Badge>
-                <span className="font-medium text-ink-2">Saved to the knowledge graph.</span>
-              </p>
-            )}
-          </AgentCard>
-        )}
+  if (workload && isOpen("workload")) {
+    cards.push({
+      id: "workload",
+      kind: "workload",
+      prio: workload.util >= 95 ? 1 : 2,
+      label: "Workload warning",
+      meta: `${workload.util}% capacity`,
+      text: workload.text,
+      acts: (
+        <button
+          type="button"
+          className="nfy-act is-quiet tap"
+          onClick={() =>
+            resolve("workload", { kind: "note", text: `${workload.person} at ${workload.util}% capacity, noted.`, resolved: "acknowledged" })
+          }
+        >
+          Acknowledge
+        </button>
+      ),
+    });
+  }
 
-        {/* 4 · new-task toast */}
-        {task && (
-          <AgentCard
-            tinted
-            icon={<CheckSquare size={15} weight="fill" />}
-            label="New task"
-          >
-            <p className="mt-2.5 text-[14.5px] font-semibold leading-snug text-ink">{task.title}</p>
-            <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-2">
-              <span className="inline-flex items-center gap-2 text-[13.5px] font-semibold text-ink">
-                <Avatar name={task.assignee} size="sm" />
-                {task.assignee}
-              </span>
-              <Badge className={CHIP}>
-                <CalendarBlank size={12} aria-hidden />
-                Due {task.due}
-              </Badge>
-            </div>
-          </AgentCard>
-        )}
+  if (stakeholder && isOpen("stakeholder")) {
+    cards.push({
+      id: "stakeholder",
+      kind: "stakeholder",
+      prio: 2,
+      label: "Missing stakeholder",
+      meta: "suggested",
+      text: (
+        <>
+          Add <b>{stakeholder.person}</b>: {stakeholder.reason}.
+        </>
+      ),
+      acts: (
+        <button
+          type="button"
+          className="nfy-act is-quiet tap"
+          onClick={() =>
+            resolve("stakeholder", {
+              kind: "note",
+              text: `${stakeholder.person} ${stakeholder.reason}.`,
+              resolved: "acknowledged",
+            })
+          }
+        >
+          Noted
+        </button>
+      ),
+    });
+  }
 
-        {/* 5 · context-fill */}
-        {context && (
-          <AgentCard
-            icon={<BookOpenText size={15} weight="fill" />}
-            label="Context added"
-            onSave={() => toggleSave("Context from Sarah's agent")}
-            savedNow={saved.includes("Context from Sarah's agent")}
-          >
-            <p className="mt-2.5 text-[14px] leading-snug text-ink">{context.text}</p>
-            <p className="mt-2.5 inline-flex max-w-full items-center gap-1.5 rounded-full border border-line bg-bg-2 px-2.5 py-1 text-[11.5px] font-semibold text-ink-3">
-              <Quotes size={12} weight="fill" className="shrink-0" aria-hidden />
-              <span className="truncate">{context.source}</span>
-            </p>
-          </AgentCard>
-        )}
+  if (dependency && isOpen("dependency")) {
+    cards.push({
+      id: "dependency",
+      kind: "dependency",
+      prio: 2,
+      label: "Dependency",
+      meta: "attention",
+      text: dependency.text,
+      acts: (
+        <button
+          type="button"
+          className="nfy-act is-quiet tap"
+          onClick={() => resolve("dependency", { kind: "note", text: dependency.text, resolved: "acknowledged" })}
+        >
+          Noted
+        </button>
+      ),
+    });
+  }
 
-        {/* 6 · workload warning (80/95 thresholds) */}
-        {workload && (
-          <AgentCard
-            icon={<Gauge size={15} weight="fill" />}
-            label="Workload"
-            chip={<PriorityChip priority={workload.util >= 95 ? "high" : "medium"} />}
-          >
-            <p className="mt-2.5 text-[14px] font-medium leading-snug text-ink">{workload.text}</p>
-            <div className="mt-3 grid grid-cols-[minmax(0,64px)_1fr_auto] items-center gap-2.5 text-[12.5px] font-semibold text-ink-3">
-              <b className="truncate font-semibold text-ink">{workload.person}</b>
-              <span
-                role="progressbar"
-                aria-label={`${workload.person} capacity used`}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={Math.min(workload.util, 100)}
-                className="relative block h-2 overflow-hidden rounded-full bg-bg-2"
-              >
-                <span
-                  className={`absolute inset-y-0 left-0 rounded-full ${
-                    workload.util >= 95 ? "bg-priority-high" : "bg-priority-medium"
-                  }`}
-                  style={{ width: `${Math.min(workload.util, 100)}%` }}
-                />
-              </span>
-              <span className="tabular-nums">{workload.util}%</span>
-            </div>
-          </AgentCard>
-        )}
+  /* Activity: what you resolved (newest first), then what the agent already did on its own. */
+  const feed: FeedEntry[] = [...log];
+  if (task) {
+    feed.push({
+      id: "task",
+      kind: "action",
+      text: /^Own\b/.test(task.title)
+        ? `${task.assignee} ${task.title.replace(/^Own\b/, "owns")}, due ${task.due}.`
+        : `${task.title}: ${task.assignee}, due ${task.due}.`,
+      cite: "Added to My Tasks",
+      resolved: "created",
+    });
+  }
+  if (context) {
+    feed.push({ id: "context", kind: "context", text: context.text, cite: context.source, saveAs: "Context from Sarah's agent" });
+  }
 
-        {/* 7 · stakeholder suggestion */}
-        {stakeholder && (
-          <AgentCard icon={<UserPlus size={15} weight="fill" />} label="Stakeholder">
-            <div className="mt-2.5 flex items-start gap-2.5">
-              <Avatar name={stakeholder.person} size="sm" />
-              <p className="text-[14px] leading-snug text-ink">
-                Add <span className="font-semibold">{stakeholder.person}</span>: {stakeholder.reason}.
-              </p>
-            </div>
-          </AgentCard>
-        )}
-
-        {/* 8 · dependency warning */}
-        {dependency && (
-          <AgentCard
-            icon={<LinkSimple size={15} weight="bold" />}
-            label="Dependency"
-            chip={<PriorityChip priority="medium" />}
-          >
-            <p className="mt-2.5 text-[14px] font-medium leading-snug text-ink">{dependency.text}</p>
-          </AgentCard>
-        )}
-
-        {/* 9 · save-for-later */}
-        <AgentCard icon={<BookmarkSimple size={15} weight="fill" />} label="Saved for later">
-          {saved.length === 0 ? (
-            <p className="mt-2.5 text-[13px] text-ink-3">
-              Nothing saved yet. Use the bookmark on any card to keep it here.
-            </p>
-          ) : (
-            <ul className="mt-2.5 space-y-1.5">
-              {saved.map((s) => (
-                <li key={s} className="flex items-center gap-2 text-[13.5px] text-ink">
-                  <BookmarkSimple size={14} weight="fill" className="shrink-0 text-signal-deep" aria-hidden />
-                  {s}
-                </li>
-              ))}
-            </ul>
-          )}
-        </AgentCard>
+  if (!demo) {
+    return (
+      <div className="reveal" id={id} style={{ animationDelay: ".14s" }}>
+        <CollapseSection title="My agent">
+          <p className="chat-empty">
+            Your agent posts notes, decisions and questions here once live transcription is running for
+            this meeting. Nothing is captured until then.
+          </p>
+        </CollapseSection>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-/* ---------------- building blocks ---------------- */
-
-function PriorityChip({ priority }: { priority: SidebarPriority }) {
-  const Icon = PRIORITY_ICON[priority];
   return (
-    <Badge tone={priority} className={CHIP}>
-      <Icon size={13} weight="fill" aria-hidden />
-      {PRIORITY_LABEL[priority]}
-    </Badge>
-  );
-}
+    <>
+      {conflict ? (
+        <div className="conflict-banner" role="alert">
+          <div className="cbn-kind">
+            <Warning size={12} weight="bold" aria-hidden />
+            Possible conflict
+            <span className="cbn-meta">
+              <PushPin size={11} weight="fill" aria-hidden />
+              pinned
+            </span>
+          </div>
+          <p className="cbn-text" style={{ marginBottom: 0 }}>
+            {conflict.text}
+          </p>
+        </div>
+      ) : null}
 
-function AgentCard({
-  icon,
-  label,
-  chip,
-  tinted = false,
-  onSave,
-  savedNow,
-  children,
-}: {
-  icon: ReactNode;
-  label: string;
-  chip?: ReactNode;
-  tinted?: boolean;
-  onSave?: () => void;
-  savedNow?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <Card className={`!p-4 ${tinted ? "!border-signal/30 !bg-signal-soft" : ""}`}>
-      <div className="flex items-center gap-2">
-        <span className="shrink-0 text-ink-3" aria-hidden>
-          {icon}
-        </span>
-        <h4 className="min-w-0 truncate text-[11.5px] font-bold uppercase tracking-[0.05em] text-ink-3">
-          {label}
-        </h4>
-        <span className="-my-1.5 ml-auto flex shrink-0 items-center gap-1">
-          {chip}
-          {onSave && (
-            <button
-              type="button"
-              onClick={onSave}
-              aria-label={savedNow ? "Remove from saved" : "Save for later"}
-              aria-pressed={savedNow}
-              title={savedNow ? "Remove from saved" : "Save for later"}
-              className={`-mr-1.5 grid h-9 w-9 place-items-center rounded-pill transition-[background-color,color,transform] duration-150 focus-visible:!rounded-pill active:scale-90 motion-reduce:transition-none ${
-                savedNow
-                  ? "text-signal-deep hover:bg-bg-2"
-                  : "text-ink-3 hover:bg-bg-2 hover:text-ink"
-              }`}
+      <div className="reveal" id={id} style={{ animationDelay: ".14s" }}>
+        <CollapseSection
+          title="My agent"
+          countChip={
+            <>
+              <Sparkle size={12} weight="fill" style={{ color: "var(--accent)" }} aria-hidden />
+              <span className="live-chip">
+                <span className="live-dot" aria-hidden="true"></span>Listening
+              </span>
+            </>
+          }
+          actions={
+            <Link
+              href="/settings"
+              target="_blank"
+              rel="noopener"
+              className="label-icon-btn tap"
+              data-tip="Agent settings"
+              aria-label="Agent settings (opens in a new tab)"
             >
-              <BookmarkSimple size={16} weight={savedNow ? "fill" : "regular"} aria-hidden />
-            </button>
-          )}
-        </span>
+              <GearSix size={14} aria-hidden />
+            </Link>
+          }
+        >
+          <div className="agent-panel">
+            {cards.length > 0 ? (
+              <div className="nfy">
+                <div className="nfy-head">
+                  Needs you <b>{count}</b>
+                </div>
+                {cards.map((card) => (
+                  <div
+                    className={`nfy-card is-${card.kind} is-p${card.prio}${leaving.has(card.id) ? " is-leaving" : ""}`}
+                    key={card.id}
+                    role={card.prio === 1 ? "alert" : undefined}
+                  >
+                    <div className="nfy-kind">
+                      {card.label} <span className="nfy-meta">{card.meta}</span>
+                    </div>
+                    <p className="nfy-text">{card.text}</p>
+                    {card.sub ? <p className="nfy-sub">{card.sub}</p> : null}
+                    <div className="nfy-acts">{card.acts}</div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            {note ? (
+              <div className="mynotes">
+                <div className="nfy-head">
+                  My notes
+                  <span className="cite-chip" style={{ marginTop: 0, marginLeft: "auto" }}>
+                    <Lock size={10} weight="fill" aria-hidden />
+                    Only you
+                  </span>
+                </div>
+                {note.lines.map((line) => (
+                  <div className="mynote" key={line}>
+                    <span className="moment-dot is-note" aria-hidden="true"></span>
+                    <span className="mynote-body">
+                      <p>{line}</p>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            <div className="mynotes">
+              <div className="nfy-head">
+                Saved for later {saved.length ? <b>{saved.length}</b> : null}
+              </div>
+              {saved.length === 0 ? (
+                <p className="saved-empty">Nothing saved yet. Use Save for later on any card to keep it here.</p>
+              ) : (
+                saved.map((s) => (
+                  <div className="mynote is-new" key={s}>
+                    <span className="moment-dot is-question" aria-hidden="true"></span>
+                    <span className="mynote-body">
+                      <p>{s}</p>
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="afeed" role="log" aria-live="polite" aria-label="Agent activity">
+              <div className="nfy-head" style={{ paddingBottom: 4 }}>
+                Activity
+              </div>
+              {feed.map((e) => (
+                <div
+                  className={`afeed-item is-${e.kind}${e.resolved ? " is-resolved" : ""}${e.isNew ? " is-new" : ""}`}
+                  key={e.id}
+                >
+                  <div className="afeed-kind">
+                    <b>{KIND_LABEL[e.kind]}</b>
+                    {e.resolved ? (
+                      <span className={`afeed-res${e.resolved === "dismissed" ? " is-muted" : ""}`}>
+                        · {RES_LABEL[e.resolved]}
+                      </span>
+                    ) : null}
+                    {e.time ? <span className="afeed-time">{e.time}</span> : null}
+                  </div>
+                  <p className="afeed-text">{e.text}</p>
+                  {e.cite ? <span className="cite-chip">{e.cite}</span> : null}
+                  {e.saveAs ? (
+                    <div className="nfy-acts">
+                      <button
+                        type="button"
+                        className={`nfy-act is-quiet tap${saved.includes(e.saveAs) ? " is-on" : ""}`}
+                        aria-pressed={saved.includes(e.saveAs)}
+                        onClick={() => toggleSave(e.saveAs!)}
+                      >
+                        {saved.includes(e.saveAs) ? "Saved" : "Save for later"}
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+              <div className="afeed-start">Agent joined · 00:00</div>
+            </div>
+          </div>
+        </CollapseSection>
       </div>
-      {children}
-    </Card>
+    </>
   );
 }

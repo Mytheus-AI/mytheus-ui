@@ -1,88 +1,127 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { PaperPlaneTilt } from "@phosphor-icons/react";
-import { Avatar } from "@/components/ui/Avatar";
+import { RoomEvent, type RemoteParticipant, type Room } from "livekit-client";
+import { PaperPlaneRight } from "@phosphor-icons/react";
+import { CollapseSection } from "@/components/call/CollapseSection";
+import { useOrgContext } from "@/lib/org-context";
 import { mockRoomChat, type ChatMessage } from "@/lib/mock/data";
 
-/* In-meeting chat. Same behaviour as before the redesign: seeded from the mock thread, a sent
-   message is appended locally and nothing is transmitted. The composer is pinned under a scrolling
-   list that follows the newest message. */
+/* In-meeting chat, as the design's "Live Chat" section. In a real call it travels over LiveKit's
+   data channel (topic CHAT_TOPIC), so everyone connected sees it; it is not stored, so someone who
+   joins later sees only what is sent after they arrive. The demo fixtures keep their sample
+   thread. The design's attachment button, reactions and typing indicator are left out. */
 
-const ME = "Yash Maurya";
+const CHAT_TOPIC = "mx-chat";
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+const clock = () => new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-export function ChatPanel() {
-  const [messages, setMessages] = useState<ChatMessage[]>(mockRoomChat);
-  const [draft, setDraft] = useState("");
-  const listRef = useRef<HTMLUListElement | null>(null);
+function initials(name: string) {
+  return name
+    .split(" ")
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
+export function ChatPanel({
+  id,
+  room = null,
+  demo = true,
+}: {
+  id?: string;
+  /** The connected LiveKit room; messages are sent and received over it. */
+  room?: Room | null;
+  /** Demo fixtures show the sample thread; a real meeting starts empty. */
+  demo?: boolean;
+}) {
+  const { user } = useOrgContext();
+  const [messages, setMessages] = useState<(ChatMessage & { isNew?: boolean })[]>(demo ? mockRoomChat : []);
+  // A real meeting with no connected call has nowhere to send to, so the composer waits.
+  const offline = !demo && !room;
 
   useEffect(() => {
-    const el = listRef.current;
+    if (!room) return;
+    const onData = (payload: Uint8Array, participant?: RemoteParticipant, _kind?: unknown, topic?: string) => {
+      if (topic !== CHAT_TOPIC) return;
+      try {
+        const { text } = JSON.parse(dec.decode(payload)) as { text?: string };
+        if (!text) return;
+        const from = participant?.name || participant?.identity || "Guest";
+        setMessages((m) => [...m, { id: `ch_${Date.now()}_${m.length}`, from, at: clock(), text, isNew: true }]);
+      } catch {
+        // Not one of our chat messages.
+      }
+    };
+    room.on(RoomEvent.DataReceived, onData);
+    return () => {
+      room.off(RoomEvent.DataReceived, onData);
+    };
+  }, [room]);
+  const [draft, setDraft] = useState("");
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const el = bodyRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
   const send = (e: React.FormEvent) => {
     e.preventDefault();
     const text = draft.trim();
-    if (!text) return;
-    setMessages((m) => [...m, { id: `ch_local_${m.length}`, from: ME, at: "now", text }]);
+    if (!text || offline) return;
+    if (room) {
+      void room.localParticipant
+        .publishData(enc.encode(JSON.stringify({ text })), { reliable: true, topic: CHAT_TOPIC })
+        .catch(() => undefined);
+    }
+    setMessages((m) => [...m, { id: `ch_local_${m.length}`, from: user.name, at: room ? clock() : "now", text, isNew: true }]);
     setDraft("");
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <ul
-        ref={listRef}
-        role="log"
-        aria-live="polite"
-        aria-label="Chat messages"
-        className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto p-3.5"
-      >
-        {messages.map((m) => {
-          const me = m.from === ME;
-          return (
-            <li key={m.id} className="grid grid-cols-[28px_minmax(0,1fr)] gap-2.5">
-              <Avatar name={m.from} size="sm" />
-              <div className="min-w-0">
-                <p className="flex items-baseline gap-2 text-[13px]">
-                  <span className="font-semibold text-ink">{me ? "You" : m.from}</span>
-                  <span className="text-[12px] tabular-nums text-ink-3">{m.at}</span>
-                </p>
-                <p
-                  className={`mt-0.5 break-words text-[14px] leading-snug ${
-                    me
-                      ? "inline-block rounded-pill bg-signal-soft px-3 py-2 text-ink"
-                      : "text-ink-2"
-                  }`}
-                >
-                  {m.text}
-                </p>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-      <form
-        onSubmit={send}
-        autoComplete="off"
-        className="flex shrink-0 items-center gap-2 border-t border-line bg-surface p-3"
-      >
-        <input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Message the room"
-          aria-label="Message the room"
-          className="h-10 min-w-0 flex-1 rounded-pill border border-line bg-surface px-4 text-[14px] text-ink placeholder:text-ink-3 focus-visible:border-signal"
-        />
-        <button
-          type="submit"
-          aria-label="Send message"
-          title="Send"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-pill bg-signal text-white transition-[background-color,transform] duration-150 hover:bg-signal-deep focus-visible:!rounded-pill active:scale-95 motion-reduce:transition-none"
-        >
-          <PaperPlaneTilt size={18} weight="fill" aria-hidden />
-        </button>
-      </form>
+    <div className="livechat reveal" id={id} style={{ animationDelay: ".27s" }}>
+      <CollapseSection title="Live Chat" countChip={<span className="count-chip">{messages.length}</span>}>
+        <div className="chat-card">
+          <div className="chat-body" ref={bodyRef} role="log" aria-live="polite" aria-label="Chat messages">
+            {messages.length === 0 ? <p className="chat-empty">No messages yet.</p> : null}
+            {messages.map((m) => {
+              const me = m.from === user.name;
+              return (
+                <div className={`cmsg${me ? " is-sent" : ""}${m.isNew ? " is-new" : ""}`} key={m.id}>
+                  <div className="cmsg-meta">
+                    {me ? null : (
+                      <span className="c-av cx-av" aria-hidden>
+                        {initials(m.from)}
+                      </span>
+                    )}
+                    <strong>{me ? "You" : m.from}</strong>
+                    <span className="time">{m.at}</span>
+                  </div>
+                  {me ? <div className="cbubble-sent">{m.text}</div> : <div className="cbubble">{m.text}</div>}
+                </div>
+              );
+            })}
+          </div>
+
+          <form className="composer" onSubmit={send} autoComplete="off">
+            <input
+              type="text"
+              placeholder={offline ? "Chat opens when you are connected" : "Message everyone"}
+              aria-label="Message everyone"
+              disabled={offline}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+            />
+            <button type="submit" className="comp-send tap" data-tip="Send" aria-label="Send message" disabled={offline}>
+              <PaperPlaneRight size={15} weight="fill" aria-hidden />
+            </button>
+          </form>
+        </div>
+      </CollapseSection>
     </div>
   );
 }

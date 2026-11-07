@@ -1,0 +1,152 @@
+/* Transcript screen additions. The prototype's own classes (page, screen-head, panel, tr-row,
+   assign-banner, speaker-row...) come from meeting.css; this file only adds what the prototype
+   lacks: our app shell already pads and scrolls <main>, a bounded scroll box for the virtualized
+   list, search stepping, the active (deep-linked) line, the speaker fields, and the breakpoints
+   the prototype never had. Every selector stays under .mx-meet and reads tokens only, so the
+   dark token set in meeting-dark.css applies unchanged. */
+
+/* <main> is the scroll container and already carries the gutter. */
+.mx-meet .tx-inner { padding: 0; }
+.mx-meet .tx-inner .screen-head { flex-wrap: wrap; row-gap: 12px; }
+.mx-meet .tx-inner .screen-head h1 { overflow-wrap: anywhere; }
+.mx-meet .tx-inner .head-actions { flex-wrap: wrap; justify-content: flex-end; }
+
+/* Search, with match stepping inside the field. */
+.mx-meet .tx-search { width: 280px; max-width: 100%; }
+.mx-meet .tx-search:focus-within { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.mx-meet .tx-search input::-webkit-search-cancel-button { display: none; }
+.mx-meet .tx-step { display: inline-flex; align-items: center; gap: 1px; margin-right: -6px; }
+.mx-meet .tx-step-count {
+  min-width: 46px;
+  text-align: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--mutedTime);
+  white-space: nowrap;
+}
+.mx-meet .tx-step-btn {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  color: var(--mutedDeep);
+}
+.mx-meet .tx-step-btn:hover:not(:disabled) { background: var(--chipNeutralBg); color: var(--ink); }
+.mx-meet .tx-step-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Panel head extras. */
+.mx-meet .tx-head-note { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--mutedTime); white-space: nowrap; }
+
+/* The banner sits inside the transcript panel, as in the prototype. */
+.mx-meet .tx-banner { margin: 0 18px 8px; flex-wrap: wrap; row-gap: 8px; }
+.mx-meet .tx-banner > span { flex: 1 1 180px; min-width: 0; }
+.mx-meet .tx-banner .assign-btn { display: inline-flex; align-items: center; }
+
+/* The virtualizer needs a bounded scroll parent. */
+.mx-meet .tx-scroll {
+  height: calc(100dvh - 17rem);
+  min-height: 380px;
+  overflow-y: auto;
+  padding: 0 8px 14px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--tabTrack) transparent;
+}
+.mx-meet .tx-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: var(--r-card); }
+.mx-meet .tx-list { display: block; position: relative; width: 100%; }
+.mx-meet .tx-item { position: absolute; left: 0; top: 0; width: 100%; padding-bottom: 2px; }
+
+.mx-meet .tx-inner .tr-speaker {
+  width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mx-meet .tx-inner .tr-speaker.sp-unknown { font-style: italic; }
+.mx-meet .tx-inner .tr-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.mx-meet .tx-inner .tr-text.is-interim { font-style: italic; color: var(--mutedTime); }
+.mx-meet .tx-inner .tr-row.is-active { background: var(--chipBrownBg); }
+.mx-meet .tx-inner .tr-time:focus-visible,
+.mx-meet .tx-step-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.mx-meet .tx-inner .tr-text mark[data-current] { background: var(--accent); color: #fff; }
+.mx-meet .tx-flag {
+  height: 18px;
+  margin-left: 6px;
+  padding: 0 7px;
+  font-size: 10px;
+  font-style: normal;
+  vertical-align: 1px;
+}
+
+/* In-panel empty states (no search match, no transcript). */
+.mx-meet .tx-empty { padding: 36px 20px 40px; text-align: center; }
+.mx-meet .tx-empty-icon { display: inline-grid; place-items: center; color: var(--mutedIcon); margin-bottom: 10px; }
+.mx-meet .tx-empty h3 { font-family: var(--serif); font-size: 19px; font-weight: 600; letter-spacing: -0.3px; color: var(--inkDeep); }
+.mx-meet .tx-empty p { max-width: 44ch; margin: 6px auto 0; font-size: 12.5px; font-weight: 500; line-height: 1.5; color: var(--mutedDeep); }
+.mx-meet .tx-empty .btn-ghost-sm,
+.mx-meet .tx-empty .btn-accent-sm { margin-top: 16px; }
+.mx-meet .tx-empty-page { max-width: 640px; }
+
+/* Talk time: our labels can be "Speaker 12", wider than the prototype's first names. */
+.mx-meet .tx-talk .speaker-name { width: 66px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Speakers panel. */
+.mx-meet .tx-spk { scroll-margin-top: 16px; }
+.mx-meet .tx-spk-list { list-style: none; margin: 0; padding: 0; }
+.mx-meet .tx-spk-row { flex-direction: column; align-items: stretch; gap: 9px; }
+.mx-meet .tx-spk-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mx-meet .tx-spk-top strong { font-size: 13px; font-weight: 700; letter-spacing: -0.2px; color: var(--ink); }
+.mx-meet .tx-spk-top small { margin-left: auto; font-size: 11px; font-weight: 500; color: var(--mutedTime); }
+.mx-meet .tx-spk-top .tag { height: 20px; padding: 0 8px; font-size: 10.5px; }
+.mx-meet .tx-spk-form { display: flex; align-items: center; gap: 8px; }
+.mx-meet .tx-field-wrap { position: relative; flex: 1; min-width: 0; }
+.mx-meet .tx-field {
+  width: 100%;
+  height: 30px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 9px;
+  background: var(--chipNeutralBg);
+  font: 600 11.5px var(--sans);
+  color: var(--ink);
+  appearance: none;
+}
+.mx-meet .tx-field::placeholder { color: var(--mutedAlt); }
+.mx-meet .tx-field:hover { background: var(--navBorder); }
+.mx-meet .tx-field:focus { outline: none; background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.mx-meet select.tx-field { padding-right: 28px; cursor: pointer; }
+.mx-meet .tx-field-chev { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--mutedIcon); }
+.mx-meet .tx-spk .assign-btn { flex-shrink: 0; }
+.mx-meet .tx-spk .assign-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.mx-meet .tx-spk .assign-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mx-meet .tx-error { padding: 0 18px 14px; font-size: 12px; font-weight: 600; color: var(--red, var(--accentDeep)); }
+
+/* Loading skeleton. */
+.mx-meet .tx-skel { border-radius: 8px; background: var(--chipNeutralBg); animation: nm-pulse 1.4s ease-in-out infinite; }
+
+/* Breakpoints the prototype lacks. */
+@media (max-width: 1080px) {
+  .mx-meet .tx-inner .canvas.cols-2r { grid-template-columns: minmax(0, 1fr); }
+  .mx-meet .tx-scroll { height: 66dvh; }
+}
+@media (max-width: 720px) {
+  .mx-meet .tx-inner .screen-head { align-items: stretch; flex-direction: column; }
+  .mx-meet .tx-inner .head-actions { justify-content: flex-start; }
+  .mx-meet .tx-search { width: 100%; flex: 1 1 100%; }
+}
+@media (max-width: 560px) {
+  .mx-meet .tx-inner .tr-row { flex-wrap: wrap; row-gap: 3px; column-gap: 10px; }
+  .mx-meet .tx-inner .tr-time { width: auto; }
+  .mx-meet .tx-inner .tr-speaker { width: auto; max-width: calc(100% - 80px); }
+  .mx-meet .tx-inner .tr-text { flex-basis: 100%; }
+  .mx-meet .tx-banner { margin: 0 12px 8px; }
+  .mx-meet .tx-scroll { padding: 0 4px 12px; }
+  .mx-meet .tx-inner .panel-head,
+  .mx-meet .tx-inner .panel-row { padding-left: 14px; padding-right: 14px; }
+  .mx-meet .tx-inner .panel-body { padding-left: 14px; padding-right: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mx-meet .tx-skel { animation: none; }
+}

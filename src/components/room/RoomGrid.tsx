@@ -1,19 +1,20 @@
 "use client";
 
 import type { CSSProperties, ReactNode } from "react";
-import { motion, useReducedMotion } from "framer-motion";
-import { ArrowsOutSimple, MicrophoneSlash } from "@phosphor-icons/react";
+import { MicrophoneSlash, Microphone, PushPin, UsersThree } from "@phosphor-icons/react";
 
-/* The participant stage, shared by the mock grid and the live LiveKit grid so swapping between
-   them is not also a visual change. Each tile is plain data (`RoomTile`); the live grid passes a
-   <VideoTrack> as `media`, the mock grid passes nothing and gets the lit-room wash.
+/* The meeting stage, in the meeting design's shape, shared by the mock tiles and the live LiveKit
+   tiles so swapping between them is not also a visual change. Each tile is plain data
+   (`RoomTile`); the live grid passes a <VideoTrack> as `media`, the mock grid passes nothing and
+   gets a lit room (camera on) or a dark room (camera off) with initials.
 
    Layouts:
-   - grid: 6-column track on desktop (2 up, 3 up, 2x2, 3+2, 3x3 ...), 2 columns on a phone.
-   - spotlight: one large tile plus a column (desktop) or strip (phone) of the others.
+   - spotlight (the design): one large frame for the pinned person, else whoever shares a screen,
+     else whoever is speaking, with up to three thumbnails beside it (a strip on a phone) and a
+     "+N" pill that opens the grid when there are more.
+   - grid: everyone as equal tiles inside the same frame.
 
-   Video tiles are always dark scrims and white tags in both themes, because they sit on top of
-   moving imagery. Their few fixed colours are noted inline; everything else reads the tokens. */
+   `overlay` is drawn inside the frame on top of the video: the timer, captions and controls. */
 
 export type RoomLayout = "grid" | "spotlight";
 
@@ -31,6 +32,8 @@ export type RoomTile = {
   media?: ReactNode;
 };
 
+const MAX_THUMBS = 3;
+
 function initials(name: string) {
   return name
     .split(" ")
@@ -41,252 +44,209 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-/* ---- grid layout classes (literal strings so Tailwind can see them) ---- */
-
-function gridContainerClass(n: number): string {
-  const base = "grid-cols-2 auto-rows-[minmax(110px,1fr)]";
-  switch (n) {
-    case 1:
-      return "grid-cols-1 auto-rows-[minmax(110px,1fr)] min-[960px]:grid-cols-1 min-[960px]:grid-rows-1";
-    case 2:
-      return `${base} min-[960px]:grid-cols-2 min-[960px]:grid-rows-1`;
-    case 3:
-      return `${base} min-[960px]:grid-cols-6 min-[960px]:grid-rows-1`;
-    case 4:
-      return `${base} min-[960px]:grid-cols-6 min-[960px]:grid-rows-2 min-[1500px]:grid-cols-4 min-[1500px]:grid-rows-1`;
-    case 5:
-    case 6:
-      return `${base} min-[960px]:grid-cols-6 min-[960px]:grid-rows-2`;
-    default:
-      return `${base} min-[960px]:grid-cols-6 min-[960px]:auto-rows-[minmax(170px,1fr)]`;
-  }
+export function pickMain(tiles: RoomTile[], pinnedId: string | null | undefined): RoomTile | undefined {
+  return (
+    tiles.find((t) => t.id === pinnedId) ??
+    tiles.find((t) => t.kind === "screen") ??
+    tiles.find((t) => t.speaking && !t.isLocal) ??
+    tiles.find((t) => !t.isLocal) ??
+    tiles[0]
+  );
 }
 
-function gridTileClass(n: number, index: number): string {
-  // On a phone the last tile of an odd set spans both columns so no hole is left.
-  const mobile = n > 1 && n % 2 === 1 && index === n - 1 ? "col-span-2 " : "";
-  switch (n) {
-    case 1:
-    case 2:
-      return mobile;
-    case 4:
-      return `${mobile}min-[960px]:col-span-3 min-[1500px]:col-span-1`;
-    case 5:
-      return `${mobile}min-[960px]:col-span-2 ${index === 3 ? "min-[960px]:col-start-2" : ""}`;
-    default:
-      return `${mobile}min-[960px]:col-span-2`;
-  }
+function gridCols(n: number) {
+  if (n <= 1) return 1;
+  if (n <= 4) return 2;
+  if (n <= 9) return 3;
+  return 4;
 }
-
-const SPOT_CONTAINER =
-  "grid-cols-[repeat(var(--side),minmax(0,1fr))] grid-rows-[minmax(0,1fr)_84px] min-[960px]:grid-cols-[minmax(0,1fr)_clamp(150px,22%,210px)] min-[960px]:grid-rows-[repeat(var(--side),minmax(0,1fr))]";
-const SPOT_MAIN =
-  "col-[1/-1] row-start-1 min-[960px]:col-[1/2] min-[960px]:row-[1/span_var(--side)]";
-const SPOT_SIDE = "row-start-2 min-[960px]:col-start-2 min-[960px]:row-auto";
 
 export function RoomGrid({
   tiles,
   layout,
-  spotlightId,
-  onSpotlight,
+  pinnedId,
+  onPin,
+  onShowAll,
+  overlay,
 }: {
   tiles: RoomTile[];
   layout: RoomLayout;
-  spotlightId?: string | null;
-  onSpotlight?: (id: string) => void;
+  pinnedId?: string | null;
+  /** Pin (or, with null, unpin) a participant to the main frame. */
+  onPin?: (id: string | null) => void;
+  /** Opens the grid; used by the "+N" pill when not everyone fits beside the main frame. */
+  onShowAll?: () => void;
+  overlay?: ReactNode;
 }) {
   const n = tiles.length;
-  const spot = layout === "spotlight" && n > 1;
-  const main = spot
-    ? (tiles.find((t) => t.id === spotlightId) ??
-      tiles.find((t) => t.kind === "screen") ??
-      tiles.find((t) => t.speaking) ??
-      tiles[0])
-    : null;
-
-  if (n === 0) {
-    return (
-      <div className="grid min-h-0 flex-1 place-items-center rounded-card border border-dashed border-line-2 text-[14px] text-ink-3">
-        Waiting for people to join.
-      </div>
-    );
-  }
-
-  if (spot && main) {
-    const side = Math.max(1, n - 1);
-    return (
-      <div
-        role="group"
-        aria-label="Participants"
-        style={{ "--side": side } as CSSProperties}
-        className={`grid min-h-0 flex-1 gap-2.5 overflow-hidden p-2 ${SPOT_CONTAINER}`}
-      >
-        {tiles.map((t) => {
-          const isMain = t.id === main.id;
-          return (
-            <Tile
-              key={t.id}
-              tile={t}
-              compact={!isMain}
-              className={isMain ? SPOT_MAIN : SPOT_SIDE}
-              onSpotlight={isMain ? undefined : onSpotlight}
-            />
-          );
-        })}
-      </div>
-    );
-  }
+  const spot = layout === "spotlight" || n <= 1;
+  const main = spot ? pickMain(tiles, pinnedId) : undefined;
+  const others = main ? tiles.filter((t) => t.id !== main.id) : [];
+  const thumbs = others.slice(0, MAX_THUMBS);
+  const hidden = others.length - thumbs.length;
 
   return (
-    <div
-      role="group"
-      aria-label="Participants"
-      className={`grid min-h-0 flex-1 gap-2.5 overflow-y-auto p-2 ${gridContainerClass(n)}`}
-    >
-      {tiles.map((t, i) => (
-        <Tile
-          key={t.id}
-          tile={t}
-          className={gridTileClass(n, i)}
-          onSpotlight={n > 1 ? onSpotlight : undefined}
-        />
-      ))}
-    </div>
+    <section className="stage" aria-label="Meeting stage">
+      <div
+        className="main-video reveal"
+        style={{ animationDelay: ".09s" }}
+        role="group"
+        aria-label={main ? `${main.name}${main.speaking ? ", speaking" : ""}` : "Participants"}
+      >
+        {n === 0 ? (
+          <div className="cx-waiting">Waiting for people to join.</div>
+        ) : main ? (
+          <>
+            <TileSurface tile={main} size="lg" />
+            <span className="name-pill scrim-pill">
+              {main.speaking && main.micOn ? <Wave /> : null}
+              {!main.micOn && main.kind !== "screen" ? (
+                <MicrophoneSlash size={13} weight="fill" className="cx-muted" aria-label="Muted" role="img" />
+              ) : null}
+              {main.isLocal ? `${main.name} (You)` : main.name}
+              {main.speaking && main.micOn ? (
+                <>
+                  &nbsp;<small>· Speaking</small>
+                </>
+              ) : null}
+            </span>
+          </>
+        ) : (
+          <div
+            className={`cx-grid${n === 1 ? " is-solo" : ""}`}
+            style={{ "--cols": gridCols(n) } as CSSProperties}
+            role="group"
+            aria-label="Participants"
+          >
+            {tiles.map((t) => (
+              <Thumb key={t.id} tile={t} pinned={false} pinLabel="Spotlight" onPin={onPin ? () => onPin(t.id) : undefined} />
+            ))}
+          </div>
+        )}
+
+        {overlay}
+      </div>
+
+      {spot && thumbs.length > 0 ? (
+        <div className="thumbs" aria-label="Participant videos">
+          {thumbs.map((t, i) => (
+            <Thumb
+              key={t.id}
+              tile={t}
+              className="reveal"
+              style={{ animationDelay: `${0.18 + i * 0.09}s` }}
+              pinned={false}
+              pinLabel="Pin"
+              onPin={onPin ? () => onPin(t.id) : undefined}
+            />
+          ))}
+          {hidden > 0 ? (
+            <button
+              type="button"
+              className="more-pill tap reveal"
+              style={{ animationDelay: ".45s" }}
+              aria-label={`Show all ${n} participants`}
+              data-tip="Show everyone"
+              onClick={onShowAll}
+            >
+              <UsersThree size={20} aria-hidden />
+              <b>{hidden}+</b>
+            </button>
+          ) : null}
+          {pinnedId && main?.id === pinnedId && onPin ? (
+            <button
+              type="button"
+              className="more-pill tap"
+              aria-label={`Unpin ${main.name}`}
+              onClick={() => onPin(null)}
+            >
+              <PushPin size={16} weight="fill" aria-hidden />
+              <b style={{ fontSize: 12.5 }}>Unpin</b>
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </section>
   );
 }
 
-function Tile({
+function TileSurface({ tile, size }: { tile: RoomTile; size: "lg" | "md" | "sm" }) {
+  const showMedia = Boolean(tile.media) && tile.camOn;
+  if (showMedia) {
+    return (
+      <>
+        <span className="cx-tile-bg is-media" aria-hidden />
+        {tile.media}
+      </>
+    );
+  }
+  if (tile.kind === "screen") return <span className="cx-tile-bg is-dark" aria-hidden />;
+  return (
+    <>
+      <span className={`cx-tile-bg ${tile.camOn ? "is-lit" : "is-dark"}`} aria-hidden />
+      <span className={`cx-initials${size === "lg" ? "" : ` is-${size}`}`} aria-hidden>
+        {initials(tile.name)}
+      </span>
+    </>
+  );
+}
+
+function Thumb({
   tile,
-  compact = false,
+  pinned,
+  pinLabel,
+  onPin,
   className = "",
-  onSpotlight,
+  style,
 }: {
   tile: RoomTile;
-  compact?: boolean;
+  pinned: boolean;
+  pinLabel: string;
+  onPin?: () => void;
   className?: string;
-  onSpotlight?: (id: string) => void;
+  style?: CSSProperties;
 }) {
   const screen = tile.kind === "screen";
-  const showMedia = Boolean(tile.media) && tile.camOn;
-  const muted = !screen && !tile.micOn;
-  const speaking = Boolean(tile.speaking) && !muted;
-
-  // Dark when there is no picture to show; black behind real video; a warm lit room for the mock.
-  const surface = showMedia
-    ? "bg-black"
-    : tile.camOn
-      ? "bg-bg-3"
-      : "bg-gradient-to-br from-[#2b2826] to-[#1a1816]";
-
-  const label = [
-    tile.name,
-    tile.isLocal ? "you" : null,
-    muted ? "muted" : null,
-    speaking ? "speaking" : null,
-  ]
+  const speaking = Boolean(tile.speaking) && tile.micOn && !screen;
+  const label = [tile.name, tile.isLocal ? "you" : null, !tile.micOn && !screen ? "muted" : null, speaking ? "speaking" : null]
     .filter(Boolean)
     .join(", ");
 
   return (
-    <figure
-      aria-label={label}
-      className={`group relative isolate min-h-0 min-w-0 overflow-hidden rounded-pill transition-shadow duration-200 motion-reduce:transition-none min-[960px]:rounded-card ${surface} ${
-        speaking
-          ? "shadow-[0_0_0_3px_var(--signal),0_0_0_8px_color-mix(in_srgb,var(--signal)_26%,transparent)]"
-          : ""
-      } ${className}`}
-    >
-      {showMedia ? (
-        tile.media
-      ) : screen ? null : (
-        <>
-          {tile.camOn ? (
-            <div
-              aria-hidden
-              className="absolute inset-0 bg-[radial-gradient(80%_90%_at_50%_30%,rgba(217,119,87,0.3),transparent_70%)]"
-            />
-          ) : null}
-          <div aria-hidden className="absolute inset-0 grid place-items-center">
-            {/* fixed deep coral so the white initials hold AA in both themes */}
-            <span
-              className={`grid place-items-center rounded-full bg-[#a8472a] font-bold text-white ${
-                compact
-                  ? "h-11 w-11 text-[16px] min-[960px]:h-14 min-[960px]:w-14 min-[960px]:text-[20px]"
-                  : "h-14 w-14 text-[20px] min-[960px]:h-20 min-[960px]:w-20 min-[960px]:text-[28px]"
-              }`}
-            >
-              {initials(tile.name)}
-            </span>
-          </div>
-        </>
-      )}
-
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-1/2 bg-gradient-to-t from-black/30 to-transparent"
-      />
-
-      {onSpotlight ? (
+    <div className={`thumb${speaking ? " is-speaking" : ""} ${className}`} style={style} role="group" aria-label={label}>
+      <TileSurface tile={tile} size="sm" />
+      {onPin ? (
         <button
           type="button"
-          onClick={() => onSpotlight(tile.id)}
-          aria-label={`Spotlight ${tile.name}`}
-          title="Spotlight"
-          className={`absolute left-2.5 top-2.5 z-20 grid h-[30px] w-[30px] place-items-center rounded-full bg-[rgba(26,24,22,0.78)] text-white opacity-0 backdrop-blur-sm transition-[opacity,transform] duration-150 hover:bg-[rgba(26,24,22,0.92)] focus-visible:!rounded-full focus-visible:opacity-100 active:scale-90 group-hover:opacity-100 motion-reduce:transition-none [@media(hover:none)]:opacity-90 ${
-            compact ? "max-[959px]:hidden" : ""
-          }`}
+          className={`thumb-pin tap${pinned ? " is-pinned" : ""}`}
+          data-tip={pinLabel}
+          aria-label={`${pinLabel} ${tile.name}`}
+          onClick={onPin}
         >
-          <ArrowsOutSimple size={15} aria-hidden />
+          <PushPin size={13} aria-hidden />
         </button>
       ) : null}
-
-      {muted ? (
-        <span
-          aria-hidden
-          className={`absolute right-2.5 top-2.5 z-10 grid place-items-center rounded-full bg-[#a8472a] text-white ${
-            compact ? "h-6 w-6" : "h-[30px] w-[30px]"
-          }`}
-        >
-          <MicrophoneSlash size={compact ? 12 : 15} weight="fill" />
-        </span>
-      ) : null}
-
-      <figcaption
-        className={`absolute z-10 inline-flex max-w-[calc(100%-52px)] items-center gap-2 rounded-full bg-[rgba(26,24,22,0.78)] font-semibold text-white backdrop-blur-sm ${
-          compact
-            ? "bottom-2 left-2 h-[26px] px-2.5 text-[12px] max-[959px]:bottom-1.5 max-[959px]:left-1.5 max-[959px]:h-[22px] max-[959px]:max-w-[calc(100%-12px)] max-[959px]:px-2 max-[959px]:text-[11px]"
-            : "bottom-2.5 left-2.5 h-[30px] pl-2.5 pr-3 text-[12.5px]"
-        }`}
-      >
+      <span className="thumb-name scrim-pill">
         {speaking ? <Wave /> : null}
-        <span className="truncate">{compact ? tile.name.split(" ")[0] : tile.name}</span>
-        {tile.isLocal && !compact ? (
-          <span className="shrink-0 text-[11.5px] font-medium text-white/75">You</span>
-        ) : null}
-        {!compact && tile.role && !tile.isLocal ? (
-          <span className="hidden shrink-0 text-[11.5px] font-medium text-white/75 sm:inline">
-            {tile.role}
-          </span>
-        ) : null}
-      </figcaption>
-    </figure>
+        {tile.isLocal ? "You" : tile.name.split(" ")[0]}
+      </span>
+      {screen ? null : (
+        <span className={`thumb-mic is-${tile.micOn ? "on" : "muted"}`} aria-hidden>
+          {tile.micOn ? <Microphone size={11} /> : <MicrophoneSlash size={11} weight="fill" />}
+        </span>
+      )}
+    </div>
   );
 }
 
-/* Four bars that breathe while someone speaks; static under reduced motion. */
+/* Four bars that breathe while someone speaks (the design's wave). */
 function Wave() {
-  const reduce = useReducedMotion();
   return (
-    <span aria-hidden className="flex h-[13px] shrink-0 items-end gap-[2px] max-[959px]:hidden">
-      {[0.45, 1, 0.62, 0.85].map((h, i) => (
-        <motion.i
-          key={i}
-          className="block w-[3px] origin-bottom rounded-sm bg-signal-bright"
-          style={{ height: `${h * 100}%` }}
-          animate={reduce ? undefined : { scaleY: [1, 0.3, 1] }}
-          transition={{ duration: 0.85, repeat: Infinity, ease: "easeInOut", delay: i * 0.12 }}
-        />
-      ))}
+    <span className="wave" aria-hidden="true">
+      <i></i>
+      <i></i>
+      <i></i>
+      <i></i>
     </span>
   );
 }

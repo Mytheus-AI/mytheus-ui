@@ -1,0 +1,72 @@
+/* Meetings hub and meeting detail: the few rules the prototype stylesheet (meeting.css) lacks.
+   Mostly responsiveness (the prototype is desktop only) and initials avatars, since our
+   participants have names but no photos. Every selector stays under .mx-meet. */
+
+/* Our app shell's <main> already provides the side gutter and scrolls, so the page frame only
+   centres and caps the width. */
+.mx-meet .page-inner.mh-page { padding: 2px 0 32px; flex: none; }
+
+.mx-meet .mh-back { display: inline-flex; align-items: center; gap: 5px; margin-bottom: 6px; }
+
+/* Initials avatars, sized by the prototype's .p-av / .av-stack i rules. */
+.mx-meet .p-av.is-initials,
+.mx-meet .av-stack i.is-initials {
+  display: grid;
+  place-items: center;
+  background: var(--avatarBg);
+  color: var(--avatarText);
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+.mx-meet .p-av.is-initials { font-size: 10.5px; }
+.mx-meet .av-stack i.is-initials { font-size: 8px; }
+.mx-meet .av-stack .av-more { margin-left: 7px; }
+
+/* Talk time: real first names can run longer than the prototype's 52px column. */
+.mx-meet .speaker-name { width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Long titles must wrap rather than push the page sideways. */
+.mx-meet .up-body strong,
+.mx-meet .rec-title-row strong,
+.mx-meet .screen-head h1,
+.mx-meet .detail-title { overflow-wrap: anywhere; }
+.mx-meet .rec-title-row { flex-wrap: wrap; row-gap: 4px; }
+.mx-meet .rec-tags { flex-wrap: wrap; }
+.mx-meet .meet-links { flex-wrap: wrap; row-gap: 6px; }
+.mx-meet .up-card .tag,
+.mx-meet .up-card .live-chip { white-space: nowrap; flex-shrink: 0; }
+.mx-meet .up-acts { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* Loading placeholders before the browser knows its own time zone. */
+.mx-meet .mh-skel {
+  display: block;
+  border-radius: 8px;
+  background: var(--chipNeutralBg);
+  animation: nm-pulse 1.6s ease-in-out infinite;
+}
+
+.mx-meet .mh-join { flex: none; width: 100%; }
+
+@media (max-width: 1023px) {
+  .mx-meet .canvas.cols-2 { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 719px) {
+  .mx-meet .screen-head { flex-wrap: wrap; align-items: flex-start; gap: 10px; }
+  .mx-meet .tr-toolbar { flex-wrap: wrap; }
+  .mx-meet .tr-search { flex: 1 1 100%; max-width: none; }
+  .mx-meet .up-card { flex-wrap: wrap; }
+  .mx-meet .up-when { width: 64px; }
+  .mx-meet .up-body { flex: 1 1 calc(100% - 80px); }
+  .mx-meet .up-acts { flex: 1 1 100%; justify-content: flex-end; flex-wrap: wrap; }
+  .mx-meet .up-acts .live-chip,
+  .mx-meet .up-acts .tag { margin-right: auto; }
+  .mx-meet .rec-card { gap: 11px; }
+  .mx-meet .rec-play { width: 36px; height: 36px; }
+  .mx-meet .panel-head { flex-wrap: wrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mx-meet .mh-skel { animation: none; }
+}
