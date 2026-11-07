@@ -9,12 +9,12 @@ import { THEME_INIT } from "@/components/app/theme-init";
 import "@/styles/app-theme.css";
 
 export const metadata: Metadata = {
-  title: "Mytheus — Admin",
+  title: "Mytheus | Admin",
 };
 
 /* RBAC gate is UX courtesy only per CLAUDE.md; real enforcement is
    server-side. Auth isn't wired up yet, so there's no gate at all right now
-   — anyone can reach /admin. Add the Clerk role check here once auth lands. */
+   - anyone can reach /admin. Add the Clerk role check here once auth lands. */
 // TODO(auth): restore Clerk middleware + RBAC gate for (admin) here.
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (

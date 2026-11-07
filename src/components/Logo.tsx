@@ -1,4 +1,4 @@
-/* The Mytheus mark — the clay tangle-into-line symbol, traced as a single
+/* The Mytheus mark - the clay tangle-into-line symbol, traced as a single
    continuous SVG stroke so it can DRAW ITSELF: `.logo-path` animates
    stroke-dashoffset from 1 → 0 (pathLength is normalized), which plays a
    live-drawing reveal on mount and replays on any ancestor `.group` hover

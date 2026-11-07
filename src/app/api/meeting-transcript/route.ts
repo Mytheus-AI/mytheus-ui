@@ -1,5 +1,5 @@
 /**
- * `GET /api/meeting-transcript?meeting_id=…` — the caption strip's re-hydrate source.
+ * `GET /api/meeting-transcript?meeting_id=…` - the caption strip's re-hydrate source.
  *
  * This closes the gap the live-caption work disclosed. `realtime-gateway` deliberately buffers
  * and replays nothing to a reconnecting client ("finals are re-hydrated from core-api's REST

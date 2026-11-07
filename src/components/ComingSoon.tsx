@@ -4,7 +4,7 @@ import { LogoMark } from "./Logo";
 
 /* A branded placeholder for routes the marketing site links to but that
    aren't built yet (auth, blog, legal, …). Keeps every link a real 200 so
-   nothing 404s — swap these out as the pages get built for real. */
+   nothing 404s - swap these out as the pages get built for real. */
 
 export function ComingSoon({
   eyebrow,

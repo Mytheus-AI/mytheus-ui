@@ -32,6 +32,8 @@
   --priority-medium-soft: #f6ecd9;
   --priority-low: #4f6f84;
   --priority-low-soft: #e6eef2;
+  --ok: #3f6a37;
+  --ok-soft: #e4efe1;
 
   /* Shape: controls 14, cards 20. Badges stay visually full because they are short. */
   --radius-pill: 14px;
@@ -70,6 +72,8 @@
   --priority-medium-soft: #382d18;
   --priority-low: #8fb3c8;
   --priority-low-soft: #1f2d35;
+  --ok: #9cbb8f;
+  --ok-soft: #232e20;
   --wash: linear-gradient(157deg, #4a2e22, #3a2820 40%, #2a2220 75%, #232120);
   --sb-thumb: rgba(243, 240, 232, 0.2);
   --sb-thumb-hover: rgba(224, 128, 95, 0.6);
@@ -98,7 +102,8 @@
 .mx-app .font-mono { font-family: var(--font-sans); font-variant-numeric: tabular-nums; }
 .mx-app .pill-surface { background-image: none; background-color: var(--surface); }
 .mx-app ::selection { background: var(--signal-soft); color: var(--ink); }
-.mx-app :focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; border-radius: 8px; }
+.mx-app :focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+.mx-app :is(input, textarea, select):focus-visible { outline-offset: 0; }
 
 /* Scrollbar: thin, rounded, warm, invisible until the container is hovered or focused. */
 .mx-app, .mx-app * { scrollbar-width: thin; scrollbar-color: transparent transparent; }

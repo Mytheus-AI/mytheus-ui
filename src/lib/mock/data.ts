@@ -1,5 +1,5 @@
 /* Static mock data for the authenticated app shell. Stands in for the
-   `bff`/`api-gateway` responses until the backend exists — every page under
+   `bff`/`api-gateway` responses until the backend exists - every page under
    (app)/ and (admin)/ reads from here instead of fetching. Replace with real
    `lib/api/` calls once core-api / bff ship. */
 
@@ -39,7 +39,7 @@ export const mockMeetings: Meeting[] = [
   },
   {
     id: "mtg_2",
-    title: "Design Review — Onboarding Flow",
+    title: "Design Review - Onboarding Flow",
     startTime: "2026-07-01T18:00:00Z",
     durationMinutes: 45,
     status: "upcoming",
@@ -59,7 +59,7 @@ export const mockMeetings: Meeting[] = [
   },
   {
     id: "mtg_4",
-    title: "Vendor Call — Deepgram Renewal",
+    title: "Vendor Call - Deepgram Renewal",
     startTime: "2026-06-29T14:00:00Z",
     durationMinutes: 30,
     status: "past",
@@ -69,7 +69,7 @@ export const mockMeetings: Meeting[] = [
   },
   {
     id: "mtg_5",
-    title: "Investor Update — June",
+    title: "Investor Update - June",
     startTime: "2026-06-27T16:00:00Z",
     durationMinutes: 60,
     status: "past",
@@ -97,27 +97,27 @@ export const mockDecisions: Decision[] = [
   {
     id: "dec_1",
     meetingId: "mtg_4",
-    meetingTitle: "Vendor Call — Deepgram Renewal",
+    meetingTitle: "Vendor Call - Deepgram Renewal",
     title: "Renew Deepgram at the annual tier",
     summary: "Annual commit saves ~18% over month-to-month at our current transcription volume.",
     priority: "medium",
     confirmedAt: "2026-06-29T14:22:00Z",
-    lineage: ["Vendor Shortlist — May", "Vendor Call — Deepgram Renewal"],
+    lineage: ["Vendor Shortlist - May", "Vendor Call - Deepgram Renewal"],
   },
   {
     id: "dec_2",
     meetingId: "mtg_5",
-    meetingTitle: "Investor Update — June",
+    meetingTitle: "Investor Update - June",
     title: "Push Series A outreach to August",
     summary: "Wait for the P4 real-time transcription demo to be stable before restarting investor conversations.",
     priority: "high",
     confirmedAt: "2026-06-27T16:41:00Z",
-    lineage: ["Investor Update — May", "Investor Update — June"],
+    lineage: ["Investor Update - May", "Investor Update - June"],
   },
   {
     id: "dec_3",
     meetingId: "mtg_5",
-    meetingTitle: "Investor Update — June",
+    meetingTitle: "Investor Update - June",
     title: "Keep runway at 18 months, no new hires this quarter",
     summary: "Hold headcount flat until P6 (AI infra) ships and GPU cost per meeting is known.",
     priority: "low",
@@ -152,7 +152,7 @@ export const mockActions: ActionItem[] = [
   {
     id: "act_2",
     meetingId: "mtg_4",
-    meetingTitle: "Vendor Call — Deepgram Renewal",
+    meetingTitle: "Vendor Call - Deepgram Renewal",
     title: "Send signed order form to Deepgram",
     assignee: "Sushan Shetty",
     dueDate: "2026-07-03",
@@ -162,7 +162,7 @@ export const mockActions: ActionItem[] = [
   {
     id: "act_3",
     meetingId: "mtg_4",
-    meetingTitle: "Vendor Call — Deepgram Renewal",
+    meetingTitle: "Vendor Call - Deepgram Renewal",
     title: "Update budget sheet with new transcription line item",
     assignee: "Yash Maurya",
     dueDate: "2026-07-02",
@@ -172,7 +172,7 @@ export const mockActions: ActionItem[] = [
   {
     id: "act_4",
     meetingId: "mtg_5",
-    meetingTitle: "Investor Update — June",
+    meetingTitle: "Investor Update - June",
     title: "Circulate updated 18-month runway model",
     assignee: "Yash Maurya",
     dueDate: "2026-07-04",
@@ -234,7 +234,7 @@ export type SourcedAnswer = {
 };
 
 export const mockSourcedAnswer: SourcedAnswer = {
-  quote: "Pricing was locked at $49 in the Q2 planning call — Sarah already owns the rework.",
+  quote: "Pricing was locked at $49 in the Q2 planning call - Sarah already owns the rework.",
   source: { meeting: "Q2 Planning", date: "Apr 3" },
   lineage: ["Q2 Planning", "Q3 Planning"],
 };
@@ -248,10 +248,10 @@ export type SearchResult = {
 };
 
 export const mockSearchIndex: SearchResult[] = [
-  { id: "mtg_4", type: "meeting", title: "Vendor Call — Deepgram Renewal", snippet: "Discussed annual vs. monthly transcription pricing tiers.", meetingId: "mtg_4" },
+  { id: "mtg_4", type: "meeting", title: "Vendor Call - Deepgram Renewal", snippet: "Discussed annual vs. monthly transcription pricing tiers.", meetingId: "mtg_4" },
   { id: "dec_1", type: "decision", title: "Renew Deepgram at the annual tier", snippet: "Annual commit saves ~18% over month-to-month.", meetingId: "mtg_4" },
   { id: "act_2", type: "action", title: "Send signed order form to Deepgram", snippet: "Assigned to Sushan Shetty, due 2026-07-03.", meetingId: "mtg_4" },
-  { id: "mtg_5", type: "meeting", title: "Investor Update — June", snippet: "Runway, headcount, and Series A timing.", meetingId: "mtg_5" },
+  { id: "mtg_5", type: "meeting", title: "Investor Update - June", snippet: "Runway, headcount, and Series A timing.", meetingId: "mtg_5" },
   { id: "dec_2", type: "decision", title: "Push Series A outreach to August", snippet: "Wait for the P4 transcription demo to stabilize first.", meetingId: "mtg_5" },
 ];
 
@@ -267,7 +267,7 @@ export const mockMeetingDetails: MeetingDetail[] = [
   {
     meetingId: "mtg_1",
     agenda: [
-      "P7 Personal Listener Agent — spec review",
+      "P7 Personal Listener Agent - spec review",
       "Q3 priorities: transcription latency vs. agent quality",
       "Pricing rework ownership",
     ],
@@ -318,19 +318,19 @@ export type TranscriptChunk = {
 };
 
 export const mockTranscriptChunks: TranscriptChunk[] = [
-  { id: "tc_1", meetingId: "mtg_4", speaker: "Yash Maurya", at: "00:12", text: "Okay, main goal today is the Deepgram renewal — the monthly tier is starting to hurt at our volume." },
+  { id: "tc_1", meetingId: "mtg_4", speaker: "Yash Maurya", at: "00:12", text: "Okay, main goal today is the Deepgram renewal - the monthly tier is starting to hurt at our volume." },
   { id: "tc_2", meetingId: "mtg_4", speaker: "Sushan Shetty", at: "00:31", text: "Right. We did about 41,000 transcription minutes last month. Month-to-month that lands near $340." },
   { id: "tc_3", meetingId: "mtg_4", speaker: "Yash Maurya", at: "01:02", text: "And the annual commit quote?" },
-  { id: "tc_4", meetingId: "mtg_4", speaker: "Sushan Shetty", at: "01:09", text: "Roughly 18% under what we pay now, assuming volume stays flat or grows. It only breaks even against monthly if usage halves — which isn't the direction we're going." },
+  { id: "tc_4", meetingId: "mtg_4", speaker: "Sushan Shetty", at: "01:09", text: "Roughly 18% under what we pay now, assuming volume stays flat or grows. It only breaks even against monthly if usage halves - which isn't the direction we're going." },
   { id: "tc_5", meetingId: "mtg_4", speaker: "Yash Maurya", at: "01:48", text: "Any lock-in concerns? If the P4 latency work stalls we might revisit providers." },
   { id: "tc_6", meetingId: "mtg_4", speaker: "Sushan Shetty", at: "02:05", text: "The annual term has a 60-day out clause for SLA breaches, and their diarization has been the best of the three we tested." },
-  { id: "tc_7", meetingId: "mtg_4", speaker: "Yash Maurya", at: "02:44", text: "Fine — let's lock the annual tier. Can you own the paperwork?" },
+  { id: "tc_7", meetingId: "mtg_4", speaker: "Yash Maurya", at: "02:44", text: "Fine - let's lock the annual tier. Can you own the paperwork?" },
   { id: "tc_8", meetingId: "mtg_4", speaker: "Sushan Shetty", at: "02:58", text: "Yep, I'll send the signed order form over by Friday." },
   { id: "tc_9", meetingId: "mtg_4", speaker: "Yash Maurya", at: "03:15", text: "I'll update the budget sheet with the new line item so June's numbers are clean." },
-  { id: "tc_10", meetingId: "mtg_4", speaker: "Sushan Shetty", at: "03:29", text: "One more thing — usage alerts. I'll set a warning at 80% of the included minutes so we see overage coming." },
+  { id: "tc_10", meetingId: "mtg_4", speaker: "Sushan Shetty", at: "03:29", text: "One more thing - usage alerts. I'll set a warning at 80% of the included minutes so we see overage coming." },
   { id: "tc_11", meetingId: "mtg_4", speaker: "Yash Maurya", at: "03:52", text: "Good call. Anything else? … Alright, that's a wrap." },
   { id: "tc_12", meetingId: "mtg_5", speaker: "Yash Maurya", at: "00:20", text: "June update: burn is steady, runway sits at 18 months as of this morning's model." },
-  { id: "tc_13", meetingId: "mtg_5", speaker: "Yash Maurya", at: "04:41", text: "On the raise — I'd rather show the live transcription demo working than pitch a deck. Pushing outreach to August." },
+  { id: "tc_13", meetingId: "mtg_5", speaker: "Yash Maurya", at: "04:41", text: "On the raise - I'd rather show the live transcription demo working than pitch a deck. Pushing outreach to August." },
   { id: "tc_14", meetingId: "mtg_5", speaker: "Yash Maurya", at: "09:03", text: "Headcount stays flat this quarter until we know GPU cost per meeting." },
 ];
 
@@ -361,7 +361,7 @@ export const mockCaptions: CaptionLine[] = [
 export type ChatMessage = { id: string; from: string; at: string; text: string };
 
 export const mockRoomChat: ChatMessage[] = [
-  { id: "ch_1", from: "Sushan Shetty", at: "10:02", text: "Joining from the train, mic's flaky — will type." },
+  { id: "ch_1", from: "Sushan Shetty", at: "10:02", text: "Joining from the train, mic's flaky - will type." },
   { id: "ch_2", from: "Samar Rihan", at: "10:04", text: "Roadmap doc: notes/q3-roadmap (updated this morning)" },
   { id: "ch_3", from: "Shaun Marvell Rodrigues", at: "10:07", text: "+1 on shipping the sidebar polish first" },
 ];
@@ -387,13 +387,13 @@ export const mockAgentSidebar: AgentSidebarCard[] = [
     kind: "note",
     lines: [
       "Launch at risk if the pricing decision slips past April.",
-      "Rework scope depends on the $49 lock — confirm before sprint start.",
+      "Rework scope depends on the $49 lock - confirm before sprint start.",
     ],
   },
   {
     kind: "suggestion",
     priority: "low",
-    text: "“Do we have legal sign-off on the new pricing?” — worth asking before the announcement draft.",
+    text: "“Do we have legal sign-off on the new pricing?” - worth asking before the announcement draft.",
   },
   {
     kind: "decision",
@@ -408,7 +408,7 @@ export const mockAgentSidebar: AgentSidebarCard[] = [
   },
   {
     kind: "context",
-    text: "Pricing was locked at $49 in the Q2 planning call — Sarah already owns the rework.",
+    text: "Pricing was locked at $49 in the Q2 planning call - Sarah already owns the rework.",
     source: "Sarah's agent · Q2 Planning · Apr 3",
   },
   {
@@ -419,12 +419,12 @@ export const mockAgentSidebar: AgentSidebarCard[] = [
     kind: "workload",
     person: "Sarah",
     util: 96,
-    text: "Sarah is at 96% — over capacity this sprint.",
+    text: "Sarah is at 96% - over capacity this sprint.",
   },
   {
     kind: "stakeholder",
     person: "Priya",
-    reason: "owns billing — should hear the pricing change before it ships",
+    reason: "owns billing - should hear the pricing change before it ships",
   },
   {
     kind: "dependency",
@@ -509,7 +509,7 @@ export const mockIntegrations: IntegrationConnection[] = [
   {
     key: "jira",
     name: "Jira",
-    description: "One project tracker per workspace — disconnect Linear to switch.",
+    description: "One project tracker per workspace - disconnect Linear to switch.",
     status: "available",
   },
 ];

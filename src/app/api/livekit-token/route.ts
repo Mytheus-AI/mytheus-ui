@@ -1,5 +1,5 @@
 /**
- * `POST /api/livekit-token` — mints a LiveKit join token for one meeting, for the browser.
+ * `POST /api/livekit-token` - mints a LiveKit join token for one meeting, for the browser.
  *
  * Why a route handler rather than a client fetch: `lib/api/client.ts` is server-only by
  * construction (it imports `auth()` from `@clerk/nextjs/server`, so importing it from a client
@@ -17,7 +17,7 @@
  * CLAUDE.md both say to call `POST /api/v1/meetings/:id/token`. That path does not mint
  * tokens: `api-gateway`'s ROUTE_MAP (`services/api_gateway/edge.py`) sends `/api/v1/meetings`
  * to `core-api`, which owns meeting CRUD, while the token mint is `meeting-service` at
- * `/api/meetings` — the two differ only by the version segment, and the gateway's own comment
+ * `/api/meetings` - the two differ only by the version segment, and the gateway's own comment
  * calls the near-collision deliberate. The shipped route decorator
  * (`services/meeting_service/routes.py:154`) is `/api/meetings/{meeting_id}/token`. Following
  * the documented path would have produced a client that never mints a token at all, so the

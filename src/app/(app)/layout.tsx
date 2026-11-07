@@ -6,7 +6,7 @@ import { AppShell } from "@/components/app/AppShell";
 import "@/styles/app-theme.css";
 
 export const metadata: Metadata = {
-  title: "Mytheus — App",
+  title: "Mytheus | App",
 };
 
 /**

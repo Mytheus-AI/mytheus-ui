@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, type MouseEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
@@ -15,8 +16,11 @@ import { ADMIN_ITEMS, NAV_SECTIONS, isActive, type NavItem } from "@/components/
      content never reflows. The choice is the user's (pin button) and is remembered.
    `drawer` renders it full width with no rail behaviour, for the small-screen overlay. */
 
-const LABEL_RAIL =
-  "w-0 opacity-0 group-hover/sb:w-auto group-hover/sb:opacity-100 group-focus-within/sb:w-auto group-focus-within/sb:opacity-100";
+/* Rail labels open with the panel: on hover, or on KEYBOARD focus. Not `focus-within`: a mouse click
+   leaves focus on the clicked link or button, which kept the panel open after the pointer had gone. */
+const LABEL_PEEK =
+  "w-0 opacity-0 group-hover/sb:w-auto group-hover/sb:opacity-100 group-has-[:focus-visible]/sb:w-auto group-has-[:focus-visible]/sb:opacity-100";
+const TITLE_PEEK = "opacity-0 group-hover/sb:opacity-100 group-has-[:focus-visible]/sb:opacity-100";
 
 export function Sidebar({
   rail = false,
@@ -33,12 +37,29 @@ export function Sidebar({
   const { org, user } = useOrgContext();
   const { signOut } = useClerk();
   const railed = rail && !drawer;
-  const label = railed ? LABEL_RAIL : "";
+  // Set when the user collapses with the pointer still over the panel; cleared when it leaves.
+  // Without it the hover rule reopens the rail under the cursor the instant it collapses.
+  const [holdClosed, setHoldClosed] = useState(false);
+  const peekable = railed && !holdClosed;
+  const label = railed ? (peekable ? LABEL_PEEK : "w-0 opacity-0") : "";
+  const title = railed ? (peekable ? TITLE_PEEK : "opacity-0") : "";
+
+  const toggleRail = (e: MouseEvent<HTMLButtonElement>) => {
+    if (!rail) {
+      setHoldClosed(true);
+      // A pointer click (detail > 0) should not leave the panel held open by focus; a keyboard
+      // press keeps focus where the user is.
+      if (e.detail > 0) e.currentTarget.blur();
+    }
+    onToggleRail?.();
+  };
 
   const width = drawer
     ? "relative h-full w-[252px] shadow-[0_24px_60px_-24px_rgba(40,30,20,0.5)]"
     : railed
-      ? "absolute inset-y-0 left-0 w-[76px] hover:w-[252px] focus-within:w-[252px] hover:bg-surface focus-within:bg-surface hover:shadow-[0_18px_40px_-8px_rgba(60,45,35,0.25)] focus-within:shadow-[0_18px_40px_-8px_rgba(60,45,35,0.25)]"
+      ? peekable
+        ? "absolute inset-y-0 left-0 w-[76px] hover:w-[252px] has-[:focus-visible]:w-[252px] hover:bg-surface has-[:focus-visible]:bg-surface hover:shadow-[0_18px_40px_-8px_rgba(60,45,35,0.25)] has-[:focus-visible]:shadow-[0_18px_40px_-8px_rgba(60,45,35,0.25)]"
+        : "absolute inset-y-0 left-0 w-[76px]"
       : "absolute inset-y-0 left-0 w-[252px]";
 
   const item = (it: NavItem, dashed = false) => {
@@ -66,6 +87,7 @@ export function Sidebar({
   return (
     <aside
       aria-label="Primary"
+      onMouseLeave={() => setHoldClosed(false)}
       className={`group/sb sb-panel flex flex-col border-r border-line bg-bg px-3 pb-3 pt-3.5 ${width}`}
     >
       <div className="flex h-[52px] items-center gap-2.5 px-2.5 pb-3.5 pt-1.5">
@@ -81,7 +103,7 @@ export function Sidebar({
         {!drawer && onToggleRail && (
           <button
             type="button"
-            onClick={onToggleRail}
+            onClick={toggleRail}
             aria-label={rail ? "Keep sidebar open" : "Collapse sidebar"}
             className={`sb-fade ml-auto grid h-8 w-8 shrink-0 place-items-center rounded-[10px] text-ink-3 transition-colors hover:bg-bg-2 hover:text-ink ${label}`}
           >
@@ -108,7 +130,7 @@ export function Sidebar({
             {section.label && (
               <p
                 className={`sb-fade h-6 px-3 pb-2 pt-1 text-[11.5px] font-bold uppercase tracking-[0.06em] text-ink-3 ${
-                  railed ? "opacity-0 group-hover/sb:opacity-100 group-focus-within/sb:opacity-100" : ""
+                  title
                 }`}
               >
                 {section.label}
@@ -121,7 +143,7 @@ export function Sidebar({
           <div className="mb-4">
             <p
               className={`sb-fade h-6 px-3 pb-2 pt-1 text-[11.5px] font-bold uppercase tracking-[0.06em] text-ink-3 ${
-                railed ? "opacity-0 group-hover/sb:opacity-100 group-focus-within/sb:opacity-100" : ""
+                title
               }`}
             >
               Admin

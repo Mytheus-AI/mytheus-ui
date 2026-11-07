@@ -36,9 +36,10 @@ export function Topbar({
           <List size={20} />
         </button>
       )}
-      <h1 className="display hidden truncate text-[20px] text-ink-display sm:block">
+      {/* A paragraph, not a heading: each screen owns its own h1. */}
+      <p className="display hidden truncate text-[20px] text-ink-display sm:block">
         {titleFor(pathname)}
-      </h1>
+      </p>
 
       <button
         type="button"
