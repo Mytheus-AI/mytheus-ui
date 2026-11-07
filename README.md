@@ -137,10 +137,10 @@ pnpm install
 cp .env.example .env.local
 #   then fill in the values from the table below
 
-# 3. run the dev server (http://localhost:3000)
+# 3. run the dev server (http://localhost:3000) - for editing only
 pnpm dev
 
-# 4. production build + start
+# 4. production build + start - use this to click around, demo, or judge speed
 pnpm build
 pnpm start
 
@@ -150,6 +150,8 @@ pnpm typecheck   # tsc --noEmit
 pnpm test        # Vitest (unit + component)
 pnpm test:e2e    # Playwright
 ```
+
+The dev server compiles each page on first visit and after every edit, so it feels slow to click through. That is expected: for anything where speed matters, run the production build (step 4), where pages answer in about 10-80ms. See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md#dev-server-or-production-build-pick-by-what-you-are-doing).
 
 ## Environment variables
 
