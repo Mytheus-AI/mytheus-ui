@@ -105,11 +105,12 @@ function Stage({ copy, scene }: { copy: StageCopy; scene?: SceneProps }) {
           </span>
         </div>
 
-        <div className="relative flex min-h-0 flex-1 items-center justify-center py-6 [@media(max-height:720px)]:hidden">
+        <div className="relative flex min-h-0 flex-1 items-center justify-center py-6 [@media(max-height:600px)]:hidden">
           <DoodleTable {...scene} />
         </div>
 
-        <div className="relative z-10">
+        {/* mt-auto keeps the headline on the bottom edge when the drawing is hidden on short screens */}
+        <div className="relative z-10 mt-auto">
           <p className="kicker mb-4">{copy.kicker}</p>
           <StageHeadline key={copy.title + (copy.accent ?? "")} title={copy.title} accent={copy.accent} />
           {copy.blurb ? (
