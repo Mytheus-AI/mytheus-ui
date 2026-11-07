@@ -16,6 +16,7 @@
     "@clerk/nextjs": "^6.39.6",
     "@livekit/components-react": "^2.9.24",
     "@livekit/components-styles": "^1.2.0",
+    "@phosphor-icons/react": "^2.1.10",
     "@tanstack/react-virtual": "^3.14.10",
     "framer-motion": "^12.40.0",
     "lenis": "^1.3.25",

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { OrgProvider } from "@/lib/org-context";
 import { resolveOrgContext } from "@/lib/api/org-context";
 import { AppShell } from "@/components/app/AppShell";
+import "@/styles/app-theme.css";
 
 export const metadata: Metadata = {
   title: "Mytheus — App",

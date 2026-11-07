@@ -2,139 +2,149 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useClerk } from "@clerk/nextjs";
+import { SidebarSimple, SignOut } from "@phosphor-icons/react";
 import { useOrgContext } from "@/lib/org-context";
 import { Avatar } from "@/components/ui/Avatar";
 import { LogoMark } from "@/components/Logo";
+import { ADMIN_ITEMS, NAV_SECTIONS, isActive, type NavItem } from "@/components/app/nav";
 
-/* The app nav, sectioned to match the doc-20 screen inventory: Workspace
-   (dashboard, meetings, decisions, tasks), Organization (org chart, search),
-   Account (settings, billing), plus the admin consoles for admins. */
+/* The app sidebar. Two modes, both of them real navigation:
+   - expanded: a 252px column with labelled groups.
+   - rail: a 76px icon column that opens to 252px over the page while hovered or focused, so the
+     content never reflows. The choice is the user's (pin button) and is remembered.
+   `drawer` renders it full width with no rail behaviour, for the small-screen overlay. */
 
-const SECTIONS: {
-  label: string | null;
-  items: { href: string; label: string }[];
-}[] = [
-  {
-    label: null,
-    items: [{ href: "/dashboard", label: "Dashboard" }],
-  },
-  {
-    label: "Workspace",
-    items: [
-      { href: "/meetings", label: "Meetings" },
-      { href: "/decisions", label: "Decisions" },
-      { href: "/tasks", label: "Tasks" },
-    ],
-  },
-  {
-    label: "Organization",
-    items: [
-      { href: "/org", label: "Org chart" },
-      { href: "/search", label: "Search" },
-    ],
-  },
-  {
-    label: "Account",
-    items: [
-      { href: "/settings", label: "Settings" },
-      { href: "/billing", label: "Billing" },
-    ],
-  },
-];
+const LABEL_RAIL =
+  "w-0 opacity-0 group-hover/sb:w-auto group-hover/sb:opacity-100 group-focus-within/sb:w-auto group-focus-within/sb:opacity-100";
 
 export function Sidebar({
-  className = "flex",
+  rail = false,
+  drawer = false,
+  onToggleRail,
   onNavigate,
 }: {
-  /* display classes for the aside — the desktop column passes "hidden lg:flex",
-     the mobile drawer passes "flex" */
-  className?: string;
+  rail?: boolean;
+  drawer?: boolean;
+  onToggleRail?: () => void;
   onNavigate?: () => void;
-} = {}) {
+}) {
   const pathname = usePathname();
   const { org, user } = useOrgContext();
+  const { signOut } = useClerk();
+  const railed = rail && !drawer;
+  const label = railed ? LABEL_RAIL : "";
 
-  const isActive = (href: string) =>
-    pathname === href || pathname?.startsWith(`${href}/`);
+  const width = drawer
+    ? "relative h-full w-[252px] shadow-[0_24px_60px_-24px_rgba(40,30,20,0.5)]"
+    : railed
+      ? "absolute inset-y-0 left-0 w-[76px] hover:w-[252px] focus-within:w-[252px] hover:bg-surface focus-within:bg-surface hover:shadow-[0_18px_40px_-8px_rgba(60,45,35,0.25)] focus-within:shadow-[0_18px_40px_-8px_rgba(60,45,35,0.25)]"
+      : "absolute inset-y-0 left-0 w-[252px]";
+
+  const item = (it: NavItem, dashed = false) => {
+    const active = isActive(pathname, it.href);
+    const Icon = it.icon;
+    return (
+      <Link
+        key={it.href}
+        href={it.href}
+        onClick={onNavigate}
+        aria-current={active ? "page" : undefined}
+        title={railed ? it.label : undefined}
+        className={`flex h-[42px] items-center gap-3 rounded-pill px-3 text-[14px] font-semibold transition-colors duration-150 active:scale-[0.98] ${
+          active
+            ? "border border-line bg-surface text-ink shadow-sm"
+            : `border border-transparent text-ink-3 hover:bg-bg-2 hover:text-ink ${dashed ? "border-dashed border-line" : ""}`
+        }`}
+      >
+        <Icon size={20} weight={active ? "fill" : "regular"} className={active ? "text-signal" : ""} />
+        <span className={`sb-fade ${label}`}>{it.label}</span>
+      </Link>
+    );
+  };
 
   return (
     <aside
-      className={`${className} h-dvh w-64 shrink-0 flex-col border-r border-line bg-surface px-4 py-6`}
+      aria-label="Primary"
+      className={`group/sb sb-panel flex flex-col border-r border-line bg-bg px-3 pb-3 pt-3.5 ${width}`}
     >
-      <Link
-        href="/dashboard"
-        onClick={onNavigate}
-        className="inline-flex items-center gap-2 px-2 text-[22px] font-medium tracking-[-0.05em] text-ink"
-      >
-        <LogoMark size={24} />
-        Mytheus
-      </Link>
+      <div className="flex h-[52px] items-center gap-2.5 px-2.5 pb-3.5 pt-1.5">
+        <Link
+          href="/dashboard"
+          onClick={onNavigate}
+          aria-label="Mytheus home"
+          className="inline-flex items-center gap-2.5 text-ink"
+        >
+          <LogoMark size={24} className="text-signal" />
+          <span className={`sb-fade display text-[21px] ${label}`}>Mytheus</span>
+        </Link>
+        {!drawer && onToggleRail && (
+          <button
+            type="button"
+            onClick={onToggleRail}
+            aria-label={rail ? "Keep sidebar open" : "Collapse sidebar"}
+            className={`sb-fade ml-auto grid h-8 w-8 shrink-0 place-items-center rounded-[10px] text-ink-3 transition-colors hover:bg-bg-2 hover:text-ink ${label}`}
+          >
+            <SidebarSimple size={18} />
+          </button>
+        )}
+      </div>
 
-      <p className="mt-1 truncate px-2 text-[12px] text-ink-3">{org.name}</p>
+      <div className="mb-3 flex items-center gap-2.5 rounded-pill border border-line bg-surface px-2.5 py-2">
+        <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[9px] bg-pill text-[13px] font-bold text-white">
+          {org.name.slice(0, 1).toUpperCase()}
+        </span>
+        <span className={`sb-fade min-w-0 ${label}`}>
+          <span className="block truncate text-[13.5px] font-semibold leading-tight text-ink">
+            {org.name}
+          </span>
+          <span className="block text-[12px] capitalize text-ink-3">{org.plan} plan</span>
+        </span>
+      </div>
 
-      <nav aria-label="Primary" className="mt-7 flex flex-1 flex-col gap-5 overflow-y-auto">
-        {SECTIONS.map((section) => (
-          <div key={section.label ?? "root"}>
+      <nav className="-mx-1.5 flex-1 overflow-y-auto overflow-x-hidden px-1.5">
+        {NAV_SECTIONS.map((section) => (
+          <div key={section.label ?? "root"} className="mb-4">
             {section.label && (
-              <p className="mb-1.5 px-3 font-mono text-[9.5px] uppercase tracking-[0.2em] text-ink-3">
+              <p
+                className={`sb-fade h-6 px-3 pb-2 pt-1 text-[11.5px] font-bold uppercase tracking-[0.06em] text-ink-3 ${
+                  railed ? "opacity-0 group-hover/sb:opacity-100 group-focus-within/sb:opacity-100" : ""
+                }`}
+              >
                 {section.label}
               </p>
             )}
-            <div className="flex flex-col gap-0.5">
-              {section.items.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onNavigate}
-                  aria-current={isActive(item.href) ? "page" : undefined}
-                  className={`rounded-md px-3 py-2.5 text-[14px] font-medium transition-colors duration-200 ${
-                    isActive(item.href)
-                      ? "bg-bg-2 text-ink"
-                      : "text-ink-2 hover:bg-bg-2 hover:text-ink"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
+            <div className="flex flex-col gap-0.5">{section.items.map((i) => item(i))}</div>
           </div>
         ))}
-
-        {user.role === "admin" ? (
-          <div>
-            <p className="mb-1.5 px-3 font-mono text-[9.5px] uppercase tracking-[0.2em] text-ink-3">
+        {user.role === "admin" && (
+          <div className="mb-4">
+            <p
+              className={`sb-fade h-6 px-3 pb-2 pt-1 text-[11.5px] font-bold uppercase tracking-[0.06em] text-ink-3 ${
+                railed ? "opacity-0 group-hover/sb:opacity-100 group-focus-within/sb:opacity-100" : ""
+              }`}
+            >
               Admin
             </p>
-            <div className="flex flex-col gap-0.5">
-              {[
-                { href: "/admin", label: "Admin console" },
-                { href: "/ops", label: "Ops console" },
-              ].map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onNavigate}
-                  aria-current={isActive(item.href) ? "page" : undefined}
-                  className={`rounded-md border border-dashed border-line px-3 py-2.5 text-[13px] font-medium transition-colors duration-200 ${
-                    isActive(item.href)
-                      ? "bg-bg-2 text-ink"
-                      : "text-ink-3 hover:bg-bg-2 hover:text-ink-2"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
+            <div className="flex flex-col gap-0.5">{ADMIN_ITEMS.map((i) => item(i, true))}</div>
           </div>
-        ) : null}
+        )}
       </nav>
 
-      <div className="flex items-center gap-2.5 rounded-md px-2 py-2">
+      <div className="flex items-center gap-2.5 border-t border-line px-2 pt-3">
         <Avatar name={user.name} size="sm" />
-        <div className="min-w-0">
-          <p className="truncate text-[13px] font-medium text-ink-2">{user.name}</p>
-          <p className="truncate text-[11px] text-ink-3">{user.email}</p>
-        </div>
+        <span className={`sb-fade min-w-0 flex-1 ${label}`}>
+          <span className="block truncate text-[13px] font-semibold text-ink">{user.name}</span>
+          <span className="block truncate text-[12px] text-ink-3">{user.email}</span>
+        </span>
+        <button
+          type="button"
+          onClick={() => void signOut({ redirectUrl: "/" })}
+          aria-label="Sign out"
+          className={`sb-fade grid h-8 w-8 shrink-0 place-items-center rounded-[10px] text-ink-3 transition-colors hover:bg-bg-2 hover:text-ink ${label}`}
+        >
+          <SignOut size={18} />
+        </button>
       </div>
     </aside>
   );

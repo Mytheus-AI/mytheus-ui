@@ -5,22 +5,49 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Sidebar } from "@/components/app/Sidebar";
 import { Topbar } from "@/components/app/Topbar";
+import { CommandPalette } from "@/components/app/CommandPalette";
+import { appFontClass } from "@/lib/fonts";
+import { THEME_INIT } from "@/components/app/theme-init";
 
-/* The authenticated shell: on desktop the nav is a fixed left column; below
-   lg it collapses into an overlay drawer opened from the Topbar hamburger.
-   Route changes, Escape, overlay click, and nav clicks all close the drawer.
-   Drawer motion is calm (150 ms fade + short slide) and degrades to instant
-   opacity under prefers-reduced-motion. */
+/* The authenticated shell. On desktop the nav is an icon rail or a labelled column (the user's
+   choice, remembered); below lg it becomes an overlay drawer opened from the Topbar. Route
+   changes, Escape, overlay click and nav clicks close the drawer. Cmd/Ctrl+K opens the palette.
+   The `.mx-app` root scopes the redesigned theme (see styles/app-theme.css); the inline script
+   sets light/dark before first paint so there is no flash.
+
+   h-dvh (not min-h-dvh) so <main> is the scroll container: the Topbar stays reachable on long
+   pages and the nav column stays fixed. MeetingRoom's h-[calc(100dvh-4rem)] relies on main being
+   exactly viewport minus the h-16 Topbar. */
 
 const EASE_OUT: [number, number, number, number] = [0.2, 0.7, 0.2, 1];
+const SB_KEY = "mx-sb";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [navOpen, setNavOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [rail, setRail] = useState(false);
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
-  const drawerTransition = {
-    duration: reduceMotion ? 0 : 0.15,
-    ease: EASE_OUT,
+  const drawerTransition = { duration: reduceMotion ? 0 : 0.15, ease: EASE_OUT };
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(SB_KEY);
+      setRail(saved ? saved === "rail" : window.innerWidth < 1280);
+    } catch {
+      setRail(window.innerWidth < 1280);
+    }
+  }, []);
+
+  const toggleRail = () => {
+    setRail((r) => {
+      try {
+        localStorage.setItem(SB_KEY, r ? "expanded" : "rail");
+      } catch {
+        // Storage blocked: the toggle still works for this visit.
+      }
+      return !r;
+    });
   };
 
   useEffect(() => {
@@ -28,13 +55,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
-    if (!navOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setNavOpen(false);
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen((o) => !o);
+      } else if (e.key === "Escape") {
+        setNavOpen(false);
+        setPaletteOpen(false);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [navOpen]);
+  }, []);
 
   /* lock the page scroll behind the drawer */
   useEffect(() => {
@@ -46,13 +78,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     };
   }, [navOpen]);
 
-  /* h-dvh (not min-h-dvh) so <main> is the scroll container: the Topbar
-     hamburger stays reachable on long pages at 320px and the desktop nav
-     column actually stays fixed. MeetingRoom's h-[calc(100dvh-4rem)] relies
-     on main being exactly viewport minus the h-16 Topbar. */
   return (
-    <div className="flex h-dvh bg-bg">
-      <Sidebar className="hidden lg:flex" />
+    <div suppressHydrationWarning className={`mx-app ${appFontClass} flex h-dvh bg-bg`}>
+      <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
+
+      <div
+        className={`sb-slot relative hidden shrink-0 lg:block ${rail ? "w-[76px]" : "w-[252px]"}`}
+      >
+        <Sidebar rail={rail} onToggleRail={toggleRail} />
+      </div>
 
       <AnimatePresence>
         {navOpen && (
@@ -73,27 +107,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               transition={drawerTransition}
             />
             <motion.div
-              className="relative z-10 h-full w-64"
+              className="relative z-10 h-full w-[252px]"
               initial={{ opacity: 0, x: reduceMotion ? 0 : -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: reduceMotion ? 0 : -20 }}
               transition={drawerTransition}
             >
-              <Sidebar
-                className="flex shadow-[0_24px_60px_-24px_rgba(40,30,20,0.5)]"
-                onNavigate={() => setNavOpen(false)}
-              />
+              <Sidebar drawer onNavigate={() => setNavOpen(false)} />
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar onMenuClick={() => setNavOpen(true)} />
-        <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-          {children}
-        </main>
+        <Topbar onMenuClick={() => setNavOpen(true)} onSearchClick={() => setPaletteOpen(true)} />
+        <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
       </div>
+
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
   );
 }
