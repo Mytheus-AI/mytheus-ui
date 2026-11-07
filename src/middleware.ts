@@ -43,9 +43,15 @@ const isPublicRoute = createRouteMatcher([
   "/contact(.*)",
   "/changelog(.*)",
   "/docs(.*)",
-  // Clerk's own hosted flows, which must be reachable while signed out.
+  // The custom auth flows (every step is a sub-path) and the OAuth return page, all of which
+  // must be reachable while signed out.
   "/sign-in(.*)",
   "/sign-up(.*)",
+  "/sso-callback(.*)",
+  // Clerk session tasks. A brand-new account is signed in but "pending" until it picks an
+  // organization, and `auth.protect()` treats pending as signed out, so gating this page would
+  // bounce the user to sign-in forever. The page itself sends a visitor with no session away.
+  "/onboarding(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, request) => {

@@ -49,7 +49,12 @@ export default function RootLayout({
   // sign-in or account state anywhere. It does not make marketing routes authenticated:
   // src/middleware.ts decides that, and its allowlist keeps them public.
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+      // Session tasks render on our own pages instead of Clerk's hosted UI.
+      taskUrls={{ "choose-organization": "/onboarding/organization" }}
+    >
       <html lang="en">
         <body
           className={`${geistSans.variable} ${geistMono.variable} ${refinity.variable} antialiased`}

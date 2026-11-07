@@ -516,3 +516,107 @@ body {
     transform: none;
   }
 }
+
+/* ---------------- auth pages (sign-in, sign-up, recovery, checks) ---------------- */
+
+/* entrance for form steps: a short fade + rise, staggered with --d */
+.auth-rise {
+  animation: authRise 0.7s var(--ease-soft) both;
+  animation-delay: var(--d, 0ms);
+}
+/* a stage-headline word lifting out of its mask */
+.auth-word {
+  animation: authWord 0.95s var(--ease-soft) both;
+}
+/* a typed code digit settling into its box */
+.auth-pop {
+  animation: authPop 0.35s var(--ease-soft);
+}
+.auth-caret {
+  animation: authCaret 1.05s steps(1) infinite;
+}
+.auth-spin {
+  animation: authSpin 0.8s linear infinite;
+}
+/* the security-check rings breathing outward */
+.auth-ring {
+  animation: authRing 3.6s var(--ease-out) infinite;
+}
+/* autofill must not paint browser yellow over the warm field */
+.auth-input:-webkit-autofill,
+.auth-input:-webkit-autofill:hover,
+.auth-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  -webkit-box-shadow: 0 0 0 1000px #fff inset;
+  transition: background-color 9999s ease-out;
+}
+/* Clerk's bot-protection widget mounts here; hide the slot until it does */
+#clerk-captcha:empty {
+  display: none;
+}
+
+@keyframes authRise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes authWord {
+  from {
+    transform: translateY(115%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes authPop {
+  0% {
+    transform: scale(0.92);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes authCaret {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes authSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes authRing {
+  0% {
+    opacity: 0.55;
+    transform: scale(0.6);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-rise,
+  .auth-word,
+  .auth-pop,
+  .auth-ring {
+    animation: none !important;
+  }
+  .auth-ring {
+    opacity: 0.2;
+  }
+  .auth-spin {
+    animation-duration: 2.4s;
+  }
+}
