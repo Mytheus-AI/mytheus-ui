@@ -28,14 +28,16 @@ export function StepHeader({
   children?: ReactNode;
 }) {
   return (
-    <header className="auth-rise mb-9">
-      <p className="kicker mb-4 flex items-center gap-2.5">
-        <span className="glow-pulse inline-block h-1.5 w-1.5 rounded-full bg-signal" aria-hidden />
+    <header className="auth-rise mb-8">
+      <p className="kicker mb-3.5 flex items-center gap-2">
+        <svg viewBox="0 0 24 24" className="h-[15px] w-[15px]" aria-hidden>
+          <path d="M12 2.5l2.3 6.4 6.7.3-5.3 4.2 1.9 6.6L12 16.2 6.4 20l1.9-6.6L3 9.2l6.7-.3z" fill="var(--signal)" stroke="var(--doodle-ink, #2a2620)" strokeWidth="1.5" strokeLinejoin="round" />
+        </svg>
         {kicker}
       </p>
-      <h1 className="display text-balance text-[clamp(2rem,3.4vw,2.75rem)]">{title}</h1>
+      <h1 className="display text-balance text-[clamp(2.2rem,3.6vw,3rem)] text-ink-display">{title}</h1>
       {children ? (
-        <p className="mt-4 max-w-[42ch] text-pretty text-[15px] leading-relaxed text-ink-3">
+        <p className="mt-3.5 max-w-[42ch] text-pretty text-[15px] leading-relaxed text-ink-3">
           {children}
         </p>
       ) : null}
@@ -72,16 +74,16 @@ export function TextField({ label, error, hint, trailing, className = "", id, ..
           placeholder=" "
           aria-invalid={error ? true : undefined}
           aria-describedby={error || hint ? msgId : undefined}
-          className={`auth-input peer block h-[60px] w-full rounded-2xl border bg-white px-5 pb-2 pt-6 text-[15.5px] text-ink outline-none transition-[border-color,box-shadow] duration-300 ${
+          className={`auth-input peer block h-[58px] w-full rounded-[16px] border-[1.5px] bg-surface px-[18px] pb-2 pt-6 text-[15.5px] text-ink !outline-none transition-[border-color,box-shadow] duration-200 ${
             error
-              ? "border-priority-high shadow-[0_0_0_4px_var(--priority-high-soft)]"
-              : "border-line hover:border-line-2 focus:border-signal focus:shadow-[0_0_0_4px_var(--signal-soft)]"
+              ? "border-priority-high shadow-[3px_3px_0_var(--priority-high-soft)]"
+              : "border-line-2 hover:border-ink-3 focus:border-[var(--doodle-ink,#2a2620)] focus:shadow-[3px_3px_0_var(--signal)]"
           } ${trailing ? "pr-14" : ""}`}
           {...rest}
         />
         <label
           htmlFor={fieldId}
-          className="pointer-events-none absolute left-5 top-1/2 origin-left -translate-y-[155%] scale-[0.8] text-[15px] text-ink-3 transition-all duration-300 [transition-timing-function:var(--ease-soft)] peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-[155%] peer-focus:scale-[0.8] peer-focus:text-signal-deep"
+          className="pointer-events-none absolute left-[18px] top-1/2 origin-left -translate-y-[155%] scale-[0.8] text-[15px] text-ink-3 transition-all duration-300 [transition-timing-function:var(--ease-soft)] peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-[155%] peer-focus:scale-[0.8] peer-focus:text-signal-deep"
         >
           {label}
         </label>
@@ -209,14 +211,14 @@ export function CodeInput({
             return (
               <span
                 key={i}
-                className={`relative flex aspect-[4/5] max-h-[68px] items-center justify-center rounded-2xl border bg-white font-mono text-[clamp(1.25rem,3vw,1.6rem)] text-ink transition-[border-color,box-shadow,transform] duration-300 ${
+                className={`relative flex aspect-[4/5] max-h-[68px] items-center justify-center rounded-[16px] border-[1.5px] bg-surface font-mono text-[clamp(1.25rem,3vw,1.6rem)] text-ink transition-[border-color,box-shadow,transform] duration-200 ${
                   error
                     ? "border-priority-high"
                     : isActive
-                      ? "border-signal shadow-[0_0_0_4px_var(--signal-soft)]"
+                      ? "border-[var(--doodle-ink,#2a2620)] shadow-[3px_3px_0_var(--signal)]"
                       : char
-                        ? "border-line-2"
-                        : "border-line"
+                        ? "border-ink-3"
+                        : "border-line-2"
                 } ${char ? "auth-pop" : ""}`}
               >
                 {char}
@@ -249,10 +251,9 @@ export function PrimaryButton({
       type="submit"
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={`group relative inline-flex h-[58px] w-full items-center justify-center gap-2.5 overflow-hidden rounded-pill bg-signal text-[15.5px] font-medium tracking-tight text-white shadow-[0_22px_44px_-20px_rgba(189,93,58,0.9),inset_0_1px_0_rgba(255,255,255,0.25)] transition-[background-color,transform,opacity] duration-300 hover:bg-signal-deep active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+      className={`group relative inline-flex h-[56px] w-full items-center justify-center gap-2.5 rounded-full border-[1.5px] border-[var(--doodle-ink,#2a2620)] bg-[var(--doodle-ink,#2a2620)] text-[15.5px] font-semibold tracking-tight text-[#fffaf0] shadow-[4px_4px_0_var(--signal)] transition-[transform,box-shadow,opacity] duration-150 hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[5px_5px_0_var(--signal)] active:translate-x-[3px] active:translate-y-[3px] active:shadow-[1px_1px_0_var(--signal)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-x-0 disabled:hover:translate-y-0 ${className}`}
       {...rest}
     >
-      <span className="sheen pointer-events-none absolute inset-0 rounded-pill" aria-hidden />
       {loading ? (
         <>
           <Spinner />
@@ -284,7 +285,7 @@ export function GoogleButton({
       type="button"
       onClick={onClick}
       disabled={disabled || loading}
-      className="pill-surface group inline-flex h-[58px] w-full items-center justify-center gap-3 rounded-pill text-[15px] font-medium text-ink-2 shadow-[0_10px_30px_-22px_rgba(40,30,20,0.45)] transition-[border-color,color,transform] duration-300 hover:border-line-2 hover:text-ink active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-60"
+      className="group inline-flex h-[56px] w-full items-center justify-center gap-3 rounded-full border-[1.5px] border-[var(--doodle-ink,#2a2620)] bg-surface text-[15px] font-semibold text-ink shadow-[3px_3px_0_var(--doodle-ink,#2a2620)] transition-[transform,box-shadow] duration-150 hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[4px_4px_0_var(--doodle-ink,#2a2620)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_var(--doodle-ink,#2a2620)] disabled:cursor-not-allowed disabled:opacity-60"
     >
       {loading ? <Spinner className="text-ink-3" /> : <GoogleGlyph />}
       {children}
@@ -320,7 +321,7 @@ export function BackLink({ onClick, href, children = "Back" }: { onClick?: () =>
     "auth-rise group mb-8 inline-flex items-center gap-2 rounded-pill py-1.5 pr-3 text-[13.5px] font-medium text-ink-3 transition-colors hover:text-ink";
   const inner = (
     <>
-      <span className="flex h-8 w-8 items-center justify-center rounded-full border border-line bg-white transition-transform duration-300 group-hover:-translate-x-0.5">
+      <span className="flex h-8 w-8 items-center justify-center rounded-full border-[1.5px] border-line-2 bg-surface transition-transform duration-300 group-hover:-translate-x-0.5">
         <ArrowRight className="h-4 w-4 rotate-180" />
       </span>
       {children}
@@ -342,9 +343,9 @@ export function BackLink({ onClick, href, children = "Back" }: { onClick?: () =>
 export function OrDivider({ children = "or" }: { children?: ReactNode }) {
   return (
     <div className="my-6 flex items-center gap-4" role="separator">
-      <span className="h-px flex-1 bg-gradient-to-r from-transparent to-line-2" />
-      <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-3">{children}</span>
-      <span className="h-px flex-1 bg-gradient-to-l from-transparent to-line-2" />
+      <span className="h-0 flex-1 border-t-[1.5px] border-dashed border-line-2" />
+      <span className="font-hand text-[19px] font-medium text-ink-3">{children}</span>
+      <span className="h-0 flex-1 border-t-[1.5px] border-dashed border-line-2" />
     </div>
   );
 }

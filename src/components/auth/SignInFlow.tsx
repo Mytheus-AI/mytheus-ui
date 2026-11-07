@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth, useClerk, useSignIn } from "@clerk/nextjs";
 import { AuthShell, type StageCopy } from "./AuthShell";
+import type { SceneProps } from "./DoodleTable";
 import {
   BackLink,
   CodeInput,
@@ -61,6 +62,35 @@ const STAGE: Record<Exclude<Step, "sso-callback" | "task">, StageCopy> = {
   },
 };
 
+/* What the drawn meeting talks about on each step. */
+const SCENES: Record<Exclude<Step, "sso-callback" | "task">, SceneProps> = {
+  start: {},
+  "factor-one": {
+    lines: [
+      { text: "Forgot the password again?" },
+      { text: "A code's on its way." },
+      { text: "One code, one use. Done.", decision: true },
+    ],
+    note: "Code sent, expires soon",
+  },
+  "factor-two": {
+    lines: [
+      { text: "Second key, please." },
+      { text: "Authenticator open?" },
+      { text: "Both keys check out.", decision: true },
+    ],
+    note: "Two-step verified",
+  },
+  "forgot-password": {
+    lines: [
+      { text: "New password, same memories?" },
+      { text: "Nothing gets lost." },
+      { text: "Reset it by email.", decision: true },
+    ],
+    note: "Password reset, history kept",
+  },
+};
+
 /** The email-code factor Clerk offers for this identifier, if any. */
 function emailCodeFactor(factors: readonly { strategy: string }[] | null | undefined) {
   const f = factors?.find((x) => x.strategy === "email_code");
@@ -111,16 +141,18 @@ export function SignInFlow({ segments }: { segments: string[] }) {
   const qs = params.toString() ? `?${params.toString()}` : "";
   const go = (path: string) => router.push(`${path}${qs}`);
   const stage = STAGE[step === "task" ? "start" : step];
+  const scene = SCENES[step === "task" ? "start" : step];
 
   return (
     <AuthShell
       stage={stage}
+      scene={scene}
       aside={
         <span className="inline-flex items-center gap-3">
           <span className="hidden whitespace-nowrap md:inline">New to Mytheus?</span>
           <Link
             href={`/sign-up${qs}`}
-            className="pill-surface inline-flex h-10 items-center whitespace-nowrap rounded-pill px-4 text-[14px] font-medium text-ink-2 transition-colors hover:text-ink"
+            className="inline-flex h-10 items-center whitespace-nowrap rounded-full border-[1.5px] border-line-2 bg-surface px-4 text-[14px] font-semibold text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
           >
             Create an account
           </Link>

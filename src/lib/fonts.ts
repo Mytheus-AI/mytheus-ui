@@ -1,4 +1,4 @@
-import { Fraunces, Hanken_Grotesk, Newsreader } from "next/font/google";
+import { Caveat, Fraunces, Hanken_Grotesk, Newsreader } from "next/font/google";
 
 /**
  * The signed-in app's type pair, declared here rather than in the root layout so the marketing
@@ -28,3 +28,13 @@ export const fraunces = Fraunces({
 
 /** Class string to put on the `.mx-app` root so both font variables resolve beneath it. */
 export const appFontClass = `${hanken.variable} ${newsreader.variable}`;
+
+/** Handwriting for the doodle annotations on the auth pages (speech bubbles, margin notes). */
+export const caveat = Caveat({
+  subsets: ["latin"],
+  variable: "--font-hand",
+  display: "swap",
+});
+
+/** The auth pages speak the app's type (they are the door into it) plus the doodle hand. */
+export const authFontClass = `${hanken.variable} ${newsreader.variable} ${caveat.variable}`;

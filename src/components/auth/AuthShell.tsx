@@ -1,56 +1,53 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import type { ReactNode } from "react";
 import { LogoMark } from "@/components/Logo";
-import { ConnectedGraph } from "@/components/landing/ConnectedGraph";
+import { Doodle } from "@/components/ui/Doodle";
+import { authFontClass } from "@/lib/fonts";
+import { DoodleTable, type SceneProps } from "./DoodleTable";
+import "@/styles/auth.css";
 
 /* ================================================================== */
-/*  AuthShell - the full-page frame every auth screen sits in.         */
+/*  AuthShell - the frame every auth screen sits in.                   */
 /*                                                                     */
-/*  Left (lg+): a rounded "stage" inset from the page edge - warm mesh, */
-/*  paper grain, the living ConnectedGraph, and a reel of meeting       */
-/*  memories trading places. It dramatizes the one idea the brand keeps */
-/*  returning to: a decision on Monday is context on Friday.            */
-/*  Right: the form, vertically centred, with its own header + footer.  */
-/*  Below lg the stage folds into a soft mesh wash behind the form.     */
+/*  Left (lg+): a sketchbook sheet with a meeting drawn on it (see     */
+/*  DoodleTable), and the page's headline underneath, its accent words */
+/*  underlined in pencil.                                              */
+/*  Right: the form, vertically centred, with its own header + footer. */
+/*  Below lg the sheet folds into a row of doodles above the form.     */
 /* ================================================================== */
 
 export type StageCopy = {
   kicker: string;
   title: string;
-  /** trailing words rendered in the animated clay gradient */
+  /** trailing words, set in italic clay with a hand-drawn underline */
   accent?: string;
   blurb?: string;
 };
 
 export function AuthShell({
   stage,
+  scene,
   aside,
   children,
 }: {
   stage: StageCopy;
+  /** what the drawn meeting shows on this page */
+  scene?: SceneProps;
   /** top-right of the form column, e.g. "New here? Create an account" */
   aside?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <div className="relative min-h-[100dvh] bg-bg lg:grid lg:grid-cols-[minmax(0,1.08fr)_minmax(0,1fr)]">
-      <Stage copy={stage} />
+    <div className={`mx-auth ${authFontClass} relative min-h-[100dvh] bg-bg lg:grid lg:grid-cols-[minmax(0,1.12fr)_minmax(0,1fr)]`}>
+      <Stage copy={stage} scene={scene} />
 
-      <section className="relative flex min-h-[100dvh] flex-col px-6 py-6 sm:px-10 lg:px-14 xl:px-20">
-        {/* mobile wash: the stage's mesh, faded out under the form */}
-        <div
-          aria-hidden
-          className="mesh-field mesh-anim pointer-events-none absolute inset-x-0 top-0 h-80 lg:hidden"
-          style={{ maskImage: "linear-gradient(180deg,#000 30%,transparent)", WebkitMaskImage: "linear-gradient(180deg,#000 30%,transparent)" }}
-        />
-
+      <section className="relative flex min-h-[100dvh] flex-col px-5 py-5 sm:px-10 lg:px-14 xl:px-20">
         <div className="relative z-10 flex min-h-[44px] items-center justify-between gap-4">
           <Link
             href="/"
-            className="group inline-flex items-center gap-2 text-[24px] font-medium tracking-[-0.05em] text-ink lg:invisible"
+            className="inline-flex items-center gap-2 text-[23px] font-semibold tracking-[-0.04em] text-ink lg:invisible"
             aria-label="Mytheus home"
           >
             <LogoMark size={24} />
@@ -60,10 +57,13 @@ export function AuthShell({
         </div>
 
         <main className="relative z-10 flex flex-1 items-center">
-          <div className="mx-auto w-full max-w-[420px] py-12">{children}</div>
+          <div className="mx-auto w-full max-w-[400px] py-10">
+            <MobileCrowd you={scene?.you} />
+            {children}
+          </div>
         </main>
 
-        <footer className="relative z-10 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 font-mono text-[11px] uppercase tracking-[0.16em] text-ink-3">
+        <footer className="relative z-10 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 text-[12.5px] text-ink-3">
           <span className="inline-flex items-center gap-2">
             <Lock />
             Sessions secured by Clerk
@@ -85,37 +85,35 @@ export function AuthShell({
   );
 }
 
-/* ---------------- the stage ---------------- */
+/* ---------------- the sheet ---------------- */
 
-function Stage({ copy }: { copy: StageCopy }) {
+function Stage({ copy, scene }: { copy: StageCopy; scene?: SceneProps }) {
   return (
     <aside className="hidden p-3 lg:sticky lg:top-0 lg:block lg:h-[100dvh]" aria-hidden>
-      <div className="mesh-field mesh-anim grain relative flex h-full flex-col overflow-hidden rounded-[28px] border border-line px-10 py-9 xl:px-14 xl:py-12">
-        <ConnectedGraph signal className="pointer-events-none absolute inset-0 opacity-45" nodeCount={26} />
-        {/* a low clay bloom that anchors the headline */}
-        <div className="pointer-events-none absolute -bottom-40 -left-32 h-[520px] w-[520px] rounded-full bg-[radial-gradient(closest-side,rgba(217,119,87,0.22),transparent)]" />
-
-        <div className="relative flex items-center justify-between">
+      <div className="doodle-sheet relative flex h-full flex-col overflow-hidden rounded-[28px] border border-line px-10 py-8 xl:px-14 xl:py-10">
+        <div className="relative z-10 flex items-center justify-between">
           <Link
             href="/"
             tabIndex={-1}
-            className="group pointer-events-auto inline-flex items-center gap-2 text-[26px] font-medium tracking-[-0.05em] text-ink"
+            className="pointer-events-auto inline-flex items-center gap-2 text-[25px] font-semibold tracking-[-0.04em] text-ink"
           >
-            <LogoMark size={28} />
+            <LogoMark size={27} />
             Mytheus
           </Link>
-          <span className="kicker hidden xl:inline">Every meeting, on repeat.</span>
+          <span className="font-hand hidden -rotate-2 text-[22px] font-medium text-ink-3 xl:inline">
+            every meeting, on repeat
+          </span>
         </div>
 
-        <div className="relative flex flex-1 items-center justify-end py-8">
-          <MemoryReel />
+        <div className="relative flex min-h-0 flex-1 items-center justify-center py-6 [@media(max-height:720px)]:hidden">
+          <DoodleTable {...scene} />
         </div>
 
-        <div className="relative">
-          <p className="kicker mb-5">{copy.kicker}</p>
+        <div className="relative z-10">
+          <p className="kicker mb-4">{copy.kicker}</p>
           <StageHeadline key={copy.title + (copy.accent ?? "")} title={copy.title} accent={copy.accent} />
           {copy.blurb ? (
-            <p className="mt-6 max-w-[40ch] text-pretty text-[16px] leading-relaxed text-ink-3">{copy.blurb}</p>
+            <p className="mt-4 max-w-[46ch] text-pretty text-[15.5px] leading-relaxed text-ink-3 [@media(max-height:820px)]:hidden">{copy.blurb}</p>
           ) : null}
         </div>
       </div>
@@ -123,133 +121,79 @@ function Stage({ copy }: { copy: StageCopy }) {
   );
 }
 
-/* ---------------- memory reel ---------------- */
-
-type Memory = { day: string; meeting: string; tag: "Decision" | "Action" | "Context"; line: string; link?: string };
-
-const MEMORIES: Memory[] = [
-  {
-    day: "Mon 09:30",
-    meeting: "Pricing review",
-    tag: "Decision",
-    line: "Annual plans launch at 20% off for the first year.",
-  },
-  {
-    day: "Wed 14:00",
-    meeting: "Design crit",
-    tag: "Action",
-    line: "Onboarding copy ships before the Friday board prep.",
-  },
-  {
-    day: "Fri 11:15",
-    meeting: "Board prep",
-    tag: "Context",
-    line: "Monday's pricing call, surfaced before anyone asked.",
-    link: "Linked from Pricing review",
-  },
-];
-
-/**
- * Three memory cards in a fanned stack. Every few seconds the front card slides to the
- * back, so the stack keeps quietly re-ordering: the one primary motion on the stage.
- * Reduced motion: a settled, static stack.
- */
-function MemoryReel() {
-  const reduce = useReducedMotion();
-  const [order, setOrder] = useState([0, 1, 2]);
-
-  useEffect(() => {
-    if (reduce) return;
-    const t = setInterval(() => setOrder(([a, b, c]) => [b, c, a]), 4200);
-    return () => clearInterval(t);
-  }, [reduce]);
-
+/** Below lg there is no room for the table, so a few of its people peek over the form. */
+function MobileCrowd({ you }: { you?: string | "empty" }) {
+  const seeds = ["tbl-ava", "tbl-ravi", "tbl-mei", "tbl-jonah"];
   return (
-    <div className="relative h-[230px] w-full max-w-[400px] xl:mr-6 [@media(max-height:700px)]:hidden">
-      <AnimatePresence initial={false}>
-        {order.map((idx, depth) => {
-          const m = MEMORIES[idx];
-          return (
-            <motion.article
-              key={idx}
-              layout={!reduce}
-              initial={false}
-              animate={{
-                y: depth * -22,
-                x: depth * 14,
-                scale: 1 - depth * 0.06,
-                opacity: 1 - depth * 0.28,
-                rotate: depth === 0 ? -1.5 : depth === 1 ? 1.2 : -0.4,
-                zIndex: 3 - depth,
-              }}
-              transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute inset-x-0 bottom-0 origin-top rounded-[22px] border border-line bg-white p-6 shadow-[0_40px_80px_-40px_rgba(40,30,20,0.5),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-sm"
-            >
-              <div className="mb-4 flex items-center justify-between">
-                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-3">
-                  {m.day} &middot; {m.meeting}
-                </span>
-                <span
-                  className={`rounded-pill px-2.5 py-1 font-mono text-[10.5px] uppercase tracking-[0.14em] ${
-                    m.tag === "Context" ? "bg-signal text-white" : "bg-bg-2 text-ink-2"
-                  }`}
-                >
-                  {m.tag}
-                </span>
-              </div>
-              <p className="text-[19px] font-medium leading-snug tracking-[-0.02em] text-ink">{m.line}</p>
-              <div className="mt-5 flex items-center gap-2.5 text-[13px] text-ink-3">
-                {m.link ? (
-                  <>
-                    <span className="glow-pulse h-2 w-2 rounded-full bg-signal" />
-                    <span className="text-signal-deep">{m.link}</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="h-2 w-2 rounded-full bg-line-2" />
-                    <span>Proposed by your agent &middot; confirmed by you</span>
-                  </>
-                )}
-              </div>
-            </motion.article>
-          );
-        })}
-      </AnimatePresence>
+    <div className="mb-8 flex items-center lg:hidden" aria-hidden>
+      {seeds.map((s, i) => (
+        <span
+          key={s}
+          className="-ml-2.5 block h-11 w-11 overflow-hidden rounded-full border-[2px] border-[var(--doodle-ink)] first:ml-0"
+          style={{ transform: `rotate(${(i % 2 ? 1 : -1) * 4}deg)` }}
+        >
+          <Doodle seed={s} className="block h-full w-full" />
+        </span>
+      ))}
+      {you && you !== "empty" ? (
+        <span className="-ml-2.5 block h-12 w-12 overflow-hidden rounded-full border-[2px] border-[var(--doodle-ink)] shadow-[0_0_0_3px_var(--signal)]">
+          <Doodle key={you} seed={you} className="doodle-pop block h-full w-full" />
+        </span>
+      ) : null}
+      <span className="font-hand ml-3 text-[20px] font-medium text-ink-3">
+        {you && you !== "empty" ? "and you" : "your team, remembered"}
+      </span>
     </div>
   );
 }
 
 /**
- * The stage headline: each word lifts out of its own masked line on mount (the shared
- * `WordReveal` waits for scroll-into-view, which never fires for a headline pinned to the
- * bottom of a viewport-height stage). Descender room is reserved, per design.md.
+ * The headline: each word lifts out of its own masked line on mount, then the accent words get
+ * a pencil underline drawn under them. Descender room is reserved, per design.md.
  */
 function StageHeadline({ title, accent }: { title: string; accent?: string }) {
-  const words = [
-    ...title.split(" ").map((w) => ({ w, accent: false })),
-    ...(accent ? accent.split(" ").map((w) => ({ w, accent: true })) : []),
-  ];
+  const words = title.split(" ");
+  const accentWords = accent ? accent.split(" ") : [];
+  const word = (w: string, i: number, last: boolean) => (
+    <span
+      key={`${w}-${i}`}
+      aria-hidden
+      className="inline-block overflow-clip align-bottom"
+      style={{ paddingBottom: "0.2em", marginBottom: "-0.2em" }}
+    >
+      <span className="auth-word inline-block" style={{ animationDelay: `${120 + i * 70}ms` }}>
+        {w}
+        {last ? "" : " "}
+      </span>
+    </span>
+  );
   return (
     <h2
       aria-label={[title, accent].filter(Boolean).join(" ")}
-      className="display display-tight max-w-[12ch] text-balance text-[clamp(2.8rem,4.6vw,5.2rem)]"
+      className="display display-tight max-w-[16ch] text-balance text-[clamp(2.4rem,3.5vw,4rem)] text-ink-display"
     >
-      {words.map((item, i) => (
-        <span
-          key={`${item.w}-${i}`}
-          aria-hidden
-          className="inline-block overflow-clip align-bottom"
-          style={{ paddingBottom: "0.22em", marginBottom: "-0.22em" }}
-        >
-          <span
-            className={`auth-word inline-block ${item.accent ? "text-gradient-signal" : ""}`}
-            style={{ animationDelay: `${120 + i * 70}ms` }}
+      {words.map((w, i) => word(w, i, i === words.length - 1 && !accentWords.length))}
+      {accentWords.length ? (
+        <span className="relative inline italic text-signal-deep">
+          {accentWords.map((w, j) => word(w, words.length + j, j === accentWords.length - 1))}
+          <svg
+            viewBox="0 0 300 16"
+            preserveAspectRatio="none"
+            className="pointer-events-none absolute -bottom-[0.06em] left-0 h-[0.22em] w-full"
+            aria-hidden
           >
-            {item.w}
-            {i < words.length - 1 ? "\u00a0" : ""}
-          </span>
+            <path
+              d="M3 11 C 60 3, 130 4, 190 8 S 270 12, 297 5"
+              fill="none"
+              stroke="var(--signal)"
+              strokeWidth="3.2"
+              strokeLinecap="round"
+              pathLength={1}
+              className="doodle-underline"
+            />
+          </svg>
         </span>
-      ))}
+      ) : null}
     </h2>
   );
 }

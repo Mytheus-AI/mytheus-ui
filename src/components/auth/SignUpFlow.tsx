@@ -5,6 +5,9 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "r
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth, useClerk, useSignUp } from "@clerk/nextjs";
 import { AuthShell, type StageCopy } from "./AuthShell";
+import type { SceneProps } from "./DoodleTable";
+import { DoodlePicker } from "@/components/ui/DoodlePicker";
+import { isDoodleSeed, randomDoodleSeed } from "@/lib/doodle";
 import {
   BackLink,
   CodeInput,
@@ -54,6 +57,26 @@ const STAGE: Record<Exclude<Step, "sso-callback">, StageCopy> = {
   },
 };
 
+const SCENE_LINES: Record<Step, SceneProps["lines"]> = {
+  start: [
+    { text: "Who's joining us today?" },
+    { text: "Saved them a seat." },
+    { text: "Let's welcome the new teammate.", decision: true },
+    { text: "Their agent's already listening." },
+  ],
+  verify: [
+    { text: "Did the code arrive?" },
+    { text: "Check the inbox, then spam." },
+    { text: "Email checked. Come on in.", decision: true },
+  ],
+  continue: [
+    { text: "Almost there." },
+    { text: "Just a couple of details." },
+    { text: "Then you're in.", decision: true },
+  ],
+  "sso-callback": undefined,
+};
+
 export function SignUpFlow({ segments }: { segments: string[] }) {
   const first = segments[0];
   const step: Step =
@@ -70,6 +93,15 @@ export function SignUpFlow({ segments }: { segments: string[] }) {
   const { isSignedIn } = useAuth();
   const clerk = useClerk();
   const target = useRedirectTarget();
+  const { signUp } = useSignUp();
+  // The visitor's doodle. Dealt in the browser (a random seed in the server render would never
+  // match), and recovered from the sign-up attempt on the later steps.
+  const [doodle, setDoodle] = useState("");
+  useEffect(() => {
+    if (doodle) return;
+    const saved = (signUp?.unsafeMetadata as Record<string, unknown> | undefined)?.doodle;
+    setDoodle(isDoodleSeed(saved) ? saved : randomDoodleSeed());
+  }, [doodle, signUp]);
 
   useEffect(() => {
     if (step === "sso-callback") return;
@@ -82,23 +114,35 @@ export function SignUpFlow({ segments }: { segments: string[] }) {
 
   const qs = params.toString() ? `?${params.toString()}` : "";
   const go = (path: string) => router.push(`${path}${qs}`);
+  const scene: SceneProps = {
+    you: isDoodleSeed(doodle) ? doodle : "empty",
+    lines: SCENE_LINES[step],
+    note: step === "start" ? "Welcome the new teammate" : "Email checked",
+  };
 
   return (
     <AuthShell
       stage={STAGE[step]}
+      scene={scene}
       aside={
         <span className="inline-flex items-center gap-3">
           <span className="hidden whitespace-nowrap md:inline">Have an account?</span>
           <Link
             href={`/sign-in${qs}`}
-            className="pill-surface inline-flex h-10 items-center whitespace-nowrap rounded-pill px-4 text-[14px] font-medium text-ink-2 transition-colors hover:text-ink"
+            className="inline-flex h-10 items-center whitespace-nowrap rounded-full border-[1.5px] border-line-2 bg-surface px-4 text-[14px] font-semibold text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
           >
             Sign in
           </Link>
         </span>
       }
     >
-      {step === "verify" ? <VerifyStep go={go} /> : step === "continue" ? <ContinueStep go={go} /> : <StartStep go={go} />}
+      {step === "verify" ? (
+        <VerifyStep go={go} />
+      ) : step === "continue" ? (
+        <ContinueStep go={go} />
+      ) : (
+        <StartStep go={go} doodle={doodle} onDoodle={setDoodle} />
+      )}
     </AuthShell>
   );
 }
@@ -118,7 +162,7 @@ function useAdvance(go: (p: string) => void) {
 
 /* ---------------- /sign-up ---------------- */
 
-function StartStep({ go }: { go: (p: string) => void }) {
+function StartStep({ go, doodle, onDoodle }: { go: (p: string) => void; doodle: string; onDoodle: (s: string) => void }) {
   const { isLoaded, signUp } = useSignUp();
   const advance = useAdvance(go);
   const target = useRedirectTarget();
@@ -144,6 +188,9 @@ function StartStep({ go }: { go: (p: string) => void }) {
         lastName: lastName.trim() || undefined,
         emailAddress: email.trim(),
         password,
+        // The picture itself uploads on the first signed-in page (DoodleImageSync); the seed
+        // is all an account without a session can store.
+        unsafeMetadata: isDoodleSeed(doodle) ? { doodle } : undefined,
       });
       await advance(res);
     } catch (err) {
@@ -161,6 +208,7 @@ function StartStep({ go }: { go: (p: string) => void }) {
         strategy: "oauth_google",
         redirectUrl: "/sso-callback",
         redirectUrlComplete: target,
+        unsafeMetadata: isDoodleSeed(doodle) ? { doodle } : undefined,
       });
     } catch (err) {
       setErrors({ form: firstError(err) });
@@ -170,11 +218,22 @@ function StartStep({ go }: { go: (p: string) => void }) {
 
   return (
     <>
-      <StepHeader kicker="Create your account" title="Meet your agent.">
+      <StepHeader kicker="Create your account" title="Pull up a chair.">
         Free to start. Your agent proposes; nothing is saved until you confirm it.
       </StepHeader>
 
       {errors.form ? <FormAlert>{errors.form}</FormAlert> : null}
+
+      <div
+        className="auth-rise mb-6 rounded-[20px] border-[1.5px] border-dashed border-line-2 bg-surface/70 px-4 py-4"
+        style={{ ["--d" as string]: "40ms" }}
+      >
+        {doodle ? (
+          <DoodlePicker value={doodle} onChange={onDoodle} size="sm" label="This is you. Deal again if it isn't." />
+        ) : (
+          <div className="h-[72px]" />
+        )}
+      </div>
 
       <div className="auth-rise" style={{ ["--d" as string]: "80ms" }}>
         <GoogleButton onClick={google} loading={busy === "google"} disabled={!!busy}>
@@ -211,7 +270,7 @@ function StartStep({ go }: { go: (p: string) => void }) {
         </div>
 
         {/* Clerk's bot protection mounts its widget here when it decides to show one. */}
-        <div id="clerk-captcha" className="flex justify-center rounded-2xl border border-line bg-white p-3" />
+        <div id="clerk-captcha" className="flex justify-center rounded-2xl border border-line bg-surface p-3" />
 
         <div className="auth-rise pt-3" style={{ ["--d" as string]: "250ms" }}>
           <PrimaryButton loading={busy === "form"} disabled={busy === "google"}>
@@ -386,7 +445,7 @@ function ContinueStep({ go }: { go: (p: string) => void }) {
           </div>
         ) : null}
         {needs.legal ? (
-          <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-line bg-white p-4 text-[14px] leading-relaxed text-ink-2">
+          <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-line bg-surface p-4 text-[14px] leading-relaxed text-ink-2">
             <input
               type="checkbox"
               checked={legal}
@@ -406,7 +465,7 @@ function ContinueStep({ go }: { go: (p: string) => void }) {
             </span>
           </label>
         ) : null}
-        <div id="clerk-captcha" className="flex justify-center rounded-2xl border border-line bg-white p-3" />
+        <div id="clerk-captcha" className="flex justify-center rounded-2xl border border-line bg-surface p-3" />
         <div className="pt-3">
           <PrimaryButton loading={busy}>Continue</PrimaryButton>
         </div>
