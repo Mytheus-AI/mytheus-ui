@@ -180,7 +180,7 @@ export function Sidebar({
       </nav>
 
       <div className={`flex items-center ${lay(FOOT)} border-t border-line pt-3`}>
-        <Avatar name={user.name} size="sm" />
+        <Avatar name={user.name} id={user.email} seed={user.avatarSeed} src={user.imageUrl} size="md" />
         <span
           className={`sb-fade min-w-0 ${label} ${
             // flex-1 would stretch the hidden name and push the avatar off-centre in the rail.

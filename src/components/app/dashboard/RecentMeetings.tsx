@@ -44,7 +44,8 @@ export function RecentMeetings({ className, style }: { className?: string; style
                             key={name}
                             name={name}
                             size="sm"
-                            className={i === 0 ? "" : "-ml-2 ring-2 ring-surface"}
+                            ring
+                            className={i === 0 ? "" : "-ml-2"}
                           />
                         ))}
                         {extra > 0 ? (

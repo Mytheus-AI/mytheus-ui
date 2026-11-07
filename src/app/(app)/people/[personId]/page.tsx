@@ -20,6 +20,8 @@ type PersonProfile = BffSchemas["schemas"]["PersonProfile"];
 type PersonView = {
   name: string;
   email: string;
+  /** `users.avatar_url`: Clerk's picture, which is the rendered doodle once one is chosen */
+  avatarUrl: string | null;
   role: string | null;
   bio: string | null;
   skills: string[];
@@ -47,6 +49,7 @@ function fromApi(p: PersonProfile): PersonView {
       .replace(/[._-]+/g, " ")
       .replace(/\b\w/g, (c) => c.toUpperCase()),
     email: p.email,
+    avatarUrl: p.avatar_url,
     role: p.role,
     bio: p.bio,
     skills: p.skills,
@@ -76,6 +79,7 @@ function fromMock(slug: string): PersonView | null {
       return {
         name: member.name,
         email: profile?.email ?? "",
+        avatarUrl: null,
         role: member.role,
         bio: profile?.bio ?? null,
         skills: profile?.skills ?? [],
@@ -123,7 +127,7 @@ export default async function PersonPage({ params }: { params: { personId: strin
           className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[radial-gradient(closest-side,var(--signal-soft),transparent)]"
         />
         <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center">
-          <Avatar name={person.name} size="lg" className="!h-20 !w-20 !text-[26px]" />
+          <Avatar name={person.name} id={person.email || undefined} src={person.avatarUrl} size="xl" />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="display text-[clamp(1.9rem,3.4vw,2.6rem)] text-ink-display">{person.name}</h1>

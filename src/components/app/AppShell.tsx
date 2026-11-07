@@ -6,6 +6,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Sidebar } from "@/components/app/Sidebar";
 import { Topbar } from "@/components/app/Topbar";
 import { CommandPalette } from "@/components/app/CommandPalette";
+import { DoodleImageSync } from "@/components/app/DoodleImageSync";
 import { appFontClass } from "@/lib/fonts";
 import { THEME_INIT } from "@/components/app/theme-init";
 
@@ -132,6 +133,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      <DoodleImageSync />
     </div>
   );
 }

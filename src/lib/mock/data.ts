@@ -5,7 +5,16 @@
 
 export type OrgContextValue = {
   org: { id: string; name: string; plan: "starter" | "pro" | "enterprise" };
-  user: { id: string; name: string; email: string; role: "member" | "admin" };
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: "member" | "admin";
+    /** the doodle this person chose (Clerk `unsafeMetadata.doodle`), if any */
+    avatarSeed?: string;
+    /** an uploaded or Google photo, used only when no doodle was chosen */
+    imageUrl?: string;
+  };
 };
 
 export const mockOrgContext: OrgContextValue = {

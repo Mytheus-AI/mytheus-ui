@@ -22,6 +22,12 @@ import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import type { OrgContextValue } from "@/lib/mock/data";
+import { defaultDoodleSeed, isDoodleSeed } from "@/lib/doodle";
+
+type Profile = { name: string; email: string; avatarSeed?: string; imageUrl?: string };
+
+/** The cache tag for one user's profile, so a profile edit can drop it at once. */
+export const profileTag = (userId: string) => `clerk-profile:${userId}`;
 
 /**
  * The display name and email for one user, from Clerk's Backend API.
@@ -31,15 +37,25 @@ import type { OrgContextValue } from "@/lib/mock/data";
  * Keyed by the verified `userId`, so one user can never be served another's profile; a profile
  * edit shows up within five minutes.
  */
-function profileFor(userId: string): Promise<{ name: string; email: string }> {
+function profileFor(userId: string): Promise<Profile> {
   return unstable_cache(
-    async () => {
+    async (): Promise<Profile> => {
       const user = await (await clerkClient()).users.getUser(userId);
       const email = user.primaryEmailAddress?.emailAddress ?? "";
-      return { name: user.fullName?.trim() || email.split("@")[0] || "Member", email };
+      const seed = (user.unsafeMetadata as Record<string, unknown> | null)?.doodle;
+      return {
+        name: user.fullName?.trim() || email.split("@")[0] || "Member",
+        email,
+        // Everyone has a doodle. Until they choose one it is the default for their email, the
+        // same face teammates see on their profile; DoodleImageSync then stores it for real.
+        avatarSeed: isDoodleSeed(seed) ? seed : defaultDoodleSeed(email || userId),
+        // Clerk always returns an imageUrl; without an uploaded image it is a generic default,
+        // which a doodle beats.
+        imageUrl: user.hasImage ? user.imageUrl : undefined,
+      };
     },
     ["clerk-profile", userId],
-    { revalidate: 300 },
+    { revalidate: 300, tags: [profileTag(userId)] },
   )();
 }
 
@@ -48,7 +64,7 @@ export const resolveOrgContext = cache(async (): Promise<OrgContextValue | null>
   const { orgId, orgSlug, orgRole, userId } = await auth();
   if (!userId) return null; // signed out; middleware should already have redirected
 
-  const { name, email } = await profileFor(userId);
+  const { name, email, avatarSeed, imageUrl } = await profileFor(userId);
 
   return {
     org: {
@@ -62,6 +78,8 @@ export const resolveOrgContext = cache(async (): Promise<OrgContextValue | null>
       id: userId,
       name,
       email,
+      avatarSeed,
+      imageUrl,
       // Clerk's organization role, read from the verified session. It only decides what the
       // UI offers (the workspace-admin nav and console); the API enforces the RBAC tier itself.
       role: orgRole === "org:admin" ? "admin" : "member",

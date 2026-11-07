@@ -620,3 +620,66 @@ body {
     animation-duration: 2.4s;
   }
 }
+
+/* ---------------- doodles ----------------
+   Ink strokes drawing themselves in (pathLength=1 on each stroke), a pop when a new face is
+   chosen, a quick deal when the strip reshuffles, and a dice tumble on the shuffle button. */
+.doodle-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: doodleDraw 0.9s var(--ease-soft) forwards;
+}
+@keyframes doodleDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.doodle-pop {
+  animation: doodlePop 0.42s var(--ease-soft) both;
+}
+@keyframes doodlePop {
+  from {
+    transform: scale(0.82) rotate(-6deg);
+    opacity: 0.4;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+.doodle-deal {
+  animation: doodleDeal 0.38s var(--ease-soft) both;
+}
+@keyframes doodleDeal {
+  from {
+    transform: translateY(6px) scale(0.85);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+.doodle-dice {
+  animation: doodleDice 0.5s var(--ease-soft);
+}
+@keyframes doodleDice {
+  from {
+    transform: rotate(-180deg) scale(0.7);
+  }
+  to {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .doodle-draw {
+    animation: none;
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+  }
+  .doodle-pop,
+  .doodle-deal,
+  .doodle-dice {
+    animation: none;
+  }
+}
