@@ -119,7 +119,9 @@ function FilterGroup({
   children: React.ReactNode;
 }) {
   return (
-    <fieldset className="border-t border-line px-[18px] py-4 first:border-t-0">
+    // min-w-0: a fieldset defaults to min-inline-size: min-content, so a long meeting name widened it
+    // past the 248px column and pushed the count off the card instead of truncating.
+    <fieldset className="min-w-0 border-t border-line px-[18px] py-4 first:border-t-0">
       <legend className="mb-2.5 float-left w-full text-[12px] font-bold uppercase tracking-[0.06em] text-ink-3">
         {title}
       </legend>
@@ -133,14 +135,17 @@ function CheckOption({
   onChange,
   children,
   count,
+  title,
 }: {
   checked: boolean;
   onChange: (v: boolean) => void;
   children: React.ReactNode;
   count: number;
+  /** Full text, shown on hover when the label is truncated. */
+  title?: string;
 }) {
   return (
-    <label className="-mx-2 flex min-h-[34px] cursor-pointer items-center gap-2.5 rounded-[10px] px-2 py-1 text-[14px] font-medium text-ink-2 transition-colors hover:bg-bg active:bg-bg-2">
+    <label title={title} className="-mx-2 flex min-h-[34px] cursor-pointer items-center gap-2.5 rounded-[10px] px-2 py-1 text-[14px] font-medium text-ink-2 transition-colors hover:bg-bg active:bg-bg-2">
       <input
         type="checkbox"
         checked={checked}
@@ -148,7 +153,7 @@ function CheckOption({
         className="h-[18px] w-[18px] shrink-0 cursor-pointer accent-signal-deep"
       />
       <span className="min-w-0 flex-1 truncate">{children}</span>
-      <span className="text-[12px] font-semibold tabular-nums text-ink-3">{count}</span>
+      <span className="shrink-0 text-[12px] font-semibold tabular-nums text-ink-3">{count}</span>
     </label>
   );
 }
@@ -406,8 +411,9 @@ export function SearchView() {
                       checked={people.includes(p)}
                       onChange={(on) => toggle(people, setPeople, p, on)}
                       count={matchesQuery.filter((r) => r.people.includes(p)).length}
+                      title={p}
                     >
-                      <span className="inline-flex items-center gap-2">
+                      <span className="flex min-w-0 items-center gap-2">
                         <Avatar name={p} size="sm" />
                         <span className="truncate">{p}</span>
                       </span>
@@ -421,6 +427,7 @@ export function SearchView() {
                       checked={meetings.includes(m.id)}
                       onChange={(on) => toggle(meetings, setMeetings, m.id, on)}
                       count={matchesQuery.filter((r) => r.meetingId === m.id).length}
+                      title={m.title}
                     >
                       {m.title}
                     </CheckOption>
