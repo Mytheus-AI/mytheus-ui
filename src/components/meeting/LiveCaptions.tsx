@@ -20,20 +20,81 @@
  * settled.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { speakerColorIndex, type CaptionLine } from "@/lib/realtime/captions";
 
-/* Speaker colors read from the token layer, never raw hex (this repo's styling rule). Six is
+/* Speaker identity colours, lifted so they hold AA on the always-dark caption scrim in both
+   themes (the scrim does not flip with the theme, so token colours would not work here). Six is
    the nominal room size from doc 10's video-grid scope, so a seventh speaker wrapping around is
    the intended degradation rather than an unbounded palette. */
 const SPEAKER_COLORS = [
-  "text-signal-deep",
-  "text-priority-low",
-  "text-priority-medium",
-  "text-priority-high",
-  "text-ink",
-  "text-ink-2",
+  "text-[#f2a184]",
+  "text-[#8fc4de]",
+  "text-[#e1c484]",
+  "text-[#b0d09c]",
+  "text-[#e3b4d6]",
+  "text-[#f3f0e8]",
 ] as const;
+
+export function speakerColor(index: number): string {
+  return SPEAKER_COLORS[index % SPEAKER_COLORS.length];
+}
+
+/* The frame: a centred dark scrim of fixed height. It is shared with the mock strip in
+   `MeetingRoom` so the mock and the live stream look identical. The inner region scrolls and the
+   content hugs the bottom (`mt-auto`), so the newest line is always the one at the bottom edge. */
+export function CaptionFrame({
+  children,
+  tailRef,
+}: {
+  children: ReactNode;
+  tailRef?: React.RefObject<HTMLDivElement>;
+}) {
+  return (
+    <div className="w-full max-w-[760px] shrink-0 self-center rounded-card bg-[rgba(26,24,22,0.8)] px-4 py-2.5 text-[rgba(250,249,244,0.96)] backdrop-blur-md max-[959px]:px-3 max-[959px]:py-2">
+      <div
+        className="flex h-[64px] flex-col overflow-y-auto min-[960px]:h-[72px]"
+        role="log"
+        aria-live="polite"
+        aria-label="Live captions"
+      >
+        <div className="mt-auto space-y-0.5">
+          {children}
+          <div ref={tailRef} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function CaptionText({
+  speaker,
+  colorIndex,
+  interim = false,
+  children,
+}: {
+  speaker: string;
+  colorIndex: number;
+  interim?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <p
+      className={`text-[14px] font-medium leading-[1.5] max-[959px]:text-[13px] ${
+        interim ? "italic text-white/75" : "text-white/95"
+      }`}
+    >
+      <span className={`mr-2 font-extrabold not-italic ${speakerColor(colorIndex)}`}>{speaker}</span>
+      {children}
+      {interim ? (
+        <span
+          aria-hidden
+          className="ml-1 inline-block h-[13px] w-[6px] rounded-sm bg-signal-bright align-[-2px] motion-safe:animate-pulse"
+        />
+      ) : null}
+    </p>
+  );
+}
 
 export function LiveCaptions({
   lines,
@@ -53,39 +114,21 @@ export function LiveCaptions({
   }, [lines]);
 
   return (
-    <div className="mt-3 rounded-card border border-line bg-white/90 px-4 py-3">
-      <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink-3">Live captions</p>
-
-      {/* Fixed height: the strip scrolls internally, so arriving captions never reflow the grid
-          above. `aria-live="polite"` announces new captions without stealing focus. */}
-      <div
-        className="mt-1.5 h-[68px] space-y-1 overflow-y-auto"
-        aria-live="polite"
-        aria-label="Live captions"
-      >
-        {lines.length === 0 ? (
-          <p className="text-[13px] leading-snug text-ink-3">Waiting for speech…</p>
-        ) : (
-          lines.map((line) => (
-            <p
-              key={line.chunkId}
-              className={`text-[13px] leading-snug ${
-                line.isFinal ? "text-ink" : "italic text-ink-3"
-              }`}
-            >
-              <span
-                className={`mr-2 font-mono text-[10px] uppercase tracking-wider ${
-                  SPEAKER_COLORS[speakerColorIndex(line.speakerId, SPEAKER_COLORS.length)]
-                }`}
-              >
-                {speakerLabel?.(line.speakerId) ?? `Speaker ${line.speakerId}`}
-              </span>
-              {line.text}
-            </p>
-          ))
-        )}
-        <div ref={tailRef} />
-      </div>
-    </div>
+    <CaptionFrame tailRef={tailRef}>
+      {lines.length === 0 ? (
+        <p className="text-[14px] leading-[1.5] text-white/75">Waiting for speech...</p>
+      ) : (
+        lines.map((line) => (
+          <CaptionText
+            key={line.chunkId}
+            speaker={speakerLabel?.(line.speakerId) ?? `Speaker ${line.speakerId}`}
+            colorIndex={speakerColorIndex(line.speakerId, SPEAKER_COLORS.length)}
+            interim={!line.isFinal}
+          >
+            {line.text}
+          </CaptionText>
+        ))
+      )}
+    </CaptionFrame>
   );
 }

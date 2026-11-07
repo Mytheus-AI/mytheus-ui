@@ -1,39 +1,51 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useAuth } from "@clerk/nextjs";
-import { AgentSidebar } from "@/components/sidebar/AgentSidebar";
+import { Clock, Info, SquaresFour, Users, Layout } from "@phosphor-icons/react";
+import { AgentSidebar, type AgentAttention } from "@/components/sidebar/AgentSidebar";
 import { LiveVideoGrid } from "@/components/meeting/LiveVideoGrid";
-import { LiveCaptions } from "@/components/meeting/LiveCaptions";
+import {
+  CaptionFrame,
+  CaptionText,
+  LiveCaptions,
+} from "@/components/meeting/LiveCaptions";
+import { ChatPanel } from "@/components/room/ChatPanel";
+import { ControlBar } from "@/components/room/ControlBar";
+import { PeoplePanel, type RoomPerson } from "@/components/room/PeoplePanel";
+import { RoomClock } from "@/components/room/RoomClock";
+import { RoomGrid, type RoomLayout, type RoomTile } from "@/components/room/RoomGrid";
+import { RoomPanel, type PanelTab, type SheetSize } from "@/components/room/RoomPanel";
+import { useNarrow } from "@/components/room/useNarrow";
+import { speakerColorIndex } from "@/lib/realtime/captions";
 import { useLiveKitRoom } from "@/lib/realtime/useLiveKitRoom";
 import { useMeetingSocket } from "@/lib/realtime/useMeetingSocket";
-import { Badge } from "@/components/ui/Badge";
-import { Avatar } from "@/components/ui/Avatar";
-import {
-  mockRoomParticipants,
-  mockCaptions,
-  mockRoomChat,
-  type Meeting,
-  type ChatMessage,
-} from "@/lib/mock/data";
+import { mockRoomParticipants, mockCaptions, type Meeting } from "@/lib/mock/data";
 
-/* The meeting room shell — video-grid mock, live-caption strip, controls,
-   and a tabbed right rail (Agent sidebar / in-meeting chat). All presentation
-   on mock data: LiveKit video and the Socket.io agent stream are a later
-   phase; this screen defines the layout, color, and interaction contract
-   they'll render into. Controls toggle locally so the room feels inhabited,
-   nothing is transmitted anywhere. */
+/* The meeting room: a peach-wash stage (top bar, participant grid, live captions, dark pill
+   controls) beside a tabbed panel (Agent / Chat / People) that collapses to a rail, and becomes a
+   bottom sheet under 960px. Video is live LiveKit when a room is connected and the mock grid
+   otherwise; captions are the real socket stream once joined and the mock strip otherwise.
+   Controls toggle locally so the room feels inhabited, nothing is transmitted anywhere. */
 
-const EASE_OUT: [number, number, number, number] = [0.2, 0.7, 0.2, 1];
+/* Tailwind classes shared by the top-bar pills. */
+const PILL =
+  "inline-flex h-9 items-center gap-2 rounded-full border border-line bg-surface px-3 text-[13px] font-semibold text-ink shadow-sm max-[959px]:h-[34px] max-[959px]:px-2.5";
 
 export function MeetingRoom({ meeting }: { meeting: Meeting }) {
-  const [tab, setTab] = useState<"agent" | "chat">("agent");
+  const [tab, setTab] = useState<PanelTab>("agent");
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [captionsOn, setCaptionsOn] = useState(true);
-  const [panelOpen, setPanelOpen] = useState(false);
+  const [layout, setLayout] = useState<RoomLayout>("grid");
+  const [spotlightId, setSpotlightId] = useState<string | null>(null);
+  // Desktop expands to a card or collapses to a rail; a phone has a sheet with three snap heights.
+  const [desktopOpen, setDesktopOpen] = useState(true);
+  const [sheet, setSheet] = useState<SheetSize>("peek");
+  const [attention, setAttention] = useState<AgentAttention>({ count: 0, conflict: false });
+  const narrow = useNarrow();
+
   // Mints a token and connects the SFU when NEXT_PUBLIC_LIVEKIT_URL is set; reports
   // "unconfigured" and does no network work at all when it is not, which is every environment
   // today. See `useLiveKitRoom` for why that fallback is deliberate rather than a stub.
@@ -52,444 +64,256 @@ export function MeetingRoom({ meeting }: { meeting: Meeting }) {
     };
   }, [getToken]);
   const socket = useMeetingSocket(meeting.id, socketToken);
-  const reduceMotion = useReducedMotion();
-  const drawerTransition = {
-    duration: reduceMotion ? 0 : 0.15,
-    ease: EASE_OUT,
+
+  const liveRoom = live.status === "connected" ? live.room : null;
+
+  // A conflict pre-empts: on a phone the sheet lifts on its own, once, so it cannot be missed.
+  const lifted = useRef(false);
+  useEffect(() => {
+    if (!narrow || !attention.conflict || lifted.current) return;
+    lifted.current = true;
+    const id = window.setTimeout(() => setSheet((s) => (s === "peek" ? "half" : s)), 1800);
+    return () => window.clearTimeout(id);
+  }, [narrow, attention.conflict]);
+
+  const onAttention = useCallback((a: AgentAttention) => setAttention(a), []);
+
+  /* mock stage: the local participant (role starts with "You") follows the mic and camera
+     controls; everyone else is as the mock data says */
+  const mockTiles = useMemo<RoomTile[]>(
+    () =>
+      mockRoomParticipants.map((p) => {
+        const local = p.role.startsWith("You");
+        const mic = local ? micOn : p.micOn;
+        return {
+          id: p.name,
+          name: p.name,
+          role: p.role.replace(/^You\s*·\s*/, ""),
+          isLocal: local,
+          micOn: mic,
+          camOn: local ? camOn : p.camOn,
+          speaking: Boolean(p.speaking) && mic,
+        };
+      }),
+    [micOn, camOn],
+  );
+
+  const people = useMemo<RoomPerson[]>(
+    () =>
+      liveRoom
+        ? live.participants.map((p) => ({
+            id: p.identity,
+            name: p.name || p.identity,
+            isLocal: p.isLocal,
+            micOn: p.isMicrophoneEnabled,
+          }))
+        : mockTiles.map((t) => ({
+            id: t.id,
+            name: t.name,
+            role: t.role,
+            isLocal: t.isLocal,
+            micOn: t.micOn,
+          })),
+    [liveRoom, live.participants, mockTiles],
+  );
+
+  const spotlight = (id: string) => {
+    setSpotlightId(id);
+    setLayout("spotlight");
   };
 
-  /* Escape closes the mobile agent/chat drawer, and the page scroll locks
-     behind it — same contract as the AppShell nav drawer */
-  useEffect(() => {
-    if (!panelOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setPanelOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [panelOpen]);
+  const panelPressed = narrow ? sheet !== "peek" : desktopOpen;
+  const togglePanel = () => {
+    if (narrow) setSheet((s) => (s === "peek" ? "half" : "peek"));
+    else setDesktopOpen((o) => !o);
+  };
+  const selectTab = (t: PanelTab) => {
+    setTab(t);
+    if (narrow && sheet === "peek") setSheet("half");
+  };
 
   return (
     /* negative margins mirror the AppShell main padding (px-4 py-6 sm:px-6
        lg:px-8 lg:py-8) so the room bleeds edge-to-edge at every breakpoint */
-    <div className="-mx-4 -my-6 flex h-[calc(100dvh-4rem)] min-h-[540px] bg-bg-2 sm:-mx-6 lg:-mx-8 lg:-my-8">
-      {/* ---- main stage ---- */}
-      <div className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
-        {/* header */}
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 pb-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <Badge tone="danger">Live</Badge>
-            <h1 className="truncate text-[16px] font-medium tracking-tight text-ink-display">
-              {meeting.title}
-            </h1>
-          </div>
-          <div className="flex shrink-0 items-center gap-3">
-            <span className="font-mono text-[11.5px] tabular-nums text-ink-3">
-              {meeting.participants.length} in room
-            </span>
-            <Link
-              href={`/meetings/${meeting.id}`}
-              className="link-underline text-[12.5px] font-medium text-ink-2"
-            >
-              Meeting details
-            </Link>
-          </div>
-        </div>
-
-        {/* video grid — live LiveKit tracks once a room is actually connected, otherwise the
-            mock composition below. `live.status` is "unconfigured" in every environment that
-            exists today, because no LiveKit account exists anywhere in the program yet, so the
-            mock is what renders and the room keeps working exactly as it did. Gating on
-            `connected` rather than merely "configured" also means a failed mint or a dropped
-            SFU degrades to the mock instead of an empty stage. */}
-        {live.status === "connected" && live.room ? (
-          <LiveVideoGrid room={live.room} />
-        ) : (
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto sm:grid-cols-2">
-          {mockRoomParticipants.map((p) => (
-            <div
-              key={p.name}
-              className={`relative flex min-h-[140px] items-center justify-center overflow-hidden rounded-card bg-pill ${
-                p.speaking ? "ring-2 ring-signal" : ""
-              }`}
-            >
-              {p.camOn ? (
-                /* stand-in for the video feed: a soft radial "lit room" wash */
-                <div
-                  aria-hidden
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      "radial-gradient(80% 90% at 50% 30%, rgba(217,119,87,0.18), transparent 70%)",
-                  }}
-                />
-              ) : null}
-              <Avatar name={p.name} size="lg" className="bg-white/10 text-white" />
-
-              {/* name tag */}
-              <div className="absolute bottom-2.5 left-2.5 flex items-center gap-2 rounded-full bg-black/35 py-1 pl-2 pr-3 backdrop-blur-sm">
-                <span className={p.micOn ? "text-white/85" : "text-priority-high"}>
-                  {p.micOn ? <MicIcon /> : <MicOffIcon />}
-                </span>
-                <span className="max-w-[160px] truncate text-[12px] font-medium text-white">
-                  {p.name}
-                </span>
-                <span className="hidden text-[10.5px] text-white/55 sm:inline">{p.role}</span>
-              </div>
-
-              {p.speaking && (
-                <span className="absolute right-2.5 top-2.5 flex items-end gap-[2px]" aria-label="Speaking">
-                  {[0.5, 1, 0.7].map((h, i) => (
-                    <span
-                      key={i}
-                      className="w-[3px] rounded-full bg-signal"
-                      style={{ height: `${8 + h * 8}px` }}
-                    />
-                  ))}
-                </span>
-              )}
-              {!p.camOn && (
-                <span className="absolute right-2.5 top-2.5 text-white/45">
-                  <CamOffIcon />
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-        )}
-
-        {/* live captions — the real `caption` socket stream once the gateway is reachable and
-            this socket has joined the room, otherwise the mock strip. Gated on `joined` rather
-            than merely "configured" for the same reason the video grid gates on `connected`: a
-            denied participant check or a dropped gateway should degrade to the mock, not to an
-            empty panel that looks like nobody is speaking. */}
-        {captionsOn &&
-          (socket.status === "joined" ? (
-            <LiveCaptions lines={socket.captions.lines} />
-          ) : (
-            <div className="mt-3 rounded-card border border-line bg-white/90 px-4 py-3">
-              <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink-3">
-                Live captions
-              </p>
-              <div className="mt-1.5 space-y-1">
-                {mockCaptions.map((c, i) => {
-                  const latest = i === mockCaptions.length - 1;
-                  return (
-                    <p
-                      key={c.text}
-                      className={`text-[13px] leading-snug ${latest ? "text-ink" : "text-ink-3"}`}
-                    >
-                      <span className="mr-2 font-mono text-[10px] uppercase tracking-wider text-signal-deep">
-                        {c.speaker.split(" ")[0]}
-                      </span>
-                      {c.text}
-                    </p>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-
-        {/* controls */}
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-2.5">
-          <ControlButton
-            label={micOn ? "Mute" : "Unmute"}
-            active={micOn}
-            onClick={() => setMicOn((v) => !v)}
-          >
-            {micOn ? <MicIcon /> : <MicOffIcon />}
-          </ControlButton>
-          <ControlButton
-            label={camOn ? "Stop camera" : "Start camera"}
-            active={camOn}
-            onClick={() => setCamOn((v) => !v)}
-          >
-            {camOn ? <CamIcon /> : <CamOffIcon />}
-          </ControlButton>
-          <ControlButton label="Share screen" active onClick={() => {}}>
-            <ShareIcon />
-          </ControlButton>
-          <ControlButton
-            label={captionsOn ? "Hide captions" : "Show captions"}
-            active={captionsOn}
-            onClick={() => setCaptionsOn((v) => !v)}
-          >
-            <CaptionsIcon />
-          </ControlButton>
-          <ControlButton
-            label="Agent & chat"
-            active
-            onClick={() => setPanelOpen(true)}
-            className="lg:hidden"
-          >
-            <PanelIcon />
-          </ControlButton>
-          <Link
-            href={`/meetings/${meeting.id}`}
-            className="ml-2 inline-flex items-center gap-2 rounded-pill bg-priority-high px-5 py-2.5 text-[13px] font-medium text-white transition-opacity duration-150 hover:opacity-90"
-          >
-            <LeaveIcon />
-            Leave
-          </Link>
-        </div>
-      </div>
-
-      {/* ---- right rail: agent / chat (desktop column) ---- */}
-      <aside className="hidden w-[360px] shrink-0 flex-col border-l border-line bg-bg lg:flex xl:w-[380px]">
-        <RailContent tab={tab} setTab={setTab} />
-      </aside>
-
-      {/* ---- right rail as overlay drawer below lg ---- */}
-      <AnimatePresence>
-        {panelOpen && (
-          <div
-            className="fixed inset-0 z-50 lg:hidden"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Agent and chat panel"
-          >
-            <motion.button
-              type="button"
-              aria-label="Close agent panel"
-              onClick={() => setPanelOpen(false)}
-              className="absolute inset-0 bg-black/30"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={drawerTransition}
-            />
-            <motion.aside
-              className="absolute inset-y-0 right-0 flex w-[min(380px,92vw)] flex-col border-l border-line bg-bg shadow-[0_24px_60px_-24px_rgba(40,30,20,0.5)]"
-              initial={{ opacity: 0, x: reduceMotion ? 0 : 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: reduceMotion ? 0 : 20 }}
-              transition={drawerTransition}
-            >
-              <RailContent tab={tab} setTab={setTab} onClose={() => setPanelOpen(false)} />
-            </motion.aside>
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-/* the tabbed rail body, shared by the desktop column and the mobile drawer */
-function RailContent({
-  tab,
-  setTab,
-  onClose,
-}: {
-  tab: "agent" | "chat";
-  setTab: (t: "agent" | "chat") => void;
-  onClose?: () => void;
-}) {
-  return (
-    <>
-      <div className="flex shrink-0 items-center gap-1 border-b border-line p-2">
-        {(
-          [
-            { key: "agent", label: "Your agent" },
-            { key: "chat", label: "Chat" },
-          ] as const
-        ).map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => setTab(t.key)}
-            aria-pressed={tab === t.key}
-            className={`min-h-[40px] flex-1 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors duration-150 ${
-              tab === t.key ? "bg-bg-2 text-ink" : "text-ink-3 hover:bg-bg-2/60 hover:text-ink-2"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-        {onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close panel"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-ink-3 transition-colors duration-150 hover:bg-bg-2 hover:text-ink"
-          >
-            <CloseIcon />
-          </button>
-        )}
-      </div>
-      <div className="min-h-0 flex-1">
-        {tab === "agent" ? <AgentSidebar /> : <ChatPanel />}
-      </div>
-    </>
-  );
-}
-
-/* ---------------- chat ---------------- */
-
-function ChatPanel() {
-  const [messages, setMessages] = useState<ChatMessage[]>(mockRoomChat);
-  const [draft, setDraft] = useState("");
-
-  const send = (e: React.FormEvent) => {
-    e.preventDefault();
-    const text = draft.trim();
-    if (!text) return;
-    setMessages((m) => [
-      ...m,
-      { id: `ch_local_${m.length}`, from: "Yash Maurya", at: "now", text },
-    ]);
-    setDraft("");
-  };
-
-  return (
-    <div className="flex h-full flex-col">
-      <ul className="min-h-0 flex-1 space-y-3.5 overflow-y-auto p-4">
-        {messages.map((m) => (
-          <li key={m.id} className="flex gap-2.5">
-            <Avatar name={m.from} size="sm" />
-            <div className="min-w-0">
-              <p className="flex items-baseline gap-2">
-                <span className="text-[12.5px] font-medium text-ink">{m.from}</span>
-                <span className="font-mono text-[10px] tabular-nums text-ink-3">{m.at}</span>
-              </p>
-              <p className="mt-0.5 text-[13px] leading-snug text-ink-2">{m.text}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-      <form onSubmit={send} className="flex shrink-0 items-center gap-2 border-t border-line p-3">
-        <input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Message the room"
-          aria-label="Message the room"
-          className="min-h-[40px] w-full rounded-pill border border-line bg-surface px-4 py-2 text-[13px] text-ink placeholder:text-ink-3 focus-visible:border-signal"
-        />
-        <button
-          type="submit"
-          aria-label="Send"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-signal text-white transition-colors duration-150 hover:bg-signal-deep"
+    <div className="relative -mx-4 -my-6 h-[calc(100dvh-4rem)] min-h-[540px] overflow-hidden p-2.5 sm:-mx-6 lg:-mx-8 lg:-my-8 min-[960px]:px-6 min-[960px]:pb-5 min-[960px]:pt-3">
+      <div
+        data-panel={desktopOpen ? "open" : "closed"}
+        className="grid h-full min-h-0 grid-cols-1 grid-rows-[minmax(0,1fr)] gap-3.5 [--pw:392px] max-[1240px]:[--pw:352px] data-[panel=closed]:[--pw:68px] min-[960px]:grid-cols-[minmax(0,1fr)_var(--pw)] motion-safe:min-[960px]:transition-[grid-template-columns] motion-safe:min-[960px]:duration-300"
+      >
+        {/* ================= stage ================= */}
+        <section
+          aria-label="Meeting stage"
+          className="relative flex min-h-0 min-w-0 flex-col gap-2 rounded-card bg-[image:var(--wash)] p-2.5 min-[960px]:gap-3 min-[960px]:p-3.5"
         >
-          <SendIcon />
-        </button>
-      </form>
+          {/* top bar: title, live state, people, clock, layout */}
+          <div className="flex min-h-[44px] items-center gap-2.5">
+            <h2 className="display min-w-0 flex-1 truncate text-[17px] text-ink-display min-[960px]:text-[21px]">
+              {meeting.title}
+            </h2>
+            <div className="flex shrink-0 items-center gap-2 max-[420px]:gap-1.5">
+              <span className={`${PILL} text-priority-high`}>
+                <span
+                  aria-hidden
+                  className="h-2 w-2 rounded-full bg-priority-high motion-safe:animate-pulse"
+                />
+                Live
+              </span>
+              <span className={`${PILL} max-[959px]:hidden`}>
+                <Users size={16} className="text-ink-3" aria-hidden />
+                {people.length}
+                <span className="hidden text-ink-3 min-[1400px]:inline">in call</span>
+              </span>
+              <span className={PILL}>
+                <Clock size={16} className="text-ink-3 max-[959px]:hidden" aria-hidden />
+                <RoomClock />
+              </span>
+              <div
+                role="group"
+                aria-label="Stage layout"
+                className="inline-flex items-center gap-0.5 rounded-full border border-line bg-surface p-[3px] shadow-sm max-[959px]:gap-1.5 max-[959px]:border-0 max-[959px]:bg-transparent max-[959px]:p-0 max-[959px]:shadow-none"
+              >
+                <LayoutButton
+                  label="Spotlight layout"
+                  text="Spotlight"
+                  active={layout === "spotlight"}
+                  onClick={() => setLayout("spotlight")}
+                >
+                  <Layout size={16} aria-hidden />
+                </LayoutButton>
+                <LayoutButton
+                  label="Grid layout"
+                  text="Grid"
+                  active={layout === "grid"}
+                  onClick={() => setLayout("grid")}
+                >
+                  <SquaresFour size={16} aria-hidden />
+                </LayoutButton>
+              </div>
+              <Link
+                href={`/meetings/${meeting.id}`}
+                className={`${PILL} hidden transition-colors duration-150 hover:border-line-2 hover:bg-bg-2 focus-visible:!rounded-full active:scale-[0.97] min-[1400px]:inline-flex`}
+              >
+                <Info size={16} className="text-ink-3" aria-hidden />
+                Meeting details
+              </Link>
+            </div>
+          </div>
+
+          {/* video grid - live LiveKit tracks once a room is actually connected, otherwise the
+              mock composition. `live.status` is "unconfigured" in every environment that
+              exists today, because no LiveKit account exists anywhere in the program yet, so the
+              mock is what renders and the room keeps working exactly as it did. Gating on
+              `connected` rather than merely "configured" also means a failed mint or a dropped
+              SFU degrades to the mock instead of an empty stage. */}
+          {liveRoom ? (
+            <LiveVideoGrid
+              room={liveRoom}
+              layout={layout}
+              spotlightId={spotlightId}
+              onSpotlight={spotlight}
+            />
+          ) : (
+            <RoomGrid
+              tiles={mockTiles}
+              layout={layout}
+              spotlightId={spotlightId}
+              onSpotlight={spotlight}
+            />
+          )}
+
+          {/* live captions - the real `caption` socket stream once the gateway is reachable and
+              this socket has joined the room, otherwise the mock strip. Gated on `joined` rather
+              than merely "configured" for the same reason the video grid gates on `connected`: a
+              denied participant check or a dropped gateway should degrade to the mock, not to an
+              empty panel that looks like nobody is speaking. */}
+          {captionsOn &&
+            (socket.status === "joined" ? (
+              <LiveCaptions lines={socket.captions.lines} />
+            ) : (
+              <CaptionFrame>
+                {mockCaptions.map((c) => (
+                  <CaptionText
+                    key={c.text}
+                    speaker={c.speaker.split(" ")[0]}
+                    colorIndex={speakerColorIndex(c.speaker, 6)}
+                  >
+                    {c.text}
+                  </CaptionText>
+                ))}
+              </CaptionFrame>
+            ))}
+
+          {/* keeps the controls clear of the peeking sheet on a phone */}
+          <div aria-hidden className="h-[72px] shrink-0 min-[960px]:hidden" />
+
+          <ControlBar
+            micOn={micOn}
+            camOn={camOn}
+            captionsOn={captionsOn}
+            panelOpen={panelPressed}
+            attention={attention.count}
+            leaveHref={`/meetings/${meeting.id}`}
+            onMic={() => setMicOn((v) => !v)}
+            onCam={() => setCamOn((v) => !v)}
+            onCaptions={() => setCaptionsOn((v) => !v)}
+            onPanel={togglePanel}
+          />
+        </section>
+
+        {/* ================= panel ================= */}
+        <RoomPanel
+          tab={tab}
+          onTab={(t) => {
+            if (!narrow) setDesktopOpen(true);
+            selectTab(t);
+          }}
+          desktopOpen={desktopOpen}
+          onDesktopOpen={setDesktopOpen}
+          sheet={sheet}
+          onSheet={setSheet}
+          narrow={narrow}
+          attention={attention.count}
+          conflict={attention.conflict}
+          peopleCount={people.length}
+          agent={<AgentSidebar onAttentionChange={onAttention} />}
+          chat={<ChatPanel />}
+          people={<PeoplePanel people={people} />}
+        />
+      </div>
     </div>
   );
 }
 
-/* ---------------- controls + icons ---------------- */
-
-function ControlButton({
+/* One half of the Spotlight / Grid switch. On a phone only the layout you are NOT in is shown, as
+   a round button, which saves the room for the video. */
+function LayoutButton({
   label,
+  text,
   active,
   onClick,
   children,
-  className = "",
 }: {
   label: string;
+  text: string;
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
-  className?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label={label}
+      aria-pressed={active}
       title={label}
-      className={`grid h-11 w-11 place-items-center rounded-full border transition-colors ${
+      className={`inline-flex h-[30px] items-center justify-center gap-1.5 rounded-full px-2.5 text-[13px] font-semibold transition-[background-color,color,transform] duration-150 focus-visible:!rounded-full active:scale-95 motion-reduce:transition-none ${
         active
-          ? "border-line bg-white text-ink-2 hover:border-line-2"
-          : "border-priority-high/30 bg-priority-high-soft text-priority-high"
-      } ${className}`}
+          ? "bg-pill text-white max-[959px]:hidden"
+          : "text-ink-3 hover:bg-bg-2 hover:text-ink max-[959px]:h-9 max-[959px]:w-9 max-[959px]:border max-[959px]:border-line max-[959px]:bg-surface max-[959px]:px-0 max-[959px]:text-ink-2 max-[959px]:shadow-sm"
+      }`}
     >
       {children}
+      <span className="hidden min-[1400px]:inline">{text}</span>
     </button>
-  );
-}
-
-function MicIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" className="h-[18px] w-[18px]" aria-hidden>
-      <rect x="7.5" y="2.5" width="5" height="9" rx="2.5" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M4.5 9.5a5.5 5.5 0 0 0 11 0M10 15v2.5M7.5 17.5h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  );
-}
-function MicOffIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" className="h-[18px] w-[18px]" aria-hidden>
-      <rect x="7.5" y="2.5" width="5" height="9" rx="2.5" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M4.5 9.5a5.5 5.5 0 0 0 11 0M10 15v2.5M7.5 17.5h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-      <path d="m3.5 3 13 14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  );
-}
-function CamIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" className="h-[18px] w-[18px]" aria-hidden>
-      <rect x="2.5" y="5" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.4" />
-      <path d="m12.5 8.5 5-2.5v8l-5-2.5" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-    </svg>
-  );
-}
-function CamOffIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" className="h-[18px] w-[18px]" aria-hidden>
-      <rect x="2.5" y="5" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.4" />
-      <path d="m12.5 8.5 5-2.5v8l-5-2.5" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-      <path d="m2.5 3 15 14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  );
-}
-function ShareIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" className="h-[18px] w-[18px]" aria-hidden>
-      <rect x="2.5" y="4" width="15" height="10.5" rx="1.6" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M10 11.5V7m0 0L7.8 9.2M10 7l2.2 2.2M6.5 17.5h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-function CaptionsIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" className="h-[18px] w-[18px]" aria-hidden>
-      <rect x="2.5" y="4.5" width="15" height="11" rx="2" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M9 9.2a1.8 1.8 0 1 0 0 1.6M14.5 9.2a1.8 1.8 0 1 0 0 1.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  );
-}
-function LeaveIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden>
-      <path d="M12.5 6.5v-2a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1v-2M8 10h9m0 0-2.5-2.5M17 10l-2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-function PanelIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" className="h-[18px] w-[18px]" aria-hidden>
-      <rect x="2.5" y="3.5" width="15" height="13" rx="2" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M12.5 3.5v13" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M5 7h4M5 9.5h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  );
-}
-function CloseIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden>
-      <path d="m5 5 10 10M15 5 5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-function SendIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden>
-      <path d="M3.5 10 17 3.5 13 16.5l-3-4.5-6.5-2Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-    </svg>
   );
 }
