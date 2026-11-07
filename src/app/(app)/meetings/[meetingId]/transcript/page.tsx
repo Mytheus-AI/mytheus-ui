@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Article, UserFocus } from "@phosphor-icons/react/ssr";
+import { Article, User } from "@phosphor-icons/react/ssr";
 import { TranscriptView } from "@/components/meeting/TranscriptView";
 import { SpeakerMapping } from "@/components/meeting/SpeakerMapping";
-import { PanelEmpty } from "@/components/meetings/PanelEmpty";
-import { TalkTime } from "@/components/meetings/TalkTime";
+import { TalkTimePanel } from "@/components/transcript/TalkTimePanel";
+import { TranscriptHead } from "@/components/transcript/TranscriptHead";
 import { fetchTranscriptSurface, type TranscriptChunk } from "@/lib/api/transcript";
-import { mockMeetings, mockTranscriptChunks } from "@/lib/mock/data";
+import { mockMeetingDetails, mockMeetings, mockTranscriptChunks } from "@/lib/mock/data";
+import "@/styles/meeting-transcript.css";
 
 export const metadata: Metadata = { title: "Transcript | Mytheus" };
 
@@ -85,75 +85,109 @@ export default async function TranscriptPage({
   const distinctSpeakers = new Set(chunks.map((c) => c.speaker_id)).size;
   const when = dateFormatter.format(new Date(meeting.startTime));
 
-  const notice =
-    unassigned.length > 0 ? (
-      <div className="mx-3 mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-pill bg-priority-medium-soft px-3.5 py-3 text-[13.5px] font-semibold text-ink min-[700px]:mx-4">
-        <UserFocus size={18} weight="fill" className="shrink-0 text-priority-medium" aria-hidden />
-        <span className="min-w-0 flex-1">
-          {unassigned.length === 1
-            ? `${lineCounts[unassigned[0].speaker_id] ?? 0} lines are from Speaker ${unassigned[0].speaker_id}, not yet matched to a teammate.`
-            : `${unassigned.length} speakers are not yet matched to a teammate.`}
-        </span>
-        <a
-          href="#speakers"
-          className="inline-flex h-8 items-center rounded-pill bg-surface px-3.5 text-[13px] font-semibold text-ink transition-[background-color,transform] duration-150 hover:bg-bg active:scale-[0.97]"
-        >
-          Assign speakers
-        </a>
-      </div>
-    ) : null;
+  const recap = mockMeetingDetails.find((d) => d.meetingId === meeting.id)?.recap;
+  const meta = [
+    "Transcript",
+    when,
+    `${meeting.durationMinutes} min`,
+    distinctSpeakers > 0 ? `${distinctSpeakers} ${distinctSpeakers === 1 ? "speaker" : "speakers"}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const backHref = `/meetings/${meeting.id}`;
 
-  return (
-    <div className="mx-auto max-w-6xl motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
-      <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4 pb-6 pt-2">
-        <div className="min-w-0 flex-[1_1_420px]">
-          <h1 className="display break-words text-[clamp(1.9rem,3.4vw,2.5rem)] text-ink-display">
-            {meeting.title}
-          </h1>
-          <p className="mt-1.5 max-w-[62ch] text-[15px] text-ink-3">
-            Transcript, {when}, {meeting.durationMinutes} min
-            {distinctSpeakers > 0
-              ? `, ${distinctSpeakers} ${distinctSpeakers === 1 ? "speaker" : "speakers"}`
-              : ""}
-            .
-          </p>
+  /* The design's "Who is Speaker 2?" banner. The assignment itself happens in the Speakers panel
+     (one field per voice), so the banner points there rather than duplicating the control. */
+  const firstOpen = unassigned[0];
+  const openLines = firstOpen ? (lineCounts[firstOpen.speaker_id] ?? 0) : 0;
+  const notice = firstOpen ? (
+    <div className="assign-banner tx-banner">
+      <User size={14} aria-hidden />
+      <span>
+        {unassigned.length === 1
+          ? `Who is Speaker ${firstOpen.speaker_id}? ${openLines} ${openLines === 1 ? "line is" : "lines are"} not yet matched to a teammate.`
+          : `${unassigned.length} speakers are not yet matched to a teammate.`}
+      </span>
+      <a href={`#sp-${firstOpen.speaker_id}`} className="assign-btn tap">
+        Assign
+      </a>
+    </div>
+  ) : null;
+
+  if (chunks.length === 0) {
+    return (
+      <section className="page" id="page-transcript">
+        <div className="page-inner tx-inner">
+          <TranscriptHead title={meeting.title} meta={meta} backHref={backHref} />
+          <div className="panel reveal tx-empty-page" style={{ animationDelay: ".09s" }}>
+            <div className="tx-empty">
+              <span className="tx-empty-icon" aria-hidden>
+                <Article size={28} />
+              </span>
+              <h3>No transcript yet</h3>
+              <p>
+                {meeting.status === "past"
+                  ? "This meeting ran before transcription was enabled."
+                  : "The transcript appears here once the meeting has run."}
+              </p>
+            </div>
+          </div>
         </div>
-        <Link
-          href={`/meetings/${meeting.id}`}
-          className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-pill border border-line-2 px-5 text-[14px] font-semibold text-ink transition-[background-color,transform] duration-150 hover:bg-surface active:scale-[0.98] motion-reduce:active:scale-100"
-        >
-          <ArrowLeft size={16} aria-hidden />
-          Back to meeting
-        </Link>
-      </header>
+      </section>
+    );
+  }
 
-      {chunks.length === 0 ? (
-        <PanelEmpty
-          className="max-w-[640px]"
-          icon={<Article size={34} />}
-          title="No transcript yet"
-          description={
-            meeting.status === "past"
-              ? "This meeting ran before transcription was enabled."
-              : "The transcript appears here once the meeting has run."
-          }
-        />
-      ) : (
-        <div className="grid items-start gap-6 min-[1100px]:grid-cols-[minmax(0,1fr)_340px]">
-          <TranscriptView
-            chunks={chunks}
-            speakers={speakers}
-            speakerLabels={speakerLabels}
-            notice={notice}
-          />
-          <aside aria-label="Speakers and talk time" className="flex min-w-0 flex-col gap-5">
-            {speakers.length > 0 && (
-              <SpeakerMapping meetingId={meeting.id} speakers={speakers} lineCounts={lineCounts} />
+  const hasOverview = Boolean(recap) || meeting.decisionCount > 0 || meeting.actionCount > 0;
+
+  const rail = (
+    <>
+      {hasOverview && (
+        <div className="panel reveal" style={{ animationDelay: ".09s" }}>
+          <div className="panel-head">
+            <h2>Overview</h2>
+          </div>
+          <div className="panel-body">
+            {recap && (
+              <p className="row-sum" style={{ marginTop: 0 }}>
+                {recap}
+              </p>
             )}
-            <TalkTime chunks={chunks} speakers={speakers} speakerLabels={speakerLabels} />
-          </aside>
+            {(meeting.decisionCount > 0 || meeting.actionCount > 0) && (
+              <div className="row-chips" style={recap ? undefined : { marginTop: 0 }}>
+                {meeting.decisionCount > 0 && (
+                  <span className="tag tag-green">
+                    <span className="tag-dot" />
+                    {meeting.decisionCount} {meeting.decisionCount === 1 ? "decision" : "decisions"}
+                  </span>
+                )}
+                {meeting.actionCount > 0 && (
+                  <span className="tag tag-brown">
+                    <span className="tag-dot" />
+                    {meeting.actionCount} {meeting.actionCount === 1 ? "action item" : "action items"}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
-    </div>
+      {speakers.length > 0 && (
+        <SpeakerMapping meetingId={meeting.id} speakers={speakers} lineCounts={lineCounts} />
+      )}
+      <TalkTimePanel chunks={chunks} speakers={speakers} speakerLabels={speakerLabels} />
+    </>
+  );
+
+  return (
+    <TranscriptView
+      chunks={chunks}
+      speakers={speakers}
+      speakerLabels={speakerLabels}
+      notice={notice}
+      title={meeting.title}
+      meta={meta}
+      backHref={backHref}
+      rail={rail}
+    />
   );
 }

@@ -17,13 +17,9 @@
  */
 
 import { useState, useTransition } from "react";
-import { CaretDown, Question } from "@phosphor-icons/react";
+import { CaretDown } from "@phosphor-icons/react";
 import { assignSpeaker } from "@/app/(app)/meetings/[meetingId]/transcript/actions";
-import { Chip } from "@/components/meetings/Chip";
 import type { MeetingSpeaker } from "@/lib/api/transcript";
-
-const FIELD =
-  "h-10 w-full min-w-0 rounded-pill border border-line-2 bg-surface px-3 text-[13.5px] text-ink transition-colors placeholder:text-ink-3 hover:border-ink-3 focus-visible:border-signal";
 
 export function SpeakerMapping({
   meetingId,
@@ -74,71 +70,60 @@ export function SpeakerMapping({
     <section
       id="speakers"
       aria-labelledby="speaker-mapping-heading"
-      className="scroll-mt-4 rounded-card border border-line bg-surface p-5"
+      className="panel reveal tx-spk"
+      style={{ animationDelay: ".14s" }}
     >
-      <div className="mb-1 flex items-center justify-between gap-3">
-        <h2 id="speaker-mapping-heading" className="text-[15px] font-semibold text-ink">
-          Speakers
-        </h2>
-        <span className="text-[12.5px] text-ink-3">
-          {open > 0 ? `${open} unassigned` : "All matched"}
-        </span>
+      <div className="panel-head">
+        <h2 id="speaker-mapping-heading">Speakers</h2>
+        <span className="count-chip">{speakers.length}</span>
+        <span className="tx-head-note">{open > 0 ? `${open} unassigned` : "All matched"}</span>
       </div>
-      <p className="mb-1.5 text-[13px] text-ink-3">
-        Transcription labels each voice it hears. Assign them to people so the transcript reads by
-        name.
-      </p>
+      <div className="panel-body">
+        <p className="row-sum" style={{ marginTop: 0 }}>
+          Transcription labels each voice it hears. Assign them to people so the transcript reads
+          by name.
+        </p>
+      </div>
 
-      <ul>
-        {speakers.map((s, i) => {
+      <ul className="tx-spk-list">
+        {speakers.map((s) => {
           const lines = lineCounts[s.speaker_id];
           const value = draft[s.speaker_id] ?? "";
           const saving = pending && savingId === s.speaker_id;
-          const unassigned = !s.user_id;
           return (
-            <li key={s.speaker_id} className={`py-3 ${i > 0 ? "border-t border-line" : ""}`}>
-              <div className="mb-2 flex flex-wrap items-center gap-2.5">
-                <span
-                  aria-hidden
-                  className={`grid h-7 w-7 shrink-0 place-items-center rounded-full ${
-                    unassigned
-                      ? "border border-dashed border-priority-medium bg-priority-medium-soft text-priority-medium"
-                      : "bg-pill text-[10.5px] font-semibold text-white"
-                  }`}
-                >
-                  {unassigned ? <Question size={14} weight="bold" /> : s.speaker_id.slice(0, 2)}
-                </span>
-                <span className="text-[13.5px] font-semibold text-ink">Speaker {s.speaker_id}</span>
+            <li key={s.speaker_id} className="panel-row tx-spk-row">
+              <div className="tx-spk-top">
+                <strong>Speaker {s.speaker_id}</strong>
                 {s.assignment === "manual" && s.user_id ? (
-                  <Chip tone="accent">Assigned</Chip>
+                  <span className="tag tag-green">Assigned</span>
                 ) : s.user_id ? (
                   /* Advisory: stated as a guess, with its confidence, and never pre-filled into
                      the control below. */
-                  <Chip>
+                  <span className="tag tag-neutral">
                     Suggested
                     {typeof s.confidence === "number" ? `, ${Math.round(s.confidence * 100)}%` : ""}
-                  </Chip>
+                  </span>
                 ) : (
-                  <Chip tone="medium">Unassigned</Chip>
+                  <span className="tag tag-brown">Unassigned</span>
                 )}
                 {typeof lines === "number" && (
-                  <span className="ml-auto text-[12.5px] text-ink-3">
+                  <small>
                     {lines} {lines === 1 ? "line" : "lines"}
-                  </span>
+                  </small>
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="tx-spk-form">
+                <label htmlFor={`sp-${s.speaker_id}`} className="sr-only">
+                  Assign speaker {s.speaker_id}
+                </label>
                 {people.length > 0 ? (
-                  <div className="relative min-w-0 flex-1">
-                    <label htmlFor={`sp-${s.speaker_id}`} className="sr-only">
-                      Assign speaker {s.speaker_id}
-                    </label>
+                  <span className="tx-field-wrap">
                     <select
                       id={`sp-${s.speaker_id}`}
                       value={value}
                       onChange={(e) => setDraft((d) => ({ ...d, [s.speaker_id]: e.target.value }))}
-                      className={`${FIELD} cursor-pointer appearance-none pr-9`}
+                      className="tx-field"
                     >
                       <option value="">Choose a person...</option>
                       {people.map((p) => (
@@ -147,17 +132,10 @@ export function SpeakerMapping({
                         </option>
                       ))}
                     </select>
-                    <CaretDown
-                      size={16}
-                      aria-hidden
-                      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-3"
-                    />
-                  </div>
+                    <CaretDown size={13} weight="bold" aria-hidden className="tx-field-chev" />
+                  </span>
                 ) : (
-                  <div className="min-w-0 flex-1">
-                    <label htmlFor={`sp-${s.speaker_id}`} className="sr-only">
-                      Assign speaker {s.speaker_id}
-                    </label>
+                  <span className="tx-field-wrap">
                     <input
                       id={`sp-${s.speaker_id}`}
                       value={value}
@@ -170,15 +148,15 @@ export function SpeakerMapping({
                       }}
                       placeholder="User id"
                       autoComplete="off"
-                      className={FIELD}
+                      className="tx-field"
                     />
-                  </div>
+                  </span>
                 )}
                 <button
                   type="button"
                   onClick={() => submit(s.speaker_id)}
                   disabled={pending || !value.trim()}
-                  className="h-10 shrink-0 rounded-pill bg-pill px-4 text-[13px] font-semibold text-white transition-[opacity,transform] duration-150 hover:opacity-90 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 motion-reduce:transition-none motion-reduce:active:scale-100"
+                  className="assign-btn tap"
                 >
                   {saving ? "Saving..." : "Assign"}
                 </button>
@@ -189,7 +167,7 @@ export function SpeakerMapping({
       </ul>
 
       {error && (
-        <p className="mt-1 text-[13px] font-medium text-priority-high" role="alert">
+        <p className="tx-error" role="alert">
           {error}
         </p>
       )}
