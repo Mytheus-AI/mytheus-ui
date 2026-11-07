@@ -89,7 +89,6 @@ export function Sidebar({
         href={it.href}
         onClick={onNavigate}
         aria-current={active ? "page" : undefined}
-        title={railed ? it.label : undefined}
         className={`flex h-[42px] items-center ${lay(ROW)} rounded-pill text-[14px] font-semibold transition-colors duration-150 active:scale-[0.98] ${
           active
             ? "border border-line bg-surface text-ink shadow-sm"

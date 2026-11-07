@@ -64,6 +64,7 @@ export interface RequestOptions {
 }
 
 const MUTATING = new Set(["POST", "PATCH", "PUT"]);
+const READ_TIMEOUT_MS = 6000;
 
 function baseUrl(): string {
   const url = process.env.API_GATEWAY_URL ?? process.env.NEXT_PUBLIC_API_GATEWAY_URL;
@@ -141,6 +142,10 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
   const response = await fetch(buildUrl(path, options.query), {
     method,
     headers,
+    // Reads give up after READ_TIMEOUT_MS so a slow or stuck backend degrades one panel (via
+    // `apiSafe`) instead of holding the whole screen, and every navigation to it, open. Writes
+    // are left alone: aborting one would not undo it on the server.
+    signal: MUTATING.has(method) ? undefined : AbortSignal.timeout(READ_TIMEOUT_MS),
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
     // Tenant-scoped responses are never shared across requests. The Next data cache keys on
     // the URL, which is identical for every tenant, so caching here would serve one tenant's

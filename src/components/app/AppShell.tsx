@@ -88,7 +88,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
 
       <div
-        className={`sb-slot relative hidden shrink-0 lg:block ${rail ? "w-[76px]" : "w-[252px]"}`}
+        // z-40: the open rail overlays the page, so it must sit above positioned page content
+        // (the meeting room stage painted over it). Below the drawer (z-50) and palette (z-80).
+        className={`sb-slot relative z-40 hidden shrink-0 lg:block ${rail ? "w-[76px]" : "w-[252px]"}`}
       >
         <Sidebar rail={rail} onToggleRail={toggleRail} />
       </div>
