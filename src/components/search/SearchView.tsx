@@ -17,6 +17,7 @@ import {
 import type { Icon } from "@phosphor-icons/react";
 import type { SearchResult } from "@/lib/mock/data";
 import { Avatar } from "@/components/ui/Avatar";
+import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/settings/primitives";
@@ -59,7 +60,7 @@ const MEETINGS = Array.from(new Map(RECORDS.map((r) => [r.meetingId, r.meetingTi
 const ASK_SUGGESTIONS = MEETINGS.slice(0, 4).map((m) => `What happened in ${m.title.replace(/\s[\u2013\u2014]\s/g, ", ")}?`);
 
 const tabBase =
-  "inline-flex h-8 items-center gap-1.5 rounded-[10px] px-3.5 text-[13.5px] font-semibold text-ink-3 transition-colors hover:text-ink active:bg-bg-3 aria-selected:bg-surface aria-selected:text-ink aria-selected:shadow-sm focus-visible:!rounded-[10px]";
+  "inline-flex h-9 items-center gap-2 rounded-full px-4 text-[13.5px] font-semibold leading-none text-ink-3 transition-colors hover:text-ink active:bg-bg-3 aria-selected:bg-surface aria-selected:text-ink aria-selected:shadow-sm focus-visible:!rounded-full";
 
 function Tabs<T extends string>({
   label,
@@ -83,7 +84,7 @@ function Tabs<T extends string>({
     });
   };
   return (
-    <div role="tablist" aria-label={label} onKeyDown={onKeyDown} className="inline-flex w-max gap-0.5 rounded-pill bg-bg-2 p-1">
+    <div role="tablist" aria-label={label} onKeyDown={onKeyDown} className="inline-flex w-max items-center gap-0.5 rounded-full bg-bg-2 p-1">
       {items.map((t) => {
         const selected = t.id === value;
         const Glyph = t.icon;
@@ -100,7 +101,7 @@ function Tabs<T extends string>({
             {Glyph ? <Glyph size={16} weight={t.id === "ask" ? "fill" : "regular"} aria-hidden="true" /> : null}
             {t.label}
             {t.count !== undefined ? (
-              <span className="rounded-full bg-bg px-[7px] py-px text-[11.5px] tabular-nums text-ink-3">
+              <span className="grid h-5 min-w-[20px] place-items-center rounded-full bg-bg-3 px-1.5 text-[11px] font-semibold tabular-nums leading-none text-ink-2">
                 {t.count}
               </span>
             ) : null}
@@ -467,21 +468,22 @@ export function SearchView() {
                     onRemove={() => toggle(meetings, setMeetings, id, false)}
                   />
                 ))}
-                <label className="ml-auto flex items-center gap-2 font-semibold">
-                  Sort
-                  <span className="relative">
-                    <select
-                      value={sort}
-                      onChange={(e) => setSort(e.target.value as Sort)}
-                      className="h-9 cursor-pointer appearance-none rounded-pill border border-line-2 bg-surface pl-3 pr-9 text-[13.5px] font-semibold text-ink transition-colors hover:border-ink-3 focus-visible:border-signal focus-visible:!rounded-pill"
-                    >
-                      <option value="match">Best match</option>
-                      <option value="new">Newest first</option>
-                      <option value="old">Oldest first</option>
-                    </select>
-                    <CaretDown size={13} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-3" aria-hidden="true" />
-                  </span>
-                </label>
+                <div className="ml-auto flex items-center gap-2.5 font-semibold">
+                  <span aria-hidden>Sort</span>
+                  <Select<Sort>
+                    label="Sort results"
+                    size="sm"
+                    align="right"
+                    value={sort}
+                    onChange={setSort}
+                    className="w-[150px]"
+                    options={[
+                      { value: "match", label: "Best match" },
+                      { value: "new", label: "Newest first" },
+                      { value: "old", label: "Oldest first" },
+                    ]}
+                  />
+                </div>
               </div>
 
               {results.length === 0 ? (

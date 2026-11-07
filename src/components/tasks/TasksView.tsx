@@ -110,9 +110,15 @@ function TaskRow({
         <MeetingLink task={task} />
       </div>
       <div className="flex basis-full flex-wrap items-center gap-2 pl-[3.25rem] sm:basis-auto sm:flex-nowrap sm:gap-3 sm:pl-0">
-        <Avatar name={task.assignee} size="sm" />
-        <DueChip dueDate={task.dueDate} done={task.done} />
-        <PriorityBadge priority={task.priority} />
+        <span className="flex sm:w-8 sm:justify-center">
+          <Avatar name={task.assignee} size="sm" />
+        </span>
+        <span className="flex sm:w-[124px]">
+          <DueChip dueDate={task.dueDate} done={task.done} />
+        </span>
+        <span className="flex sm:w-[92px] sm:justify-end">
+          <PriorityBadge priority={task.priority} />
+        </span>
       </div>
     </li>
   );
@@ -368,7 +374,7 @@ export function TasksView({ actions }: { actions: ActionItem[] }) {
             role="tablist"
             aria-label="Task view"
             onKeyDown={onTabKey}
-            className="inline-flex shrink-0 gap-1 rounded-pill bg-bg-2 p-1"
+            className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-bg-2 p-1"
           >
             {([
               ["list", "List", ListBullets],
@@ -386,7 +392,7 @@ export function TasksView({ actions }: { actions: ActionItem[] }) {
                 aria-controls="tasks-panel"
                 tabIndex={view === key ? 0 : -1}
                 onClick={() => setView(key)}
-                className={`inline-flex h-9 items-center gap-2 rounded-[10px] px-3.5 text-[13.5px] font-medium transition-colors duration-150 ${
+                className={`inline-flex h-9 items-center gap-2 rounded-full px-4 text-[13.5px] font-medium transition-colors duration-150 focus-visible:!rounded-full ${
                   view === key
                     ? "bg-surface text-ink shadow-sm"
                     : "text-ink-3 hover:text-ink active:bg-bg-3"

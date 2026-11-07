@@ -4,7 +4,6 @@ import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   CalendarBlank,
-  CaretDown,
   CaretRight,
   CheckCircle,
   Flag,
@@ -15,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/Badge";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { Select } from "@/components/ui/Select";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SidePanel } from "@/components/tasks/SidePanel";
 import type { Decision, Priority } from "@/lib/mock/data";
@@ -321,7 +321,7 @@ export function DecisionsLog({ decisions }: { decisions: Decision[] }) {
               <div
                 role="group"
                 aria-label="Priority"
-                className="inline-flex shrink-0 gap-1 rounded-pill bg-bg-2 p-1 max-sm:grid max-sm:w-full max-sm:grid-cols-4"
+                className="inline-flex h-10 shrink-0 items-center gap-0.5 rounded-full bg-bg-2 p-1 max-sm:grid max-sm:w-full max-sm:grid-cols-4"
               >
                 {PRIORITY_FILTERS.map(({ key, label }) => {
                   const count = sorted.filter((d) => matches(d, true) && (key === "all" || d.priority === key)).length;
@@ -332,12 +332,12 @@ export function DecisionsLog({ decisions }: { decisions: Decision[] }) {
                       type="button"
                       aria-pressed={on}
                       onClick={() => setPriority(key)}
-                      className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-[10px] px-3 text-[13px] font-medium transition-colors duration-150 ${
+                      className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-full px-3.5 text-[13px] font-medium transition-colors duration-150 focus-visible:!rounded-full ${
                         on ? "bg-surface text-ink shadow-sm" : "text-ink-3 hover:text-ink active:bg-bg-3"
                       }`}
                     >
                       {label}
-                      <span className="text-[11.5px] text-ink-3">{count}</span>
+                      <span className="min-w-[18px] text-center text-[11.5px] tabular-nums text-ink-3">{count}</span>
                     </button>
                   );
                 })}
@@ -345,26 +345,16 @@ export function DecisionsLog({ decisions }: { decisions: Decision[] }) {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <div className="relative min-w-0 flex-1 basis-48 sm:max-w-[280px]">
-                <select
-                  value={meeting}
-                  onChange={(e) => setMeeting(e.target.value)}
-                  aria-label="Filter by meeting"
-                  className="h-10 w-full cursor-pointer appearance-none rounded-pill border border-line bg-surface pl-3.5 pr-9 text-[14px] text-ink transition-colors hover:border-line-2 focus-visible:border-signal"
-                >
-                  <option value="all">All meetings</option>
-                  {meetings.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.title}
-                    </option>
-                  ))}
-                </select>
-                <CaretDown
-                  size={15}
-                  aria-hidden
-                  className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-3"
-                />
-              </div>
+              <Select
+                label="Filter by meeting"
+                value={meeting}
+                onChange={setMeeting}
+                className="min-w-0 flex-1 basis-48 sm:max-w-[300px]"
+                options={[
+                  { value: "all", label: "All meetings", icon: <VideoCamera size={16} aria-hidden /> },
+                  ...meetings.map((m) => ({ value: m.id, label: m.title })),
+                ]}
+              />
               {anyFilter && (
                 <Button variant="ghost" size="sm" onClick={clear}>
                   <X size={14} aria-hidden />

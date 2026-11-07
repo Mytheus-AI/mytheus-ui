@@ -86,7 +86,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
         className="w-full max-w-[640px] overflow-hidden rounded-[28px] border border-line bg-surface shadow-[0_18px_40px_-8px_rgba(60,45,35,0.35)]"
       >
         <div className="flex items-center gap-3 border-b border-line px-5">
-          <MagnifyingGlass size={20} className="shrink-0 text-ink-3" />
+          <MagnifyingGlass size={20} weight="bold" className="shrink-0 text-signal" aria-hidden />
           <input
             ref={input}
             value={query}
@@ -97,8 +97,11 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             onKeyDown={onKey}
             placeholder="Go to a screen, or search and ask"
             aria-label="Search or ask"
-            className="h-[60px] w-full bg-transparent text-[16px] text-ink placeholder:text-ink-3 focus:outline-none"
+            className="h-[64px] w-full bg-transparent text-[16.5px] text-ink !outline-none placeholder:text-ink-3"
           />
+          <kbd className="hidden shrink-0 rounded-md border border-line bg-bg px-1.5 py-0.5 font-sans text-[11px] font-semibold text-ink-3 sm:inline">
+            Esc
+          </kbd>
         </div>
         <ul className="max-h-[52vh] overflow-y-auto p-2" role="listbox">
           {entries.length === 0 && (

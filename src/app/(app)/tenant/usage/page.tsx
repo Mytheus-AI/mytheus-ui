@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CheckCircle, Warning, WarningOctagon } from "@phosphor-icons/react/dist/ssr";
+import { CaretDown, CheckCircle, Table, Warning, WarningOctagon } from "@phosphor-icons/react/dist/ssr";
 import { LinkButton } from "@/components/ui/Button";
 import { Note, PageHeader, SectionCard } from "@/components/settings/primitives";
 import { thClass } from "@/components/admin/StatCard";
@@ -168,24 +168,34 @@ export default async function UsagePage() {
               <span>{dayLabel(mockUsage.daily.length - 1)}</span>
             </div>
           </div>
-          <details className="group px-4 py-3 sm:px-[22px]">
-            <summary className="cursor-pointer text-[13px] font-semibold text-ink-2 hover:text-ink">View as table</summary>
-            <table className="mt-3 w-full text-left text-[13px]">
-              <thead>
-                <tr>
-                  <th scope="col" className={`${thClass} px-0`}>Day</th>
-                  <th scope="col" className={`${thClass} px-0 text-right`}>Tokens</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {mockUsage.daily.map((v, i) => (
-                  <tr key={i}>
-                    <td className="py-1.5 text-ink-2">{dayLabel(i)}</td>
-                    <td className="py-1.5 text-right tabular-nums text-ink">{nf(v)}M</td>
+          {/* A native disclosure (works without JS, announced as expandable), styled as a row:
+              the default triangle marker is hidden and a caret rotates instead. The table scrolls
+              inside a fixed height so opening it does not push the page a screen down. */}
+          <details className="group border-t border-line">
+            <summary className="flex h-12 cursor-pointer list-none items-center gap-2.5 px-4 text-[13.5px] font-semibold text-ink-2 transition-colors hover:bg-bg hover:text-ink focus-visible:outline-offset-[-2px] sm:px-[22px] [&::-webkit-details-marker]:hidden">
+              <Table size={16} aria-hidden className="text-ink-3" />
+              <span className="flex-1">View as table</span>
+              <span className="text-[12px] font-medium text-ink-3 group-open:hidden">{mockUsage.daily.length} days</span>
+              <CaretDown size={14} weight="bold" aria-hidden className="text-ink-3 transition-transform duration-200 group-open:rotate-180" />
+            </summary>
+            <div className="max-h-[320px] overflow-y-auto border-t border-line">
+              <table className="w-full text-left text-[13px]">
+                <thead className="sticky top-0 z-[1] bg-surface">
+                  <tr className="border-b border-line">
+                    <th scope="col" className={`${thClass} pl-4 sm:pl-[22px]`}>Day</th>
+                    <th scope="col" className={`${thClass} pr-4 text-right sm:pr-[22px]`}>Tokens</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {mockUsage.daily.map((v, i) => (
+                    <tr key={i} className="transition-colors hover:bg-bg">
+                      <td className="py-2 pl-4 text-ink-2 sm:pl-[22px]">{dayLabel(i)}</td>
+                      <td className="py-2 pr-4 text-right font-medium tabular-nums text-ink sm:pr-[22px]">{nf(v)}M</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </details>
         </SectionCard>
       </div>
