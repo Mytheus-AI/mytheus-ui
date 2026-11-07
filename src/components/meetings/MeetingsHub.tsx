@@ -1,411 +1,361 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Article,
-  CalendarBlank,
-  CalendarCheck,
-  CheckSquare,
-  ListChecks,
-  MagnifyingGlass,
-  VideoCameraSlash,
-} from "@phosphor-icons/react";
-import { Chip } from "./Chip";
-import { MeetingRow } from "./MeetingRow";
-import { MeetingsCalendar } from "./MeetingsCalendar";
-import { PanelEmpty } from "./PanelEmpty";
-import { WeekSummary } from "./WeekSummary";
-import { dayKey, dayLabel, sameDay, shortDate, startOfDay } from "./date-utils";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { ArrowRight, MagnifyingGlass } from "@phosphor-icons/react";
+import { Tag } from "./Tag";
+import { addDays, dayDiff, mondayOf, shortDate, startOfDay } from "./date-utils";
 import type { HubMeeting } from "./types";
 
-/* The meetings hub: Upcoming / Live / Past tabs, search, filters, a day-grouped list, and the
-   calendar and week rail. This is the one client island on the page; the page itself stays a
-   Server Component and hands this the meetings it already read.
+/* The meetings hub client island: search, the All / Upcoming / Ended filter, the "Up next" and
+   "Past" lists, and the rail. Ported from the meeting design (non/mytheus-web meetings page) and
+   fed with the meetings the Server Component page already read.
 
-   Everything date-shaped waits for mount. The server cannot know the visitor's time zone, so
-   rendering "Today" or day groups there would disagree with the browser and cause a hydration
-   mismatch. Until `now` exists the list shows its loading skeleton, which is also the honest
-   state: the day grouping genuinely is not known yet. */
+   Everything date-shaped waits for mount: the server cannot know the visitor's time zone, so
+   rendering times or "Today" there would disagree with the browser and break hydration. Until
+   then the lists show placeholders of the same shape. */
 
-type TabKey = "up" | "live" | "past";
-const TABS: { key: TabKey; label: string }[] = [
-  { key: "up", label: "Upcoming" },
-  { key: "live", label: "Live" },
-  { key: "past", label: "Past" },
-];
+const FILTERS = ["All", "Upcoming", "Ended"] as const;
+type Filter = (typeof FILTERS)[number];
 
-type FilterKey = "agenda" | "transcript" | "outcomes";
-type Filters = Record<FilterKey, boolean>;
-const NO_FILTERS: Filters = { agenda: false, transcript: false, outcomes: false };
+/** How close to its start an upcoming meeting counts as "starting soon" and offers Join. */
+const SOON_MS = 10 * 60_000;
 
-const FILTERS: { key: FilterKey; label: string; icon: React.ReactNode }[] = [
-  { key: "agenda", label: "With agenda", icon: <ListChecks size={15} aria-hidden /> },
-  { key: "transcript", label: "With transcript", icon: <Article size={15} aria-hidden /> },
-  { key: "outcomes", label: "With outcomes", icon: <CheckSquare size={15} aria-hidden /> },
-];
+const clock = new Intl.DateTimeFormat("en-US", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
 
-function inTab(m: HubMeeting, tab: TabKey): boolean {
-  if (tab === "up") return m.status !== "past";
-  if (tab === "live") return m.status === "live";
-  return m.status === "past";
+function plural(n: number, one: string, many: string): string {
+  return `${n} ${n === 1 ? one : many}`;
 }
 
-function matches(m: HubMeeting, q: string, f: Filters, day: Date | null): boolean {
-  if (f.agenda && m.agendaCount === 0) return false;
-  if (f.transcript && !m.hasTranscript) return false;
-  if (f.outcomes && m.decisionCount + m.actionCount === 0) return false;
-  if (day && !sameDay(new Date(m.startTime), day)) return false;
-  if (q) {
-    const hay = `${m.title} ${m.participants.join(" ")}`.toLowerCase();
-    if (!hay.includes(q)) return false;
-  }
-  return true;
+function shortDay(d: Date, today: Date): string {
+  const diff = dayDiff(d, today);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Tomorrow";
+  if (diff === -1) return "Yesterday";
+  return shortDate(d);
 }
 
-function Skeleton({ className = "" }: { className?: string }) {
-  return <div className={`rounded-lg bg-bg-2 motion-safe:animate-pulse ${className}`} />;
+function matches(m: HubMeeting, q: string): boolean {
+  if (!q) return true;
+  return `${m.title} ${m.participants.join(" ")}`.toLowerCase().includes(q);
 }
 
-function ListSkeleton() {
+function hoursAndMinutes(total: number): string {
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (h === 0) return `${m}m`;
+  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+
+function Skeleton() {
   return (
-    <div role="status" aria-label="Loading meetings">
-      <Skeleton className="mb-3 ml-1 h-6 w-32" />
-      <div className="overflow-hidden rounded-card border border-line bg-surface">
-        {[0, 1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className={`grid grid-cols-[72px_minmax(0,1fr)_72px] items-center gap-4 px-5 py-[18px] ${
-              i > 0 ? "border-t border-line" : ""
-            }`}
-          >
-            <Skeleton className="h-9" />
-            <div>
-              <Skeleton className="mb-2 h-4 w-3/5" />
-              <Skeleton className="h-3 w-2/5" />
-            </div>
-            <Skeleton className="h-7" />
-          </div>
-        ))}
-      </div>
-      <span className="sr-only">Loading meetings</span>
-    </div>
-  );
-}
-
-function RailSkeleton() {
-  return (
-    <div aria-hidden className="grid gap-5 min-[760px]:grid-cols-2 min-[1100px]:grid-cols-1">
-      <div className="rounded-card border border-line bg-surface p-5">
-        <Skeleton className="mb-4 h-6 w-36" />
-        <Skeleton className="h-56" />
-      </div>
-      <div className="rounded-card border border-line bg-surface p-5">
-        <Skeleton className="mb-4 h-5 w-24" />
-        <div className="grid grid-cols-2 gap-4">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <Skeleton key={i} className="h-10" />
-          ))}
+    <div className="rec-list" role="status" aria-label="Loading meetings">
+      {[0, 1, 2].map((i) => (
+        <div className="up-card" key={i} aria-hidden="true">
+          <span className="mh-skel" style={{ width: 74, height: 48, borderRadius: 12 }} />
+          <span className="up-body">
+            <span className="mh-skel" style={{ width: "55%", height: 13 }} />
+            <span className="mh-skel" style={{ width: "35%", height: 10, marginTop: 8 }} />
+          </span>
         </div>
-      </div>
+      ))}
     </div>
   );
 }
 
 export function MeetingsHub({ meetings }: { meetings: HubMeeting[] }) {
   const [now, setNow] = useState<Date | null>(null);
-  const [tab, setTab] = useState<TabKey>("up");
   const [query, setQuery] = useState("");
-  const [filters, setFilters] = useState<Filters>(NO_FILTERS);
-  const [day, setDay] = useState<Date | null>(null);
-  const [month, setMonth] = useState<Date | null>(null);
-  const tabRefs = useRef<Record<TabKey, HTMLButtonElement | null>>({
-    up: null,
-    live: null,
-    past: null,
-  });
+  const [filter, setFilter] = useState<Filter>("All");
 
   useEffect(() => {
-    const d = new Date();
-    setNow(d);
-    setMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+    setNow(new Date());
+    const id = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(id);
   }, []);
 
   const q = query.trim().toLowerCase();
-  const filtered = Boolean(q || day || filters.agenda || filters.transcript || filters.outcomes);
-  const today = now ? startOfDay(now) : null;
 
-  const counts = useMemo(() => {
-    const c: Record<TabKey, number> = { up: 0, live: 0, past: 0 };
-    for (const m of meetings) {
-      if (!matches(m, q, filters, day)) continue;
-      (Object.keys(c) as TabKey[]).forEach((k) => {
-        if (inTab(m, k)) c[k] += 1;
-      });
-    }
-    return c;
-  }, [meetings, q, filters, day]);
+  const upcoming = useMemo(
+    () =>
+      filter === "Ended"
+        ? []
+        : meetings
+            .filter((m) => m.status !== "past" && matches(m, q))
+            .sort((a, b) => {
+              if (a.status === "live" && b.status !== "live") return -1;
+              if (b.status === "live" && a.status !== "live") return 1;
+              return Date.parse(a.startTime) - Date.parse(b.startTime);
+            }),
+    [meetings, filter, q],
+  );
 
-  const groups = useMemo(() => {
-    const list = meetings
-      .filter((m) => inTab(m, tab) && matches(m, q, filters, day))
-      .map((m) => ({ m, at: new Date(m.startTime) }))
-      .sort((a, b) =>
-        tab === "past" ? b.at.getTime() - a.at.getTime() : a.at.getTime() - b.at.getTime(),
-      );
-    const out: { day: Date; items: HubMeeting[] }[] = [];
-    for (const { m, at } of list) {
-      const last = out[out.length - 1];
-      if (last && sameDay(last.day, at)) last.items.push(m);
-      else out.push({ day: startOfDay(at), items: [m] });
-    }
-    return { out, total: list.length };
-  }, [meetings, tab, q, filters, day]);
+  const past = useMemo(
+    () =>
+      filter === "Upcoming"
+        ? []
+        : meetings
+            .filter((m) => m.status === "past" && matches(m, q))
+            .sort((a, b) => Date.parse(b.startTime) - Date.parse(a.startTime)),
+    [meetings, filter, q],
+  );
 
-  const dayCounts = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const m of meetings) {
-      const k = dayKey(new Date(m.startTime));
-      map.set(k, (map.get(k) ?? 0) + 1);
-    }
-    return map;
+  /* The rail's "This week": Monday to Sunday around today, plain sums of real fields. */
+  const week = useMemo(() => {
+    if (!now) return null;
+    const mon = mondayOf(now);
+    const sun = addDays(mon, 6);
+    const inWeek = meetings.filter((m) => {
+      const d = startOfDay(new Date(m.startTime));
+      return d >= mon && d <= sun;
+    });
+    return {
+      count: inWeek.length,
+      minutes: inWeek.reduce((a, m) => a + m.durationMinutes, 0),
+      decisions: inWeek.reduce((a, m) => a + m.decisionCount, 0),
+      actions: inWeek.reduce((a, m) => a + m.actionCount, 0),
+    };
+  }, [meetings, now]);
+
+  /* The next call is the live one, else the earliest scheduled one. */
+  const next = useMemo(() => {
+    const open = meetings.filter((m) => m.status !== "past");
+    return (
+      open.find((m) => m.status === "live") ??
+      [...open].sort((a, b) => Date.parse(a.startTime) - Date.parse(b.startTime))[0]
+    );
   }, [meetings]);
 
-  const clearAll = () => {
-    setQuery("");
-    setFilters(NO_FILTERS);
-    setDay(null);
-  };
-
-  const onTabKey = (e: React.KeyboardEvent) => {
-    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
-    e.preventDefault();
-    const i = TABS.findIndex((t) => t.key === tab);
-    const next = TABS[(i + (e.key === "ArrowRight" ? 1 : TABS.length - 1)) % TABS.length].key;
-    setTab(next);
-    tabRefs.current[next]?.focus();
-  };
-
-  const onSelectDay = (d: Date) => {
-    if (day && sameDay(day, d)) {
-      setDay(null);
-      return;
-    }
-    setDay(d);
-    const hits = meetings.filter((m) => sameDay(new Date(m.startTime), d));
-    if (hits.length > 0 && !hits.some((m) => inTab(m, tab))) {
-      setTab(hits[0].status === "past" ? "past" : "up");
-    }
-    if (month && d.getMonth() !== month.getMonth()) {
-      setMonth(new Date(d.getFullYear(), d.getMonth(), 1));
-    }
-  };
-
-  const emptyCopy =
-    tab === "live"
-      ? { title: "Nothing live right now", text: "When a meeting starts it shows up here with a Join button." }
-      : { title: "Nothing here yet", text: "Meetings your team schedules through Mytheus will appear here." };
+  const today = now ? startOfDay(now) : null;
 
   return (
-    <div className="grid items-start gap-6 min-[1100px]:grid-cols-[minmax(0,1fr)_320px]">
-      <section aria-label="Meeting list" className="min-w-0">
-        <div className="mb-4 flex flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <div
-              role="tablist"
-              aria-label="Meeting status"
-              onKeyDown={onTabKey}
-              className="inline-flex max-w-full gap-0.5 overflow-x-auto rounded-pill bg-bg-2 p-1"
-            >
-              {TABS.map((t) => {
-                const selected = tab === t.key;
-                return (
-                  <button
-                    key={t.key}
-                    ref={(el) => {
-                      tabRefs.current[t.key] = el;
-                    }}
-                    type="button"
-                    role="tab"
-                    id={`mt-tab-${t.key}`}
-                    aria-selected={selected}
-                    aria-controls="mt-panel"
-                    tabIndex={selected ? 0 : -1}
-                    onClick={() => setTab(t.key)}
-                    className={`inline-flex h-8 shrink-0 items-center gap-2 rounded-[10px] px-3.5 text-[13.5px] font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100 ${
-                      selected
-                        ? "bg-surface text-ink shadow-[0_1px_2px_rgba(40,30,20,0.12)]"
-                        : "text-ink-3 hover:text-ink"
-                    }`}
-                  >
-                    {t.key === "live" && counts.live > 0 && (
-                      <span aria-hidden className="relative flex h-2 w-2">
-                        <span className="absolute inline-flex h-full w-full rounded-full bg-priority-high opacity-60 motion-safe:animate-ping" />
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-priority-high" />
-                      </span>
-                    )}
-                    {t.label}
-                    <span
-                      className={`rounded-full px-1.5 text-[11.5px] ${
-                        selected ? "bg-bg-2 text-ink-2" : "bg-surface text-ink-3"
-                      }`}
-                    >
-                      {now ? counts[t.key] : "-"}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <label className="relative block min-w-[200px] flex-1">
-              <span className="sr-only">Search meetings</span>
-              <MagnifyingGlass
-                size={16}
-                aria-hidden
-                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-3"
-              />
-              <input
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search by title or person"
-                autoComplete="off"
-                className="h-11 w-full rounded-pill border border-line-2 bg-surface pl-10 pr-3 text-[14px] text-ink transition-colors placeholder:text-ink-3 hover:border-ink-3 focus-visible:border-signal"
-              />
-            </label>
+    <div className="canvas cols-2">
+      <div>
+        <div className="tr-toolbar reveal" style={{ animationDelay: ".05s" }}>
+          <div className="tr-search">
+            <MagnifyingGlass size={14} aria-hidden="true" />
+            <input
+              type="text"
+              placeholder="Search meetings"
+              aria-label="Search meetings"
+              autoComplete="off"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
           </div>
-
-          <div role="group" aria-label="Filters" className="flex flex-wrap items-center gap-2">
-            {FILTERS.map((f) => {
-              const on = filters[f.key];
-              return (
-                <button
-                  key={f.key}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => setFilters((cur) => ({ ...cur, [f.key]: !cur[f.key] }))}
-                  className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] font-semibold transition-[background-color,color,border-color,transform] duration-150 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100 ${
-                    on
-                      ? "border-pill bg-pill text-white"
-                      : "border-line-2 bg-surface text-ink-2 hover:border-ink-3 hover:text-ink"
-                  }`}
-                >
-                  {f.icon}
-                  {f.label}
-                </button>
-              );
-            })}
-            <span className="ml-auto text-[12.5px] text-ink-3" aria-live="polite">
-              {now && meetings.length > 0
-                ? `${groups.total} ${groups.total === 1 ? "meeting" : "meetings"}`
-                : ""}
-            </span>
+          <div className="seg" role="group" aria-label="Filter meetings">
+            {FILTERS.map((f) => (
+              <button
+                key={f}
+                type="button"
+                aria-pressed={filter === f}
+                className={`seg-btn tap${filter === f ? " is-on" : ""}`}
+                onClick={() => setFilter(f)}
+              >
+                {f}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div id="mt-panel" role="tabpanel" aria-labelledby={`mt-tab-${tab}`}>
-          {!now || !today ? (
-            <ListSkeleton />
-          ) : meetings.length === 0 ? (
-            <PanelEmpty
-              icon={<CalendarBlank size={34} />}
-              title="No meetings yet"
-              description="Meetings will show up here once your team starts scheduling them through Mytheus."
-            />
-          ) : (
-            <>
-              {day && (
-                <div className="mb-3.5 flex flex-wrap items-center gap-2">
-                  <Chip tone="accent">
-                    <CalendarCheck size={14} aria-hidden />
-                    Showing {shortDate(day)}
-                  </Chip>
-                  <button
-                    type="button"
-                    onClick={() => setDay(null)}
-                    className="h-8 rounded-pill px-3 text-[13px] font-semibold text-ink-3 transition-colors hover:bg-bg-2 hover:text-ink active:scale-[0.97]"
-                  >
-                    Clear day
-                  </button>
+        {!now || !today ? (
+          <Skeleton />
+        ) : (
+          <>
+            {upcoming.length > 0 && (
+              <>
+                <div className="section-label reveal" style={{ animationDelay: ".08s", paddingBottom: 9 }}>
+                  Up next
                 </div>
-              )}
-
-              {groups.out.length === 0 ? (
-                <PanelEmpty
-                  icon={
-                    tab === "live" && !filtered ? (
-                      <VideoCameraSlash size={34} />
-                    ) : (
-                      <CalendarBlank size={34} />
-                    )
-                  }
-                  title={filtered ? "No meetings match" : emptyCopy.title}
-                  description={
-                    filtered
-                      ? "Nothing in this tab fits your search and filters. Try clearing them."
-                      : emptyCopy.text
-                  }
-                  action={
-                    filtered ? (
-                      <button
-                        type="button"
-                        onClick={clearAll}
-                        className="h-11 rounded-pill border border-line-2 px-5 text-[14px] font-semibold text-ink transition-[background-color,transform] duration-150 hover:bg-bg active:scale-[0.98]"
-                      >
-                        Clear search and filters
-                      </button>
-                    ) : undefined
-                  }
-                />
-              ) : (
-                <div className="flex flex-col gap-[22px]">
-                  {groups.out.map((g) => {
-                    const lbl = dayLabel(g.day, today);
+                <div className="rec-list" style={{ marginBottom: 22 }}>
+                  {upcoming.map((m, i) => {
+                    const start = new Date(m.startTime);
+                    const until = start.getTime() - now.getTime();
+                    const soon = m.status === "upcoming" && until >= 0 && until <= SOON_MS;
+                    const joinable = m.status === "live" || soon;
                     return (
-                      <section key={g.day.getTime()} aria-label={lbl.primary}>
-                        <div className="flex flex-wrap items-baseline gap-x-2.5 px-1 pb-2.5">
-                          <h3 className="display text-[20px] text-ink-display">{lbl.primary}</h3>
-                          <span className="text-[13px] text-ink-3">{lbl.secondary}</span>
-                        </div>
-                        <ul className="overflow-hidden rounded-card border border-line bg-surface">
-                          {g.items.map((m, i) => (
-                            <MeetingRow
-                              key={m.id}
-                              meeting={m}
-                              past={m.status === "past"}
-                              divided={i > 0}
-                            />
-                          ))}
-                        </ul>
-                      </section>
+                      <div
+                        className="up-card reveal"
+                        style={{ animationDelay: `${0.1 + i * 0.05}s` }}
+                        key={m.id}
+                      >
+                        <span className="up-when">
+                          <b>{clock.format(start)}</b>
+                          <span>{shortDay(start, today)}</span>
+                        </span>
+                        <span className="up-body">
+                          <strong>{m.title}</strong>
+                          <small>
+                            {m.durationMinutes} min · {plural(m.participants.length, "person", "people")} invited
+                          </small>
+                        </span>
+                        <span className="up-acts">
+                          {joinable ? (
+                            <span className="live-chip">
+                              <span className="live-dot" aria-hidden="true"></span>
+                              {m.status === "live"
+                                ? "Live now"
+                                : `Starts in ${Math.max(1, Math.ceil(until / 60_000))} min`}
+                            </span>
+                          ) : (
+                            <Tag variant="neutral">{shortDay(start, today)}</Tag>
+                          )}
+                          <Link href={`/meetings/${m.id}`} className="btn-ghost-sm tap">
+                            Details
+                          </Link>
+                          {joinable && (
+                            <Link
+                              href={`/meetings/${m.id}/join`}
+                              className="btn-accent-sm tap"
+                              aria-label={`Join ${m.title}`}
+                            >
+                              Join
+                            </Link>
+                          )}
+                        </span>
+                      </div>
                     );
                   })}
                 </div>
-              )}
-            </>
-          )}
-        </div>
-      </section>
+              </>
+            )}
 
-      <aside
-        aria-label="Calendar and week summary"
-        className="min-w-0 min-[1100px]:sticky min-[1100px]:top-2"
-      >
-        {!now || !today || !month ? (
-          <RailSkeleton />
-        ) : (
-          <div className="grid gap-5 min-[760px]:grid-cols-2 min-[1100px]:grid-cols-1">
-            <MeetingsCalendar
-              today={today}
-              month={month}
-              selected={day}
-              counts={dayCounts}
-              onMonthChange={setMonth}
-              onSelect={onSelectDay}
-            />
-            <WeekSummary meetings={meetings} today={today} />
+            {past.length > 0 && (
+              <>
+                <div className="section-label reveal" style={{ animationDelay: ".12s", paddingBottom: 9 }}>
+                  Past
+                </div>
+                <div className="rec-list">
+                  {past.map((m, i) => (
+                    <div
+                      className="rec-card reveal"
+                      style={{ animationDelay: `${0.14 + i * 0.05}s` }}
+                      key={m.id}
+                    >
+                      <Link
+                        href={`/meetings/${m.id}`}
+                        className="rec-play tap"
+                        aria-label={`Open meeting: ${m.title}`}
+                      >
+                        <ArrowRight size={15} weight="bold" aria-hidden="true" />
+                      </Link>
+                      <div className="rec-main">
+                        <div className="rec-title-row">
+                          <strong>{m.title}</strong>
+                          <Tag variant="neutral">{shortDay(new Date(m.startTime), today)}</Tag>
+                        </div>
+                        <div className="rec-meta">
+                          {m.durationMinutes} min · {plural(m.participants.length, "person", "people")}
+                          {m.hasTranscript ? " · transcribed" : ""}
+                        </div>
+                        {m.recap && <p className="rec-sum">{m.recap}</p>}
+                        {(m.decisionCount > 0 || m.actionCount > 0) && (
+                          <div className="rec-tags">
+                            {m.decisionCount > 0 && (
+                              <Tag variant="green" dot>
+                                {plural(m.decisionCount, "decision", "decisions")}
+                              </Tag>
+                            )}
+                            {m.actionCount > 0 && (
+                              <Tag variant="orange" dot>
+                                {plural(m.actionCount, "action", "actions")}
+                              </Tag>
+                            )}
+                          </div>
+                        )}
+                        <div className="meet-links">
+                          <Link href={`/meetings/${m.id}`} className="foot-link tap">
+                            Open meeting
+                          </Link>
+                          {m.hasTranscript && (
+                            <Link href={`/meetings/${m.id}/transcript`} className="foot-link tap">
+                              Transcript
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {upcoming.length === 0 && past.length === 0 && (
+              <div className="board-empty" style={{ borderTop: "none" }} aria-live="polite">
+                {meetings.length === 0
+                  ? "No meetings yet. Meetings your team schedules through Mytheus appear here."
+                  : q
+                    ? `No meetings match "${query.trim()}". Try a different search.`
+                    : filter === "Upcoming"
+                      ? "Nothing scheduled. New meetings appear here as soon as they are booked."
+                      : "No ended meetings yet."}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      <div className="rail-stack">
+        <div className="panel reveal" style={{ animationDelay: ".12s" }}>
+          <div className="panel-head">
+            <h2>This week</h2>
+          </div>
+          <div className="panel-body">
+            {!week ? (
+              <span className="mh-skel" style={{ height: 90 }} aria-hidden="true" />
+            ) : week.count === 0 ? (
+              <p className="rail-note" style={{ marginTop: 0 }}>
+                Nothing on your calendar this week.
+              </p>
+            ) : (
+              [
+                {
+                  n: String(week.count),
+                  label: `${week.count === 1 ? "meeting" : "meetings"}, ${hoursAndMinutes(week.minutes)} in calls`,
+                },
+                { n: String(week.decisions), label: week.decisions === 1 ? "decision captured" : "decisions captured" },
+                { n: String(week.actions), label: week.actions === 1 ? "action captured" : "actions captured" },
+              ].map((d) => (
+                <div className="digest-row" key={d.label}>
+                  <b>{d.n}</b>
+                  <span>{d.label}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {next && (
+          <div className="panel reveal" style={{ animationDelay: ".16s" }}>
+            <div className="panel-head">
+              <h2>Before your next call</h2>
+            </div>
+            <div className="panel-body">
+              <p className="rail-note" style={{ marginTop: 0 }}>
+                <b>{next.title}</b>
+                {next.status === "live" ? " is live now. " : " is next on your calendar. "}
+                {next.agendaCount > 0
+                  ? `Its agenda has ${plural(next.agendaCount, "item", "items")}, ready to read before you join.`
+                  : "No agenda has been shared for it yet."}
+              </p>
+              <div className="meet-links">
+                <Link href={`/meetings/${next.id}`} className="foot-link tap">
+                  Open meeting
+                </Link>
+                {next.status === "live" && (
+                  <Link href={`/meetings/${next.id}/join`} className="foot-link tap">
+                    Join
+                  </Link>
+                )}
+              </div>
+            </div>
           </div>
         )}
-      </aside>
+      </div>
     </div>
   );
 }

@@ -18,4 +18,6 @@ export interface HubMeeting {
   agendaCount: number;
   /** True when transcript lines exist for this meeting. */
   hasTranscript: boolean;
+  /** The agent's recap, when one was written. */
+  recap?: string;
 }
