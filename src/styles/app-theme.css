@@ -126,6 +126,9 @@
 .mx-app .sb-panel { transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s; }
 .mx-app .sb-fade { transition: opacity 0.18s; white-space: nowrap; overflow: hidden; }
 
+/* No slide while the saved sidebar mode is first applied on load. */
+.mx-app.sb-instant .sb-slot, .mx-app.sb-instant .sb-panel { transition: none; }
+
 @media (prefers-reduced-motion: reduce) {
   .mx-app .sb-slot, .mx-app .sb-panel, .mx-app .sb-fade { transition: none; }
 }

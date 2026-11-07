@@ -26,6 +26,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [navOpen, setNavOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [rail, setRail] = useState(false);
+  // False until the saved sidebar mode has been applied. The server cannot know it, so the first
+  // paint is the expanded column; without this the rail visibly slid shut on every full page load.
+  const [sbSynced, setSbSynced] = useState(false);
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
   const drawerTransition = { duration: reduceMotion ? 0 : 0.15, ease: EASE_OUT };
@@ -37,6 +40,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     } catch {
       setRail(window.innerWidth < 1280);
     }
+    const id = requestAnimationFrame(() => requestAnimationFrame(() => setSbSynced(true)));
+    return () => cancelAnimationFrame(id);
   }, []);
 
   const toggleRail = () => {
@@ -79,7 +84,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [navOpen]);
 
   return (
-    <div suppressHydrationWarning className={`mx-app ${appFontClass} flex h-dvh bg-bg`}>
+    <div suppressHydrationWarning className={`mx-app ${appFontClass} flex h-dvh bg-bg ${sbSynced ? "" : "sb-instant"}`}>
       <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
 
       <div

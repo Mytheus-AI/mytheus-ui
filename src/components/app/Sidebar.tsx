@@ -22,6 +22,21 @@ const LABEL_PEEK =
   "w-0 opacity-0 group-hover/sb:w-auto group-hover/sb:opacity-100 group-has-[:focus-visible]/sb:w-auto group-has-[:focus-visible]/sb:opacity-100";
 const TITLE_PEEK = "opacity-0 group-hover/sb:opacity-100 group-has-[:focus-visible]/sb:opacity-100";
 
+/* Collapsed-rail layout, and the classes that restore the full layout while the rail is open. Written
+   out in full because Tailwind only generates classes it can read literally. Collapsed, every row
+   centres its icon with no gap (a zero-width label still took its gap and pushed icons off-centre),
+   section labels take no height (they left uneven holes), and the org block drops its box. */
+const ROW = { open: "gap-3 px-3", rail: "justify-center gap-0 px-0",
+  peek: "group-hover/sb:justify-start group-hover/sb:gap-3 group-hover/sb:px-3 group-has-[:focus-visible]/sb:justify-start group-has-[:focus-visible]/sb:gap-3 group-has-[:focus-visible]/sb:px-3" };
+const BRAND = { open: "gap-2.5 px-2.5", rail: "justify-center gap-0 px-0",
+  peek: "group-hover/sb:justify-start group-hover/sb:gap-2.5 group-hover/sb:px-2.5 group-has-[:focus-visible]/sb:justify-start group-has-[:focus-visible]/sb:gap-2.5 group-has-[:focus-visible]/sb:px-2.5" };
+const ORG = { open: "gap-2.5 border-line bg-surface px-2.5 py-2", rail: "justify-center gap-0 border-transparent bg-transparent px-0 py-1",
+  peek: "group-hover/sb:justify-start group-hover/sb:gap-2.5 group-hover/sb:border-line group-hover/sb:bg-surface group-hover/sb:px-2.5 group-hover/sb:py-2 group-has-[:focus-visible]/sb:justify-start group-has-[:focus-visible]/sb:gap-2.5 group-has-[:focus-visible]/sb:border-line group-has-[:focus-visible]/sb:bg-surface group-has-[:focus-visible]/sb:px-2.5 group-has-[:focus-visible]/sb:py-2" };
+const HEAD = { open: "h-6 pb-2 pt-1", rail: "h-0 py-0",
+  peek: "group-hover/sb:h-6 group-hover/sb:pb-2 group-hover/sb:pt-1 group-has-[:focus-visible]/sb:h-6 group-has-[:focus-visible]/sb:pb-2 group-has-[:focus-visible]/sb:pt-1" };
+const FOOT = { open: "gap-2.5 px-2", rail: "justify-center gap-0 px-0",
+  peek: "group-hover/sb:justify-start group-hover/sb:gap-2.5 group-hover/sb:px-2 group-has-[:focus-visible]/sb:justify-start group-has-[:focus-visible]/sb:gap-2.5 group-has-[:focus-visible]/sb:px-2" };
+
 export function Sidebar({
   rail = false,
   drawer = false,
@@ -43,6 +58,8 @@ export function Sidebar({
   const peekable = railed && !holdClosed;
   const label = railed ? (peekable ? LABEL_PEEK : "w-0 opacity-0") : "";
   const title = railed ? (peekable ? TITLE_PEEK : "opacity-0") : "";
+  const lay = (c: { open: string; rail: string; peek: string }) =>
+    railed ? (peekable ? `${c.rail} ${c.peek}` : c.rail) : c.open;
 
   const toggleRail = (e: MouseEvent<HTMLButtonElement>) => {
     if (!rail) {
@@ -72,7 +89,7 @@ export function Sidebar({
         onClick={onNavigate}
         aria-current={active ? "page" : undefined}
         title={railed ? it.label : undefined}
-        className={`flex h-[42px] items-center gap-3 rounded-pill px-3 text-[14px] font-semibold transition-colors duration-150 active:scale-[0.98] ${
+        className={`flex h-[42px] items-center ${lay(ROW)} rounded-pill text-[14px] font-semibold transition-colors duration-150 active:scale-[0.98] ${
           active
             ? "border border-line bg-surface text-ink shadow-sm"
             : `border border-transparent text-ink-3 hover:bg-bg-2 hover:text-ink ${dashed ? "border-dashed border-line" : ""}`
@@ -90,12 +107,18 @@ export function Sidebar({
       onMouseLeave={() => setHoldClosed(false)}
       className={`group/sb sb-panel flex flex-col border-r border-line bg-bg px-3 pb-3 pt-3.5 ${width}`}
     >
-      <div className="flex h-[52px] items-center gap-2.5 px-2.5 pb-3.5 pt-1.5">
+      <div className={`flex h-[52px] items-center ${lay(BRAND)} pb-3.5 pt-1.5`}>
         <Link
           href="/dashboard"
           onClick={onNavigate}
           aria-label="Mytheus home"
-          className="inline-flex items-center gap-2.5 text-ink"
+          className={`inline-flex items-center text-ink ${
+            railed
+              ? peekable
+                ? "gap-0 group-hover/sb:gap-2.5 group-has-[:focus-visible]/sb:gap-2.5"
+                : "gap-0"
+              : "gap-2.5"
+          }`}
         >
           <LogoMark size={24} className="text-signal" />
           <span className={`sb-fade display text-[21px] ${label}`}>Mytheus</span>
@@ -105,14 +128,21 @@ export function Sidebar({
             type="button"
             onClick={toggleRail}
             aria-label={rail ? "Keep sidebar open" : "Collapse sidebar"}
-            className={`sb-fade ml-auto grid h-8 w-8 shrink-0 place-items-center rounded-[10px] text-ink-3 transition-colors hover:bg-bg-2 hover:text-ink ${label}`}
+            className={`ml-auto h-8 w-8 shrink-0 place-items-center rounded-[10px] text-ink-3 transition-colors hover:bg-bg-2 hover:text-ink ${
+              // Takes no space in the collapsed rail, so the logo can centre; back when the rail opens.
+              railed
+                ? peekable
+                  ? "hidden group-hover/sb:grid group-has-[:focus-visible]/sb:grid"
+                  : "hidden"
+                : "grid"
+            }`}
           >
             <SidebarSimple size={18} />
           </button>
         )}
       </div>
 
-      <div className="mb-3 flex items-center gap-2.5 rounded-pill border border-line bg-surface px-2.5 py-2">
+      <div className={`mb-3 flex items-center rounded-pill border ${lay(ORG)}`}>
         <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[9px] bg-pill text-[13px] font-bold text-white">
           {org.name.slice(0, 1).toUpperCase()}
         </span>
@@ -129,7 +159,7 @@ export function Sidebar({
           <div key={section.label ?? "root"} className="mb-4">
             {section.label && (
               <p
-                className={`sb-fade h-6 px-3 pb-2 pt-1 text-[11.5px] font-bold uppercase tracking-[0.06em] text-ink-3 ${
+                className={`sb-fade ${lay(HEAD)} px-3 text-[11.5px] font-bold uppercase tracking-[0.06em] text-ink-3 ${
                   title
                 }`}
               >
@@ -142,7 +172,7 @@ export function Sidebar({
         {user.role === "admin" && (
           <div className="mb-4">
             <p
-              className={`sb-fade h-6 px-3 pb-2 pt-1 text-[11.5px] font-bold uppercase tracking-[0.06em] text-ink-3 ${
+              className={`sb-fade ${lay(HEAD)} px-3 text-[11.5px] font-bold uppercase tracking-[0.06em] text-ink-3 ${
                 title
               }`}
             >
@@ -153,7 +183,7 @@ export function Sidebar({
         )}
       </nav>
 
-      <div className="flex items-center gap-2.5 border-t border-line px-2 pt-3">
+      <div className={`flex items-center ${lay(FOOT)} border-t border-line pt-3`}>
         <Avatar name={user.name} size="sm" />
         <span className={`sb-fade min-w-0 flex-1 ${label}`}>
           <span className="block truncate text-[13px] font-semibold text-ink">{user.name}</span>
