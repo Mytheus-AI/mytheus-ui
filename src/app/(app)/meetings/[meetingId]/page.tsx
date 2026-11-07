@@ -10,6 +10,7 @@ import {
   mockDecisions,
   mockActions,
   mockTranscriptChunks,
+  mockCollaborations,
   type Meeting,
   type Decision,
   type ActionItem,
@@ -231,6 +232,16 @@ function EndedDetail({
         ]
       : []),
     { kicker: "Decisions", desc: "Traceable back to this meeting", href: "/decisions", tone: "is-green" },
+    ...(mockCollaborations.some((c) => c.meetingId === meeting.id)
+      ? [
+          {
+            kicker: "Agent log",
+            desc: "When one agent asked another for context",
+            href: `/meetings/${meeting.id}/collaborations`,
+            tone: "is-brown",
+          },
+        ]
+      : []),
     { kicker: "Tasks", desc: "Every action item, wherever it was captured", href: "/tasks", tone: "is-orange" },
   ];
 
@@ -258,7 +269,11 @@ function EndedDetail({
               <div className="mynote" key={d.id} style={{ padding: "5px 0" }}>
                 <span className="moment-dot is-decision" style={{ marginTop: 5 }} aria-hidden="true"></span>
                 <span className="mynote-body">
-                  <p>{d.title}</p>
+                  <p>
+                    <Link href={`/meetings/${meeting.id}/decisions/${d.id}`} className="tap" style={{ color: "inherit" }}>
+                      {d.title}
+                    </Link>
+                  </p>
                   <span className="cite-chip">Confirmed {shortDateFormatter.format(new Date(d.confirmedAt))}</span>
                 </span>
               </div>

@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/settings/primitives";
-import { mockDepartments, mockOrgContext } from "@/lib/mock/data";
+import { mockDepartments, mockOrgContext, personSlug } from "@/lib/mock/data";
 
 export const metadata: Metadata = { title: "Org | Mytheus" };
 
@@ -57,16 +58,18 @@ export default function OrgPage() {
                       </div>
                       <ul className="divide-y divide-line border-t border-line">
                         {team.members.map((m) => (
-                          <li
-                            key={m.name}
-                            className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-bg sm:px-[22px]"
-                          >
+                          <li key={m.name}>
+                            <Link
+                              href={`/people/${personSlug(m.name)}`}
+                              className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-bg sm:px-[22px]"
+                            >
                             <Avatar name={m.name} size="md" />
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-[14px] font-semibold text-ink">{m.name}</p>
                               <p className="truncate text-[12.5px] text-ink-3">{m.role}</p>
                             </div>
                             {m.lead ? <Badge className="shrink-0">Lead</Badge> : null}
+                            </Link>
                           </li>
                         ))}
                       </ul>

@@ -532,3 +532,128 @@ export const mockTenantOps: TenantOps[] = [
   { orgId: "org_3", name: "Globex Logistics", plan: "enterprise", monthlyCostUsd: 412.9, agentTokensM: 58.7, flags: ["cell-isolated", "beta-sidebar"], openTickets: 3 },
   { orgId: "org_4", name: "Initech Labs", plan: "starter", monthlyCostUsd: 2.1, agentTokensM: 0.1, flags: ["suspended"], openTickets: 2 },
 ];
+
+/* ---- people (doc-20 person profile; `GET /bff/people/{user_id}` stand-in) ---- */
+
+/** URL-safe key for a mock person. Real profiles are addressed by their `user_id` uuid. */
+export function personSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+export type PersonProfileMock = {
+  name: string;
+  email: string;
+  bio: string;
+  skills: string[];
+  /** taxonomy topics the person's agent listens for (`taxonomy/role-topics`) */
+  topics: string[];
+};
+
+export const mockPeopleProfiles: PersonProfileMock[] = [
+  {
+    name: "Yash Maurya",
+    email: "yash@acme.test",
+    bio: "Founder. Runs product and the frontend, and still writes the release notes.",
+    skills: ["Product strategy", "Next.js", "Fundraising", "Design systems"],
+    topics: ["roadmap", "pricing", "hiring", "investor relations"],
+  },
+  {
+    name: "Samar Rihan",
+    email: "samar@acme.test",
+    bio: "Leads the backend platform: tenancy, the event backbone and the API gateway.",
+    skills: ["Python", "Postgres", "Kafka", "API design"],
+    topics: ["reliability", "data model", "latency", "incidents"],
+  },
+  {
+    name: "Sushan Shetty",
+    email: "sushan@acme.test",
+    bio: "Infrastructure and vendors. Owns deploys, observability and the Deepgram relationship.",
+    skills: ["Docker", "Observability", "Vendor management", "CI/CD"],
+    topics: ["cost", "vendors", "security", "deploys"],
+  },
+  {
+    name: "Shaun Marvell Rodrigues",
+    email: "shaun@acme.test",
+    bio: "Design engineer. Turns the agent's output into screens people trust.",
+    skills: ["Interaction design", "React", "Motion", "Accessibility"],
+    topics: ["onboarding", "UX research", "design reviews"],
+  },
+];
+
+/* ---- agent collaborations (`agent_collaborations`; `GET /api/v1/meetings/:id/collaborations` stand-in) ---- */
+
+export type AgentCollaboration = {
+  id: string;
+  meetingId: string;
+  at: string; // ISO
+  requester: string;
+  responder: string;
+  queryClass: "context_fill" | "decision_history" | "stakeholder" | "dependency";
+  outcome: "granted" | "denied" | "no_answer";
+  latencyMs: number;
+  /** the citation the answer carried, when granted */
+  source?: string;
+  /** why a denial happened, when denied */
+  reason?: string;
+};
+
+export const mockCollaborations: AgentCollaboration[] = [
+  { id: "col_1", meetingId: "mtg_4", at: "2026-06-29T14:04:10Z", requester: "Sushan Shetty", responder: "Yash Maurya", queryClass: "decision_history", outcome: "granted", latencyMs: 640, source: "Vendor Shortlist - May · decision" },
+  { id: "col_2", meetingId: "mtg_4", at: "2026-06-29T14:09:42Z", requester: "Yash Maurya", responder: "Sushan Shetty", queryClass: "context_fill", outcome: "granted", latencyMs: 910, source: "Transcript · 12:40, Sushan" },
+  { id: "col_3", meetingId: "mtg_4", at: "2026-06-29T14:15:03Z", requester: "Sushan Shetty", responder: "Samar Rihan", queryClass: "dependency", outcome: "denied", latencyMs: 120, reason: "Responder's notes for this topic are private" },
+  { id: "col_4", meetingId: "mtg_4", at: "2026-06-29T14:18:55Z", requester: "Yash Maurya", responder: "Samar Rihan", queryClass: "stakeholder", outcome: "no_answer", latencyMs: 2000 },
+  { id: "col_5", meetingId: "mtg_5", at: "2026-06-27T16:12:30Z", requester: "Yash Maurya", responder: "Sushan Shetty", queryClass: "context_fill", outcome: "granted", latencyMs: 720, source: "Vendor Call - Deepgram Renewal · decision" },
+  { id: "col_6", meetingId: "mtg_5", at: "2026-06-27T16:30:08Z", requester: "Yash Maurya", responder: "Samar Rihan", queryClass: "decision_history", outcome: "denied", latencyMs: 95, reason: "Requester is not in the responder's team scope" },
+  { id: "col_7", meetingId: "mtg_1", at: "2026-07-01T15:06:00Z", requester: "Samar Rihan", responder: "Yash Maurya", queryClass: "context_fill", outcome: "granted", latencyMs: 540, source: "Q2 Planning · decision" },
+];
+
+/* ---- tenant admin console (`/admin/tenant/*` stand-in) ---- */
+
+export type WorkspaceMember = {
+  name: string;
+  email: string;
+  tier: "owner" | "admin" | "member";
+  team: string;
+  status: "active" | "invited";
+  lastActive?: string; // ISO date
+};
+
+export const mockWorkspaceMembers: WorkspaceMember[] = [
+  { name: "Yash Maurya", email: "yash@acme.test", tier: "owner", team: "Web", status: "active", lastActive: "2026-07-01" },
+  { name: "Samar Rihan", email: "samar@acme.test", tier: "admin", team: "Platform", status: "active", lastActive: "2026-07-01" },
+  { name: "Sushan Shetty", email: "sushan@acme.test", tier: "member", team: "Platform", status: "active", lastActive: "2026-06-30" },
+  { name: "Shaun Marvell Rodrigues", email: "shaun@acme.test", tier: "member", team: "Web", status: "active", lastActive: "2026-06-29" },
+  { name: "Priya Nair", email: "priya@acme.test", tier: "member", team: "Operations", status: "invited" },
+];
+
+/* ---- usage & agent budget (`/usage`, `usage_aggregates` + `agent_budgets` stand-in) ---- */
+
+export type UsageDimension = {
+  key: "agent_tokens" | "transcription_minutes" | "storage_gb" | "meetings";
+  label: string;
+  unit: string;
+  used: number;
+  included: number;
+};
+
+export const mockUsage = {
+  period: { start: "2026-07-01", end: "2026-07-31" },
+  dimensions: [
+    { key: "agent_tokens", label: "Agent tokens", unit: "M tokens", used: 8.6, included: 10 },
+    { key: "transcription_minutes", label: "Transcription", unit: "minutes", used: 1840, included: 3000 },
+    { key: "storage_gb", label: "Recordings and documents", unit: "GB", used: 12.4, included: 50 },
+    { key: "meetings", label: "Meetings with agents", unit: "meetings", used: 64, included: 200 },
+  ] as UsageDimension[],
+  /** agent-token burn split by model tier, millions of tokens */
+  tiers: [
+    { tier: "Haiku", purpose: "Live notes and captions clean-up", tokensM: 6.1 },
+    { tier: "Sonnet", purpose: "Decisions, actions and context fills", tokensM: 2.2 },
+    { tier: "Opus", purpose: "Cross-meeting synthesis", tokensM: 0.3 },
+  ],
+  /** daily agent-token burn this period, millions */
+  daily: [0.21, 0.34, 0.29, 0.12, 0.08, 0.41, 0.38, 0.45, 0.33, 0.36, 0.1, 0.07, 0.48, 0.52, 0.44, 0.39, 0.42, 0.11, 0.09, 0.47, 0.5, 0.46, 0.41, 0.43],
+};

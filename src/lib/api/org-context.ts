@@ -45,7 +45,7 @@ function profileFor(userId: string): Promise<{ name: string; email: string }> {
 
 /** Once per request: the layout and a page that both ask share the one lookup. */
 export const resolveOrgContext = cache(async (): Promise<OrgContextValue | null> => {
-  const { orgId, orgSlug, userId } = await auth();
+  const { orgId, orgSlug, orgRole, userId } = await auth();
   if (!userId) return null; // signed out; middleware should already have redirected
 
   const { name, email } = await profileFor(userId);
@@ -62,7 +62,9 @@ export const resolveOrgContext = cache(async (): Promise<OrgContextValue | null>
       id: userId,
       name,
       email,
-      role: "member",
+      // Clerk's organization role, read from the verified session. It only decides what the
+      // UI offers (the workspace-admin nav and console); the API enforces the RBAC tier itself.
+      role: orgRole === "org:admin" ? "admin" : "member",
     },
   };
 });

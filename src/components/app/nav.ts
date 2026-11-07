@@ -10,6 +10,8 @@ import {
   TreeStructure,
   VideoCamera,
   CheckSquare,
+  ChartBar,
+  UsersThree,
 } from "@phosphor-icons/react";
 
 export type NavItem = { href: string; label: string; icon: Icon };
@@ -43,7 +45,15 @@ export const NAV_SECTIONS: NavSection[] = [
   },
 ];
 
+/* Shown to workspace owners and admins: the tenant admin console (doc 20 section 7). */
 export const ADMIN_ITEMS: NavItem[] = [
+  { href: "/tenant", label: "Workspace admin", icon: UsersThree },
+  { href: "/tenant/usage", label: "Usage", icon: ChartBar },
+];
+
+/* Platform-staff consoles (every tenant, ops). Not in the workspace nav: no staff role exists
+   in the session yet, so they stay reachable by URL only. */
+export const PLATFORM_ITEMS: NavItem[] = [
   { href: "/admin", label: "Admin console", icon: ShieldCheck },
   { href: "/ops", label: "Ops console", icon: Gauge },
 ];

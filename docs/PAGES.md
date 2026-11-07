@@ -28,7 +28,10 @@ template is `../src/components/marketing/FeaturePage.tsx`, visuals in
 
 | Route | Render | Data | Status |
 | --- | --- | --- | --- |
-| `/sign-in`, `/sign-up` | RSC redirect to `/dashboard` | none | bypass; restore Clerk here (see the `TODO(auth)` markers) |
+| `/sign-in/[[...rest]]` | Client (custom Clerk flow) | Clerk `useSignIn` | done: password, email code (`/factor-one`), 2FA (`/factor-two`), reset (`/forgot-password`) |
+| `/sign-up/[[...rest]]` | Client (custom Clerk flow) | Clerk `useSignUp` | done: details, `/verify-email-address`, `/continue` |
+| `/sso-callback` | Client | Clerk OAuth callback + bot check (`#clerk-captcha`) | done |
+| `/onboarding/organization` | Client | Clerk `choose-organization` session task | done |
 
 ## (app) - authenticated shell
 
@@ -50,6 +53,15 @@ screen-shaped `bff` endpoint (or resource endpoint) each swaps to.
 | `/settings/profile` | Client | user profile + `get_user_context` fields | done |
 | `/settings/integrations` | Client | `integration_connections` | done (toggles visual-only) |
 | `/billing` | RSC | `billing-metering-service` via bff | done |
+| `/people/[id]` | RSC | `GET /bff/people/{user_id}` (real for a uuid; mock for org-chart name slugs) | done |
+| `/meetings/[id]/decisions/[decisionId]` | RSC | decision lineage template via `bff` -> `knowledge-graph-service` | done (mock) |
+| `/meetings/[id]/collaborations` | RSC | `GET /api/v1/meetings/:id/collaborations` (`agent_collaborations`) | done (mock) |
+| `/tenant` | RSC, admin-gated | `admin-ops-service` `/admin/tenant/*` | done (mock); request buttons disabled until the service exists |
+| `/tenant/usage` | RSC, admin-gated | `billing-metering-service` `/usage` | done (mock) |
+
+`/tenant` deviates from doc 20, which files it under `(admin)`: it is a workspace admin's
+console, so it lives in the app shell; `(admin)` stays the platform-staff surface. The gate is
+the Clerk organization role (`org:admin`), UX only: the API enforces the RBAC tier.
 
 The org/tenant context is resolved once in `../src/app/(app)/layout.tsx`
 (mock `OrgContext` today, Clerk session later). Screens never re-resolve

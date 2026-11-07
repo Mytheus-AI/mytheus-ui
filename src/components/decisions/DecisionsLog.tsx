@@ -209,9 +209,14 @@ function DetailBody({ decision }: { decision: Decision }) {
         )}
       </section>
 
-      <LinkButton href={`/meetings/${decision.meetingId}`} variant="outline" className="self-start">
-        Open meeting
-      </LinkButton>
+      <div className="flex flex-wrap gap-2.5">
+        <LinkButton href={`/meetings/${decision.meetingId}/decisions/${decision.id}`} variant="primary" className="self-start">
+          Full lineage
+        </LinkButton>
+        <LinkButton href={`/meetings/${decision.meetingId}`} variant="outline" className="self-start">
+          Open meeting
+        </LinkButton>
+      </div>
     </div>
   );
 }
