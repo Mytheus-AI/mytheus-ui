@@ -3,10 +3,10 @@
 import type { CSSProperties, ReactNode } from "react";
 import { MicrophoneSlash, Microphone, PushPin, UsersThree } from "@phosphor-icons/react";
 
-/* The meeting stage, in the meeting design's shape, shared by the mock tiles and the live LiveKit
-   tiles so swapping between them is not also a visual change. Each tile is plain data
-   (`RoomTile`); the live grid passes a <VideoTrack> as `media`, the mock grid passes nothing and
-   gets a lit room (camera on) or a dark room (camera off) with initials.
+/* The meeting stage, in the meeting design's shape, shared by your own pre-connect tile and the
+   live LiveKit tiles so connecting is not also a visual change. Each tile is plain data
+   (`RoomTile`); the live grid passes a <VideoTrack> as `media`, a tile without media gets a lit
+   room (camera on) or a dark room (camera off) with initials.
 
    Layouts:
    - spotlight (the design): one large frame for the pinned person, else whoever shares a screen,

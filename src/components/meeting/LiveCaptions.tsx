@@ -21,7 +21,6 @@
  * settled.
  */
 
-import { useEffect, useState } from "react";
 import { speakerColorIndex, type CaptionLine } from "@/lib/realtime/captions";
 
 /* Speaker identity colours on the always-dark scrim: cs-1..cs-3 are the design's, cs-4..cs-6 are
@@ -73,45 +72,6 @@ export function LiveCaptions({
         ) : lines.length === 0 ? (
           "Waiting for speech..."
         ) : null}
-      </div>
-    </Strip>
-  );
-}
-
-/**
- * The mock strip, shown until the caption socket has joined: it plays the mock lines the way the
- * design does, building the interim word by word, holding a beat, then settling it as the final.
- */
-export function MockCaptions({ lines }: { lines: { speaker: string; text: string }[] }) {
-  const [cap, setCap] = useState({ line: 0, words: 0 });
-
-  useEffect(() => {
-    if (lines.length === 0) return;
-    const id = window.setInterval(() => {
-      setCap((c) => {
-        const words = lines[c.line].text.split(" ").length;
-        if (c.words >= words + 3) return { line: (c.line + 1) % lines.length, words: 0 };
-        return { ...c, words: c.words + 1 };
-      });
-    }, 300);
-    return () => window.clearInterval(id);
-  }, [lines]);
-
-  if (lines.length === 0) return null;
-  const current = lines[cap.line];
-  const interimText = current.text.split(" ").slice(0, cap.words).join(" ");
-  const settled = lines[(cap.line + lines.length - 1) % lines.length];
-
-  // Not announced: a looping sample re-read word by word would only be noise to a screen reader.
-  return (
-    <Strip announce={false}>
-      <div className="cap-line">
-        <b className={speakerClass(settled.speaker)}>{settled.speaker.split(" ")[0]}</b>
-        {settled.text}
-      </div>
-      <div className="cap-interim">
-        {interimText}
-        {interimText ? <span className="stream-caret" aria-hidden="true" /> : null}
       </div>
     </Strip>
   );

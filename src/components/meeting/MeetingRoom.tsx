@@ -5,7 +5,7 @@ import { useAuth } from "@clerk/nextjs";
 import { RoomEvent, Track, type LocalTrackPublication } from "livekit-client";
 import { AgentSidebar, type AgentAttention } from "@/components/sidebar/AgentSidebar";
 import { LiveVideoGrid } from "@/components/meeting/LiveVideoGrid";
-import { LiveCaptions, MockCaptions } from "@/components/meeting/LiveCaptions";
+import { LiveCaptions } from "@/components/meeting/LiveCaptions";
 import { CallToastProvider } from "@/components/call/CallToast";
 import { CallTopBar } from "@/components/call/CallTopBar";
 import { CALL_PREFS_KEY } from "@/components/call/prefs";
@@ -19,7 +19,8 @@ import { useNarrow } from "@/components/room/useNarrow";
 import { useOrgContext } from "@/lib/org-context";
 import { useLiveKitRoom } from "@/lib/realtime/useLiveKitRoom";
 import { useMeetingSocket } from "@/lib/realtime/useMeetingSocket";
-import { mockRoomParticipants, mockCaptions, type Meeting } from "@/lib/mock/data";
+import type { CallMeeting } from "@/components/call/resolve-meeting";
+import type { AgentSidebarCard } from "@/lib/mock/data";
 
 /* The meeting room, in the meeting design's shape and full screen in the (call) layout: the app
    bar (counts, title, Share link, panel toggle), the stage (a large speaker frame with thumbnails,
@@ -27,12 +28,13 @@ import { mockRoomParticipants, mockCaptions, type Meeting } from "@/lib/mock/dat
    panel (agent, participants, chat) that collapses to a rail. Under 960px it is one column with
    the panel as a bottom sheet.
 
-   Video is live LiveKit when a room is connected and the mock tiles otherwise; captions are the
-   real socket stream once joined and the mock strip otherwise. Once a real call is connected the
-   mic, camera and screen-share controls drive it: your devices from the pre-join are published,
-   muted and unpublished for real. Before that (or for the demo fixtures) they toggle locally. */
+   Video is live LiveKit once the room is connected; before that the stage shows only your own
+   tile. Captions are the real socket stream once joined and nothing otherwise. Once the call is
+   connected the mic, camera and screen-share controls drive it: your devices from the pre-join
+   are published, muted and unpublished for real. Before that they toggle locally. */
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** The agent's cards arrive over `agent-results`, which this room does not subscribe to yet. */
+const NO_AGENT_CARDS: AgentSidebarCard[] = [];
 
 /** Plain words for why the call would not let you in, keyed by the server's stable code. */
 function joinProblem(code: string | null): string {
@@ -48,7 +50,7 @@ function joinProblem(code: string | null): string {
   }
 }
 
-export function MeetingRoom({ meeting }: { meeting: Meeting & { invited?: number } }) {
+export function MeetingRoom({ meeting }: { meeting: CallMeeting }) {
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [captionsOn, setCaptionsOn] = useState(true);
@@ -60,7 +62,6 @@ export function MeetingRoom({ meeting }: { meeting: Meeting & { invited?: number
   const [screenOn, setScreenOn] = useState(false);
   // The devices picked on the pre-join, applied when the real call publishes them.
   const deviceIds = useRef<{ mic?: string; cam?: string }>({});
-  const realMeeting = UUID.test(meeting.id);
   const { user } = useOrgContext();
   const narrow = useNarrow();
 
@@ -172,24 +173,11 @@ export function MeetingRoom({ meeting }: { meeting: Meeting & { invited?: number
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  /* mock stage: the local participant (role starts with "You") follows the mic and camera
-     controls; everyone else is as the mock data says */
-  const mockTiles = useMemo<RoomTile[]>(
-    () =>
-      mockRoomParticipants.map((p) => {
-        const local = p.role.startsWith("You");
-        const mic = local ? micOn : p.micOn;
-        return {
-          id: p.name,
-          name: p.name,
-          role: p.role.replace(/^You\s*·\s*/, ""),
-          isLocal: local,
-          micOn: mic,
-          camOn: local ? camOn : p.camOn,
-          speaking: Boolean(p.speaking) && mic,
-        };
-      }),
-    [micOn, camOn],
+  /* Before the call connects nobody else is known, so the stage is just you, following the mic
+     and camera controls. */
+  const selfTiles = useMemo<RoomTile[]>(
+    () => [{ id: "self", name: user.name, isLocal: true, micOn, camOn, speaking: false }],
+    [user.name, micOn, camOn],
   );
 
   const people = useMemo<RoomPerson[]>(
@@ -202,15 +190,8 @@ export function MeetingRoom({ meeting }: { meeting: Meeting & { invited?: number
             micOn: p.isMicrophoneEnabled,
             speaking: p.isSpeaking,
           }))
-        : mockTiles.map((t) => ({
-            id: t.id,
-            name: t.name,
-            role: t.role,
-            isLocal: t.isLocal,
-            micOn: t.micOn,
-            speaking: t.speaking,
-          })),
-    [liveRoom, live.participants, mockTiles, user.name],
+        : selfTiles.map((t) => ({ id: t.id, name: t.name, isLocal: true, micOn: t.micOn, speaking: false })),
+    [liveRoom, live.participants, selfTiles, user.name],
   );
 
   const pin = (id: string | null) => {
@@ -224,17 +205,8 @@ export function MeetingRoom({ meeting }: { meeting: Meeting & { invited?: number
       <RoomClock />
 
       {/* live captions - the real `caption` socket stream once the gateway is reachable and this
-          socket has joined the room, otherwise the mock strip. Gated on `joined` rather than
-          merely "configured" for the same reason the stage gates on `connected`: a denied
-          participant check or a dropped gateway should degrade to the mock, not to an empty strip
-          that looks like nobody is speaking. */}
-      {captionsOn ? (
-        socket.status === "joined" ? (
-          <LiveCaptions lines={socket.captions.lines} />
-        ) : (
-          realMeeting ? null : <MockCaptions lines={mockCaptions} />
-        )
-      ) : null}
+          socket has joined the room. Until then there is no strip at all. */}
+      {captionsOn && socket.status === "joined" ? <LiveCaptions lines={socket.captions.lines} /> : null}
 
       <ControlBar
         micOn={micOn}
@@ -244,9 +216,9 @@ export function MeetingRoom({ meeting }: { meeting: Meeting & { invited?: number
         leaveHref={`/meetings/${meeting.id}`}
         onMic={() => setMicOn((v) => !v)}
         onCam={() => setCamOn((v) => !v)}
-        // A real meeting has captions only when the transcription stream is joined; until then the
-        // button would toggle nothing, so it is not offered.
-        onCaptions={!realMeeting || socket.status === "joined" ? () => setCaptionsOn((v) => !v) : undefined}
+        // Captions exist only once the transcription stream is joined; until then the button would
+        // toggle nothing, so it is not offered.
+        onCaptions={socket.status === "joined" ? () => setCaptionsOn((v) => !v) : undefined}
         onLayout={() => setLayout((l) => (l === "grid" ? "spotlight" : "grid"))}
         screenOn={screenOn}
         onScreen={liveRoom ? () => setScreenOn((v) => !v) : undefined}
@@ -268,7 +240,7 @@ export function MeetingRoom({ meeting }: { meeting: Meeting & { invited?: number
   return (
     <CallToastProvider>
       <div className="mx-meet cx-call">
-        {realMeeting && (live.status === "connecting" || live.status === "reconnecting" || live.status === "error") ? (
+        {(live.status === "connecting" || live.status === "reconnecting" || live.status === "error") ? (
           <div
             role={live.status === "error" ? "alert" : "status"}
             className={`fixed left-1/2 top-[72px] z-50 w-[min(560px,calc(100vw-32px))] -translate-x-1/2 rounded-[14px] px-4 py-3 text-[13.5px] font-semibold shadow-[var(--shadow-card)] ${
@@ -289,7 +261,7 @@ export function MeetingRoom({ meeting }: { meeting: Meeting & { invited?: number
             room={{
               title: meeting.title,
               inCall: people.length,
-              invited: meeting.invited ?? meeting.participants.length,
+              invited: meeting.invited,
               shareUrl,
               sideVisible: sideOpen,
               onToggleSide: () => setSideOpen((v) => !v),
@@ -301,13 +273,9 @@ export function MeetingRoom({ meeting }: { meeting: Meeting & { invited?: number
                 className={`page meeting-page${sideOpen ? "" : " side-collapsed"}`}
                 id="page-meeting"
               >
-                {/* video stage - live LiveKit tracks once a room is actually connected, otherwise
-                    the mock composition. `live.status` is "unconfigured" in every environment that
-                    exists today, because no LiveKit account exists anywhere in the program yet, so
-                    the mock is what renders. Gating on `connected` rather than merely "configured"
-                    also means a failed mint or a dropped SFU degrades to the mock instead of an
-                    empty stage. */}
-                {liveRoom ? <LiveVideoGrid room={liveRoom}>{stage}</LiveVideoGrid> : stage(mockTiles)}
+                {/* video stage - live LiveKit tracks once the room is connected, otherwise your own
+                    tile while it connects (or if it cannot). */}
+                {liveRoom ? <LiveVideoGrid room={liveRoom}>{stage}</LiveVideoGrid> : stage(selfTiles)}
 
                 <RoomPanel
                   open={sideOpen}
@@ -315,9 +283,9 @@ export function MeetingRoom({ meeting }: { meeting: Meeting & { invited?: number
                   attention={attention.count}
                   conflict={attention.conflict}
                   peopleCount={people.length}
-                  agent={<AgentSidebar onAttentionChange={onAttention} id={SECTION_IDS.agent} demo={!realMeeting} />}
+                  agent={<AgentSidebar onAttentionChange={onAttention} id={SECTION_IDS.agent} items={NO_AGENT_CARDS} />}
                   people={<PeoplePanel people={people} id={SECTION_IDS.people} />}
-                  chat={<ChatPanel id={SECTION_IDS.chat} room={liveRoom} demo={!realMeeting} />}
+                  chat={<ChatPanel id={SECTION_IDS.chat} room={liveRoom} />}
                 />
               </section>
             </main>

@@ -4,7 +4,7 @@ import { Microphone, MicrophoneSlash } from "@phosphor-icons/react";
 import { CollapseSection } from "@/components/call/CollapseSection";
 
 /* Who is in the call, as the design's "Participants" section. Rows come from the live LiveKit
-   participants when connected, otherwise from the mock roster, so this is a projection of
+   participants when connected, otherwise just you, so this is a projection of
    whatever the stage is showing. The design's invite and options buttons are left out (no invite
    flow exists in the app yet). */
 
