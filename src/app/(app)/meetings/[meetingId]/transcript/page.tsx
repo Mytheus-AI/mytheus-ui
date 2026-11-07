@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft, Article, UserFocus } from "@phosphor-icons/react/ssr";
 import { TranscriptView } from "@/components/meeting/TranscriptView";
 import { SpeakerMapping } from "@/components/meeting/SpeakerMapping";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { PanelEmpty } from "@/components/meetings/PanelEmpty";
+import { TalkTime } from "@/components/meetings/TalkTime";
 import { fetchTranscriptSurface, type TranscriptChunk } from "@/lib/api/transcript";
 import { mockMeetings, mockTranscriptChunks } from "@/lib/mock/data";
 
-export const metadata: Metadata = { title: "Transcript — Mytheus" };
+export const metadata: Metadata = { title: "Transcript | Mytheus" };
 
 /* Transcript view (plan 3-4 §3.8 steps 2 and 3, doc 20 §7): the durable record of the meeting,
    with speaker-resolved labels, in-page search, virtualized rows and jump-to-moment timestamps,
@@ -20,6 +22,12 @@ export const metadata: Metadata = { title: "Transcript — Mytheus" };
    gateway answering 404 is a real not-found and is NOT papered over with fabricated content. */
 
 export const dynamic = "force-dynamic";
+
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  weekday: "long",
+  month: "short",
+  day: "numeric",
+});
 
 /** The mock fixtures predate the real contract, so they carry a display name and an "mm:ss"
  *  string where the API carries a diarized `speaker_id` and `start_ms`. Adapting here rather
@@ -48,6 +56,8 @@ function mockAsChunks(meetingId: string): TranscriptChunk[] {
     });
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default async function TranscriptPage({
   params,
 }: {
@@ -56,47 +66,94 @@ export default async function TranscriptPage({
   const meeting = mockMeetings.find((m) => m.id === params.meetingId);
   if (!meeting) notFound();
 
-  const live = await fetchTranscriptSurface(params.meetingId);
+  // Fixture ids ("mtg_1") are not UUIDs, so a real gateway answers them 422. They have no real
+  // transcript to fetch; only a real meeting id goes to the gateway.
+  const live = UUID.test(params.meetingId) ? await fetchTranscriptSurface(params.meetingId) : null;
   const chunks = live?.chunks ?? mockAsChunks(meeting.id);
   const speakers = live?.speakers ?? [];
 
-  return (
-    <div className="mx-auto max-w-4xl motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
-      <p className="kicker text-signal">Transcript</p>
-      <h1 className="display mt-2 break-words text-[clamp(1.8rem,4vw,2.4rem)]">{meeting.title}</h1>
-      <p className="mt-2 text-[14px] text-ink-3">
-        The final transcript is the durable record — interim captions are never stored.
-      </p>
+  // The mock fixtures already carry display names in `speaker_id`; the real contract does not,
+  // so labels are only overridden when the mock fallback is what is on screen.
+  const speakerLabels: Record<string, string> = live
+    ? {}
+    : Object.fromEntries(chunks.map((c) => [c.speaker_id, c.speaker_id]));
 
-      {speakers.length > 0 && (
-        <div className="mt-8">
-          <SpeakerMapping meetingId={meeting.id} speakers={speakers} />
-        </div>
-      )}
+  const lineCounts: Record<string, number> = {};
+  for (const c of chunks) lineCounts[c.speaker_id] = (lineCounts[c.speaker_id] ?? 0) + 1;
 
-      <div className="mt-8">
-        {chunks.length === 0 ? (
-          <EmptyState
-            title="No transcript yet"
-            description={
-              meeting.status === "past"
-                ? "This meeting ran before transcription was enabled."
-                : "The transcript appears here once the meeting has run."
-            }
-          />
-        ) : (
-          <TranscriptView chunks={chunks} speakers={speakers} />
-        )}
+  const unassigned = speakers.filter((s) => !s.user_id);
+  const distinctSpeakers = new Set(chunks.map((c) => c.speaker_id)).size;
+  const when = dateFormatter.format(new Date(meeting.startTime));
+
+  const notice =
+    unassigned.length > 0 ? (
+      <div className="mx-3 mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-pill bg-priority-medium-soft px-3.5 py-3 text-[13.5px] font-semibold text-ink min-[700px]:mx-4">
+        <UserFocus size={18} weight="fill" className="shrink-0 text-priority-medium" aria-hidden />
+        <span className="min-w-0 flex-1">
+          {unassigned.length === 1
+            ? `${lineCounts[unassigned[0].speaker_id] ?? 0} lines are from Speaker ${unassigned[0].speaker_id}, not yet matched to a teammate.`
+            : `${unassigned.length} speakers are not yet matched to a teammate.`}
+        </span>
+        <a
+          href="#speakers"
+          className="inline-flex h-8 items-center rounded-pill bg-surface px-3.5 text-[13px] font-semibold text-ink transition-[background-color,transform] duration-150 hover:bg-bg active:scale-[0.97]"
+        >
+          Assign speakers
+        </a>
       </div>
+    ) : null;
 
-      <div className="mt-10">
+  return (
+    <div className="mx-auto max-w-6xl motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
+      <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4 pb-6 pt-2">
+        <div className="min-w-0 flex-[1_1_420px]">
+          <h1 className="display break-words text-[clamp(1.9rem,3.4vw,2.5rem)] text-ink-display">
+            {meeting.title}
+          </h1>
+          <p className="mt-1.5 max-w-[62ch] text-[15px] text-ink-3">
+            Transcript, {when}, {meeting.durationMinutes} min
+            {distinctSpeakers > 0
+              ? `, ${distinctSpeakers} ${distinctSpeakers === 1 ? "speaker" : "speakers"}`
+              : ""}
+            .
+          </p>
+        </div>
         <Link
           href={`/meetings/${meeting.id}`}
-          className="link-underline text-[13px] font-medium text-ink-2"
+          className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-pill border border-line-2 px-5 text-[14px] font-semibold text-ink transition-[background-color,transform] duration-150 hover:bg-surface active:scale-[0.98] motion-reduce:active:scale-100"
         >
-          ← Meeting details
+          <ArrowLeft size={16} aria-hidden />
+          Back to meeting
         </Link>
-      </div>
+      </header>
+
+      {chunks.length === 0 ? (
+        <PanelEmpty
+          className="max-w-[640px]"
+          icon={<Article size={34} />}
+          title="No transcript yet"
+          description={
+            meeting.status === "past"
+              ? "This meeting ran before transcription was enabled."
+              : "The transcript appears here once the meeting has run."
+          }
+        />
+      ) : (
+        <div className="grid items-start gap-6 min-[1100px]:grid-cols-[minmax(0,1fr)_340px]">
+          <TranscriptView
+            chunks={chunks}
+            speakers={speakers}
+            speakerLabels={speakerLabels}
+            notice={notice}
+          />
+          <aside aria-label="Speakers and talk time" className="flex min-w-0 flex-col gap-5">
+            {speakers.length > 0 && (
+              <SpeakerMapping meetingId={meeting.id} speakers={speakers} lineCounts={lineCounts} />
+            )}
+            <TalkTime chunks={chunks} speakers={speakers} speakerLabels={speakerLabels} />
+          </aside>
+        </div>
+      )}
     </div>
   );
 }

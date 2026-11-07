@@ -4,7 +4,7 @@ type Tone = "default" | "success" | "warning" | "danger" | "high" | "medium" | "
 
 const toneClass: Record<Tone, string> = {
   default: "bg-bg-2 text-ink-2",
-  success: "bg-[#e4efe1] text-[#3a6b34]",
+  success: "bg-[var(--ok-soft,#e4efe1)] text-[var(--ok,#3a6b34)]",
   warning: "bg-priority-medium-soft text-priority-medium",
   danger: "bg-priority-high-soft text-priority-high",
   high: "bg-priority-high-soft text-priority-high",

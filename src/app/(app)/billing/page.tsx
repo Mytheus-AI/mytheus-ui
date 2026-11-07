@@ -1,17 +1,22 @@
 import type { Metadata } from "next";
+import { CalendarBlank, Receipt, UsersThree } from "@phosphor-icons/react/dist/ssr";
 import { mockBilling } from "@/lib/mock/data";
-import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { SettingsShell } from "@/components/settings/SettingsShell";
+import { SectionCard } from "@/components/settings/primitives";
+import { SeatMeter } from "@/components/billing/SeatMeter";
 
 export const metadata: Metadata = {
-  title: "Billing — Mytheus",
+  title: "Billing | Mytheus",
 };
 
 const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
 function formatDate(iso: string) {
-  return new Intl.DateTimeFormat("en-US", { dateStyle: "long" }).format(new Date(`${iso}T00:00:00Z`));
+  return new Intl.DateTimeFormat("en-US", { dateStyle: "long", timeZone: "UTC" }).format(
+    new Date(`${iso}T00:00:00Z`),
+  );
 }
 
 function capitalize(value: string) {
@@ -22,107 +27,95 @@ export default function BillingPage() {
   const { plan, seatsUsed, seatsTotal, pricePerSeat, billingCycle, nextInvoiceDate, nextInvoiceAmount, invoices } =
     mockBilling;
 
-  const seatPct = Math.min(100, Math.round((seatsUsed / seatsTotal) * 100));
   const sortedInvoices = [...invoices].sort((a, b) => (a.date < b.date ? 1 : -1));
 
   return (
-    <div className="mx-auto max-w-3xl motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
-      <p className="kicker">Billing</p>
-      <h1 className="mt-2 text-[28px] font-medium tracking-tight text-ink-display">
-        Plan &amp; billing
-      </h1>
+    <SettingsShell title="Billing" description="Your plan, what you have used this cycle, and past invoices.">
+      {/* Current plan */}
+      <section
+        aria-label="Current plan"
+        className="rounded-[28px] border border-line bg-surface p-5 shadow-sm [background-image:var(--wash)] sm:p-6"
+      >
+        <span className="inline-flex items-center rounded-full bg-pill px-3 py-1 text-[12px] font-semibold text-white">
+          Current plan
+        </span>
+        <h3 className="display mt-3 text-[30px] text-ink-display">{capitalize(plan)}</h3>
+        <p className="mt-1 text-[15px] text-ink-2">
+          <b className="text-[22px] font-semibold text-ink">{currency.format(pricePerSeat)}</b> per seat
+          per {billingCycle === "monthly" ? "month" : "year"}, billed {billingCycle}
+        </p>
+        <ul className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-[13.5px] text-ink-2">
+          <li className="inline-flex items-center gap-1.5">
+            <UsersThree size={16} className="text-ink-3" aria-hidden="true" />
+            {seatsUsed} of {seatsTotal} seats used
+          </li>
+          <li className="inline-flex items-center gap-1.5">
+            <CalendarBlank size={16} className="text-ink-3" aria-hidden="true" />
+            Next invoice {formatDate(nextInvoiceDate)}
+          </li>
+        </ul>
+      </section>
 
-      <div className="mt-8 flex flex-col gap-6">
-        {/* Current plan */}
-        <Card>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-[13px] font-medium uppercase tracking-wide text-ink-3">Current plan</p>
-              <p className="mt-1 text-[20px] font-medium text-ink-display">{capitalize(plan)}</p>
-            </div>
-            <Button variant="outline" size="sm" className="shrink-0">
-              Change plan
-            </Button>
+      <SectionCard title="Usage this cycle" description="Seats in use against the seats you pay for.">
+        <SeatMeter used={seatsUsed} total={seatsTotal} />
+      </SectionCard>
+
+      <SectionCard title="Next invoice">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-4 py-[18px] sm:px-[22px]">
+          <div className="inline-flex items-center gap-2.5">
+            <Receipt size={20} className="text-ink-3" aria-hidden="true" />
+            <p className="display text-[22px] text-ink-display">{formatDate(nextInvoiceDate)}</p>
           </div>
+          <p className="display text-[22px] tabular-nums text-ink-display">
+            {currency.format(nextInvoiceAmount)}
+          </p>
+        </div>
+      </SectionCard>
 
-          <div className="mt-5">
-            <div className="flex items-center justify-between text-[13px] text-ink-2">
-              <span>
-                {seatsUsed} of {seatsTotal} seats used
-              </span>
-              <span>{seatPct}%</span>
-            </div>
-            <div className="mt-2 h-2 w-full overflow-hidden rounded-pill bg-bg-2">
-              <div className="h-full rounded-pill bg-signal" style={{ width: `${seatPct}%` }} />
-            </div>
+      <SectionCard title="Invoice history">
+        {sortedInvoices.length === 0 ? (
+          <div className="p-4 sm:p-[22px]">
+            <EmptyState
+              title="No invoices yet"
+              description="Your first invoice arrives after the current cycle."
+              className="py-10"
+            />
           </div>
-
-          <div className="mt-5 flex flex-wrap gap-x-8 gap-y-2 text-[13px] text-ink-2">
-            <span>
-              <span className="text-ink-3">Price per seat: </span>
-              {currency.format(pricePerSeat)}/seat
-            </span>
-            <span>
-              <span className="text-ink-3">Billing cycle: </span>
-              {capitalize(billingCycle)}
-            </span>
-          </div>
-        </Card>
-
-        {/* Next invoice */}
-        <Card>
-          <p className="text-[13px] font-medium uppercase tracking-wide text-ink-3">Next invoice</p>
-          <div className="mt-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-            <p className="text-[20px] font-medium text-ink-display">{formatDate(nextInvoiceDate)}</p>
-            <p className="text-[20px] font-medium text-ink-display">
-              {currency.format(nextInvoiceAmount)}
-            </p>
-          </div>
-        </Card>
-
-        {/* Invoice history */}
-        <Card>
-          <p className="text-[13px] font-medium uppercase tracking-wide text-ink-3">Invoice history</p>
-          {sortedInvoices.length === 0 ? (
-            <p className="mt-4 text-[13px] text-ink-3">
-              No invoices yet — your first one lands after the current cycle.
-            </p>
-          ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[420px] border-collapse text-left text-[13px]">
-              <thead>
-                <tr className="border-b border-line">
-                  <th scope="col" className="py-2 pr-4 font-medium text-ink-3">
-                    Date
-                  </th>
-                  <th scope="col" className="py-2 pr-4 font-medium text-ink-3">
-                    Amount
-                  </th>
-                  <th scope="col" className="py-2 pr-4 font-medium text-ink-3">
-                    Status
-                  </th>
+        ) : (
+          <table className="w-full border-collapse text-left text-[14px]">
+            <thead>
+              <tr className="bg-bg text-[12px] font-bold uppercase tracking-[0.06em] text-ink-3">
+                <th scope="col" className="px-4 py-2.5 font-bold sm:px-[22px]">
+                  Date
+                </th>
+                <th scope="col" className="px-2 py-2.5 font-bold">
+                  Status
+                </th>
+                <th scope="col" className="px-4 py-2.5 text-right font-bold sm:px-[22px]">
+                  Amount
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {sortedInvoices.map((invoice) => (
+                <tr key={invoice.id} className="transition-colors hover:bg-bg">
+                  <td className="px-4 py-3.5 font-semibold text-ink sm:px-[22px]">
+                    {formatDate(invoice.date)}
+                  </td>
+                  <td className="px-2 py-3.5">
+                    <Badge tone={invoice.status === "paid" ? "success" : "default"}>
+                      {capitalize(invoice.status)}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3.5 text-right font-semibold tabular-nums text-ink sm:px-[22px]">
+                    {currency.format(invoice.amount)}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {sortedInvoices.map((invoice) => (
-                  <tr key={invoice.id} className="border-b border-line-2 last:border-b-0">
-                    <td className="whitespace-nowrap py-3 pr-4 text-ink">{formatDate(invoice.date)}</td>
-                    <td className="whitespace-nowrap py-3 pr-4 tabular-nums text-ink">
-                      {currency.format(invoice.amount)}
-                    </td>
-                    <td className="py-3 pr-4">
-                      <Badge tone={invoice.status === "paid" ? "success" : "default"}>
-                        {capitalize(invoice.status)}
-                      </Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          )}
-        </Card>
-      </div>
-    </div>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </SectionCard>
+    </SettingsShell>
   );
 }

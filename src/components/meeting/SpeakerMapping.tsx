@@ -17,28 +17,40 @@
  */
 
 import { useState, useTransition } from "react";
+import { CaretDown, Question } from "@phosphor-icons/react";
 import { assignSpeaker } from "@/app/(app)/meetings/[meetingId]/transcript/actions";
+import { Chip } from "@/components/meetings/Chip";
 import type { MeetingSpeaker } from "@/lib/api/transcript";
+
+const FIELD =
+  "h-10 w-full min-w-0 rounded-pill border border-line-2 bg-surface px-3 text-[13.5px] text-ink transition-colors placeholder:text-ink-3 hover:border-ink-3 focus-visible:border-signal";
 
 export function SpeakerMapping({
   meetingId,
   speakers,
   people = [],
+  lineCounts = {},
 }: {
   meetingId: string;
   speakers: MeetingSpeaker[];
   /** Assignable org members, resolved by the page. Empty until a people endpoint is wired,
    *  which is why the control degrades to a plain id field rather than an empty dropdown. */
   people?: { id: string; name: string }[];
+  /** `speaker_id` to number of transcript lines, when the page has it. */
+  lineCounts?: Record<string, number>;
 }) {
   const [pending, startTransition] = useTransition();
+  const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<Record<string, string>>({});
+
+  const open = speakers.filter((s) => !s.user_id).length;
 
   const submit = (speakerId: string) => {
     const userId = draft[speakerId]?.trim();
     if (!userId) return;
     setError(null);
+    setSavingId(speakerId);
     startTransition(async () => {
       const result = await assignSpeaker(meetingId, speakerId, userId);
       if (!result.ok) {
@@ -47,85 +59,137 @@ export function SpeakerMapping({
             ? "That user is not a member of this organization."
             : "Could not save that assignment.",
         );
+      } else {
+        setDraft((d) => {
+          const next = { ...d };
+          delete next[speakerId];
+          return next;
+        });
       }
+      setSavingId(null);
     });
   };
 
   return (
-    <section aria-labelledby="speaker-mapping-heading">
-      <h2
-        id="speaker-mapping-heading"
-        className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink-3"
-      >
-        Speakers
-      </h2>
-      <p className="mt-1.5 text-[13px] text-ink-3">
-        Transcription labels each voice it hears. Assign them to people so the transcript reads
-        by name.
+    <section
+      id="speakers"
+      aria-labelledby="speaker-mapping-heading"
+      className="scroll-mt-4 rounded-card border border-line bg-surface p-5"
+    >
+      <div className="mb-1 flex items-center justify-between gap-3">
+        <h2 id="speaker-mapping-heading" className="text-[15px] font-semibold text-ink">
+          Speakers
+        </h2>
+        <span className="text-[12.5px] text-ink-3">
+          {open > 0 ? `${open} unassigned` : "All matched"}
+        </span>
+      </div>
+      <p className="mb-1.5 text-[13px] text-ink-3">
+        Transcription labels each voice it hears. Assign them to people so the transcript reads by
+        name.
       </p>
 
-      <ul className="mt-4 space-y-2">
-        {speakers.map((s) => (
-          <li
-            key={s.speaker_id}
-            className="flex flex-wrap items-center gap-3 rounded-card border border-line bg-surface px-4 py-3"
-          >
-            <span className="font-mono text-[11px] uppercase tracking-wider text-ink-2">
-              Speaker {s.speaker_id}
-            </span>
-
-            {s.assignment === "manual" && s.user_id ? (
-              <span className="rounded-pill bg-signal-soft px-2 py-0.5 text-[11.5px] text-signal-deep">
-                Assigned
-              </span>
-            ) : s.user_id ? (
-              /* Advisory: stated as a guess, with its confidence, and never pre-filled into the
-                 control below. */
-              <span className="text-[12px] text-ink-3">
-                Suggested{typeof s.confidence === "number" ? ` · ${Math.round(s.confidence * 100)}%` : ""}
-              </span>
-            ) : (
-              <span className="text-[12px] text-ink-3">Unassigned</span>
-            )}
-
-            <label className="ml-auto flex items-center gap-2">
-              <span className="sr-only">Assign speaker {s.speaker_id}</span>
-              {people.length > 0 ? (
-                <select
-                  value={draft[s.speaker_id] ?? ""}
-                  onChange={(e) => setDraft((d) => ({ ...d, [s.speaker_id]: e.target.value }))}
-                  className="min-h-[36px] rounded-pill border border-line bg-surface px-3 text-[13px] text-ink"
+      <ul>
+        {speakers.map((s, i) => {
+          const lines = lineCounts[s.speaker_id];
+          const value = draft[s.speaker_id] ?? "";
+          const saving = pending && savingId === s.speaker_id;
+          const unassigned = !s.user_id;
+          return (
+            <li key={s.speaker_id} className={`py-3 ${i > 0 ? "border-t border-line" : ""}`}>
+              <div className="mb-2 flex flex-wrap items-center gap-2.5">
+                <span
+                  aria-hidden
+                  className={`grid h-7 w-7 shrink-0 place-items-center rounded-full ${
+                    unassigned
+                      ? "border border-dashed border-priority-medium bg-priority-medium-soft text-priority-medium"
+                      : "bg-pill text-[10.5px] font-semibold text-white"
+                  }`}
                 >
-                  <option value="">Choose a person…</option>
-                  {people.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  value={draft[s.speaker_id] ?? ""}
-                  onChange={(e) => setDraft((d) => ({ ...d, [s.speaker_id]: e.target.value }))}
-                  placeholder="user id"
-                  className="min-h-[36px] w-[260px] rounded-pill border border-line bg-surface px-3 text-[13px] text-ink placeholder:text-ink-3"
-                />
-              )}
-              <button
-                type="button"
-                onClick={() => submit(s.speaker_id)}
-                disabled={pending || !draft[s.speaker_id]?.trim()}
-                className="min-h-[36px] rounded-pill bg-signal px-4 text-[13px] font-medium text-white transition-colors hover:bg-signal-deep disabled:opacity-40"
-              >
-                {pending ? "Saving…" : "Assign"}
-              </button>
-            </label>
-          </li>
-        ))}
+                  {unassigned ? <Question size={14} weight="bold" /> : s.speaker_id.slice(0, 2)}
+                </span>
+                <span className="text-[13.5px] font-semibold text-ink">Speaker {s.speaker_id}</span>
+                {s.assignment === "manual" && s.user_id ? (
+                  <Chip tone="accent">Assigned</Chip>
+                ) : s.user_id ? (
+                  /* Advisory: stated as a guess, with its confidence, and never pre-filled into
+                     the control below. */
+                  <Chip>
+                    Suggested
+                    {typeof s.confidence === "number" ? `, ${Math.round(s.confidence * 100)}%` : ""}
+                  </Chip>
+                ) : (
+                  <Chip tone="medium">Unassigned</Chip>
+                )}
+                {typeof lines === "number" && (
+                  <span className="ml-auto text-[12.5px] text-ink-3">
+                    {lines} {lines === 1 ? "line" : "lines"}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {people.length > 0 ? (
+                  <div className="relative min-w-0 flex-1">
+                    <label htmlFor={`sp-${s.speaker_id}`} className="sr-only">
+                      Assign speaker {s.speaker_id}
+                    </label>
+                    <select
+                      id={`sp-${s.speaker_id}`}
+                      value={value}
+                      onChange={(e) => setDraft((d) => ({ ...d, [s.speaker_id]: e.target.value }))}
+                      className={`${FIELD} cursor-pointer appearance-none pr-9`}
+                    >
+                      <option value="">Choose a person...</option>
+                      {people.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                    <CaretDown
+                      size={16}
+                      aria-hidden
+                      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-3"
+                    />
+                  </div>
+                ) : (
+                  <div className="min-w-0 flex-1">
+                    <label htmlFor={`sp-${s.speaker_id}`} className="sr-only">
+                      Assign speaker {s.speaker_id}
+                    </label>
+                    <input
+                      id={`sp-${s.speaker_id}`}
+                      value={value}
+                      onChange={(e) => setDraft((d) => ({ ...d, [s.speaker_id]: e.target.value }))}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          submit(s.speaker_id);
+                        }
+                      }}
+                      placeholder="User id"
+                      autoComplete="off"
+                      className={FIELD}
+                    />
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => submit(s.speaker_id)}
+                  disabled={pending || !value.trim()}
+                  className="h-10 shrink-0 rounded-pill bg-pill px-4 text-[13px] font-semibold text-white transition-[opacity,transform] duration-150 hover:opacity-90 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 motion-reduce:transition-none motion-reduce:active:scale-100"
+                >
+                  {saving ? "Saving..." : "Assign"}
+                </button>
+              </div>
+            </li>
+          );
+        })}
       </ul>
 
       {error && (
-        <p className="mt-3 text-[12.5px] text-priority-high" role="alert">
+        <p className="mt-1 text-[13px] font-medium text-priority-high" role="alert">
           {error}
         </p>
       )}
