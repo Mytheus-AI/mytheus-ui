@@ -1,8 +1,9 @@
 /* Dark values for the Meeting tab's design tokens (src/styles/meeting.css, generated from the
    non/ meeting design, which is light-only). Hand-maintained, so it survives regenerating that
-   file. Only colours change: radii, fonts and spacing are the design's own. */
+   file. The second selector covers the (call) layout, where both classes sit on one element. Only colours change: radii, fonts and spacing are the design's own. */
 
-.mx-app[data-theme="dark"] .mx-meet {
+.mx-app[data-theme="dark"] .mx-meet,
+.mx-app.mx-meet[data-theme="dark"] {
   --bgOuter: #141210;
   --bgApp: #1a1816;
   --surface: #232120;

@@ -1,10 +1,12 @@
 "use client";
 
 import { Microphone, MicrophoneSlash } from "@phosphor-icons/react";
-import { Avatar } from "@/components/ui/Avatar";
+import { CollapseSection } from "@/components/call/CollapseSection";
 
-/* Who is in the call. Rows come from the live LiveKit participants when connected, otherwise from
-   the mock roster, so this is a projection of whatever the stage is showing. */
+/* Who is in the call, as the design's "Participants" section. Rows come from the live LiveKit
+   participants when connected, otherwise from the mock roster, so this is a projection of
+   whatever the stage is showing. The design's invite and options buttons are left out (no invite
+   flow exists in the app yet). */
 
 export type RoomPerson = {
   id: string;
@@ -12,50 +14,55 @@ export type RoomPerson = {
   role?: string;
   isLocal?: boolean;
   micOn: boolean;
+  speaking?: boolean;
 };
 
-export function PeoplePanel({ people }: { people: RoomPerson[] }) {
+function initials(name: string) {
+  return name
+    .split(" ")
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
+export function PeoplePanel({ people, id }: { people: RoomPerson[]; id?: string }) {
   return (
-    <div className="h-full overflow-y-auto px-3.5 pb-4">
-      <h3 className="mb-1 mt-3.5 text-[12px] font-bold uppercase tracking-[0.06em] text-ink-3">
-        In the call ({people.length})
-      </h3>
-      {people.length === 0 ? (
-        <p className="py-4 text-[13px] text-ink-3">No one is in the room yet.</p>
-      ) : (
-        <ul>
-          {people.map((p) => (
-            <li
-              key={p.id}
-              className="flex items-center gap-3 border-t border-line py-2.5 first:border-t-0"
-            >
-              <Avatar name={p.name} size="md" />
-              <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-2 text-[14px] font-semibold text-ink">
-                  <span className="truncate">{p.name}</span>
-                  {p.isLocal ? (
-                    <span className="shrink-0 rounded-full bg-bg-2 px-2 py-0.5 text-[11.5px] font-semibold text-ink-2">
-                      You
+    <div className="participants reveal" id={id} style={{ animationDelay: ".18s" }}>
+      <CollapseSection title="Participants" countChip={<span className="count-chip">{people.length}</span>}>
+        {people.length === 0 ? (
+          <p className="saved-empty">No one is in the room yet.</p>
+        ) : (
+          <div className="p-list" role="list">
+            {people.map((p) => (
+              <div className="p-row" role="listitem" key={p.id}>
+                <span className="p-av cx-av" aria-hidden>
+                  {initials(p.name)}
+                </span>
+                <span className="p-id">
+                  <strong>{p.isLocal ? `${p.name} (You)` : p.name}</strong>
+                  {p.role ? <small>{p.role}</small> : null}
+                </span>
+                <span className="p-status">
+                  {p.speaking && p.micOn ? (
+                    <span className="st-speaking wave" role="img" aria-label="Speaking">
+                      <i></i>
+                      <i></i>
+                      <i></i>
+                      <i></i>
                     </span>
-                  ) : null}
-                </p>
-                {p.role ? <p className="truncate text-[12.5px] text-ink-3">{p.role}</p> : null}
+                  ) : p.micOn ? (
+                    <Microphone size={14} role="img" aria-label="Mic on" />
+                  ) : (
+                    <MicrophoneSlash size={14} weight="fill" role="img" aria-label="Muted" />
+                  )}
+                </span>
               </div>
-              {p.micOn ? (
-                <Microphone size={18} className="shrink-0 text-ink-3" aria-label="Mic on" role="img" />
-              ) : (
-                <MicrophoneSlash
-                  size={18}
-                  weight="fill"
-                  className="shrink-0 text-priority-high"
-                  aria-label="Muted"
-                  role="img"
-                />
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+            ))}
+          </div>
+        )}
+      </CollapseSection>
     </div>
   );
 }

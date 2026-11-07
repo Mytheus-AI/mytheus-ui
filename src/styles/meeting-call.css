@@ -1,0 +1,249 @@
+/* The call surfaces (pre-join and the live room), on top of meeting.css.
+
+   Everything here is scoped under `.mx-meet .cx-call` so it only touches these two screens, even
+   after a client-side navigation has left this stylesheet loaded.
+
+   Why an inner `.mx-meet`: the (call) layout puts `mx-app` and `mx-meet` on the same element, and
+   meeting-dark.css is written as `.mx-app[data-theme="dark"] .mx-meet` (a descendant). The call
+   pages therefore render their own `.mx-meet cx-call` root, which picks up the dark tokens. */
+
+/* ---------------------------------------------------------------- shell */
+
+.mx-meet .cx-call { min-height: 100dvh; background: var(--bgApp); color: var(--ink); }
+
+/* The design pins the app to 1024px minimum; the call has to work down to 360px. */
+.mx-meet .cx-call .app { min-width: 0; min-height: 0; }
+
+.mx-meet .cx-call .brand-mark { display: inline-flex; }
+
+/* A long meeting title truncates instead of running under the count chips. */
+.mx-meet .cx-call .appbar-title { max-width: 40%; overflow: hidden; text-overflow: ellipsis; }
+
+/* No coloured left-edge bars on cards or banners (owner's rule). Priority is carried by the kind
+   dot, the label colour and the meta text instead; the act-now card also gets a soft tint. */
+.mx-meet .cx-call .nfy-card::before,
+.mx-meet .cx-call .conflict-banner::before { content: none; }
+.mx-meet .cx-call .nfy-card.is-p1 { background: var(--prioHighBg); }
+
+/* The conflict stays pinned to the top of the panel while it scrolls. */
+.mx-meet .cx-call .conflict-banner { position: sticky; top: 0; z-index: 3; }
+.mx-meet .cx-call .cbn-meta { display: inline-flex; align-items: center; gap: 4px; }
+
+/* Initials avatars: the design uses stock photos, the app shows people's initials. */
+.mx-meet .cx-call .cx-av {
+  display: grid;
+  place-items: center;
+  background: var(--avatarBg);
+  color: var(--avatarText);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+.mx-meet .cx-call .av-stack i.cx-av { font-style: normal; font-size: 8px; }
+
+.mx-meet .cx-call .nfy-acts { flex-wrap: wrap; row-gap: 6px; }
+.mx-meet .cx-call .nfy-sub { font-size: 10.5px; font-weight: 600; color: var(--mutedAlt); margin: -3px 0 7px; }
+.mx-meet .cx-call .nfy-act.is-on { background: var(--chipOrangeBg); color: var(--accentDeep); }
+.mx-meet .cx-call .saved-empty { font-size: 11.5px; line-height: 1.45; font-weight: 500; color: var(--mutedAlt); padding: 4px 2px 2px; }
+.mx-meet .cx-call .afeed-item .nfy-acts { margin-top: 6px; }
+
+/* ---------------------------------------------------------------- stage */
+
+/* The stage frame drops the design's stock photo: what fills it is the participant tile. */
+.mx-meet .cx-call .main-video { background-image: none; background: var(--chipNeutralBg); }
+.mx-meet .cx-call .thumb { background-image: none; }
+
+/* A participant surface: live video, or a lit room (camera on, mock) or a dark room (camera off). */
+.mx-meet .cx-call .cx-tile-bg { position: absolute; inset: 0; }
+.mx-meet .cx-call .cx-tile-bg.is-lit { background: linear-gradient(157deg, #e6b398, #eac4ac 27%, #f0dbc9 54%, #f6efe4); }
+.mx-meet .cx-call .cx-tile-bg.is-dark { background: linear-gradient(160deg, #34312d, #262625); }
+.mx-meet .cx-call .cx-tile-bg.is-media { background: #000; }
+
+.mx-meet .cx-call .cx-initials {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 108px;
+  height: 108px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--serif);
+  font-size: 38px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  background: rgba(38, 38, 37, 0.78);
+  color: rgba(255, 255, 255, 0.9);
+}
+.mx-meet .cx-call .cx-initials.is-sm { width: 52px; height: 52px; font-size: 19px; }
+.mx-meet .cx-call .cx-initials.is-md { width: 72px; height: 72px; font-size: 26px; }
+
+.mx-meet .cx-call .name-pill .cx-muted,
+.mx-meet .cx-call .thumb-name .cx-muted { color: #f2a184; }
+
+/* Thumbs never stretch into tall slivers when only one or two others are in the call. */
+.mx-meet .cx-call .thumbs .thumb { max-height: 260px; }
+.mx-meet .cx-call .thumb-pin.is-always { opacity: 1; }
+
+/* Grid layout: every tile inside the frame, clear of the timer above and the controls below. */
+.mx-meet .cx-call .cx-grid {
+  position: absolute;
+  inset: 64px 14px 84px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+}
+.mx-meet .cx-call .cx-grid .thumb { flex: none; max-height: none; min-height: 0; }
+
+.mx-meet .cx-call .cx-waiting {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mutedDeep);
+}
+
+/* Captions: one settled line and the line being spoken, clamped so a long sentence never grows
+   the strip past two lines. The strip floats over the video, so it never reflows the grid. */
+.mx-meet .cx-call .cap-line { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mx-meet .cx-call .cap-interim { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mx-meet .cx-call .cap-line .cs-4 { color: #8fc4de; }
+.mx-meet .cx-call .cap-line .cs-5 { color: #b0d09c; }
+.mx-meet .cx-call .cap-line .cs-6 { color: #e3b4d6; }
+.mx-meet .cx-call .cap-interim b { font-style: normal; font-weight: 800; margin-right: 6px; color: rgba(255, 255, 255, 0.72); }
+
+/* ---------------------------------------------------------------- side panel */
+
+.mx-meet .cx-call .side-inner { scroll-behavior: smooth; }
+.mx-meet .cx-call .chat-card { min-height: 260px; }
+.mx-meet .cx-call .chat-empty { margin: auto; font-size: 11.5px; font-weight: 600; color: var(--mutedAlt); }
+
+/* ---------------------------------------------------------------- pre-join */
+
+.mx-meet .cx-call .cx-prejoin-canvas { grid-template-columns: minmax(0, 1fr) 380px; }
+
+/* The preview is the person's own camera, not the design's photo. */
+.mx-meet .cx-call .pv-stage { background-image: linear-gradient(160deg, #34312d, #262625); }
+.mx-meet .cx-call .pv-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+.mx-meet .cx-call .pv-video[hidden] { display: none; }
+
+.mx-meet .cx-call .pv-status {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 74px);
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 32px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 13px;
+  border-radius: var(--r-chip);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+}
+.mx-meet .cx-call .pv-status svg { color: #f2a184; }
+
+/* A live level meter: bars scale with the microphone's actual input. */
+.mx-meet .cx-call .mic-meter.is-live i {
+  animation: none;
+  transform-origin: bottom;
+  transform: scaleY(var(--lvl, 0.15));
+  transition: transform 0.08s linear;
+}
+
+.mx-meet .cx-call .pv-devices { padding: 14px 18px 16px; display: flex; gap: 14px; }
+.mx-meet .cx-call .select-btn:disabled { cursor: default; color: var(--mutedDeep); }
+.mx-meet .cx-call .select-btn:disabled:hover { background: var(--chipNeutralBg); }
+.mx-meet .cx-call .select-btn span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.mx-meet .cx-call .detail-title { overflow-wrap: anywhere; }
+.mx-meet .cx-call .pv-actions .btn-ghost { justify-content: center; }
+
+/* ---------------------------------------------------------------- tablet and down */
+
+@media (max-width: 1179px) {
+  .mx-meet .cx-call .appbar .chip.meeting-only:not(.chip-btn) + .chip.meeting-only:not(.chip-btn) { display: none; }
+  .mx-meet .cx-call .appbar-title { max-width: 34%; }
+}
+
+@media (max-width: 1099px) {
+  .mx-meet .cx-call .cx-prejoin-canvas { grid-template-columns: minmax(0, 1fr) 330px; }
+}
+
+@media (max-width: 959px) {
+  /* App bar: the title moves inline and truncates; the count chips give way. */
+  .mx-meet .cx-call .appbar { height: 56px; padding: 0 12px; gap: 8px; }
+  .mx-meet .cx-call .brand { margin-right: 0; }
+  .mx-meet .cx-call .appbar .chip.meeting-only:not(.chip-btn) { display: none; }
+  .mx-meet .cx-call .appbar-title {
+    position: static;
+    transform: none;
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+    font-size: 16px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mx-meet .cx-call .appbar-right { margin-left: 0; }
+  .mx-meet .cx-call .chip-btn .chip-label { display: none; }
+  .mx-meet .cx-call .chip-btn { padding: 0 10px; }
+
+  .mx-meet .cx-call .app-row { padding: 0 8px 8px; }
+
+  /* Room: one column, the stage on top and the panel as a bottom sheet. */
+  .mx-meet .cx-call .meeting-page { flex-direction: column; gap: 8px; }
+  .mx-meet .cx-call .stage { flex-direction: column; gap: 8px; }
+  .mx-meet .cx-call .main-video { min-height: 220px; border-radius: var(--r-card); }
+  .mx-meet .cx-call .thumbs { width: auto; height: 84px; flex-direction: row; gap: 8px; }
+  .mx-meet .cx-call .thumbs .thumb { flex: 1 1 0; min-width: 0; max-height: none; }
+  .mx-meet .cx-call .thumb-pin { opacity: 1; }
+  .mx-meet .cx-call .thumb-name { left: 6px; bottom: 6px; max-width: calc(100% - 38px); overflow: hidden; }
+  .mx-meet .cx-call .thumb-mic { right: 6px; bottom: 6px; }
+  .mx-meet .cx-call .more-pill { height: auto; padding: 0 12px 0 8px; }
+
+  .mx-meet .cx-call .timer-pill { top: 10px; left: 10px; height: 32px; }
+  .mx-meet .cx-call .main-video > .name-pill { top: 10px; right: 10px; left: auto; bottom: auto; height: 32px; max-width: calc(100% - 150px); overflow: hidden; white-space: nowrap; }
+  .mx-meet .cx-call .controls { bottom: 10px; gap: 5px; padding: 7px; max-width: calc(100% - 16px); }
+  .mx-meet .cx-call .ctl { width: 40px; height: 40px; }
+  .mx-meet .cx-call .ctl-leave { height: 40px; padding: 0 13px; }
+  .mx-meet .cx-call .ctl-leave .ctl-leave-label { display: none; }
+  .mx-meet .cx-call .captions { width: calc(100% - 20px); bottom: 66px; padding: 8px 12px 9px; }
+  .mx-meet .cx-call .cx-initials { width: 84px; height: 84px; font-size: 30px; }
+  .mx-meet .cx-call .cx-initials.is-sm { width: 40px; height: 40px; font-size: 15px; }
+  .mx-meet .cx-call .cx-initials.is-md { width: 56px; height: 56px; font-size: 20px; }
+  .mx-meet .cx-call .cx-grid { inset: 52px 8px 66px; gap: 8px; }
+
+  .mx-meet .cx-call .side { width: 100%; height: 42dvh; min-height: 220px; flex-shrink: 0; }
+  .mx-meet .cx-call .side-inner { width: 100%; padding-right: 0; }
+  .mx-meet .cx-call .meeting-page.side-collapsed .side { width: 100%; height: 50px; min-height: 0; }
+  .mx-meet .cx-call .side-mini { width: 100%; height: 50px; flex-direction: row; justify-content: center; padding: 0 10px; gap: 10px; }
+  .mx-meet .cx-call .mini-sep { width: 1px; height: 20px; margin: 0 3px; }
+
+  /* Pre-join: a single column. */
+  .mx-meet .cx-call .page-inner { padding: 8px 16px 24px; }
+  .mx-meet .cx-call .cx-prejoin-canvas { grid-template-columns: minmax(0, 1fr); }
+  .mx-meet .cx-call .pv-stage { min-height: 0; aspect-ratio: 4 / 3; flex: none; }
+  .mx-meet .cx-call .screen-head { margin: 4px 2px 14px; }
+}
+
+@media (max-width: 520px) {
+  .mx-meet .cx-call .pv-devices { flex-direction: column; gap: 12px; }
+  .mx-meet .cx-call .pv-stage { aspect-ratio: 3 / 4; max-height: 62dvh; width: 100%; }
+  .mx-meet .cx-call .cx-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mx-meet .cx-call .cx-grid.is-solo { grid-template-columns: minmax(0, 1fr); }
+  .mx-meet .cx-call .preview-name { top: 12px; bottom: auto; max-width: calc(100% - 24px); overflow: hidden; white-space: nowrap; }
+}

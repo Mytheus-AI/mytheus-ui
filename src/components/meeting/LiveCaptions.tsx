@@ -1,18 +1,19 @@
 "use client";
 
 /**
- * The live-caption strip. Plan 3-4 §3.8 step 1: "interim-then-final, no layout shift,
- * append-only final track".
+ * The live-caption strip, in the meeting design's shape: a dark scrim floating over the video
+ * with the last settled line and, under it, the line still being spoken. Plan 3-4 §3.8 step 1:
+ * "interim-then-final, no layout shift, append-only final track".
  *
- * NO LAYOUT SHIFT is the requirement that shapes this file. Three things protect it:
+ * NO LAYOUT SHIFT is what shapes this file:
  *
  *  1. Interims REPLACE their own line by `chunkId` (handled in `lib/realtime/captions.ts`), so a
  *     revising utterance never adds a row.
- *  2. The strip is a fixed-height scroll region, not a growing block. A caption arriving must
- *     not reflow the video grid above it, which is what an auto-growing strip would do on every
- *     single utterance.
- *  3. Only the tail is shown, pinned to the bottom. A caption strip is a "what was just said"
- *     surface; the full record is the transcript view (§3.8 step 2).
+ *  2. The strip is absolutely positioned over the video frame, so a caption arriving can never
+ *     reflow the stage. Each of its two rows is clamped to two lines and the interim row keeps a
+ *     minimum height, so the strip itself barely moves either.
+ *  3. Only the tail is shown. A caption strip is a "what was just said" surface; the full record
+ *     is the transcript view (§3.8 step 2).
  *
  * Interims are rendered dimmer and italic rather than hidden. Hiding them until final would
  * cost the entire latency benefit of interims - the p95 < 2 s promise is about the interim, not
@@ -20,79 +21,22 @@
  * settled.
  */
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { speakerColorIndex, type CaptionLine } from "@/lib/realtime/captions";
 
-/* Speaker identity colours, lifted so they hold AA on the always-dark caption scrim in both
-   themes (the scrim does not flip with the theme, so token colours would not work here). Six is
-   the nominal room size from doc 10's video-grid scope, so a seventh speaker wrapping around is
-   the intended degradation rather than an unbounded palette. */
-const SPEAKER_COLORS = [
-  "text-[#f2a184]",
-  "text-[#8fc4de]",
-  "text-[#e1c484]",
-  "text-[#b0d09c]",
-  "text-[#e3b4d6]",
-  "text-[#f3f0e8]",
-] as const;
+/* Speaker identity colours on the always-dark scrim: cs-1..cs-3 are the design's, cs-4..cs-6 are
+   added in meeting-call.css. Six is the nominal room size from doc 10's video-grid scope. */
+const PALETTE = 6;
 
-export function speakerColor(index: number): string {
-  return SPEAKER_COLORS[index % SPEAKER_COLORS.length];
+function speakerClass(speakerId: string) {
+  return `cs-${speakerColorIndex(speakerId, PALETTE) + 1}`;
 }
 
-/* The frame: a centred dark scrim of fixed height. It is shared with the mock strip in
-   `MeetingRoom` so the mock and the live stream look identical. The inner region scrolls and the
-   content hugs the bottom (`mt-auto`), so the newest line is always the one at the bottom edge. */
-export function CaptionFrame({
-  children,
-  tailRef,
-}: {
-  children: ReactNode;
-  tailRef?: React.RefObject<HTMLDivElement>;
-}) {
+function Strip({ children, announce = true }: { children: React.ReactNode; announce?: boolean }) {
   return (
-    <div className="w-full max-w-[760px] shrink-0 self-center rounded-card bg-[rgba(26,24,22,0.8)] px-4 py-2.5 text-[rgba(250,249,244,0.96)] backdrop-blur-md max-[959px]:px-3 max-[959px]:py-2">
-      <div
-        className="flex h-[64px] flex-col overflow-y-auto min-[960px]:h-[72px]"
-        role="log"
-        aria-live="polite"
-        aria-label="Live captions"
-      >
-        <div className="mt-auto space-y-0.5">
-          {children}
-          <div ref={tailRef} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export function CaptionText({
-  speaker,
-  colorIndex,
-  interim = false,
-  children,
-}: {
-  speaker: string;
-  colorIndex: number;
-  interim?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <p
-      className={`text-[14px] font-medium leading-[1.5] max-[959px]:text-[13px] ${
-        interim ? "italic text-white/75" : "text-white/95"
-      }`}
-    >
-      <span className={`mr-2 font-extrabold not-italic ${speakerColor(colorIndex)}`}>{speaker}</span>
+    <div className="captions" role="log" aria-live={announce ? "polite" : "off"} aria-label="Live captions">
       {children}
-      {interim ? (
-        <span
-          aria-hidden
-          className="ml-1 inline-block h-[13px] w-[6px] rounded-sm bg-signal-bright align-[-2px] motion-safe:animate-pulse"
-        />
-      ) : null}
-    </p>
+    </div>
   );
 }
 
@@ -105,30 +49,70 @@ export function LiveCaptions({
    *  Falls back to the raw label, which is what the user sees before any mapping exists. */
   speakerLabel?: (speakerId: string) => string;
 }) {
-  const tailRef = useRef<HTMLDivElement | null>(null);
-
-  // Keep the newest line in view. Scrolling the strip's own container, never the page, so a
-  // caption can never yank the whole room layout.
-  useEffect(() => {
-    tailRef.current?.scrollIntoView({ block: "end" });
-  }, [lines]);
+  const name = (id: string) => speakerLabel?.(id) ?? `Speaker ${id}`;
+  const last = lines[lines.length - 1];
+  const interim = last && !last.isFinal ? last : undefined;
+  const finals = lines.filter((l) => l.isFinal);
+  const settled = finals[finals.length - 1];
 
   return (
-    <CaptionFrame tailRef={tailRef}>
-      {lines.length === 0 ? (
-        <p className="text-[14px] leading-[1.5] text-white/75">Waiting for speech...</p>
-      ) : (
-        lines.map((line) => (
-          <CaptionText
-            key={line.chunkId}
-            speaker={speakerLabel?.(line.speakerId) ?? `Speaker ${line.speakerId}`}
-            colorIndex={speakerColorIndex(line.speakerId, SPEAKER_COLORS.length)}
-            interim={!line.isFinal}
-          >
-            {line.text}
-          </CaptionText>
-        ))
-      )}
-    </CaptionFrame>
+    <Strip>
+      {settled ? (
+        <div className="cap-line">
+          <b className={speakerClass(settled.speakerId)}>{name(settled.speakerId)}</b>
+          {settled.text}
+        </div>
+      ) : null}
+      <div className="cap-interim">
+        {interim ? (
+          <>
+            {settled && settled.speakerId === interim.speakerId ? null : <b>{name(interim.speakerId)}</b>}
+            {interim.text}
+            <span className="stream-caret" aria-hidden="true" />
+          </>
+        ) : lines.length === 0 ? (
+          "Waiting for speech..."
+        ) : null}
+      </div>
+    </Strip>
+  );
+}
+
+/**
+ * The mock strip, shown until the caption socket has joined: it plays the mock lines the way the
+ * design does, building the interim word by word, holding a beat, then settling it as the final.
+ */
+export function MockCaptions({ lines }: { lines: { speaker: string; text: string }[] }) {
+  const [cap, setCap] = useState({ line: 0, words: 0 });
+
+  useEffect(() => {
+    if (lines.length === 0) return;
+    const id = window.setInterval(() => {
+      setCap((c) => {
+        const words = lines[c.line].text.split(" ").length;
+        if (c.words >= words + 3) return { line: (c.line + 1) % lines.length, words: 0 };
+        return { ...c, words: c.words + 1 };
+      });
+    }, 300);
+    return () => window.clearInterval(id);
+  }, [lines]);
+
+  if (lines.length === 0) return null;
+  const current = lines[cap.line];
+  const interimText = current.text.split(" ").slice(0, cap.words).join(" ");
+  const settled = lines[(cap.line + lines.length - 1) % lines.length];
+
+  // Not announced: a looping sample re-read word by word would only be noise to a screen reader.
+  return (
+    <Strip announce={false}>
+      <div className="cap-line">
+        <b className={speakerClass(settled.speaker)}>{settled.speaker.split(" ")[0]}</b>
+        {settled.text}
+      </div>
+      <div className="cap-interim">
+        {interimText}
+        {interimText ? <span className="stream-caret" aria-hidden="true" /> : null}
+      </div>
+    </Strip>
   );
 }

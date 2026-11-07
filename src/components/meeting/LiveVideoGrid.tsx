@@ -3,10 +3,11 @@
 /**
  * The real participant video grid, rendered from live LiveKit tracks.
  *
- * Deliberately renders through the same `RoomGrid` as the mock composition in `MeetingRoom.tsx`
- * - same tiles, name tags, muted badge and speaking ring - so that swapping from mock to live
- * media is not also a visual redesign. This file only turns LiveKit tracks into `RoomTile`s and
- * supplies the <VideoTrack> as each tile's media.
+ * Deliberately renders through the same stage as the mock composition in `MeetingRoom.tsx`
+ * - same frame, thumbnails, name pills, muted badge and speaking ring - so that swapping from
+ * mock to live media is not also a visual redesign. This file only turns LiveKit tracks into
+ * `RoomTile`s, supplies the <VideoTrack> as each tile's media, and hands the tiles to `children`,
+ * which draws the stage (with the room's overlays) exactly as it does for the mock tiles.
  *
  * `<VideoTrack>` and `useTracks` come from `@livekit/components-react` rather than being
  * hand-rolled over `livekit-client`: attaching a `MediaStreamTrack` to a `<video>` element
@@ -17,18 +18,16 @@
 import { VideoTrack, useTracks } from "@livekit/components-react";
 import { Track } from "livekit-client";
 import type { Room } from "livekit-client";
-import { RoomGrid, type RoomLayout, type RoomTile } from "@/components/room/RoomGrid";
+import type { ReactNode } from "react";
+import type { RoomTile } from "@/components/room/RoomGrid";
 
 export function LiveVideoGrid({
   room,
-  layout = "grid",
-  spotlightId = null,
-  onSpotlight,
+  children,
 }: {
   room: Room;
-  layout?: RoomLayout;
-  spotlightId?: string | null;
-  onSpotlight?: (id: string) => void;
+  /** Draws the stage from the live tiles. */
+  children: (tiles: RoomTile[]) => ReactNode;
 }) {
   // `onlySubscribed: false` keeps a participant in the grid while their camera is off or their
   // track has not been subscribed yet, so people do not blink out of the room the moment they
@@ -66,5 +65,5 @@ export function LiveVideoGrid({
     };
   });
 
-  return <RoomGrid tiles={tiles} layout={layout} spotlightId={spotlightId} onSpotlight={onSpotlight} />;
+  return <>{children(tiles)}</>;
 }

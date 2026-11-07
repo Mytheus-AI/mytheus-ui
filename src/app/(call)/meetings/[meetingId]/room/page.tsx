@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { MeetingRoom } from "@/components/meeting/MeetingRoom";
 import { mockMeetings } from "@/lib/mock/data";
+import "@/styles/meeting-call.css";
 
 export const metadata: Metadata = { title: "Meeting room | Mytheus" };
 
-/* The real meeting-room screen (4-July Part 4b): video-grid mock, live
-   captions, chat, and the agent sidebar - all presentation on mock data.
-   LiveKit media and the Socket.io agent-stream/agent-results wiring are the
-   later phase; they plug into <MeetingRoom /> without changing this route. */
+/* The live meeting room, full screen in the (call) layout: the stage (LiveKit video when a room is
+   connected, the mock tiles otherwise), live captions, and the side panel with the agent, the
+   participants and chat. See <MeetingRoom /> for the data flow. */
 
 export function generateStaticParams() {
   return mockMeetings.map((m) => ({ meetingId: m.id }));
