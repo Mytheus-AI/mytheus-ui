@@ -276,7 +276,9 @@
 
 /* ---- top bar: brand | title with who is here under it | share, panel */
 .mx-meet .cx-call .cx-bar-sep { width: 1px; height: 22px; background: var(--navBorder); margin: 0 4px; flex-shrink: 0; }
-.mx-meet .cx-call .cx-bar-title { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+/* The title takes the free space, which is what pushes Share and the panel toggle to the right
+   edge (an older narrow-screen rule zeroes .appbar-right's auto margin). */
+.mx-meet .cx-call .cx-bar-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .mx-meet .cx-call .cx-bar-title h1 {
   font-size: 15px;
   font-weight: 700;
@@ -296,6 +298,8 @@
   white-space: nowrap;
 }
 @media (max-width: 719px) {
+  /* Phones: the logo mark alone, so the meeting title has room. */
+  .mx-meet .cx-call .appbar .brand-name { display: none; }
   .mx-meet .cx-call .cx-bar-sep { display: none; }
   .mx-meet .cx-call .cx-bar-title p span { display: none; }
 }
