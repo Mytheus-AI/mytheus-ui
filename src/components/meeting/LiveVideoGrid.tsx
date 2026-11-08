@@ -21,6 +21,7 @@ import type { Room } from "livekit-client";
 import type { ReactNode } from "react";
 import type { RoomTile } from "@/components/room/RoomGrid";
 import { useOrgContext } from "@/lib/org-context";
+import { useRoomName } from "@/lib/realtime/room-names";
 
 export function LiveVideoGrid({
   room,
@@ -34,6 +35,7 @@ export function LiveVideoGrid({
   // `onlySubscribed: false` keeps a participant in the grid while their camera is off or their
   // track has not been subscribed yet, so people do not blink out of the room the moment they
   // mute. Placeholders are what make the grid stable.
+  const nameOf = useRoomName();
   const tracks = useTracks(
     [
       { source: Track.Source.Camera, withPlaceholder: true },
@@ -48,8 +50,8 @@ export function LiveVideoGrid({
     const screen = reference.source === Track.Source.ScreenShare;
     const camOn = publication !== undefined && !publication.isMuted;
     // LiveKit identities are internal user ids, so never show one: your own tile uses your name,
-    // anyone the token did not name shows as Guest.
-    const name = participant.name || (participant.isLocal ? user.name : "Guest");
+    // everyone else is named from the workspace's members, and only a stranger shows as Guest.
+    const name = participant.isLocal ? user.name : participant.name || nameOf(participant.identity);
 
     return {
       id: `${participant.identity}:${reference.source}`,
