@@ -12,6 +12,18 @@
  */
 
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+
+import { hostRedirect, requestHost } from "@/lib/hosts";
+
+/**
+ * Host split (marketing on the apex, the app and every auth step on the app host). Both are
+ * NEXT_PUBLIC so they are inlined at build time: set them as build args. Unset means no split.
+ */
+const HOSTS = {
+  appHost: process.env.NEXT_PUBLIC_APP_HOST ?? "",
+  marketingOrigin: process.env.NEXT_PUBLIC_MARKETING_ORIGIN ?? "",
+};
 
 /**
  * Public routes. Everything else requires a session.
@@ -55,6 +67,15 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
+  // Before auth, so a signed-out visit to an app route on the apex lands on the app host's
+  // sign-in rather than a sign-in on the apex whose session the app host would not see.
+  const target = hostRedirect(
+    requestHost(request.headers),
+    request.nextUrl.pathname,
+    request.nextUrl.search,
+    HOSTS,
+  );
+  if (target) return NextResponse.redirect(target, 308);
   if (isPublicRoute(request)) return;
   // Redirects to sign-in when there is no session. Fails closed: an unprotected `(app)` route
   // would render the shell and then have every data read rejected by the gateway with a 401,

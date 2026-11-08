@@ -62,6 +62,10 @@ jobs:
             NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
             CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}
             API_GATEWAY_URL=${{ vars.API_GATEWAY_URL }}
+            NEXT_PUBLIC_APP_HOST=${{ vars.NEXT_PUBLIC_APP_HOST }}
+            NEXT_PUBLIC_MARKETING_ORIGIN=${{ vars.NEXT_PUBLIC_MARKETING_ORIGIN }}
+            NEXT_PUBLIC_LIVEKIT_URL=${{ vars.NEXT_PUBLIC_LIVEKIT_URL }}
+            NEXT_PUBLIC_REALTIME_WS_URL=${{ vars.NEXT_PUBLIC_REALTIME_WS_URL }}
           tags: |
             ghcr.io/mytheus-ai/mytheus-ui:${{ github.sha }}
             ghcr.io/mytheus-ai/mytheus-ui:main
