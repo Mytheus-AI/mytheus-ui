@@ -183,11 +183,15 @@ export default async function UsagePage() {
   const ctx = await resolveOrgContext();
   const result = await fetchUsage();
 
-  if (result.kind === "forbidden") {
+  if (result.kind === "forbidden" || result.kind === "unavailable") {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader title="Usage and budget" description="Workspace usage against the plan." />
-        <Note>Only workspace admins can see usage and the agent budget. Ask an admin for access.</Note>
+        <Note>
+          {result.kind === "forbidden"
+            ? "Only workspace admins can see usage and the agent budget. Ask an admin for access."
+            : "Usage is not available from the server right now. Try again later."}
+        </Note>
       </div>
     );
   }
