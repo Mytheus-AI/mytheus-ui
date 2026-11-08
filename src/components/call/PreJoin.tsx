@@ -69,7 +69,9 @@ export function PreJoin({ meeting }: { meeting: CallMeeting }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const meterRef = useRef<HTMLSpanElement>(null);
 
-  // Acquire (or re-acquire, after a device switch) the camera and microphone.
+  // Acquire (or re-acquire, after a device switch) the camera and microphone. Camera off asks
+  // for no video at all, so the camera is released and its light goes out; turning it back on
+  // asks again.
   useEffect(() => {
     let cancelled = false;
     let acquired: MediaStream | null = null;
@@ -81,7 +83,7 @@ export function PreJoin({ meeting }: { meeting: CallMeeting }) {
     setStatus("pending");
     media
       .getUserMedia({
-        video: request.cam ? { deviceId: { exact: request.cam } } : true,
+        video: camOff ? false : request.cam ? { deviceId: { exact: request.cam } } : true,
         audio: request.mic ? { deviceId: { exact: request.mic } } : true,
       })
       .then(async (got) => {
@@ -92,7 +94,8 @@ export function PreJoin({ meeting }: { meeting: CallMeeting }) {
         acquired = got;
         setStream(got);
         setStatus("ready");
-        setCamValue(got.getVideoTracks()[0]?.getSettings().deviceId);
+        const camId = got.getVideoTracks()[0]?.getSettings().deviceId;
+        if (camId) setCamValue(camId);
         setMicValue(got.getAudioTracks()[0]?.getSettings().deviceId);
         const devices = await media.enumerateDevices();
         if (cancelled) return;
@@ -113,20 +116,17 @@ export function PreJoin({ meeting }: { meeting: CallMeeting }) {
       cancelled = true;
       stopAll(acquired);
     };
-  }, [request]);
+  }, [request, camOff]);
 
   // The preview element follows the stream.
   useEffect(() => {
     if (videoRef.current) videoRef.current.srcObject = stream;
   }, [stream]);
 
-  // Mute and camera-off act on the tracks themselves, so the preview tells the truth.
+  // Mute acts on the track itself, so the level meter tells the truth.
   useEffect(() => {
     stream?.getAudioTracks().forEach((t) => (t.enabled = !micOff));
   }, [stream, micOff]);
-  useEffect(() => {
-    stream?.getVideoTracks().forEach((t) => (t.enabled = !camOff));
-  }, [stream, camOff]);
 
   // Level meter: the bars follow the microphone's real input level.
   const hasAudio = Boolean(stream?.getAudioTracks().length);
