@@ -9,6 +9,7 @@ import { AFTER_AUTH_URL, firstError } from "./clerk-helpers";
 import { ArrowRight } from "@/components/landing/ui";
 import { Doodle } from "@/components/ui/Doodle";
 import { defaultDoodleSeed, isDoodleSeed } from "@/lib/doodle";
+import { provisionActiveWorkspace } from "@/app/actions/workspace";
 
 /* ================================================================== */
 /*  The "choose-organization" session task, made our own. A new        */
@@ -80,6 +81,19 @@ export function ChooseOrganization() {
       await setActive({
         organization: organizationId,
         navigate: async () => {
+          // Mint a token that carries the org just made active, so the server action below
+          // reads it from the refreshed session cookie rather than the pre-switch one.
+          await clerk.session?.getToken({ skipCache: true });
+          const outcome = await provisionActiveWorkspace();
+          if (!outcome.ok) {
+            setError(
+              outcome.reason === "not_admin"
+                ? "This workspace isn't set up yet. Ask its admin to sign in once to finish setting it up."
+                : "We couldn't set up your workspace just now. Try again in a moment.",
+            );
+            setBusy(null);
+            return;
+          }
           router.push(AFTER_AUTH_URL);
         },
       });
