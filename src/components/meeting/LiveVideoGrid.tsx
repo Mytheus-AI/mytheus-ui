@@ -3,11 +3,11 @@
 /**
  * The real participant video grid, rendered from live LiveKit tracks.
  *
- * Deliberately renders through the same stage as the mock composition in `MeetingRoom.tsx`
- * - same frame, thumbnails, name pills, muted badge and speaking ring - so that swapping from
- * mock to live media is not also a visual redesign. This file only turns LiveKit tracks into
- * `RoomTile`s, supplies the <VideoTrack> as each tile's media, and hands the tiles to `children`,
- * which draws the stage (with the room's overlays) exactly as it does for the mock tiles.
+ * Deliberately renders through the same stage as the pre-connect tile in `MeetingRoom.tsx`
+ * - same frame, thumbnails, name pills, muted badge and speaking ring - so that connecting is
+ * not also a visual redesign. This file only turns LiveKit tracks into `RoomTile`s, supplies the
+ * <VideoTrack> as each tile's media, and hands the tiles to `children`, which draws the stage
+ * (with the room's overlays).
  *
  * `<VideoTrack>` and `useTracks` come from `@livekit/components-react` rather than being
  * hand-rolled over `livekit-client`: attaching a `MediaStreamTrack` to a `<video>` element

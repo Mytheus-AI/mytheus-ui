@@ -17,7 +17,7 @@ import { CallTopBar } from "@/components/call/CallTopBar";
 import { CALL_PREFS_KEY } from "@/components/call/prefs";
 import { Select, type SelectOption } from "@/components/call/Select";
 import { useOrgContext } from "@/lib/org-context";
-import type { Meeting } from "@/lib/mock/data";
+import type { CallMeeting } from "@/components/call/resolve-meeting";
 
 /* The pre-join "green room", ported from the meeting design: your own camera preview with mic and
    camera toggles and a level meter, device pickers, the meeting card, what your agent will do, and
@@ -52,7 +52,7 @@ function stopAll(stream: MediaStream | null) {
   stream?.getTracks().forEach((t) => t.stop());
 }
 
-export function PreJoin({ meeting }: { meeting: Meeting & { invited?: number } }) {
+export function PreJoin({ meeting }: { meeting: CallMeeting }) {
   const { user } = useOrgContext();
   const [micOff, setMicOff] = useState(false);
   const [camOff, setCamOff] = useState(false);
@@ -171,13 +171,10 @@ export function PreJoin({ meeting }: { meeting: Meeting & { invited?: number } }
     },
   ];
 
-  const others = meeting.participants.filter((p) => p !== user.name);
+  // The API gives the invite list as user ids without names, so the card says how many, not who.
+  const others = Math.max(0, meeting.invited - 1);
   const invitedNote =
-    others.length === 0
-      ? "Only you are invited"
-      : others.length === 1
-        ? `With ${others[0]}`
-        : `With ${others.slice(0, -1).map((n) => n.split(" ")[0]).join(", ")} and ${others[others.length - 1].split(" ")[0]}`;
+    others === 0 ? "Only you are invited" : `You and ${others} ${others === 1 ? "other" : "others"}`;
 
   const remember = () => {
     try {
@@ -319,19 +316,13 @@ export function PreJoin({ meeting }: { meeting: Meeting & { invited?: number } }
                               {meeting.title}
                             </h3>
                             <p className="detail-by">
-                              {meeting.durationMinutes} min · {meeting.invited ?? meeting.participants.length}{" "}
-                              {(meeting.invited ?? meeting.participants.length) === 1 ? "person" : "people"} invited
+                              {meeting.durationMinutes} min · {meeting.invited}{" "}
+                              {meeting.invited === 1 ? "person" : "people"} invited
                             </p>
                             <div className="pv-lobby">
                               <span className="av-stack" style={{ marginTop: 0 }} aria-hidden="true">
-                                {meeting.participants.slice(0, 3).map((p) => (
-                                  <i className="cx-av" key={p}>
-                                    {initials(p)}
-                                  </i>
-                                ))}
-                                {meeting.participants.length > 3 ? (
-                                  <span className="av-more">+{meeting.participants.length - 3}</span>
-                                ) : null}
+                                <i className="cx-av">{initials(user.name)}</i>
+                                {others > 0 ? <span className="av-more">+{others}</span> : null}
                               </span>
                               <span className="pv-lobby-note">{invitedNote}</span>
                             </div>

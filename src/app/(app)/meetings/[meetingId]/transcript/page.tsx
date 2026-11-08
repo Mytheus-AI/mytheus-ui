@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { ApiError } from "@/lib/api/client";
 import { Article, User } from "@phosphor-icons/react/ssr";
 import { TranscriptView } from "@/components/meeting/TranscriptView";
 import { SpeakerMapping } from "@/components/meeting/SpeakerMapping";
 import { TalkTimePanel } from "@/components/transcript/TalkTimePanel";
 import { TranscriptHead } from "@/components/transcript/TranscriptHead";
-import { fetchTranscriptSurface, type TranscriptChunk } from "@/lib/api/transcript";
-import { mockMeetingDetails, mockMeetings, mockTranscriptChunks } from "@/lib/mock/data";
+import { resolveCallMeeting } from "@/components/call/resolve-meeting";
+import { fetchTranscriptSurface } from "@/lib/api/transcript";
 import "@/styles/meeting-transcript.css";
 
 export const metadata: Metadata = { title: "Transcript | Mytheus" };
@@ -15,11 +16,8 @@ export const metadata: Metadata = { title: "Transcript | Mytheus" };
    with speaker-resolved labels, in-page search, virtualized rows and jump-to-moment timestamps,
    plus the speaker-mapping surface. RSC page, client islands for the two interactive parts.
 
-   Reads through `core-api`'s `GET /meetings/:id/transcript` and `GET .../speakers`, both of
-   which landed in mytheus-backend f6c9466 - before that neither existed, which is why this
-   screen was on mock data. When no gateway is configured (every environment today) the read
-   returns null and the mock transcript renders, so the screen keeps working; a configured
-   gateway answering 404 is a real not-found and is NOT papered over with fabricated content. */
+   Reads the meeting and `core-api`'s `GET /meetings/:id/transcript` and `GET .../speakers`. An
+   unreachable transcript service is shown as no transcript; a 404 is a real not-found. */
 
 export const dynamic = "force-dynamic";
 
@@ -29,54 +27,19 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
   day: "numeric",
 });
 
-/** The mock fixtures predate the real contract, so they carry a display name and an "mm:ss"
- *  string where the API carries a diarized `speaker_id` and `start_ms`. Adapting here rather
- *  than teaching the component two shapes keeps the component honest about what the server
- *  actually returns. */
-function mockAsChunks(meetingId: string): TranscriptChunk[] {
-  return mockTranscriptChunks
-    .filter((c) => c.meetingId === meetingId)
-    .map((c): TranscriptChunk => {
-      const [m, s] = c.at.split(":").map(Number);
-      const startMs = ((m || 0) * 60 + (s || 0)) * 1000;
-      return {
-        id: c.id,
-        meeting_id: c.meetingId,
-        // The fixture's display name stands in for a diarized label. The view renders an
-        // unmapped speaker as "Speaker {id}", so a mock name reads as "Speaker Yash Maurya" -
-        // slightly odd, and correct: it is exactly what an unmapped label looks like.
-        speaker_id: c.speaker,
-        start_ms: startMs,
-        end_ms: startMs + 4000,
-        text: c.text,
-        is_final: true,
-        confidence: 0.95,
-        redacted: false,
-      };
-    });
-}
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 export default async function TranscriptPage({
   params,
 }: {
   params: { meetingId: string };
 }) {
-  const meeting = mockMeetings.find((m) => m.id === params.meetingId);
-  if (!meeting) notFound();
-
-  // Fixture ids ("mtg_1") are not UUIDs, so a real gateway answers them 422. They have no real
-  // transcript to fetch; only a real meeting id goes to the gateway.
-  const live = UUID.test(params.meetingId) ? await fetchTranscriptSurface(params.meetingId) : null;
-  const chunks = live?.chunks ?? mockAsChunks(meeting.id);
+  const meeting = await resolveCallMeeting(params.meetingId);
+  const live = await fetchTranscriptSurface(meeting.id).catch((error: unknown) => {
+    if (error instanceof ApiError && error.status === 404) notFound();
+    return null;
+  });
+  const chunks = live?.chunks ?? [];
   const speakers = live?.speakers ?? [];
-
-  // The mock fixtures already carry display names in `speaker_id`; the real contract does not,
-  // so labels are only overridden when the mock fallback is what is on screen.
-  const speakerLabels: Record<string, string> = live
-    ? {}
-    : Object.fromEntries(chunks.map((c) => [c.speaker_id, c.speaker_id]));
+  const speakerLabels: Record<string, string> = {};
 
   const lineCounts: Record<string, number> = {};
   for (const c of chunks) lineCounts[c.speaker_id] = (lineCounts[c.speaker_id] ?? 0) + 1;
@@ -85,7 +48,6 @@ export default async function TranscriptPage({
   const distinctSpeakers = new Set(chunks.map((c) => c.speaker_id)).size;
   const when = dateFormatter.format(new Date(meeting.startTime));
 
-  const recap = mockMeetingDetails.find((d) => d.meetingId === meeting.id)?.recap;
   const meta = [
     "Transcript",
     when,
@@ -137,40 +99,8 @@ export default async function TranscriptPage({
     );
   }
 
-  const hasOverview = Boolean(recap) || meeting.decisionCount > 0 || meeting.actionCount > 0;
-
   const rail = (
     <>
-      {hasOverview && (
-        <div className="panel reveal" style={{ animationDelay: ".09s" }}>
-          <div className="panel-head">
-            <h2>Overview</h2>
-          </div>
-          <div className="panel-body">
-            {recap && (
-              <p className="row-sum" style={{ marginTop: 0 }}>
-                {recap}
-              </p>
-            )}
-            {(meeting.decisionCount > 0 || meeting.actionCount > 0) && (
-              <div className="row-chips" style={recap ? undefined : { marginTop: 0 }}>
-                {meeting.decisionCount > 0 && (
-                  <span className="tag tag-green">
-                    <span className="tag-dot" />
-                    {meeting.decisionCount} {meeting.decisionCount === 1 ? "decision" : "decisions"}
-                  </span>
-                )}
-                {meeting.actionCount > 0 && (
-                  <span className="tag tag-brown">
-                    <span className="tag-dot" />
-                    {meeting.actionCount} {meeting.actionCount === 1 ? "action item" : "action items"}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
       {speakers.length > 0 && (
         <SpeakerMapping meetingId={meeting.id} speakers={speakers} lineCounts={lineCounts} />
       )}

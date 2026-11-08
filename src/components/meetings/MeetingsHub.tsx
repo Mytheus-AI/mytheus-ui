@@ -9,7 +9,7 @@ import type { HubMeeting } from "./types";
 
 /* The meetings hub client island: search, the All / Upcoming / Ended filter, the "Up next" and
    "Past" lists, and the rail. Ported from the meeting design (non/mytheus-web meetings page) and
-   fed with the meetings the Server Component page already read.
+   fed with the meetings the Server Component page read from core-api.
 
    Everything date-shaped waits for mount: the server cannot know the visitor's time zone, so
    rendering times or "Today" there would disagree with the browser and break hydration. Until
@@ -41,7 +41,7 @@ function shortDay(d: Date, today: Date): string {
 
 function matches(m: HubMeeting, q: string): boolean {
   if (!q) return true;
-  return `${m.title} ${m.participants.join(" ")}`.toLowerCase().includes(q);
+  return m.title.toLowerCase().includes(q);
 }
 
 function hoursAndMinutes(total: number): string {
@@ -67,7 +67,14 @@ function Skeleton() {
   );
 }
 
-export function MeetingsHub({ meetings }: { meetings: HubMeeting[] }) {
+export function MeetingsHub({
+  meetings,
+  unavailable = false,
+}: {
+  meetings: HubMeeting[];
+  /** The list could not be loaded, which is not the same as having no meetings. */
+  unavailable?: boolean;
+}) {
   const [now, setNow] = useState<Date | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("All");
@@ -116,8 +123,6 @@ export function MeetingsHub({ meetings }: { meetings: HubMeeting[] }) {
     return {
       count: inWeek.length,
       minutes: inWeek.reduce((a, m) => a + m.durationMinutes, 0),
-      decisions: inWeek.reduce((a, m) => a + m.decisionCount, 0),
-      actions: inWeek.reduce((a, m) => a + m.actionCount, 0),
     };
   }, [meetings, now]);
 
@@ -190,7 +195,7 @@ export function MeetingsHub({ meetings }: { meetings: HubMeeting[] }) {
                         <span className="up-body">
                           <strong>{m.title}</strong>
                           <small>
-                            {m.durationMinutes} min · {plural(m.participants.length, "person", "people")} invited
+                            {m.durationMinutes} min · {plural(m.invited, "person", "people")} invited
                           </small>
                         </span>
                         <span className="up-acts">
@@ -249,33 +254,15 @@ export function MeetingsHub({ meetings }: { meetings: HubMeeting[] }) {
                           <Tag variant="neutral">{shortDay(new Date(m.startTime), today)}</Tag>
                         </div>
                         <div className="rec-meta">
-                          {m.durationMinutes} min · {plural(m.participants.length, "person", "people")}
-                          {m.hasTranscript ? " · transcribed" : ""}
+                          {m.durationMinutes} min · {plural(m.invited, "person", "people")}
                         </div>
-                        {m.recap && <p className="rec-sum">{m.recap}</p>}
-                        {(m.decisionCount > 0 || m.actionCount > 0) && (
-                          <div className="rec-tags">
-                            {m.decisionCount > 0 && (
-                              <Tag variant="green" dot>
-                                {plural(m.decisionCount, "decision", "decisions")}
-                              </Tag>
-                            )}
-                            {m.actionCount > 0 && (
-                              <Tag variant="orange" dot>
-                                {plural(m.actionCount, "action", "actions")}
-                              </Tag>
-                            )}
-                          </div>
-                        )}
                         <div className="meet-links">
                           <Link href={`/meetings/${m.id}`} className="foot-link tap">
                             Open meeting
                           </Link>
-                          {m.hasTranscript && (
-                            <Link href={`/meetings/${m.id}/transcript`} className="foot-link tap">
-                              Transcript
-                            </Link>
-                          )}
+                          <Link href={`/meetings/${m.id}/transcript`} className="foot-link tap">
+                            Transcript
+                          </Link>
                         </div>
                       </div>
                     </div>
@@ -286,7 +273,9 @@ export function MeetingsHub({ meetings }: { meetings: HubMeeting[] }) {
 
             {upcoming.length === 0 && past.length === 0 && (
               <div className="board-empty" style={{ borderTop: "none" }} aria-live="polite">
-                {meetings.length === 0
+                {unavailable
+                  ? "Meetings could not be loaded right now. Refresh in a moment to try again."
+                  : meetings.length === 0
                   ? "No meetings yet. Meetings your team schedules through Mytheus appear here."
                   : q
                     ? `No meetings match "${query.trim()}". Try a different search.`
@@ -312,19 +301,12 @@ export function MeetingsHub({ meetings }: { meetings: HubMeeting[] }) {
                 Nothing on your calendar this week.
               </p>
             ) : (
-              [
-                {
-                  n: String(week.count),
-                  label: `${week.count === 1 ? "meeting" : "meetings"}, ${hoursAndMinutes(week.minutes)} in calls`,
-                },
-                { n: String(week.decisions), label: week.decisions === 1 ? "decision captured" : "decisions captured" },
-                { n: String(week.actions), label: week.actions === 1 ? "action captured" : "actions captured" },
-              ].map((d) => (
-                <div className="digest-row" key={d.label}>
-                  <b>{d.n}</b>
-                  <span>{d.label}</span>
-                </div>
-              ))
+              <div className="digest-row">
+                <b>{week.count}</b>
+                <span>
+                  {week.count === 1 ? "meeting" : "meetings"}, {hoursAndMinutes(week.minutes)} in calls
+                </span>
+              </div>
             )}
           </div>
         </div>
@@ -337,20 +319,15 @@ export function MeetingsHub({ meetings }: { meetings: HubMeeting[] }) {
             <div className="panel-body">
               <p className="rail-note" style={{ marginTop: 0 }}>
                 <b>{next.title}</b>
-                {next.status === "live" ? " is live now. " : " is next on your calendar. "}
-                {next.agendaCount > 0
-                  ? `Its agenda has ${plural(next.agendaCount, "item", "items")}, ready to read before you join.`
-                  : "No agenda has been shared for it yet."}
+                {next.status === "live" ? " is live now." : " is next on your calendar."}
               </p>
               <div className="meet-links">
                 <Link href={`/meetings/${next.id}`} className="foot-link tap">
                   Open meeting
                 </Link>
-                {next.status === "live" && (
-                  <Link href={`/meetings/${next.id}/join`} className="foot-link tap">
-                    Join
-                  </Link>
-                )}
+                <Link href={`/meetings/${next.id}/join`} className="foot-link tap">
+                  Join
+                </Link>
               </div>
             </div>
           </div>

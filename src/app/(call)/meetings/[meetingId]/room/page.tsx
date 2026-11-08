@@ -1,18 +1,15 @@
 import type { Metadata } from "next";
 import { resolveCallMeeting } from "@/components/call/resolve-meeting";
 import { MeetingRoom } from "@/components/meeting/MeetingRoom";
-import { mockMeetings } from "@/lib/mock/data";
 import "@/styles/meeting-call.css";
 
 export const metadata: Metadata = { title: "Meeting room | Mytheus" };
 
-/* The live meeting room, full screen in the (call) layout: the stage (LiveKit video when a room is
-   connected, the mock tiles otherwise), live captions, and the side panel with the agent, the
+/* The live meeting room, full screen in the (call) layout: the stage (LiveKit video once the room
+   is connected, your own tile until then), live captions, and the side panel with the agent, the
    participants and chat. See <MeetingRoom /> for the data flow. */
 
-export function generateStaticParams() {
-  return mockMeetings.map((m) => ({ meetingId: m.id }));
-}
+export const dynamic = "force-dynamic";
 
 export default async function MeetingRoomPage({
   params,

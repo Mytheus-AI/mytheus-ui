@@ -5,12 +5,11 @@ import { RoomEvent, type RemoteParticipant, type Room } from "livekit-client";
 import { PaperPlaneRight } from "@phosphor-icons/react";
 import { CollapseSection } from "@/components/call/CollapseSection";
 import { useOrgContext } from "@/lib/org-context";
-import { mockRoomChat, type ChatMessage } from "@/lib/mock/data";
+import type { ChatMessage } from "@/lib/mock/data";
 
 /* In-meeting chat, as the design's "Live Chat" section. In a real call it travels over LiveKit's
    data channel (topic CHAT_TOPIC), so everyone connected sees it; it is not stored, so someone who
-   joins later sees only what is sent after they arrive. The demo fixtures keep their sample
-   thread. The design's attachment button, reactions and typing indicator are left out. */
+   joins later sees only what is sent after they arrive. The design's attachment button, reactions and typing indicator are left out. */
 
 const CHAT_TOPIC = "mx-chat";
 const enc = new TextEncoder();
@@ -30,18 +29,15 @@ function initials(name: string) {
 export function ChatPanel({
   id,
   room = null,
-  demo = true,
 }: {
   id?: string;
   /** The connected LiveKit room; messages are sent and received over it. */
   room?: Room | null;
-  /** Demo fixtures show the sample thread; a real meeting starts empty. */
-  demo?: boolean;
 }) {
   const { user } = useOrgContext();
-  const [messages, setMessages] = useState<(ChatMessage & { isNew?: boolean })[]>(demo ? mockRoomChat : []);
-  // A real meeting with no connected call has nowhere to send to, so the composer waits.
-  const offline = !demo && !room;
+  const [messages, setMessages] = useState<(ChatMessage & { isNew?: boolean })[]>([]);
+  // With no connected call there is nowhere to send to, so the composer waits.
+  const offline = !room;
 
   useEffect(() => {
     if (!room) return;
@@ -73,12 +69,10 @@ export function ChatPanel({
     e.preventDefault();
     const text = draft.trim();
     if (!text || offline) return;
-    if (room) {
-      void room.localParticipant
-        .publishData(enc.encode(JSON.stringify({ text })), { reliable: true, topic: CHAT_TOPIC })
-        .catch(() => undefined);
-    }
-    setMessages((m) => [...m, { id: `ch_local_${m.length}`, from: user.name, at: room ? clock() : "now", text, isNew: true }]);
+    void room.localParticipant
+      .publishData(enc.encode(JSON.stringify({ text })), { reliable: true, topic: CHAT_TOPIC })
+      .catch(() => undefined);
+    setMessages((m) => [...m, { id: `ch_local_${m.length}`, from: user.name, at: clock(), text, isNew: true }]);
     setDraft("");
   };
 

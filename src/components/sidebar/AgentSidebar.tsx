@@ -5,17 +5,15 @@ import Link from "next/link";
 import { GearSix, Lock, PushPin, Sparkle, Warning } from "@phosphor-icons/react";
 import { CollapseSection } from "@/components/call/CollapseSection";
 import { useCallToast } from "@/components/call/CallToast";
-import {
-  mockAgentSidebar,
-  type AgentSidebarCard,
-  type SidebarPriority,
-} from "@/lib/mock/data";
+import type { AgentSidebarCard, SidebarPriority } from "@/lib/mock/data";
 
 /* The agent sidebar - the product's centerpiece - in the meeting design's shape: a conflict banner
    pinned above everything, then "My agent" with the Needs-you cards, My notes, Saved for later and
    the Activity feed.
 
-   The data is the same frozen 9-section mock (doc 20 §7) and the UX contract is unchanged:
+   The cards come in through `items` (the 9-section shape of doc 20 §7). Nothing feeds them yet:
+   the room passes the `agent-results` cards once that stream is wired, and until then an empty
+   list renders an honest empty state instead of sample cards. The UX contract is unchanged:
    Confirm visibly commits (and is the ONLY thing that commits), Dismiss removes, Save for later
    collects into Saved for later. The conflict is always pinned to the top and cannot be dismissed.
    Acknowledging a warning only moves it into the Activity feed; nothing is sent anywhere.
@@ -60,10 +58,8 @@ type FeedEntry = {
 
 type CardId = "suggestion" | "decision" | "workload" | "stakeholder" | "dependency";
 
-function pick<K extends AgentSidebarCard["kind"]>(kind: K) {
-  return mockAgentSidebar.find((c) => c.kind === kind) as
-    | Extract<AgentSidebarCard, { kind: K }>
-    | undefined;
+function pick<K extends AgentSidebarCard["kind"]>(cards: AgentSidebarCard[], kind: K) {
+  return cards.find((c) => c.kind === kind) as Extract<AgentSidebarCard, { kind: K }> | undefined;
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -77,11 +73,11 @@ export interface AgentAttention {
 export function AgentSidebar({
   onAttentionChange,
   id,
-  demo = true,
+  items,
 }: {
-  /** The sample cards are for the demo fixtures. A real meeting shows them only once the agent
-   *  stream exists, so until then it gets an honest empty state rather than invented cards. */
-  demo?: boolean;
+  /** The agent's cards for this meeting. Empty until the `agent-results` stream is wired, which
+   *  renders the empty state rather than invented cards. */
+  items: AgentSidebarCard[];
   /** Optional. The room uses it for the badge on the collapsed panel rail. */
   onAttentionChange?: (attention: AgentAttention) => void;
   /** Anchor id for the "My agent" section, so the collapsed rail can open the panel at it. */
@@ -100,25 +96,25 @@ export function AgentSidebar({
     joinedAt.current = Date.now();
   }, []);
 
-  const note = useMemo(() => pick("note"), []);
-  const suggestion = useMemo(() => pick("suggestion"), []);
-  const decision = useMemo(() => pick("decision"), []);
-  const task = useMemo(() => pick("task"), []);
-  const context = useMemo(() => pick("context"), []);
-  const conflict = useMemo(() => pick("conflict"), []);
-  const workload = useMemo(() => pick("workload"), []);
-  const stakeholder = useMemo(() => pick("stakeholder"), []);
-  const dependency = useMemo(() => pick("dependency"), []);
+  const note = useMemo(() => pick(items, "note"), [items]);
+  const suggestion = useMemo(() => pick(items, "suggestion"), [items]);
+  const decision = useMemo(() => pick(items, "decision"), [items]);
+  const task = useMemo(() => pick(items, "task"), [items]);
+  const context = useMemo(() => pick(items, "context"), [items]);
+  const conflict = useMemo(() => pick(items, "conflict"), [items]);
+  const workload = useMemo(() => pick(items, "workload"), [items]);
+  const stakeholder = useMemo(() => pick(items, "stakeholder"), [items]);
+  const dependency = useMemo(() => pick(items, "dependency"), [items]);
 
   const isOpen = (cid: CardId) => !closed.has(cid);
 
-  const count = !demo ? 0 :
+  const count =
     (conflict ? 1 : 0) +
     (decision && decisionState === "pending" ? 1 : 0) +
     (suggestion && suggestion.priority !== "low" && isOpen("suggestion") ? 1 : 0) +
     (workload && isOpen("workload") ? 1 : 0) +
     (dependency && isOpen("dependency") ? 1 : 0);
-  const hasConflict = demo && Boolean(conflict);
+  const hasConflict = Boolean(conflict);
   useEffect(() => {
     onAttentionChange?.({ count, conflict: hasConflict });
   }, [count, hasConflict, onAttentionChange]);
@@ -342,7 +338,7 @@ export function AgentSidebar({
     feed.push({ id: "context", kind: "context", text: context.text, cite: context.source, saveAs: "Context from Sarah's agent" });
   }
 
-  if (!demo) {
+  if (items.length === 0) {
     return (
       <div className="reveal" id={id} style={{ animationDelay: ".14s" }}>
         <CollapseSection title="My agent">
