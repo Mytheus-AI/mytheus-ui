@@ -62,6 +62,8 @@ type FieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "size"> & {
  * top of the field once it has a value (driven by `:placeholder-shown`, so autofill moves it
  * too without any JS). Clicking into the field changes nothing visually: `focus-visible:rounded`
  * keeps the corners, because the global `:focus-visible` rule would otherwise square them off.
+ * While the field is empty its text slot is centred, so the caret sits on the label's line,
+ * just before it, like a native placeholder.
  */
 export function TextField({ label, error, hint, trailing, className = "", id, ...rest }: FieldProps) {
   const autoId = useId();
@@ -75,7 +77,7 @@ export function TextField({ label, error, hint, trailing, className = "", id, ..
           placeholder=" "
           aria-invalid={error ? true : undefined}
           aria-describedby={error || hint ? msgId : undefined}
-          className={`auth-input peer block h-[58px] w-full rounded-[16px] focus-visible:rounded-[16px] border-[1.5px] bg-surface px-[18px] pb-2 pt-6 text-[15.5px] text-ink !outline-none transition-[border-color] duration-200 ${
+          className={`auth-input peer block h-[58px] w-full rounded-[16px] focus-visible:rounded-[16px] border-[1.5px] bg-surface px-[18px] pb-2 pt-6 placeholder-shown:py-0 text-[15.5px] text-ink !outline-none transition-[border-color] duration-200 ${
             error ? "border-priority-high" : "border-line-2"
           } ${trailing ? "pr-14" : ""}`}
           {...rest}
