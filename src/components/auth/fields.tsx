@@ -58,9 +58,12 @@ type FieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "size"> & {
 };
 
 /**
- * Floating-label field. The label sits inside the field like a placeholder and lifts to
- * the top edge on focus or once filled (driven by `:placeholder-shown`, so autofill
- * lifts it too without any JS).
+ * Floating-label field. The label sits inside the field like a placeholder and moves to the
+ * top of the field once it has a value (driven by `:placeholder-shown`, so autofill moves it
+ * too without any JS). Clicking into the field changes nothing visually: `focus-visible:rounded`
+ * keeps the corners, because the global `:focus-visible` rule would otherwise square them off.
+ * While the field is empty its text slot is centred, so the caret sits on the label's line,
+ * just before it, like a native placeholder.
  */
 export function TextField({ label, error, hint, trailing, className = "", id, ...rest }: FieldProps) {
   const autoId = useId();
@@ -74,16 +77,14 @@ export function TextField({ label, error, hint, trailing, className = "", id, ..
           placeholder=" "
           aria-invalid={error ? true : undefined}
           aria-describedby={error || hint ? msgId : undefined}
-          className={`auth-input peer block h-[58px] w-full rounded-[16px] border-[1.5px] bg-surface px-[18px] pb-2 pt-6 text-[15.5px] text-ink !outline-none transition-[border-color,box-shadow] duration-200 ${
-            error
-              ? "border-priority-high shadow-[3px_3px_0_var(--priority-high-soft)]"
-              : "border-line-2 hover:border-ink-3 focus:border-[var(--doodle-ink,#2a2620)] focus:shadow-[3px_3px_0_var(--signal)]"
+          className={`auth-input peer block h-[58px] w-full rounded-[16px] focus-visible:rounded-[16px] border-[1.5px] bg-surface px-[18px] pb-2 pt-6 placeholder-shown:py-0 text-[15.5px] text-ink !outline-none transition-[border-color] duration-200 ${
+            error ? "border-priority-high" : "border-line-2"
           } ${trailing ? "pr-14" : ""}`}
           {...rest}
         />
         <label
           htmlFor={fieldId}
-          className="pointer-events-none absolute left-[18px] top-1/2 origin-left -translate-y-[155%] scale-[0.8] text-[15px] text-ink-3 transition-all duration-300 [transition-timing-function:var(--ease-soft)] peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-[155%] peer-focus:scale-[0.8] peer-focus:text-signal-deep"
+          className="pointer-events-none absolute left-[18px] top-[9px] origin-left scale-[0.8] text-[15px] leading-none text-ink-3 transition-[top,transform] duration-200 [transition-timing-function:var(--ease-soft)] peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100"
         >
           {label}
         </label>
@@ -211,11 +212,11 @@ export function CodeInput({
             return (
               <span
                 key={i}
-                className={`relative flex aspect-[4/5] max-h-[68px] items-center justify-center rounded-[16px] border-[1.5px] bg-surface font-mono text-[clamp(1.25rem,3vw,1.6rem)] text-ink transition-[border-color,box-shadow,transform] duration-200 ${
+                className={`relative flex aspect-[4/5] max-h-[68px] items-center justify-center rounded-[16px] border-[1.5px] bg-surface font-mono text-[clamp(1.25rem,3vw,1.6rem)] text-ink transition-[border-color] duration-200 ${
                   error
                     ? "border-priority-high"
                     : isActive
-                      ? "border-[var(--doodle-ink,#2a2620)] shadow-[3px_3px_0_var(--signal)]"
+                      ? "border-ink-3"
                       : char
                         ? "border-ink-3"
                         : "border-line-2"
@@ -251,7 +252,7 @@ export function PrimaryButton({
       type="submit"
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={`group relative inline-flex h-[56px] w-full items-center justify-center gap-2.5 rounded-full border-[1.5px] border-[var(--doodle-ink,#2a2620)] bg-[var(--doodle-ink,#2a2620)] text-[15.5px] font-semibold tracking-tight text-[#fffaf0] shadow-[4px_4px_0_var(--signal)] transition-[transform,box-shadow,opacity] duration-150 hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[5px_5px_0_var(--signal)] active:translate-x-[3px] active:translate-y-[3px] active:shadow-[1px_1px_0_var(--signal)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-x-0 disabled:hover:translate-y-0 ${className}`}
+      className={`group relative inline-flex h-[56px] w-full items-center justify-center gap-2.5 rounded-full border-[1.5px] border-[var(--doodle-ink,#2a2620)] bg-[var(--doodle-ink,#2a2620)] text-[15.5px] font-semibold tracking-tight text-[#fffaf0] transition-opacity duration-150 hover:opacity-90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
       {...rest}
     >
       {loading ? (
@@ -285,7 +286,7 @@ export function GoogleButton({
       type="button"
       onClick={onClick}
       disabled={disabled || loading}
-      className="group inline-flex h-[56px] w-full items-center justify-center gap-3 rounded-full border-[1.5px] border-[var(--doodle-ink,#2a2620)] bg-surface text-[15px] font-semibold text-ink shadow-[3px_3px_0_var(--doodle-ink,#2a2620)] transition-[transform,box-shadow] duration-150 hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[4px_4px_0_var(--doodle-ink,#2a2620)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_var(--doodle-ink,#2a2620)] disabled:cursor-not-allowed disabled:opacity-60"
+      className="group inline-flex h-[56px] w-full items-center justify-center gap-3 rounded-full border-[1.5px] border-line-2 bg-surface text-[15px] font-semibold text-ink transition-colors duration-150 hover:border-ink-3 hover:bg-bg-2 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
     >
       {loading ? <Spinner className="text-ink-3" /> : <GoogleGlyph />}
       {children}

@@ -309,7 +309,7 @@ export function ChooseOrganization() {
           ) : (
             <form role="tabpanel" onSubmit={create} noValidate className="auth-rise space-y-5" style={{ ["--d" as string]: "100ms" }}>
               {/* the workspace being named, with its first seat taken */}
-              <div className="rounded-[20px] border-[1.5px] border-[var(--doodle-ink)] bg-surface p-4 shadow-[4px_4px_0_var(--doodle-ink)]">
+              <div className="rounded-[20px] border-[1.5px] border-line-2 bg-surface p-4">
                 <p className="font-hand -rotate-1 truncate text-[28px] font-bold leading-tight text-ink">
                   {name.trim() || "Your workspace"}
                 </p>
@@ -379,8 +379,8 @@ function OrgRow({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`group flex w-full items-center gap-4 rounded-[20px] border-[1.5px] bg-surface p-3.5 pr-4 text-left transition-[transform,box-shadow,border-color] duration-150 enabled:hover:-translate-y-[1px] enabled:hover:shadow-[3px_3px_0_var(--doodle-ink)] disabled:cursor-not-allowed disabled:opacity-75 ${
-        highlight ? "border-signal" : "border-line-2 enabled:hover:border-[var(--doodle-ink)]"
+      className={`group flex w-full items-center gap-4 rounded-[20px] border-[1.5px] bg-surface p-3.5 pr-4 text-left transition-colors duration-150 enabled:hover:bg-bg-2 disabled:cursor-not-allowed disabled:opacity-75 ${
+        highlight ? "border-signal" : "border-line-2 enabled:hover:border-ink-3"
       }`}
     >
       {imageUrl ? (
