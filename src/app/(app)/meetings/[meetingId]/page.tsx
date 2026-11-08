@@ -2,9 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Sparkle } from "@phosphor-icons/react/ssr";
 import { resolveCallMeeting } from "@/components/call/resolve-meeting";
+import { InviteToMeeting } from "@/components/meetings/InviteToMeeting";
+import type { PickableMember } from "@/components/meetings/MemberPicker";
 import { Tag } from "@/components/meetings/Tag";
 import { resolveSpeaker, wordCount } from "@/components/meetings/transcript-utils";
 import type { CallMeeting } from "@/lib/api/meetings";
+import { listMembers } from "@/lib/api/members";
 import { fetchTranscriptSurface, type MeetingSpeaker, type TranscriptChunk } from "@/lib/api/transcript";
 import "@/styles/meeting-hub.css";
 
@@ -49,7 +52,15 @@ function relative(from: Date, to: Date): string {
   return mins >= 0 ? `in ${span}` : `${span} ago`;
 }
 
-function UpcomingDetail({ meeting, hasTranscript }: { meeting: CallMeeting; hasTranscript: boolean }) {
+function UpcomingDetail({
+  meeting,
+  hasTranscript,
+  invitable,
+}: {
+  meeting: CallMeeting;
+  hasTranscript: boolean;
+  invitable: PickableMember[] | null;
+}) {
   const live = meeting.status === "live";
   const start = new Date(meeting.startTime);
   const end = new Date(start.getTime() + meeting.durationMinutes * 60000);
@@ -133,6 +144,7 @@ function UpcomingDetail({ meeting, hasTranscript }: { meeting: CallMeeting; hasT
         <Link href={`/meetings/${meeting.id}/join`} className="join-btn mh-join tap reveal" style={{ animationDelay: ".14s" }}>
           Join meeting
         </Link>
+        <InviteToMeeting meetingId={meeting.id} members={invitable} />
         {hasTranscript && (
           <Link href={`/meetings/${meeting.id}/transcript`} className="foot-link tap" style={{ alignSelf: "center" }}>
             View transcript
@@ -252,7 +264,14 @@ function EndedDetail({
 export default async function MeetingDetailPage({ params }: { params: { meetingId: string } }) {
   const meeting = await resolveCallMeeting(params.meetingId);
   // A transcript that cannot be reached is shown as no transcript; the meeting itself still loads.
-  const transcript = await fetchTranscriptSurface(meeting.id).catch(() => null);
+  const [transcript, members] = await Promise.all([
+    fetchTranscriptSurface(meeting.id).catch(() => null),
+    meeting.status === "past" ? Promise.resolve(null) : listMembers(),
+  ]);
+  const invitable =
+    members
+      ?.filter((m) => !m.isYou && !meeting.participantIds.includes(m.id))
+      .map(({ id, name, email }) => ({ id, name, email })) ?? null;
   const chunks = transcript?.chunks ?? [];
   const ended = meeting.status === "past";
 
@@ -281,7 +300,7 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
       {ended ? (
         <EndedDetail meeting={meeting} chunks={chunks} speakers={transcript?.speakers ?? []} />
       ) : (
-        <UpcomingDetail meeting={meeting} hasTranscript={chunks.length > 0} />
+        <UpcomingDetail meeting={meeting} hasTranscript={chunks.length > 0} invitable={invitable} />
       )}
     </div>
   );

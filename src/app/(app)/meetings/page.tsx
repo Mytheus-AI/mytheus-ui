@@ -1,5 +1,7 @@
 import { MeetingsHub } from "@/components/meetings/MeetingsHub";
+import { NewMeeting } from "@/components/meetings/NewMeeting";
 import { listMeetings, toCallMeeting } from "@/lib/api/meetings";
+import { listMembers } from "@/lib/api/members";
 import "@/styles/meeting-hub.css";
 
 /* The meetings hub, in the meeting design (non/mytheus-web meetings page). A Server Component
@@ -9,7 +11,8 @@ import "@/styles/meeting-hub.css";
 export const dynamic = "force-dynamic";
 
 export default async function MeetingsPage() {
-  const real = await listMeetings();
+  const [real, members] = await Promise.all([listMeetings(), listMembers()]);
+  const invitable = members?.filter((m) => !m.isYou).map(({ id, name, email }) => ({ id, name, email })) ?? null;
   const meetings = (real ?? []).map(toCallMeeting);
 
   return (
@@ -19,6 +22,7 @@ export default async function MeetingsPage() {
           <h1>Meetings</h1>
           <p>Every call, its prep and everything it produced</p>
         </div>
+        <NewMeeting members={invitable} />
       </div>
       <MeetingsHub meetings={meetings} unavailable={real === null} />
     </div>

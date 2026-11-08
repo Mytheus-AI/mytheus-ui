@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, DownloadSimple, PlugsConnected, CreditCard, Trash, UserPlus } from "@phosphor-icons/react/dist/ssr";
+import { ArrowRight, DownloadSimple, PlugsConnected, CreditCard, Trash } from "@phosphor-icons/react/dist/ssr";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { InlineRow, Note, PageHeader, SectionCard } from "@/components/settings/primitives";
 import { StatCard, thClass } from "@/components/admin/StatCard";
 import { resolveOrgContext } from "@/lib/api/org-context";
-import { mockBilling, mockIntegrations, mockWorkspaceMembers, personSlug, type WorkspaceMember } from "@/lib/mock/data";
+import { listMembers, type MemberTier } from "@/lib/api/members";
+import { WorkspaceInvite } from "@/components/admin/WorkspaceInvite";
+import { mockBilling, mockIntegrations } from "@/lib/mock/data";
 
 export const metadata: Metadata = { title: "Workspace admin | Mytheus" };
 
@@ -16,19 +19,59 @@ export const metadata: Metadata = { title: "Workspace admin | Mytheus" };
    then. Nothing here pretends to act: the request buttons stay disabled until the service
    behind them exists. */
 
-const tierTone: Record<WorkspaceMember["tier"], "default" | "medium" | "low"> = {
+const tierTone: Record<MemberTier, "default" | "medium" | "low"> = {
   owner: "medium",
   admin: "low",
   member: "default",
 };
 const planLabel = { starter: "Starter", pro: "Pro", enterprise: "Enterprise" } as const;
-const date = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+
+type Row = {
+  key: string;
+  name: string;
+  email: string;
+  imageUrl: string | null;
+  tier: MemberTier;
+  status: "active" | "invited";
+  isYou: boolean;
+};
+
+/** Pending Clerk invitations for the active workspace, shown as "Invited" rows. */
+async function pendingInvites(): Promise<Row[]> {
+  const { orgId } = await auth();
+  if (!orgId) return [];
+  try {
+    const { data } = await (await clerkClient()).organizations.getOrganizationInvitationList({
+      organizationId: orgId,
+      status: ["pending"],
+      limit: 100,
+    });
+    return data.map((inv) => ({
+      key: inv.id,
+      name: inv.emailAddress.split("@")[0],
+      email: inv.emailAddress,
+      imageUrl: null,
+      tier: inv.role === "org:admin" ? "admin" : "member",
+      status: "invited",
+      isYou: false,
+    }));
+  } catch {
+    return [];
+  }
+}
 
 export default async function TenantAdminPage() {
-  const ctx = await resolveOrgContext();
-  const members = mockWorkspaceMembers;
-  const active = members.filter((m) => m.status === "active");
-  const invited = members.filter((m) => m.status === "invited");
+  const [ctx, real, invited] = await Promise.all([resolveOrgContext(), listMembers(), pendingInvites()]);
+  const active: Row[] = (real ?? []).map((m) => ({
+    key: m.id,
+    name: m.name,
+    email: m.email,
+    imageUrl: m.imageUrl,
+    tier: m.tier ?? "member",
+    status: "active",
+    isYou: m.isYou,
+  }));
+  const members = [...active, ...invited];
   const connected = mockIntegrations.filter((i) => i.status === "connected");
 
   return (
@@ -36,12 +79,7 @@ export default async function TenantAdminPage() {
       <PageHeader
         title="Workspace admin"
         description={`Who is in ${ctx?.org.name ?? "this workspace"}, what it runs on, and the requests only an admin can make.`}
-        actions={
-          <Button variant="primary" disabled title="Invites open once the members API is live">
-            <UserPlus size={17} weight="bold" aria-hidden />
-            Invite people
-          </Button>
-        }
+        actions={<WorkspaceInvite />}
       />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -65,25 +103,25 @@ export default async function TenantAdminPage() {
           <thead>
             <tr className="bg-bg">
               <th scope="col" className={thClass}>Person</th>
-              <th scope="col" className={thClass}>Team</th>
               <th scope="col" className={thClass}>Access</th>
               <th scope="col" className={thClass}>Status</th>
-              <th scope="col" className={thClass}>Last active</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
             {members.map((m) => (
-              <tr key={m.email} className="transition-colors hover:bg-bg">
-                <td className="max-w-[320px] px-5 py-3">
-                  <Link href={`/people/${personSlug(m.name)}`} className="group flex min-w-0 items-center gap-3">
-                    <Avatar name={m.name} size="md" />
+              <tr key={m.key} className="transition-colors hover:bg-bg">
+                <td className="max-w-[360px] px-5 py-3">
+                  <span className="flex min-w-0 items-center gap-3">
+                    <Avatar name={m.name} id={m.email} src={m.imageUrl ?? undefined} size="md" />
                     <span className="min-w-0">
-                      <span className="block truncate font-semibold text-ink group-hover:underline group-hover:underline-offset-[3px]">{m.name}</span>
+                      <span className="block truncate font-semibold text-ink">
+                        {m.name}
+                        {m.isYou && <span className="ml-1.5 font-normal text-ink-3">(you)</span>}
+                      </span>
                       <span className="block truncate text-[12.5px] text-ink-3">{m.email}</span>
                     </span>
-                  </Link>
+                  </span>
                 </td>
-                <td className="px-5 py-3 text-ink-2">{m.team}</td>
                 <td className="px-5 py-3">
                   <Badge tone={tierTone[m.tier]} className="capitalize">
                     {m.tier}
@@ -94,7 +132,6 @@ export default async function TenantAdminPage() {
                     {m.status}
                   </Badge>
                 </td>
-                <td className="px-5 py-3 text-ink-2">{m.lastActive ? date.format(new Date(m.lastActive)) : "–"}</td>
               </tr>
             ))}
           </tbody>
@@ -102,19 +139,20 @@ export default async function TenantAdminPage() {
 
         <ul className="divide-y divide-line border-t border-line md:hidden">
           {members.map((m) => (
-            <li key={m.email}>
-              <Link href={`/people/${personSlug(m.name)}`} className="flex items-center gap-3 px-4 py-3.5">
-                <Avatar name={m.name} size="md" />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[14px] font-semibold text-ink">{m.name}</span>
-                  <span className="block truncate text-[12.5px] text-ink-3">
-                    {m.team} &middot; {m.status === "invited" ? "Invited" : `Active ${m.lastActive ? date.format(new Date(m.lastActive)) : ""}`}
-                  </span>
+            <li key={m.key} className="flex items-center gap-3 px-4 py-3.5">
+              <Avatar name={m.name} id={m.email} src={m.imageUrl ?? undefined} size="md" />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[14px] font-semibold text-ink">
+                  {m.name}
+                  {m.isYou && <span className="ml-1.5 font-normal text-ink-3">(you)</span>}
                 </span>
-                <Badge tone={tierTone[m.tier]} className="shrink-0 capitalize">
-                  {m.tier}
-                </Badge>
-              </Link>
+                <span className="block truncate text-[12.5px] text-ink-3">
+                  {m.status === "invited" ? `Invited · ${m.email}` : m.email}
+                </span>
+              </span>
+              <Badge tone={tierTone[m.tier]} className="shrink-0 capitalize">
+                {m.tier}
+              </Badge>
             </li>
           ))}
         </ul>

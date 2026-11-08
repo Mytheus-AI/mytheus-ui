@@ -22,6 +22,8 @@ export interface CallMeeting {
   status: MeetingStatus;
   /** Everyone on the participant list, the host included. */
   invited: number;
+  /** Internal user ids of those participants, for leaving them out of an invite picker. */
+  participantIds: string[];
 }
 
 /** A meeting without a scheduled end is shown as the default half hour. */
@@ -39,6 +41,7 @@ export function toCallMeeting(m: ApiMeeting): CallMeeting {
     durationMinutes: minutes,
     status: toMockStatus(m.status),
     invited: m.participants?.length ?? 0,
+    participantIds: (m.participants ?? []).map((p) => p.user_id),
   };
 }
 
