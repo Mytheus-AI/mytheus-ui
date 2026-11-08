@@ -81,6 +81,14 @@ export default clerkMiddleware(async (auth, request) => {
   // would render the shell and then have every data read rejected by the gateway with a 401,
   // which looks like a broken app rather than a sign-in prompt.
   await auth.protect();
+}, {
+  // Where `auth.protect()` sends a signed-out visitor. Stated here rather than left to
+  // NEXT_PUBLIC_CLERK_SIGN_IN_URL: that variable was only ever in local `.env`, so the
+  // production image had none and Clerk fell back to its hosted Account Portal
+  // (`*.accounts.dev/sign-in`) instead of our own pages. Relative, so it resolves on the host
+  // the request came in on, which after the host split is always the app host.
+  signInUrl: "/sign-in",
+  signUpUrl: "/sign-up",
 });
 
 export const config = {
