@@ -56,6 +56,9 @@ function insertOrdered(lines: CaptionLine[], line: CaptionLine): CaptionLine[] {
 }
 
 export function applyCaption(state: CaptionState, payload: CaptionPayload): CaptionState {
+  // Deepgram streams results for silence and breath with empty text; drawing them showed a
+  // speaker label with nothing after it. Nothing is lost: a real utterance carries text.
+  if (!payload.text.trim()) return state;
   const index = state.lines.findIndex((l) => l.chunkId === payload.chunkId);
 
   if (index === -1) {

@@ -247,3 +247,24 @@
   .mx-meet .cx-call .cx-grid.is-solo { grid-template-columns: minmax(0, 1fr); }
   .mx-meet .cx-call .preview-name { top: 12px; bottom: auto; max-width: calc(100% - 24px); overflow: hidden; white-space: nowrap; }
 }
+
+/* Autoplay unblock. LiveKit renders it only while the browser refuses to play the call's
+   audio; it hides itself once a click starts playback. */
+.mx-meet .call-start-audio {
+  position: fixed;
+  left: 50%;
+  bottom: 112px;
+  z-index: 40;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 700;
+  box-shadow: 0 10px 30px -10px rgba(40, 34, 28, 0.45);
+}
+.mx-meet .call-start-audio:hover { background: var(--accentDeep); }

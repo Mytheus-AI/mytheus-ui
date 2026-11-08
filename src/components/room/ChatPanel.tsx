@@ -5,6 +5,7 @@ import { RoomEvent, type RemoteParticipant, type Room } from "livekit-client";
 import { PaperPlaneRight } from "@phosphor-icons/react";
 import { CollapseSection } from "@/components/call/CollapseSection";
 import { useOrgContext } from "@/lib/org-context";
+import { useRoomName } from "@/lib/realtime/room-names";
 import type { ChatMessage } from "@/lib/mock/data";
 
 /* In-meeting chat, as the design's "Live Chat" section. In a real call it travels over LiveKit's
@@ -35,6 +36,11 @@ export function ChatPanel({
   room?: Room | null;
 }) {
   const { user } = useOrgContext();
+  // Read through a ref so the data listener (bound once per room) always names with the latest
+  // member list instead of the one it closed over.
+  const nameOf = useRoomName();
+  const nameRef = useRef(nameOf);
+  nameRef.current = nameOf;
   const [messages, setMessages] = useState<(ChatMessage & { isNew?: boolean })[]>([]);
   // With no connected call there is nowhere to send to, so the composer waits.
   const offline = !room;
@@ -46,7 +52,7 @@ export function ChatPanel({
       try {
         const { text } = JSON.parse(dec.decode(payload)) as { text?: string };
         if (!text) return;
-        const from = participant?.name || participant?.identity || "Guest";
+        const from = participant?.name || nameRef.current(participant?.identity);
         setMessages((m) => [...m, { id: `ch_${Date.now()}_${m.length}`, from, at: clock(), text, isNew: true }]);
       } catch {
         // Not one of our chat messages.

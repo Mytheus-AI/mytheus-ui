@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { RoomAudioRenderer, StartAudio } from "@livekit/components-react";
 import { RoomEvent, Track, type LocalTrackPublication } from "livekit-client";
 import { AgentSidebar, type AgentAttention } from "@/components/sidebar/AgentSidebar";
 import { LiveVideoGrid } from "@/components/meeting/LiveVideoGrid";
@@ -18,6 +19,7 @@ import { RoomPanel, SECTION_IDS } from "@/components/room/RoomPanel";
 import { useNarrow } from "@/components/room/useNarrow";
 import { useOrgContext } from "@/lib/org-context";
 import { useLiveKitRoom } from "@/lib/realtime/useLiveKitRoom";
+import { RoomNamesProvider, type RoomNames } from "@/lib/realtime/room-names";
 import { orderedNotes } from "@/lib/realtime/notes";
 import { useMeetingSocket } from "@/lib/realtime/useMeetingSocket";
 import type { CallMeeting } from "@/components/call/resolve-meeting";
@@ -51,7 +53,7 @@ function joinProblem(code: string | null): string {
   }
 }
 
-export function MeetingRoom({ meeting }: { meeting: CallMeeting }) {
+export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; names?: RoomNames }) {
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [captionsOn, setCaptionsOn] = useState(true);
@@ -87,6 +89,8 @@ export function MeetingRoom({ meeting }: { meeting: CallMeeting }) {
   const myNotes = useMemo(() => orderedNotes(socket.notes), [socket.notes]);
 
   const liveRoom = live.status === "connected" ? live.room : null;
+  // Your LiveKit identity is your internal user id, the same id captions name a speaker by.
+  const myUserId = liveRoom?.localParticipant.identity;
 
   // The mic and camera you chose on the pre-join carry in; the link to share is the pre-join.
   useEffect(() => {
@@ -187,13 +191,13 @@ export function MeetingRoom({ meeting }: { meeting: CallMeeting }) {
       liveRoom
         ? live.participants.map((p) => ({
             id: p.identity,
-            name: p.name || (p.isLocal ? user.name : "Guest"),
+            name: p.isLocal ? user.name : p.name || names[p.identity]?.name || "Guest",
             isLocal: p.isLocal,
             micOn: p.isMicrophoneEnabled,
             speaking: p.isSpeaking,
           }))
         : selfTiles.map((t) => ({ id: t.id, name: t.name, isLocal: true, micOn: t.micOn, speaking: false })),
-    [liveRoom, live.participants, selfTiles, user.name],
+    [liveRoom, live.participants, selfTiles, user.name, names],
   );
 
   const pin = (id: string | null) => {
@@ -208,7 +212,10 @@ export function MeetingRoom({ meeting }: { meeting: CallMeeting }) {
 
       {/* live captions - the real `caption` socket stream once the gateway is reachable and this
           socket has joined the room. Until then there is no strip at all. */}
-      {captionsOn && socket.status === "joined" ? <LiveCaptions lines={socket.captions.lines} /> : null}
+      {captionsOn && socket.status === "joined" ? <LiveCaptions
+          lines={socket.captions.lines}
+          speakerLabel={(id) => (id === myUserId ? "You" : names[id]?.name ?? "Someone")}
+        /> : null}
 
       <ControlBar
         micOn={micOn}
@@ -240,6 +247,7 @@ export function MeetingRoom({ meeting }: { meeting: CallMeeting }) {
   );
 
   return (
+    <RoomNamesProvider names={names}>
     <CallToastProvider>
       <div className="mx-meet cx-call">
         {(live.status === "connecting" || live.status === "reconnecting" || live.status === "error") ? (
@@ -278,6 +286,14 @@ export function MeetingRoom({ meeting }: { meeting: CallMeeting }) {
                 {/* video stage - live LiveKit tracks once the room is connected, otherwise your own
                     tile while it connects (or if it cannot). */}
                 {liveRoom ? <LiveVideoGrid room={liveRoom}>{stage}</LiveVideoGrid> : stage(selfTiles)}
+                {/* Everyone else's microphone. The grid only attaches VIDEO; without this every
+                    remote audio track was subscribed and never played, so nobody could hear
+                    anybody. Your own mic is never rendered back to you. */}
+                {liveRoom && <RoomAudioRenderer room={liveRoom} />}
+                {/* Shown only when the browser blocked autoplay; one click unblocks the call. */}
+                {liveRoom && (
+                  <StartAudio room={liveRoom} label="Click to hear the call" className="call-start-audio tap" />
+                )}
 
                 <RoomPanel
                   open={sideOpen}
@@ -295,5 +311,6 @@ export function MeetingRoom({ meeting }: { meeting: CallMeeting }) {
         </div>
       </div>
     </CallToastProvider>
+    </RoomNamesProvider>
   );
 }
