@@ -37,16 +37,36 @@ function whenLine(meeting: CallMeeting): string {
   )}`;
 }
 
+const monthFormatter = new Intl.DateTimeFormat("en-US", { month: "short" });
+
+/** "in 2 hours", "3 hours ago": how far the start is from now, in the largest whole unit. */
+function relative(from: Date, to: Date): string {
+  const mins = Math.round((to.getTime() - from.getTime()) / 60000);
+  const abs = Math.abs(mins);
+  const [n, unit] =
+    abs < 60 ? [abs, "minute"] : abs < 60 * 24 ? [Math.round(abs / 60), "hour"] : [Math.round(abs / 1440), "day"];
+  const span = `${n} ${unit}${n === 1 ? "" : "s"}`;
+  return mins >= 0 ? `in ${span}` : `${span} ago`;
+}
+
 function UpcomingDetail({ meeting, hasTranscript }: { meeting: CallMeeting; hasTranscript: boolean }) {
   const live = meeting.status === "live";
+  const start = new Date(meeting.startTime);
+  const end = new Date(start.getTime() + meeting.durationMinutes * 60000);
+  const now = new Date();
   const others = Math.max(0, meeting.invited - 1);
+  const timing = live
+    ? `Started ${relative(now, start)}`
+    : start > now
+      ? `Starts ${relative(now, start)}`
+      : `Was due to start ${relative(now, start)}`;
 
   return (
     <div className="canvas cols-2">
       <div className="rail-stack">
         <div className="panel reveal" style={{ animationDelay: ".08s" }}>
           <div className="panel-head">
-            <h2>Meeting</h2>
+            <h2>When</h2>
             {live && (
               <span className="live-chip" style={{ marginLeft: "auto" }}>
                 <span className="live-dot" aria-hidden="true"></span>
@@ -54,20 +74,44 @@ function UpcomingDetail({ meeting, hasTranscript }: { meeting: CallMeeting; hasT
               </span>
             )}
           </div>
-          <div className="panel-body">
-            <h3 className="detail-title" style={{ fontSize: 19 }}>
-              {meeting.title}
-            </h3>
-            <p className="detail-by">{whenLine(meeting)}</p>
-            <p className="rail-note">
-              {others === 0 ? "Only you are invited." : `You and ${plural(others, "other person", "other people")} are invited.`}
-            </p>
+          <div className="panel-body mh-when">
+            <span className="mh-date" aria-hidden="true">
+              <small>{monthFormatter.format(start)}</small>
+              <b>{start.getDate()}</b>
+            </span>
+            <span className="mh-when-text">
+              <strong>
+                {dayFormatter.format(start)}, {timeFormatter.format(start)} to {timeFormatter.format(end)}
+              </strong>
+              <span>{timing}</span>
+            </span>
           </div>
+          <div className="mh-facts">
+            <span>
+              <small>Length</small>
+              <b>{meeting.durationMinutes} min</b>
+            </span>
+            <span>
+              <small>Invited</small>
+              <b>{others === 0 ? "Only you" : `You and ${plural(others, "other", "others")}`}</b>
+            </span>
+            <span>
+              <small>Transcript</small>
+              <b>{hasTranscript ? "Ready" : "After the call"}</b>
+            </span>
+          </div>
+        </div>
+
+        <div className="panel reveal" style={{ animationDelay: ".12s" }}>
+          <div className="panel-head">
+            <h2>Agenda</h2>
+          </div>
+          <div className="board-empty">The agenda lands here when the organizer shares it.</div>
         </div>
       </div>
 
       <div className="rail-stack">
-        <div className="panel reveal" style={{ animationDelay: ".12s" }}>
+        <div className="panel reveal" style={{ animationDelay: ".1s" }}>
           <div className="panel-head">
             <h2>Your agent is ready</h2>
             <Sparkle size={12} aria-hidden="true" />
@@ -86,7 +130,7 @@ function UpcomingDetail({ meeting, hasTranscript }: { meeting: CallMeeting; hasT
           </div>
         </div>
 
-        <Link href={`/meetings/${meeting.id}/join`} className="join-btn mh-join tap reveal">
+        <Link href={`/meetings/${meeting.id}/join`} className="join-btn mh-join tap reveal" style={{ animationDelay: ".14s" }}>
           Join meeting
         </Link>
         {hasTranscript && (

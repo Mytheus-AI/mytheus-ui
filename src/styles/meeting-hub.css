@@ -70,3 +70,29 @@
 @media (prefers-reduced-motion: reduce) {
   .mx-meet .mh-skel { animation: none; }
 }
+
+/* Meeting detail, upcoming: the When card. The design's .join-btn is `flex: 1`, which collapses
+   it to nothing inside a column stack, so the detail page pins its height. */
+.mx-meet .join-btn.mh-join { flex: none; height: 48px; font-size: 14.5px; }
+.mx-meet .mh-when { display: flex; align-items: center; gap: 16px; }
+.mx-meet .mh-date {
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 64px; height: 68px; flex: none; border-radius: 16px; background: var(--surfaceAlt);
+}
+.mx-meet .mh-date small { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accentDeep); }
+.mx-meet .mh-date b { font-size: 26px; line-height: 1.05; color: var(--ink); }
+.mx-meet .mh-when-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.mx-meet .mh-when-text strong { font-size: 16px; color: var(--ink); }
+.mx-meet .mh-when-text span { font-size: 13.5px; color: var(--muted); }
+.mx-meet .mh-facts {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--navBorder);
+}
+.mx-meet .mh-facts > span { display: flex; flex-direction: column; gap: 3px; padding: 14px 18px; }
+.mx-meet .mh-facts > span + span { border-left: 1px solid var(--navBorder); }
+.mx-meet .mh-facts small { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--mutedLabel); }
+.mx-meet .mh-facts b { font-size: 14px; font-weight: 600; color: var(--body); }
+@media (max-width: 519px) {
+  .mx-meet .mh-facts { grid-template-columns: minmax(0, 1fr); }
+  .mx-meet .mh-facts > span + span { border-left: 0; border-top: 1px solid var(--navBorder); }
+}
