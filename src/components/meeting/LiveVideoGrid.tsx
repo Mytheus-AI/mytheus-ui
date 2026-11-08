@@ -21,7 +21,7 @@ import type { Room } from "livekit-client";
 import type { ReactNode } from "react";
 import type { RoomTile } from "@/components/room/RoomGrid";
 import { useOrgContext } from "@/lib/org-context";
-import { useRoomName } from "@/lib/realtime/room-names";
+import { useRoomName, useRoomNames } from "@/lib/realtime/room-names";
 
 export function LiveVideoGrid({
   room,
@@ -36,6 +36,7 @@ export function LiveVideoGrid({
   // track has not been subscribed yet, so people do not blink out of the room the moment they
   // mute. Placeholders are what make the grid stable.
   const nameOf = useRoomName();
+  const people = useRoomNames();
   const tracks = useTracks(
     [
       { source: Track.Source.Camera, withPlaceholder: true },
@@ -56,6 +57,7 @@ export function LiveVideoGrid({
     return {
       id: `${participant.identity}:${reference.source}`,
       name: screen ? `${name}'s screen` : name,
+      imageUrl: screen ? undefined : (participant.isLocal ? user.imageUrl : people[participant.identity]?.imageUrl) ?? undefined,
       isLocal: participant.isLocal && !screen,
       micOn: screen ? true : participant.isMicrophoneEnabled,
       camOn,

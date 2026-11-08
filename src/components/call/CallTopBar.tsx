@@ -1,11 +1,12 @@
 "use client";
 
-import { LinkSimple, SidebarSimple, UserCheck, Users } from "@phosphor-icons/react";
+import { LinkSimple, SidebarSimple, Users } from "@phosphor-icons/react";
 import { LogoMark } from "@/components/Logo";
 import { useCallToast } from "@/components/call/CallToast";
 
-/* The call window's app bar, ported from the meeting design. On the pre-join it is just the brand;
-   in the room it adds the people counts, the meeting title, Share link and the panel toggle. */
+/* The call window's app bar. On the pre-join it is just the brand; in the room it adds the meeting
+   title with who is here under it (one quiet line instead of two count chips), Share link and
+   the panel toggle. */
 
 export type CallTopBarRoom = {
   title: string;
@@ -30,15 +31,15 @@ export function CallTopBar({ room }: { room?: CallTopBarRoom }) {
 
       {room ? (
         <>
-          <span className="chip meeting-only">
-            <Users size={14} aria-hidden />
-            In call · <b>{room.inCall}</b>
-          </span>
-          <span className="chip meeting-only">
-            <UserCheck size={14} aria-hidden />
-            Invited · <b>{room.invited}</b>
-          </span>
-          <h1 className="appbar-title meeting-only">{room.title}</h1>
+          <span className="cx-bar-sep meeting-only" aria-hidden="true" />
+          <div className="cx-bar-title meeting-only">
+            <h1 title={room.title}>{room.title}</h1>
+            <p>
+              <Users size={13} aria-hidden />
+              {room.inCall} in call
+              {room.invited > room.inCall ? <span> · {room.invited} invited</span> : null}
+            </p>
+          </div>
 
           <div className="appbar-right">
             <button

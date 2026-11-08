@@ -268,3 +268,140 @@
   box-shadow: 0 10px 30px -10px rgba(40, 34, 28, 0.45);
 }
 .mx-meet .call-start-audio:hover { background: var(--accentDeep); }
+
+/* ================================================================ room redesign (2026-11-09)
+   From a real 3-person call: a cluttered top bar, one person blown up on a near-empty dark frame
+   with a giant serif initial, an off-centre caption box, mismatched control colours and a dark
+   chat composer inside a light card. Calmer, more even, and still the meeting design's tokens. */
+
+/* ---- top bar: brand | title with who is here under it | share, panel */
+.mx-meet .cx-call .cx-bar-sep { width: 1px; height: 22px; background: var(--navBorder); margin: 0 4px; flex-shrink: 0; }
+.mx-meet .cx-call .cx-bar-title { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.mx-meet .cx-call .cx-bar-title h1 {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mx-meet .cx-call .cx-bar-title p {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mutedTime);
+  white-space: nowrap;
+}
+@media (max-width: 719px) {
+  .mx-meet .cx-call .cx-bar-sep { display: none; }
+  .mx-meet .cx-call .cx-bar-title p span { display: none; }
+}
+
+/* ---- stage frame: a quiet dark surface, so tiles read as tiles */
+.mx-meet .cx-call .main-video { background: #1f1e1c; }
+
+/* ---- grid: equal tiles that fill the frame, last row centred (no empty quarter for 3 people) */
+.mx-meet .cx-call .cx-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  gap: 10px;
+  inset: 62px 14px 82px;
+}
+.mx-meet .cx-call .cx-grid .thumb {
+  flex: 0 0 calc((100% - (var(--cols, 2) - 1) * 10px) / var(--cols, 2));
+  height: calc((100% - (var(--rows, 1) - 1) * 10px) / var(--rows, 1));
+  border-radius: 16px;
+  box-shadow: none;
+}
+.mx-meet .cx-call .cx-grid.is-solo .thumb { flex-basis: 100%; height: 100%; }
+
+/* ---- camera-off tiles: a warm dark surface and an avatar sized to the tile */
+.mx-meet .cx-call .thumb,
+.mx-meet .cx-call .main-video { container-type: size; }
+.mx-meet .cx-call .cx-tile-bg.is-dark { background: radial-gradient(120% 90% at 50% 35%, #3a3632, #2a2826 70%); }
+.mx-meet .cx-call .cx-initials,
+.mx-meet .cx-call .cx-initials.is-sm,
+.mx-meet .cx-call .cx-initials.is-md {
+  width: clamp(44px, 34cqmin, 132px);
+  height: clamp(44px, 34cqmin, 132px);
+  font-family: inherit;
+  font-size: clamp(15px, 12cqmin, 44px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: #4a4540;
+  color: #f4ede6;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+}
+.mx-meet .cx-call .cx-initials img { width: 100%; height: 100%; object-fit: cover; }
+/* Speaking: the avatar gets the ring, and the tile a soft outline, never a loud fill. */
+.mx-meet .cx-call .thumb.is-speaking { box-shadow: inset 0 0 0 2px var(--accent); }
+.mx-meet .cx-call .thumb.is-speaking .cx-initials { box-shadow: 0 0 0 3px #1f1e1c, 0 0 0 6px var(--accent); }
+@media (prefers-reduced-motion: reduce) {
+  .mx-meet .cx-call .cx-initials { transition: none; }
+}
+
+/* ---- name pills: smaller and calmer on tiles */
+.mx-meet .cx-call .thumb-name { height: 26px; padding: 0 10px; font-size: 12px; background: rgba(20, 19, 18, 0.62); color: #f4ede6; }
+
+/* ---- captions: centred above the controls. Centred with margins, not translateX, because the
+   entrance animation sets `transform` and was overriding the centring. */
+.mx-meet .cx-call .captions {
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  transform: none;
+  bottom: 86px;
+  width: min(720px, calc(100% - 32px));
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: rgba(16, 15, 14, 0.78);
+  font-size: 15px;
+  line-height: 1.45;
+  text-align: center;
+}
+.mx-meet .cx-call .captions b { margin-right: 6px; }
+
+/* ---- controls: one quiet family. Off (mic or camera muted) is red, on (captions, grid) is
+   light, Leave is the one strong button. */
+.mx-meet .cx-call .controls { gap: 8px; padding: 8px 10px; border-radius: 999px; background: rgba(28, 27, 25, 0.92); }
+.mx-meet .cx-call .ctl { width: 44px; height: 44px; border-radius: 999px; background: rgba(255, 255, 255, 0.09); color: #f4ede6; }
+.mx-meet .cx-call .ctl:hover { background: rgba(255, 255, 255, 0.16); }
+.mx-meet .cx-call .ctl.is-off { background: #c2412e; color: #fff; }
+.mx-meet .cx-call .ctl.is-off:hover { background: #a93626; }
+.mx-meet .cx-call .ctl.is-active { background: #f4ede6; color: #1f1e1c; }
+.mx-meet .cx-call .ctl.is-active:hover { background: #fff; }
+.mx-meet .cx-call .ctl-sep { background: rgba(255, 255, 255, 0.14); }
+.mx-meet .cx-call .ctl-leave { height: 44px; border-radius: 999px; padding: 0 20px; background: #c2412e; }
+.mx-meet .cx-call .ctl-leave:hover { background: #a93626; }
+
+/* ---- chat: a light composer that belongs to its card */
+.mx-meet .cx-call .composer {
+  background: var(--surfaceAlt);
+  border: 1px solid var(--navBorder);
+  box-shadow: none;
+  border-radius: 14px;
+  padding: 6px 6px 6px 4px;
+}
+.mx-meet .cx-call .composer input { color: var(--ink); }
+.mx-meet .cx-call .composer input::placeholder { color: var(--mutedAlt); }
+/* While captions show, the grid makes room for them instead of hiding the bottom tiles' names. */
+.mx-meet .cx-call .main-video:has(.captions) .cx-grid { bottom: 158px; }
+
+/* Phones: compact captions (one line each) so they never cover half the tiles. */
+@media (max-width: 719px) {
+  .mx-meet .cx-call .captions { bottom: 72px; font-size: 12.5px; line-height: 1.35; padding: 6px 10px; width: calc(100% - 20px); gap: 1px; }
+  .mx-meet .cx-call .cap-line,
+  .mx-meet .cx-call .cap-interim { -webkit-line-clamp: 1; }
+  .mx-meet .cx-call .main-video:has(.captions) .cx-grid { bottom: 124px; }
+  .mx-meet .cx-call .cx-grid { inset: 58px 10px 72px; gap: 8px; }
+  .mx-meet .cx-call .cx-grid .thumb {
+    flex-basis: calc((100% - (var(--cols, 2) - 1) * 8px) / var(--cols, 2));
+    height: calc((100% - (var(--rows, 1) - 1) * 8px) / var(--rows, 1));
+  }
+}

@@ -57,7 +57,8 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [captionsOn, setCaptionsOn] = useState(true);
-  const [layout, setLayout] = useState<RoomLayout>("spotlight");
+  // Everyone visible by default; a shared screen takes the spotlight (see the effect below).
+  const [layout, setLayout] = useState<RoomLayout>("grid");
   const [pinnedId, setPinnedId] = useState<string | null>(null);
   const [sideOpen, setSideOpen] = useState(true);
   const [attention, setAttention] = useState<AgentAttention>({ count: 0, conflict: false });
@@ -89,6 +90,12 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
   const myNotes = useMemo(() => orderedNotes(socket.notes), [socket.notes]);
 
   const liveRoom = live.status === "connected" ? live.room : null;
+  // Someone starting a screen share is the one moment spotlight is clearly right, so the room
+  // switches to it once per share; the layout button still switches back.
+  const sharing = live.participants.some((p) => p.isScreenShareEnabled);
+  useEffect(() => {
+    if (sharing) setLayout("spotlight");
+  }, [sharing]);
   // Your LiveKit identity is your internal user id, the same id captions name a speaker by.
   const myUserId = liveRoom?.localParticipant.identity;
 
