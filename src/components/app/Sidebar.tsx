@@ -142,7 +142,15 @@ export function Sidebar({
         )}
       </div>
 
-      <div className={`mb-3 flex items-center rounded-pill border ${lay(ORG)}`}>
+      {/* Opens the workspace chooser: switch to another workspace you belong to, or accept an
+          invitation to one. `switch=1` keeps the chooser open for someone who already has an
+          active workspace (it otherwise sends them straight on to the dashboard). */}
+      <Link
+        href="/onboarding/organization?switch=1"
+        title="Switch workspace or accept an invitation"
+        aria-label={`${org.name}: switch workspace`}
+        className={`mb-3 flex items-center rounded-pill border transition-colors hover:border-line-2 ${lay(ORG)}`}
+      >
         <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[9px] bg-pill text-[13px] font-bold text-white">
           {org.name.slice(0, 1).toUpperCase()}
         </span>
@@ -152,7 +160,7 @@ export function Sidebar({
           </span>
           <span className="block text-[12px] capitalize text-ink-3">{org.plan} plan</span>
         </span>
-      </div>
+      </Link>
 
       <nav className="-mx-1.5 flex-1 overflow-y-auto overflow-x-hidden px-1.5">
         {NAV_SECTIONS.map((section) => (

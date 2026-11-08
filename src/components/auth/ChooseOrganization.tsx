@@ -48,10 +48,15 @@ export function ChooseOrganization() {
 
   // No session at all: this page has nothing to offer. An active session that owes no task
   // has nothing to do here either.
+  // `?switch=1` (the sidebar's workspace button, and invitation emails) keeps the chooser open
+  // for someone who already has a workspace, so they can switch or accept an invitation.
+  // Read from `window` in the effect, not `useSearchParams`, so the page needs no Suspense.
   useEffect(() => {
     if (!clerk.loaded) return;
+    const switching = new URLSearchParams(window.location.search).get("switch") === "1";
     if (!clerk.session) router.replace("/sign-in");
-    else if (clerk.session.status === "active" && clerk.session.lastActiveOrganizationId) router.replace(AFTER_AUTH_URL);
+    else if (!switching && clerk.session.status === "active" && clerk.session.lastActiveOrganizationId)
+      router.replace(AFTER_AUTH_URL);
   }, [clerk.loaded, clerk.session, router]);
 
   useEffect(() => {
