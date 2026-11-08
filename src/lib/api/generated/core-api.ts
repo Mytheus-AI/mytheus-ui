@@ -232,6 +232,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/meetings/{meeting_id}/worklogs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List My Worklogs */
+        get: operations["list_my_worklogs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/teams": {
         parameters: {
             query?: never;
@@ -697,6 +714,51 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /**
+         * Worklog
+         * @description One `PersonalListenerAgent` note from `worklogs` (Plan 7-9 section 3.3).
+         *
+         *     Only `surfaced` notes are ever served; the 0.4-0.7 silent-log band stays in the table and
+         *     is not returned. `window_id` ties the note to the 30 s agent window it came from, and
+         *     `source_chunk_ids` to the transcript finals in that window.
+         */
+        Worklog: {
+            /** Confidence */
+            confidence?: number | null;
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Relevance Score */
+            relevance_score?: number | null;
+            /** Source Chunk Ids */
+            source_chunk_ids: string[];
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Window Id */
+            window_id: string;
+        };
+        /** WorklogList */
+        WorklogList: {
+            /** Items */
+            items: components["schemas"]["Worklog"][];
         };
     };
     responses: never;
@@ -1241,6 +1303,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TranscriptPage"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_my_worklogs: {
+        parameters: {
+            query?: {
+                user_id?: "me";
+            };
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorklogList"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */

@@ -18,6 +18,7 @@ import { RoomPanel, SECTION_IDS } from "@/components/room/RoomPanel";
 import { useNarrow } from "@/components/room/useNarrow";
 import { useOrgContext } from "@/lib/org-context";
 import { useLiveKitRoom } from "@/lib/realtime/useLiveKitRoom";
+import { orderedNotes } from "@/lib/realtime/notes";
 import { useMeetingSocket } from "@/lib/realtime/useMeetingSocket";
 import type { CallMeeting } from "@/components/call/resolve-meeting";
 import type { AgentSidebarCard } from "@/lib/mock/data";
@@ -83,6 +84,7 @@ export function MeetingRoom({ meeting }: { meeting: CallMeeting }) {
     };
   }, [getToken]);
   const socket = useMeetingSocket(meeting.id, socketToken);
+  const myNotes = useMemo(() => orderedNotes(socket.notes), [socket.notes]);
 
   const liveRoom = live.status === "connected" ? live.room : null;
 
@@ -283,7 +285,7 @@ export function MeetingRoom({ meeting }: { meeting: CallMeeting }) {
                   attention={attention.count}
                   conflict={attention.conflict}
                   peopleCount={people.length}
-                  agent={<AgentSidebar onAttentionChange={onAttention} id={SECTION_IDS.agent} items={NO_AGENT_CARDS} />}
+                  agent={<AgentSidebar onAttentionChange={onAttention} id={SECTION_IDS.agent} items={NO_AGENT_CARDS} notes={myNotes} />}
                   people={<PeoplePanel people={people} id={SECTION_IDS.people} />}
                   chat={<ChatPanel id={SECTION_IDS.chat} room={liveRoom} />}
                 />

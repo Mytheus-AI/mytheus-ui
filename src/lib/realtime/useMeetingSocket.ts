@@ -35,6 +35,15 @@ import {
   type CaptionPayload,
   type CaptionState,
 } from "./captions";
+import {
+  applyNoteDelta,
+  applyNoteFinal,
+  emptyNotesState,
+  hydrateNotes,
+  type NoteDeltaPayload,
+  type NoteFinalPayload,
+  type NotesState,
+} from "./notes";
 
 export type SocketStatus =
   | "disabled" // no NEXT_PUBLIC_REALTIME_WS_URL: caller falls back to mock captions
@@ -48,6 +57,8 @@ export interface MeetingSocketState {
   captions: CaptionState;
   /** Internal `users.id` UUIDs currently in the room, per the gateway's presence contract. */
   presence: string[];
+  /** This participant's own PersonalListener notes (Plan 7-9 §3.4): live drafts and finals. */
+  notes: NotesState;
 }
 
 interface JoinAck {
@@ -61,6 +72,7 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
   const [status, setStatus] = useState<SocketStatus>(url ? "connecting" : "disabled");
   const [captions, setCaptions] = useState<CaptionState>(emptyCaptionState);
   const [presence, setPresence] = useState<string[]>([]);
+  const [notes, setNotes] = useState<NotesState>(emptyNotesState);
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -96,8 +108,25 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
       }
     };
 
+    // The same re-hydrate rule for My Notes: the gateway replays nothing, so every (re)connect
+    // re-reads the durable notes and folds them in by window.
+    const rehydrateNotes = async () => {
+      try {
+        const response = await fetch(
+          `/api/meeting-worklogs?meeting_id=${encodeURIComponent(meetingId)}`,
+        );
+        if (!response.ok) return;
+        const body = (await response.json()) as { items?: NoteFinalPayload[] };
+        if (cancelled || !body.items?.length) return;
+        setNotes((prev) => hydrateNotes(prev, body.items!));
+      } catch {
+        // Same reasoning as captions: the live stream keeps working without it.
+      }
+    };
+
     const join = () => {
       void rehydrate();
+      void rehydrateNotes();
       socket.emit("join", { meetingId }, (ack: JoinAck) => {
         if (cancelled) return;
         if (ack?.ok) {
@@ -127,6 +156,16 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
       setCaptions((prev) => applyCaption(prev, event.payload));
     });
 
+    // Private to this participant: the gateway emits these only to the note's owner.
+    socket.on("agent-delta", (event: { meetingId: string; payload: NoteDeltaPayload }) => {
+      if (cancelled || event?.meetingId !== meetingId || !event.payload) return;
+      setNotes((prev) => applyNoteDelta(prev, event.payload));
+    });
+    socket.on("agent-note", (event: { meetingId: string; payload: NoteFinalPayload }) => {
+      if (cancelled || event?.meetingId !== meetingId || !event.payload) return;
+      setNotes((prev) => applyNoteFinal(prev, event.payload));
+    });
+
     socket.on("presence", (members: string[]) => {
       if (!cancelled) setPresence(Array.isArray(members) ? members : []);
     });
@@ -140,7 +179,7 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
   }, [url, token, meetingId]);
 
   return useMemo(
-    () => ({ status, captions, presence }),
-    [status, captions, presence],
+    () => ({ status, captions, presence, notes }),
+    [status, captions, presence, notes],
   );
 }

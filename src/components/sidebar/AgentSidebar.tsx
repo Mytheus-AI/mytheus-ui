@@ -6,6 +6,7 @@ import { GearSix, Lock, PushPin, Sparkle, Warning } from "@phosphor-icons/react"
 import { CollapseSection } from "@/components/call/CollapseSection";
 import { useCallToast } from "@/components/call/CallToast";
 import type { AgentSidebarCard, SidebarPriority } from "@/lib/mock/data";
+import type { LiveNote } from "@/lib/realtime/notes";
 
 /* The agent sidebar - the product's centerpiece - in the meeting design's shape: a conflict banner
    pinned above everything, then "My agent" with the Needs-you cards, My notes, Saved for later and
@@ -70,10 +71,19 @@ export interface AgentAttention {
   conflict: boolean;
 }
 
+/** A note's bullets, one per line, without the leading "- " the agent writes. */
+function noteLines(text: string): string[] {
+  return text
+    .split("\n")
+    .map((l) => l.replace(/^\s*[-*]\s+/, "").trim())
+    .filter(Boolean);
+}
+
 export function AgentSidebar({
   onAttentionChange,
   id,
   items,
+  notes = [],
 }: {
   /** The agent's cards for this meeting. Empty until the `agent-results` stream is wired, which
    *  renders the empty state rather than invented cards. */
@@ -82,6 +92,9 @@ export function AgentSidebar({
   onAttentionChange?: (attention: AgentAttention) => void;
   /** Anchor id for the "My agent" section, so the collapsed rail can open the panel at it. */
   id?: string;
+  /** This participant's live PersonalListener notes (Plan 7-9 §3.4), oldest first. Only
+   *  surfaced notes ever reach the client; a draft is one still streaming. */
+  notes?: LiveNote[];
 }) {
   const toast = useCallToast();
   const [decisionState, setDecisionState] = useState<"pending" | "confirmed" | "dismissed">(
@@ -338,7 +351,7 @@ export function AgentSidebar({
     feed.push({ id: "context", kind: "context", text: context.text, cite: context.source, saveAs: "Context from Sarah's agent" });
   }
 
-  if (items.length === 0) {
+  if (items.length === 0 && notes.length === 0) {
     return (
       <div className="reveal" id={id} style={{ animationDelay: ".14s" }}>
         <CollapseSection title="My agent">
@@ -416,7 +429,32 @@ export function AgentSidebar({
               </div>
             ) : null}
 
-            {note ? (
+            {notes.length > 0 ? (
+              <div className="mynotes" aria-live="polite">
+                <div className="nfy-head">
+                  My notes <b>{notes.length}</b>
+                  <span className="cite-chip" style={{ marginTop: 0, marginLeft: "auto" }}>
+                    <Lock size={10} weight="fill" aria-hidden />
+                    Only you
+                  </span>
+                </div>
+                {notes.map((n) => (
+                  <div
+                    className={`mynote${n.final ? "" : " is-new"}`}
+                    key={n.windowId}
+                    aria-busy={n.final ? undefined : true}
+                  >
+                    <span className="moment-dot is-note" aria-hidden="true"></span>
+                    <span className="mynote-body">
+                      {noteLines(n.text).map((line, i) => (
+                        <p key={i}>{line}</p>
+                      ))}
+                      {n.final ? null : <p className="saved-empty">Writing...</p>}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : note ? (
               <div className="mynotes">
                 <div className="nfy-head">
                   My notes

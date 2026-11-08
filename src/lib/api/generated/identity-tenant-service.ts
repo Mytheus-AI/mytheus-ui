@@ -63,6 +63,118 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Own Org
+         * @description The organization the caller's token is scoped to, and only that one.
+         *
+         *     A collection path returning one object, deliberately: `/orgs/{id}` would put a tenant
+         *     identifier in the path (`org-id-never-in-path` in `design/.spectral.yaml`), and a list
+         *     would only ever have one visible member anyway.
+         */
+        get: operations["read_own_org"];
+        put?: never;
+        /**
+         * Provision Org
+         * @description Create a complete tenant: root, settings, residency, owner + grant, outbox, audit.
+         *
+         *     `Idempotency-Key` is honoured by the shared middleware (scoped to the OPERATOR's tenant),
+         *     so a retried request replays the stored 201. Without a key, a repeat is a 409.
+         */
+        post: operations["provision_org"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pii-tokens/mint": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mint Tokens */
+        post: operations["mint_tokens"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pii-tokens/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve Tokens */
+        post: operations["resolve_tokens"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rbac/grants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Grants
+         * @description Keyset page of the caller's tenant's grants, by `user_id`. RLS scopes it to the tenant.
+         */
+        get: operations["list_grants"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rbac/grants/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Grant
+         * @description Set `user_id`'s tier, creating the grant if absent. Idempotent in the value written.
+         */
+        put: operations["set_grant"];
+        post?: never;
+        /**
+         * Revoke Grant
+         * @description Remove `user_id`'s grant. A user with no grant is a 204 no-op (and writes no audit row).
+         *
+         *     The user row is untouched: they stay a tenant member with no tier, which the authz chain
+         *     treats as satisfying nothing.
+         */
+        delete: operations["revoke_grant"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/scim/v2/Groups": {
         parameters: {
             query?: never;
@@ -190,6 +302,12 @@ export interface components {
             name: string;
         };
         /**
+         * EntityType
+         * @description Canon `_canon/02-data-model.md` `pii_tokens.entity_type`. Mirrored by a CHECK.
+         * @enum {string}
+         */
+        EntityType: "EMAIL" | "PHONE" | "IBAN" | "CARD" | "GOVID" | "PERSON" | "ORG" | "LOC";
+        /**
          * @description The frozen program-wide error enum. Clients branch on this and never on `detail`, which is human-readable and free to change. Values are added, never removed or repurposed. Emitted verbatim from `libs.shared.errors.ErrorCode`, so this list cannot drift from the code; the no-removal half is asserted by `test_no_published_error_code_is_ever_removed`, because `oasdiff` does not treat narrowing a response enum as a breaking change.
          * @enum {string}
          */
@@ -219,6 +337,68 @@ export interface components {
             /** Title */
             title: string | null;
         };
+        /** MintRequest */
+        MintRequest: {
+            /** Spans */
+            spans: components["schemas"]["Span"][];
+        };
+        /** MintResponse */
+        MintResponse: {
+            /** Tokens */
+            tokens: components["schemas"]["MintedSpan"][];
+        };
+        /** MintedSpan */
+        MintedSpan: {
+            entity_type: components["schemas"]["EntityType"];
+            /** Placeholder */
+            placeholder: string;
+            /** Token */
+            token: string;
+        };
+        /**
+         * OrgCreate
+         * @description `POST /orgs` body. There is no `org_id` field: the id is minted server-side.
+         */
+        OrgCreate: {
+            /** Clerk Org Id */
+            clerk_org_id: string;
+            /** Name */
+            name: string;
+            owner: components["schemas"]["OrgOwner"];
+            /** Slug */
+            slug: string;
+        };
+        /**
+         * OrgOwner
+         * @description The tenant's first owner. Becomes a `users` mirror row plus an `owner` `rbac_grants`
+         *     row in the provisioning transaction; Clerk's later `user.*` webhook converges the mirror.
+         */
+        OrgOwner: {
+            /** Clerk User Id */
+            clerk_user_id: string;
+            /** Email */
+            email: string;
+        };
+        /**
+         * Organization
+         * @description The tenant root, restricted to the columns `mytheus_app` may read at all (migration
+         *     `a1c4e7f20b18` grants SELECT on `id, clerk_org_id, name, slug, status, deleted_at` only).
+         */
+        Organization: {
+            /** Clerk Org Id */
+            clerk_org_id: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+            /** Status */
+            status: string;
+        };
         /** @description RFC 7807 problem detail. Every 4xx and 5xx this service emits has this shape, including the ones FastAPI would otherwise return in its own format: `libs/shared/errors.py` registers handlers for `ProblemDetail`, `HTTPException`, `RequestValidationError` and bare `Exception`. */
         Problem: {
             code: components["schemas"]["ErrorCode"];
@@ -238,6 +418,90 @@ export interface components {
              */
             type: string;
         };
+        /** ProvisionedOrganization */
+        ProvisionedOrganization: {
+            /** Clerk Org Id */
+            clerk_org_id: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Owner User Id
+             * Format: uuid
+             */
+            owner_user_id: string;
+            /** Slug */
+            slug: string;
+            /** Status */
+            status: string;
+        };
+        /** RbacGrant */
+        RbacGrant: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Granted By */
+            granted_by: string | null;
+            /**
+             * Tier
+             * @enum {string}
+             */
+            tier: "owner" | "admin" | "member";
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /**
+         * RbacGrantPage
+         * @description Keyset page over `rbac_grants`, ordered by `user_id`. `next_cursor` is opaque.
+         */
+        RbacGrantPage: {
+            /** Items */
+            items: components["schemas"]["RbacGrant"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
+        /**
+         * RbacGrantUpdate
+         * @description `PUT /rbac/grants/{user_id}` body: set this user's tier, creating the grant if absent.
+         */
+        RbacGrantUpdate: {
+            /**
+             * Tier
+             * @enum {string}
+             */
+            tier: "owner" | "admin" | "member";
+        };
+        /** ResolveRequest */
+        ResolveRequest: {
+            /** Reason */
+            reason?: string | null;
+            /** Tokens */
+            tokens: string[];
+        };
+        /** ResolveResponse */
+        ResolveResponse: {
+            /** Unresolved */
+            unresolved: string[];
+            /** Values */
+            values: components["schemas"]["ResolvedValue"][];
+        };
+        /** ResolvedValue */
+        ResolvedValue: {
+            entity_type: components["schemas"]["EntityType"];
+            /** Token */
+            token: string;
+            /** Value */
+            value: string;
+        };
         /**
          * RoleTopicsResponse
          * @description `GET /taxonomy/role-topics` response - the full role->topics map for one pinned
@@ -252,6 +516,12 @@ export interface components {
             };
             /** Version */
             version: string;
+        };
+        /** Span */
+        Span: {
+            entity_type: components["schemas"]["EntityType"];
+            /** Value */
+            value: string;
         };
         /**
          * TeamRef
@@ -493,6 +763,359 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    read_own_org: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Organization"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    provision_org: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrgCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProvisionedOrganization"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    mint_tokens: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MintRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MintResponse"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    resolve_tokens: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResolveResponse"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_grants: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RbacGrantPage"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    set_grant: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RbacGrantUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RbacGrant"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    revoke_grant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Unhandled server error. Carries a `trace_id` and no internals. */

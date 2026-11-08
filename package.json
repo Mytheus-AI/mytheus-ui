@@ -10,7 +10,8 @@
     "lint": "next lint",
     "clean": "node scripts/dev-clean.mjs",
     "generate:api": "node scripts/generate-api-types.mjs",
-    "generate:api:check": "node scripts/generate-api-types.mjs --check"
+    "generate:api:check": "node scripts/generate-api-types.mjs --check",
+    "test": "node --experimental-strip-types --no-warnings --test \"tests/**/*.test.ts\""
   },
   "dependencies": {
     "@clerk/nextjs": "^6.39.6",
