@@ -48,7 +48,7 @@ export function SsoCallback() {
       <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 pb-16 text-center">
         {/* a doodle under inspection */}
         <div className="relative mb-10 h-44 w-44" aria-hidden>
-          <span className="absolute inset-3 block overflow-hidden rounded-full border-[2.5px] border-[var(--doodle-ink)] shadow-[5px_6px_0_var(--doodle-ink)]">
+          <span className="absolute inset-3 block overflow-hidden rounded-full border-[2.5px] border-[var(--doodle-ink)]">
             <Doodle seed="human-check" draw className="block h-full w-full" />
           </span>
           <svg viewBox="0 0 120 120" className="sso-glass absolute -right-10 -top-6 h-28 w-28">
@@ -95,7 +95,7 @@ export function SsoCallback() {
         {/* Clerk mounts its challenge here only when it needs one; the slot is hidden while empty. */}
         <div
           id="clerk-captcha"
-          className="mt-8 min-w-[300px] rounded-[20px] border-[1.5px] border-[var(--doodle-ink)] bg-surface p-4 shadow-[4px_4px_0_var(--doodle-ink)]"
+          className="mt-8 min-w-[300px] rounded-[20px] border-[1.5px] border-line-2 bg-surface p-4"
         />
 
         <div className="mt-8 h-6 text-[14px] text-ink-3" aria-live="polite">
