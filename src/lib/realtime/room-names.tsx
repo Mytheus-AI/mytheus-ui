@@ -32,3 +32,7 @@ export function useRoomPerson(id: string | undefined | null): RoomPerson | undef
   const names = useContext(Ctx);
   return id ? names[id] : undefined;
 }
+
+export function useRoomNames(): RoomNames {
+  return useContext(Ctx);
+}

@@ -30,6 +30,8 @@ export type RoomTile = {
   kind?: "camera" | "screen";
   /** Live media (a <VideoTrack>), absolutely positioned by the caller. */
   media?: ReactNode;
+  /** Profile photo for the camera-off avatar; initials when absent. */
+  imageUrl?: string;
 };
 
 const MAX_THUMBS = 3;
@@ -114,7 +116,7 @@ export function RoomGrid({
         ) : (
           <div
             className={`cx-grid${n === 1 ? " is-solo" : ""}`}
-            style={{ "--cols": gridCols(n) } as CSSProperties}
+            style={{ "--cols": gridCols(n), "--rows": Math.ceil(n / gridCols(n)) } as CSSProperties}
             role="group"
             aria-label="Participants"
           >
@@ -185,7 +187,13 @@ function TileSurface({ tile, size }: { tile: RoomTile; size: "lg" | "md" | "sm" 
     <>
       <span className={`cx-tile-bg ${tile.camOn ? "is-lit" : "is-dark"}`} aria-hidden />
       <span className={`cx-initials${size === "lg" ? "" : ` is-${size}`}`} aria-hidden>
-        {initials(tile.name)}
+        {tile.imageUrl ? (
+          // A profile photo from Clerk's CDN; a plain <img> keeps it out of next/image's domain list.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={tile.imageUrl} alt="" referrerPolicy="no-referrer" />
+        ) : (
+          initials(tile.name)
+        )}
       </span>
     </>
   );
