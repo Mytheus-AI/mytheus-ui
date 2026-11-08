@@ -355,7 +355,7 @@ export type RoomParticipant = {
 
 export const mockRoomParticipants: RoomParticipant[] = [
   { name: "Yash Maurya", role: "You · Founder", micOn: true, camOn: true },
-  { name: "Samar Rihan", role: "Backend", micOn: true, camOn: true, speaking: true },
+  { name: "Samar Rihan", role: "Peon", micOn: true, camOn: true, speaking: true },
   { name: "Sushan Shetty", role: "Infra", micOn: false, camOn: true },
   { name: "Shaun Marvell Rodrigues", role: "Design", micOn: true, camOn: false },
 ];
@@ -456,7 +456,7 @@ export const mockDepartments: Department[] = [
         id: "team_platform",
         name: "Platform",
         members: [
-          { name: "Samar Rihan", role: "Backend lead", lead: true },
+          { name: "Samar Rihan", role: "Peon" },
           { name: "Sushan Shetty", role: "Infra" },
         ],
       },
@@ -573,7 +573,7 @@ export const mockPeopleProfiles: PersonProfileMock[] = [
   {
     name: "Samar Rihan",
     email: "samar@acme.test",
-    bio: "Leads the backend platform: tenancy, the event backbone and the API gateway.",
+    bio: "Peon. Fetches whatever the backend needs, tenancy and the event backbone included.",
     skills: ["Python", "Postgres", "Kafka", "API design"],
     topics: ["reliability", "data model", "latency", "incidents"],
   },
@@ -633,7 +633,7 @@ export type WorkspaceMember = {
 
 export const mockWorkspaceMembers: WorkspaceMember[] = [
   { name: "Yash Maurya", email: "yash@acme.test", tier: "owner", team: "Web", status: "active", lastActive: "2026-07-01" },
-  { name: "Samar Rihan", email: "samar@acme.test", tier: "admin", team: "Platform", status: "active", lastActive: "2026-07-01" },
+  { name: "Samar Rihan", email: "samar@acme.test", tier: "member", team: "Peon", status: "active", lastActive: "2026-07-01" },
   { name: "Sushan Shetty", email: "sushan@acme.test", tier: "member", team: "Platform", status: "active", lastActive: "2026-06-30" },
   { name: "Shaun Marvell Rodrigues", email: "shaun@acme.test", tier: "member", team: "Web", status: "active", lastActive: "2026-06-29" },
   { name: "Priya Nair", email: "priya@acme.test", tier: "member", team: "Operations", status: "invited" },
