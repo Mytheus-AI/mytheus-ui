@@ -619,3 +619,78 @@
   .mx-meet .cx-call .nv-tx li b,
   .mx-meet .cx-call .nv-tx li p { grid-column: 2; }
 }
+
+/* ================================================================ connection pill
+   Replaces the full-width "Connecting to the call..." card: one small dark-glass pill centred
+   just under the top bar, over the stage, so it reads as the call's state and not as a page
+   notice. An error keeps the same shape, tinted, with a retry. */
+.mx-meet .cx-conn {
+  position: fixed;
+  left: 50%;
+  top: 76px;
+  z-index: 50;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100vw - 32px);
+  min-height: 34px;
+  padding: 0 16px 0 14px;
+  border-radius: 999px;
+  background: rgba(24, 22, 20, 0.74);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  box-shadow: 0 10px 28px -14px rgba(24, 22, 20, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  animation: cx-conn-in 0.18s ease-out both;
+}
+.mx-meet .cx-conn-dots { display: inline-flex; gap: 3px; }
+.mx-meet .cx-conn-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.35;
+  animation: cx-conn-dot 1s ease-in-out infinite;
+}
+.mx-meet .cx-conn-dots i:nth-child(2) { animation-delay: 0.15s; }
+.mx-meet .cx-conn-dots i:nth-child(3) { animation-delay: 0.3s; }
+.mx-meet .cx-conn.is-error {
+  padding: 6px 6px 6px 14px;
+  border-radius: 18px;
+  background: rgba(58, 22, 16, 0.86);
+  line-height: 1.35;
+}
+.mx-meet .cx-conn.is-error > svg { flex-shrink: 0; color: #ff9b85; }
+.mx-meet .cx-conn-retry {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.mx-meet .cx-conn-retry:hover { background: rgba(255, 255, 255, 0.22); }
+@keyframes cx-conn-in {
+  from { opacity: 0; transform: translate(-50%, -4px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+@keyframes cx-conn-dot {
+  0%, 100% { opacity: 0.35; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mx-meet .cx-conn { animation: none; }
+  .mx-meet .cx-conn-dots i { animation: none; opacity: 0.8; }
+}
+@media (max-width: 640px) {
+  .mx-meet .cx-conn { top: 64px; }
+}
