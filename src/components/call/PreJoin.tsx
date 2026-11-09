@@ -180,7 +180,10 @@ export function PreJoin({ meeting }: { meeting: CallMeeting }) {
     try {
       sessionStorage.setItem(
         CALL_PREFS_KEY,
-        JSON.stringify({ micOff, camOff, micId: micValue, camId: camValue }),
+        // Only a device you actually picked is pinned. Pinning the one the browser happened to
+        // give (the system default at that moment) kept the call on the laptop mic after a
+        // Bluetooth headset connected; unpinned, the room follows the system default.
+        JSON.stringify({ micOff, camOff, micId: request.mic, camId: request.cam }),
       );
     } catch {
       // Storage blocked: the room simply starts with mic and camera on.

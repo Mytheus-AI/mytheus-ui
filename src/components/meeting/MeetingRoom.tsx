@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { RoomAudioRenderer, StartAudio } from "@livekit/components-react";
-import { RoomEvent, Track, type LocalTrackPublication } from "livekit-client";
+import { ParticipantEvent, RoomEvent, Track, type LocalTrackPublication } from "livekit-client";
 import { AgentSidebar, type AgentAttention } from "@/components/sidebar/AgentSidebar";
 import { LiveVideoGrid } from "@/components/meeting/LiveVideoGrid";
 import { LiveCaptions } from "@/components/meeting/LiveCaptions";
@@ -210,6 +210,44 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
         }),
     );
   }, [liveRoom, camOn]);
+  // Follow the system's default microphone. Chrome keeps capturing the device a track was
+  // opened on even after the OS default moves (a Bluetooth headset connecting or dropping),
+  // and LiveKit only steps in when that device disappears entirely, so the call stayed on the
+  // laptop mic. On every device change, if you did not pick a mic yourself and the default now
+  // names a different physical device than the live track, restart the track on the default.
+  // A picked mic that vanished falls back to the default too.
+  useEffect(() => {
+    if (!liveRoom) return;
+    const follow = async () => {
+      const track = liveRoom.localParticipant.getTrackPublication(Track.Source.Microphone)?.audioTrack;
+      if (!track || track.isMuted) return;
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const inputs = devices.filter((d) => d.kind === "audioinput");
+      const pinned = deviceIds.current.mic;
+      if (pinned && inputs.some((d) => d.deviceId === pinned)) return;
+      if (pinned) deviceIds.current.mic = undefined;
+      const fallback = inputs.find((d) => d.deviceId === "default") ?? inputs[0];
+      const current = track.mediaStreamTrack.getSettings();
+      const sameDevice =
+        track.mediaStreamTrack.readyState === "live" &&
+        fallback !== undefined &&
+        (fallback.groupId ? fallback.groupId === current.groupId : fallback.deviceId === current.deviceId);
+      if (!fallback || sameDevice) return;
+      await track.restartTrack({ deviceId: fallback.deviceId });
+    };
+    const onChange = () => {
+      follow().catch(() => undefined);
+    };
+    // A muted mic is left alone, so check again on unmute: unmuting after a headset
+    // connected should pick the headset up.
+    const lp = liveRoom.localParticipant;
+    liveRoom.on(RoomEvent.MediaDevicesChanged, onChange);
+    lp.on(ParticipantEvent.TrackUnmuted, onChange);
+    return () => {
+      liveRoom.off(RoomEvent.MediaDevicesChanged, onChange);
+      lp.off(ParticipantEvent.TrackUnmuted, onChange);
+    };
+  }, [liveRoom]);
   useEffect(() => {
     if (!liveRoom) return;
     // Ask for sound with the picture: a shared tab's or the whole screen's audio rides along as
