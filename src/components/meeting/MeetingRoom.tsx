@@ -12,6 +12,7 @@ import { CallTopBar } from "@/components/call/CallTopBar";
 import { CALL_PREFS_KEY } from "@/components/call/prefs";
 import { ChatPanel } from "@/components/room/ChatPanel";
 import { ControlBar } from "@/components/room/ControlBar";
+import { NotesView } from "@/components/room/NotesView";
 import { PeoplePanel, type RoomPerson } from "@/components/room/PeoplePanel";
 import { RoomClock } from "@/components/room/RoomClock";
 import { RoomGrid, type RoomLayout, type RoomTile } from "@/components/room/RoomGrid";
@@ -39,6 +40,9 @@ import type { AgentSidebarCard } from "@/lib/mock/data";
 /** The agent's cards arrive over `agent-results`, which this room does not subscribe to yet. */
 const NO_AGENT_CARDS: AgentSidebarCard[] = [];
 
+export type RoomMode = "call" | "notes";
+const ROOM_MODE_KEY = "mytheus.room-mode";
+
 /** Plain words for why the call would not let you in, keyed by the server's stable code. */
 function joinProblem(code: string | null): string {
   switch (code) {
@@ -64,6 +68,24 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
   const [attention, setAttention] = useState<AgentAttention>({ count: 0, conflict: false });
   const [shareUrl, setShareUrl] = useState(`/meetings/${meeting.id}/join`);
   const [screenOn, setScreenOn] = useState(false);
+  // Two views of one live meeting: Call keeps the video up front, Notes turns the room into the
+  // living document. Remembered per browser, so people keep the view they work in.
+  const [mode, setMode] = useState<RoomMode>("call");
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(ROOM_MODE_KEY) === "notes") setMode("notes");
+    } catch {
+      // Storage blocked: start in Call.
+    }
+  }, []);
+  const switchMode = useCallback((next: RoomMode) => {
+    setMode(next);
+    try {
+      localStorage.setItem(ROOM_MODE_KEY, next);
+    } catch {
+      // Storage blocked: the switch still works for this visit.
+    }
+  }, []);
   // The devices picked on the pre-join, applied when the real call publishes them.
   const deviceIds = useRef<{ mic?: string; cam?: string }>({});
   const { user } = useOrgContext();
@@ -163,7 +185,7 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
 
   const onAttention = useCallback((a: AgentAttention) => setAttention(a), []);
 
-  // The design's keyboard shortcuts: M mic, V camera, C captions, L layout.
+  // The design's keyboard shortcuts: M mic, V camera, C captions, L layout; 1 Call, 2 Notes.
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       const target = e.target as HTMLElement;
@@ -181,10 +203,12 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
       else if (k === "v") setCamOn((v) => !v);
       else if (k === "c") setCaptionsOn((v) => !v);
       else if (k === "l") setLayout((l) => (l === "grid" ? "spotlight" : "grid"));
+      else if (k === "1") switchMode("call");
+      else if (k === "2") switchMode("notes");
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [switchMode]);
 
   /* Before the call connects nobody else is known, so the stage is just you, following the mic
      and camera controls. */
@@ -253,6 +277,29 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
     />
   );
 
+  const whenLine = `${new Date(meeting.startTime).toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  })} · ${people.length} in call`;
+  const notesView = (tiles: RoomTile[]) => (
+    <NotesView
+      title={meeting.title}
+      when={whenLine}
+      tiles={tiles}
+      notes={myNotes}
+      lines={socket.captions.lines}
+      speakerLabel={(id) => (id === myUserId ? "You" : names[id]?.name ?? "Someone")}
+      micOn={micOn}
+      camOn={camOn}
+      onMic={() => setMicOn((v) => !v)}
+      onCam={() => setCamOn((v) => !v)}
+      onBackToCall={() => switchMode("call")}
+      leaveHref={`/meetings/${meeting.id}`}
+      chat={<ChatPanel id={SECTION_IDS.chat} room={liveRoom} />}
+    />
+  );
+
   return (
     <RoomNamesProvider names={names}>
     <CallToastProvider>
@@ -282,17 +329,25 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
               shareUrl,
               sideVisible: sideOpen,
               onToggleSide: () => setSideOpen((v) => !v),
+              mode,
+              onMode: switchMode,
             }}
           />
           <div className="app-row">
             <main className="main">
               <section
-                className={`page meeting-page${sideOpen ? "" : " side-collapsed"}`}
+                className={`page meeting-page${sideOpen ? "" : " side-collapsed"}${mode === "notes" ? " is-notes" : ""}`}
                 id="page-meeting"
               >
                 {/* video stage - live LiveKit tracks once the room is connected, otherwise your own
                     tile while it connects (or if it cannot). */}
-                {liveRoom ? <LiveVideoGrid room={liveRoom}>{stage}</LiveVideoGrid> : stage(selfTiles)}
+                {mode === "notes"
+                  ? liveRoom
+                    ? <LiveVideoGrid room={liveRoom}>{notesView}</LiveVideoGrid>
+                    : notesView(selfTiles)
+                  : liveRoom
+                    ? <LiveVideoGrid room={liveRoom}>{stage}</LiveVideoGrid>
+                    : stage(selfTiles)}
                 {/* Everyone else's microphone. The grid only attaches VIDEO; without this every
                     remote audio track was subscribed and never played, so nobody could hear
                     anybody. Your own mic is never rendered back to you. */}
@@ -302,6 +357,7 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
                   <StartAudio room={liveRoom} label="Click to hear the call" className="call-start-audio tap" />
                 )}
 
+                {mode === "call" && (
                 <RoomPanel
                   open={sideOpen}
                   onOpen={() => setSideOpen(true)}
@@ -312,6 +368,7 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
                   people={<PeoplePanel people={people} id={SECTION_IDS.people} />}
                   chat={<ChatPanel id={SECTION_IDS.chat} room={liveRoom} />}
                 />
+                )}
               </section>
             </main>
           </div>

@@ -409,3 +409,213 @@
     height: calc((100% - (var(--rows, 1) - 1) * 8px) / var(--rows, 1));
   }
 }
+
+/* ================================================================ room modes (Call / Notes)
+   One live meeting, two views. Call is the video room; Notes is the same meeting as a living
+   document, with the people kept live in a narrow column. */
+
+/* ---- the switch in the top bar */
+.mx-meet .cx-call .cx-modes {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--tabTrack);
+  flex-shrink: 0;
+}
+.mx-meet .cx-call .cx-modes button {
+  position: relative;
+  z-index: 1;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--mutedDeep);
+  transition: color 0.2s ease;
+}
+.mx-meet .cx-call .cx-modes button.is-on { color: var(--ink); }
+.mx-meet .cx-call .cx-modes-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(40, 34, 28, 0.12);
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.mx-meet .cx-call .cx-modes.is-notes .cx-modes-thumb { transform: translateX(100%); }
+.mx-meet .cx-call .cx-hide { display: none; }
+@media (max-width: 719px) {
+  .mx-meet .cx-call .cx-modes button { padding: 0 10px; }
+  .mx-meet .cx-call .cx-modes button span { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mx-meet .cx-call .cx-modes-thumb { transition: none; }
+}
+
+/* ---- Notes view layout */
+.mx-meet .cx-call .meeting-page.is-notes { display: block; }
+.mx-meet .cx-call .nv {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 14px;
+}
+.mx-meet .cx-call .nv-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--mutedLabel);
+}
+
+/* left column: people, speaking now, talk time, chat, controls */
+.mx-meet .cx-call .nv-side { display: flex; flex-direction: column; gap: 10px; min-height: 0; padding: 2px; }
+.mx-meet .cx-call .nv-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mx-meet .cx-call .nv-tile {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 14px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(120% 90% at 50% 30%, #3a3632, #2a2826 70%);
+  transition: box-shadow 0.2s ease;
+}
+.mx-meet .cx-call .nv-tile.is-speaking { box-shadow: 0 0 0 2px var(--accent); }
+.mx-meet .cx-call .nv-av {
+  width: 42%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: #4a4540;
+  color: #f4ede6;
+  font-size: 14px;
+  font-weight: 700;
+}
+.mx-meet .cx-call .nv-av img { width: 100%; height: 100%; object-fit: cover; }
+.mx-meet .cx-call .nv-name {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #f4ede6;
+  background: rgba(20, 19, 18, 0.6);
+}
+.mx-meet .cx-call .nv-muted { color: #f2a184; }
+.mx-meet .cx-call .nv-now {
+  padding: 11px 12px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--navBorder);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--body);
+  min-height: 64px;
+  max-height: 120px;
+  overflow: hidden;
+}
+.mx-meet .cx-call .nv-now b { display: block; font-size: 11.5px; color: var(--accentDeep); margin-bottom: 2px; }
+.mx-meet .cx-call .nv-quiet { color: var(--mutedAlt); }
+.mx-meet .cx-call .nv-talk { display: flex; flex-direction: column; gap: 7px; }
+.mx-meet .cx-call .nv-talk li { display: grid; grid-template-columns: 78px 1fr 34px; align-items: center; gap: 8px; font-size: 12px; }
+.mx-meet .cx-call .nv-talk-name { font-weight: 600; color: var(--body); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-meet .cx-call .nv-talk-bar { height: 6px; border-radius: 999px; background: var(--chipNeutralBg); overflow: hidden; }
+.mx-meet .cx-call .nv-talk-bar i { display: block; height: 100%; border-radius: 999px; background: var(--accent); transition: width 0.4s ease; }
+.mx-meet .cx-call .nv-talk-pct { text-align: right; color: var(--mutedTime); font-variant-numeric: tabular-nums; }
+.mx-meet .cx-call .nv-chat { flex: 1; min-height: 140px; display: flex; flex-direction: column; }
+.mx-meet .cx-call .nv-chat .livechat { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.mx-meet .cx-call .nv-chat .chat-card { flex: 1; min-height: 0; }
+.mx-meet .cx-call .nv-fill { flex: 1; }
+.mx-meet .cx-call .nv-ctls { display: flex; gap: 6px; }
+.mx-meet .cx-call .nv-ctl {
+  flex: 1;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border: 1px solid var(--navBorder);
+  color: var(--ink);
+}
+.mx-meet .cx-call .nv-ctl:hover { background: var(--surfaceAlt); }
+.mx-meet .cx-call .nv-ctl.is-off { background: #c2412e; border-color: #c2412e; color: #fff; }
+.mx-meet .cx-call .nv-leave {
+  height: 42px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #c2412e;
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+.mx-meet .cx-call .nv-leave:hover { background: #a93626; }
+
+/* main column: the living document */
+.mx-meet .cx-call .nv-doc {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 22px clamp(18px, 4vw, 52px) 40px;
+  border-radius: 22px;
+  background: var(--surface);
+  border: 1px solid var(--navBorder);
+  box-shadow: var(--shadow-card);
+}
+.mx-meet .cx-call .nv-title { font-family: var(--serif); font-size: clamp(24px, 2.6vw, 32px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.12; color: var(--inkDeep); }
+.mx-meet .cx-call .nv-sub { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 8px 0 20px; font-size: 13px; color: var(--mutedTime); }
+.mx-meet .cx-call .nv-agent { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: var(--chipOrangeBg); color: var(--accentDeep); font-size: 12px; font-weight: 600; }
+.mx-meet .cx-call .nv-agent i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.mx-meet .cx-call .nv-card { border: 1px solid var(--navBorder); border-radius: 16px; padding: 16px 18px; margin-bottom: 12px; background: var(--surfaceAlt); }
+.mx-meet .cx-call .nv-card h3 { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; font-weight: 700; color: var(--ink); }
+.mx-meet .cx-call .nv-card h3 small { margin-left: auto; font-size: 11.5px; font-weight: 600; color: var(--mutedAlt); }
+.mx-meet .cx-call .nv-count { font-size: 11px; font-weight: 600; color: var(--mutedTime); padding: 0 7px; border-radius: 999px; background: var(--surface); border: 1px solid var(--navBorder); }
+.mx-meet .cx-call .nv-notes { padding-left: 18px; list-style: disc; }
+.mx-meet .cx-call .nv-notes li { font-size: 14.5px; line-height: 1.6; color: var(--body); white-space: pre-line; }
+.mx-meet .cx-call .nv-notes li.is-draft { color: var(--mutedTime); }
+.mx-meet .cx-call .nv-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.mx-meet .cx-call .nv-empty { font-size: 13px; line-height: 1.5; color: var(--mutedAlt); }
+.mx-meet .cx-call .nv-tx-label { display: flex; align-items: center; gap: 8px; margin: 22px 0 6px; }
+.mx-meet .cx-call .nv-tx li {
+  display: grid;
+  grid-template-columns: 52px 130px minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 2px;
+  border-top: 1px solid var(--navBorder);
+}
+.mx-meet .cx-call .nv-tx time { font-size: 12px; color: var(--mutedAlt); font-variant-numeric: tabular-nums; padding-top: 2px; }
+.mx-meet .cx-call .nv-tx b { font-size: 13px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-meet .cx-call .nv-tx p { font-size: 14.5px; line-height: 1.55; color: var(--body); }
+
+@media (max-width: 959px) {
+  .mx-meet .cx-call .nv { grid-template-columns: 1fr; height: auto; }
+  .mx-meet .cx-call .nv-tiles { grid-template-columns: repeat(4, 1fr); }
+  /* Phones: the column stacks above the document, so chat stays in Call mode and the
+     document follows the controls directly. */
+  .mx-meet .cx-call .nv-chat,
+  .mx-meet .cx-call .nv-fill { display: none; }
+  .mx-meet .cx-call .nv-two { grid-template-columns: 1fr; }
+  .mx-meet .cx-call .nv-tx li { grid-template-columns: 44px minmax(0, 1fr); }
+  .mx-meet .cx-call .nv-tx li b,
+  .mx-meet .cx-call .nv-tx li p { grid-column: 2; }
+}

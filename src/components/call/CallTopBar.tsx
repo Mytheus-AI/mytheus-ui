@@ -1,6 +1,6 @@
 "use client";
 
-import { LinkSimple, SidebarSimple, Users } from "@phosphor-icons/react";
+import { LinkSimple, Notebook, SidebarSimple, Users, VideoCamera } from "@phosphor-icons/react";
 import { LogoMark } from "@/components/Logo";
 import { useCallToast } from "@/components/call/CallToast";
 
@@ -15,6 +15,9 @@ export type CallTopBarRoom = {
   shareUrl: string;
   sideVisible: boolean;
   onToggleSide: () => void;
+  /** Call keeps the video up front; Notes turns the room into the living document. */
+  mode?: "call" | "notes";
+  onMode?: (mode: "call" | "notes") => void;
 };
 
 export function CallTopBar({ room }: { room?: CallTopBarRoom }) {
@@ -41,6 +44,34 @@ export function CallTopBar({ room }: { room?: CallTopBarRoom }) {
             </p>
           </div>
 
+          {room.mode && room.onMode ? (
+            <div className={`cx-modes meeting-only${room.mode === "notes" ? " is-notes" : ""}`} role="tablist" aria-label="Room view">
+              <span className="cx-modes-thumb" aria-hidden="true" />
+              <button
+                type="button"
+                role="tab"
+                aria-selected={room.mode === "call"}
+                className={`tap${room.mode === "call" ? " is-on" : ""}`}
+                onClick={() => room.onMode?.("call")}
+                data-tip="Call view (1)"
+              >
+                <VideoCamera size={15} aria-hidden />
+                <span>Call</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={room.mode === "notes"}
+                className={`tap${room.mode === "notes" ? " is-on" : ""}`}
+                onClick={() => room.onMode?.("notes")}
+                data-tip="Notes view (2)"
+              >
+                <Notebook size={15} aria-hidden />
+                <span>Notes</span>
+              </button>
+            </div>
+          ) : null}
+
           <div className="appbar-right">
             <button
               type="button"
@@ -59,7 +90,7 @@ export function CallTopBar({ room }: { room?: CallTopBarRoom }) {
             </button>
             <button
               type="button"
-              className={`icon-shell tap meeting-only${room.sideVisible ? " is-on" : ""}`}
+              className={`icon-shell tap meeting-only${room.sideVisible ? " is-on" : ""}${room.mode === "notes" ? " cx-hide" : ""}`}
               onClick={room.onToggleSide}
               data-tip={room.sideVisible ? "Collapse panel" : "Expand panel"}
               aria-label="Toggle side panel"
