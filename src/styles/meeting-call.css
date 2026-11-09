@@ -694,3 +694,24 @@
 @media (max-width: 640px) {
   .mx-meet .cx-conn { top: 64px; }
 }
+
+/* Decision and action candidate cards (Plan 7-9 section 3.8): the inline Edit form. */
+.mx-meet .cx-call .nfy-edit { display: flex; flex-direction: column; gap: 8px; margin: 2px 0 2px; }
+.mx-meet .cx-call .nfy-edit label { display: flex; flex-direction: column; gap: 4px; }
+.mx-meet .cx-call .nfy-edit label > span { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--mutedAlt); }
+.mx-meet .cx-call .nfy-edit textarea,
+.mx-meet .cx-call .nfy-edit input {
+  width: 100%;
+  border: 1px solid var(--navBorder);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+  padding: 7px 9px;
+  resize: vertical;
+}
+.mx-meet .cx-call .nfy-edit textarea:focus-visible,
+.mx-meet .cx-call .nfy-edit input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.mx-meet .cx-call .nfy-act:disabled { opacity: .55; cursor: default; }
