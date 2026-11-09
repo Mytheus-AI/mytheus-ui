@@ -4,16 +4,17 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, EnvelopeSimple, Sparkle, UsersThree, VideoCamera } from "@phosphor-icons/react/dist/ssr";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
-import { Note, SectionCard } from "@/components/settings/primitives";
+import { SectionCard } from "@/components/settings/primitives";
 import { apiSafe } from "@/lib/api/client";
 import type { components as BffSchemas } from "@/lib/api/generated/bff";
-import { mockDepartments, mockMeetings, mockPeopleProfiles, personSlug } from "@/lib/mock/data";
+import { listMembers } from "@/lib/api/members";
 
 export const metadata: Metadata = { title: "Person | Mytheus" };
 
-/* Person profile (Plan 5-6 section 3.5, doc 20 section 7). A real `user_id` reads
-   `GET /bff/people/{user_id}`, which is `get_user_context()` plus email. The org chart still
-   runs on mock people addressed by a name slug, so those resolve to the sample profiles. */
+/* Person profile (Plan 5-6 section 3.5, doc 20 section 7). Addressed by internal `user_id`,
+   which is what the org chart links to. Reads `GET /bff/people/{user_id}`, which is
+   `get_user_context()` plus email; the display name and photo come from Clerk via
+   `listMembers()`, because the profile carries no name. */
 
 type PersonProfile = BffSchemas["schemas"]["PersonProfile"];
 
@@ -30,7 +31,6 @@ type PersonView = {
   department: string | null;
   lead: boolean;
   meetings: { id: string; title: string; when: string | null; status: string }[];
-  source: "live" | "sample";
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -41,15 +41,17 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
   timeZone: "UTC",
 });
 
-function fromApi(p: PersonProfile): PersonView {
+function fromApi(p: PersonProfile, named?: { name: string; imageUrl: string | null }): PersonView {
   return {
     // The profile carries no display name; the email's local part is the honest stand-in.
-    name: p.email
-      .split("@")[0]
-      .replace(/[._-]+/g, " ")
-      .replace(/\b\w/g, (c) => c.toUpperCase()),
+    name:
+      named?.name ||
+      p.email
+        .split("@")[0]
+        .replace(/[._-]+/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase()),
     email: p.email,
-    avatarUrl: p.avatar_url,
+    avatarUrl: named?.imageUrl ?? p.avatar_url,
     role: p.role,
     bio: p.bio,
     skills: p.skills,
@@ -63,51 +65,18 @@ function fromApi(p: PersonProfile): PersonView {
       when: m.scheduled_start,
       status: m.status,
     })),
-    source: "live",
   };
 }
 
-function fromMock(slug: string): PersonView | null {
-  for (const dep of mockDepartments) {
-    for (const team of dep.teams) {
-      const member = team.members.find((m) => personSlug(m.name) === slug);
-      if (!member) continue;
-      const profile = mockPeopleProfiles.find((p) => p.name === member.name);
-      const teams = mockDepartments.flatMap((d) =>
-        d.teams.filter((t) => t.members.some((m) => m.name === member.name)).map((t) => t.name),
-      );
-      return {
-        name: member.name,
-        email: profile?.email ?? "",
-        avatarUrl: null,
-        role: member.role,
-        bio: profile?.bio ?? null,
-        skills: profile?.skills ?? [],
-        topics: profile?.topics ?? [],
-        teams,
-        department: dep.name,
-        lead: !!member.lead,
-        meetings: mockMeetings
-          .filter((m) => m.participants.includes(member.name))
-          .map((m) => ({ id: m.id, title: m.title, when: m.startTime, status: m.status })),
-        source: "sample",
-      };
-    }
-  }
-  return null;
-}
 
 export default async function PersonPage({ params }: { params: { personId: string } }) {
-  let person: PersonView | null = null;
-
-  if (UUID.test(params.personId)) {
-    const res = await apiSafe<PersonProfile>(`/bff/people/${params.personId}`);
-    if (res.ok) person = fromApi(res.data);
-    else if (res.error.status === 404) notFound();
-  } else {
-    person = fromMock(params.personId);
-  }
-  if (!person) notFound();
+  if (!UUID.test(params.personId)) notFound();
+  const [res, members] = await Promise.all([
+    apiSafe<PersonProfile>(`/bff/people/${params.personId}`),
+    listMembers(),
+  ]);
+  if (!res.ok) notFound();
+  const person = fromApi(res.data, members?.find((m) => m.id === params.personId));
 
   const meetings = [...person.meetings].sort((a, b) => (b.when ?? "").localeCompare(a.when ?? ""));
 
@@ -159,10 +128,6 @@ export default async function PersonPage({ params }: { params: { personId: strin
           ) : null}
         </div>
       </header>
-
-      {person.source === "sample" ? (
-        <Note>Sample profile. Real profiles load from your organization once its directory is connected.</Note>
-      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         <div className="flex min-w-0 flex-col gap-6">
