@@ -1,0 +1,20 @@
+{
+  "verification_code": "{{otp_code}} is your Mytheus code",
+  "reset_password_code": "{{otp_code}} is your Mytheus password reset code",
+  "magic_link_sign_in": "Your Mytheus sign-in link",
+  "magic_link_sign_up": "Finish creating your Mytheus account",
+  "magic_link_user_profile": "Verify your email for Mytheus",
+  "invitation": "You're invited to Mytheus",
+  "organization_invitation": "Join {{org.name}} on Mytheus",
+  "organization_invitation_accepted": "{{email_address}} joined {{org.name}}",
+  "new_device_sign_in": "New sign-in to your Mytheus account",
+  "account_locked": "Your Mytheus account is locked for now",
+  "password_changed": "Your Mytheus password was changed",
+  "password_removed": "Your Mytheus password was removed",
+  "primary_email_address_changed": "Your Mytheus email address was updated",
+  "mfa_enabled": "Two-step verification is on for Mytheus",
+  "passkey_added": "A passkey was added to your Mytheus account",
+  "passkey_removed": "A passkey was removed from your Mytheus account",
+  "waitlist_confirmation": "You're on the Mytheus waitlist",
+  "waitlist_invitation": "Your spot on Mytheus is ready"
+}
