@@ -24,7 +24,7 @@
 .mx-meet .av-stack .av-more { margin-left: 7px; }
 
 /* Talk time: real first names can run longer than the prototype's 52px column. */
-.mx-meet .speaker-name { width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-meet .speaker-name { width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Long titles must wrap rather than push the page sideways. */
 .mx-meet .up-body strong,
@@ -254,3 +254,41 @@
 .mx-meet .mh-pick-link { color: var(--accentDeep); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
 .mx-meet .mh-new-body { display: flex; flex-direction: column; gap: 14px; }
 .mx-meet .mh-invite-open { align-self: center; }
+
+/* Meeting page, organised (2026-11-09): status beside the title, a quiet meta line, a single
+   action card, and people by name. */
+.mx-meet .mh-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.mx-meet .mh-title-row h1 { margin: 0; }
+.mx-meet .mh-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 6px; }
+.mx-meet .mh-meta span { display: inline-flex; align-items: center; gap: 5px; }
+.mx-meet .mh-meta span + span::before { content: "·"; margin-right: 9px; color: var(--mutedIcon); }
+.mx-meet .mh-detail .rail-stack { gap: 14px; }
+
+.mx-meet .mh-action { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+.mx-meet .mh-action-state { display: flex; align-items: center; min-height: 26px; }
+.mx-meet .mh-action-when { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--body); }
+.mx-meet .mh-action-more { display: flex; flex-wrap: wrap; gap: 8px; }
+.mx-meet .mh-action-more > * { flex: 1 1 0; justify-content: center; }
+.mx-meet .mh-action .mh-invite-open { align-self: auto; }
+
+.mx-meet .mh-people { display: flex; flex-direction: column; padding: 2px 8px 10px; }
+.mx-meet .mh-people li { display: flex; align-items: center; gap: 11px; padding: 8px 8px; border-radius: 12px; }
+.mx-meet .mh-people li + li { border-top: 1px solid var(--navBorder); border-radius: 0; }
+.mx-meet .mh-person-av {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--avatarBg);
+  color: var(--avatarText);
+  font-size: 12px;
+  font-weight: 800;
+}
+.mx-meet .mh-person-av img { width: 100%; height: 100%; object-fit: cover; }
+.mx-meet .mh-person-who { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.mx-meet .mh-person-who strong { font-size: 13.5px; font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-meet .mh-person-who strong small { font-weight: 500; color: var(--mutedTime); }
+.mx-meet .mh-person-who span { font-size: 12px; color: var(--mutedTime); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ApiError } from "@/lib/api/client";
 import { Article, User } from "@phosphor-icons/react/ssr";
 import { TranscriptView } from "@/components/meeting/TranscriptView";
+import { listMembers } from "@/lib/api/members";
 import { SpeakerMapping } from "@/components/meeting/SpeakerMapping";
 import { TalkTimePanel } from "@/components/transcript/TalkTimePanel";
 import { TranscriptHead } from "@/components/transcript/TranscriptHead";
@@ -33,18 +34,29 @@ export default async function TranscriptPage({
   params: { meetingId: string };
 }) {
   const meeting = await resolveCallMeeting(params.meetingId);
-  const live = await fetchTranscriptSurface(meeting.id).catch((error: unknown) => {
-    if (error instanceof ApiError && error.status === 404) notFound();
-    return null;
-  });
-  const chunks = live?.chunks ?? [];
+  const [live, members] = await Promise.all([
+    fetchTranscriptSurface(meeting.id).catch((error: unknown) => {
+      if (error instanceof ApiError && error.status === 404) notFound();
+      return null;
+    }),
+    listMembers(),
+  ]);
+  // Silence used to be saved as lines with no text; older transcripts still hold them.
+  const chunks = (live?.chunks ?? []).filter((c) => c.text.trim().length > 0);
   const speakers = live?.speakers ?? [];
+  // Each person's audio is transcribed on its own stream, so a line's speaker id is that
+  // person's user id: name it straight from the workspace's members.
+  const memberNames = new Map((members ?? []).map((m) => [m.id, m.name]));
   const speakerLabels: Record<string, string> = {};
+  for (const c of chunks) {
+    const name = memberNames.get(c.speaker_id);
+    if (name) speakerLabels[c.speaker_id] = name;
+  }
 
   const lineCounts: Record<string, number> = {};
   for (const c of chunks) lineCounts[c.speaker_id] = (lineCounts[c.speaker_id] ?? 0) + 1;
 
-  const unassigned = speakers.filter((s) => !s.user_id);
+  const unassigned = speakers.filter((s) => !s.user_id && !speakerLabels[s.speaker_id]);
   const distinctSpeakers = new Set(chunks.map((c) => c.speaker_id)).size;
   const when = dateFormatter.format(new Date(meeting.startTime));
 
