@@ -13,7 +13,7 @@ const dueToneClass: Record<DueTone, string> = {
 };
 
 /** Due date chip: tinted when overdue or due today, with an icon so colour is never the only cue. */
-export function DueChip({ dueDate, done }: { dueDate: string; done: boolean }) {
+export function DueChip({ dueDate, done }: { dueDate: string | null; done: boolean }) {
   const info = dueInfo(dueDate, done);
   const Icon = info.icon === "warning" ? WarningCircle : info.icon === "done" ? CalendarCheck : CalendarBlank;
   return (

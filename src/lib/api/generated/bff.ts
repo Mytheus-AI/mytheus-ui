@@ -32,6 +32,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/bff/meetings/{meeting_id}/decisions/{decision_id}/lineage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Decision Lineage */
+        get: operations["decision_lineage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/bff/org/chart": {
         parameters: {
             query?: never;
@@ -156,6 +173,21 @@ export interface components {
             /** Meeting Title */
             meeting_title: string | null;
         };
+        /** DecisionLineage */
+        DecisionLineage: {
+            /** Chain */
+            chain: components["schemas"]["LineageDecision"][];
+            /**
+             * Decision Id
+             * Format: uuid
+             */
+            decision_id: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+        };
         /** DepartmentNode */
         DepartmentNode: {
             /** Children */
@@ -189,6 +221,31 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** LineageDecision */
+        LineageDecision: {
+            /** Confidence */
+            confidence?: number | null;
+            /** Confirmed At */
+            confirmed_at?: string | null;
+            /** Content */
+            content?: string | null;
+            /** Depth */
+            depth: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Meeting Id */
+            meeting_id?: string | null;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "ancestor" | "subject" | "descendant";
+            /** Status */
+            status?: string | null;
         };
         /**
          * MeetingRef
@@ -411,6 +468,56 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Dashboard"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    decision_lineage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+                decision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionLineage"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */

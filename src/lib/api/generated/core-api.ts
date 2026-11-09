@@ -12,6 +12,23 @@
  */
 
 export interface paths {
+    "/api/v1/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List My Tasks */
+        get: operations["list_my_tasks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/actions/{action_id}": {
         parameters: {
             query?: never;
@@ -63,6 +80,23 @@ export interface paths {
          * @description proposed -> dismissed. Emits nothing. Idempotent on re-dismiss.
          */
         post: operations["dismiss_action"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/actions/{action_id}/done": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark Done */
+        post: operations["mark_done"];
         delete?: never;
         options?: never;
         head?: never;
@@ -832,6 +866,51 @@ export interface components {
             /** Title */
             title?: string | null;
         };
+        /**
+         * MyTask
+         * @description One action item as the My Tasks screen needs it: the row plus its meeting's title, so
+         *     the page can say where the task came from without a second round trip.
+         */
+        MyTask: {
+            /**
+             * Assignee Id
+             * Format: uuid
+             */
+            assignee_id: string;
+            /** Confidence */
+            confidence: number;
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Due Date */
+            due_date?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Meeting Title */
+            meeting_title: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "confirmed" | "done";
+        };
+        /** MyTaskList */
+        MyTaskList: {
+            /** Items */
+            items: components["schemas"]["MyTask"][];
+        };
         /** Participant */
         Participant: {
             /** Role In Meeting */
@@ -1091,6 +1170,56 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_my_tasks: {
+        parameters: {
+            query: {
+                assignee_id: "me";
+                status?: "confirmed" | "done";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyTaskList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     update_action: {
         parameters: {
             query?: never;
@@ -1220,6 +1349,58 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ActionItem"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    mark_done: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                action_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyTask"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
