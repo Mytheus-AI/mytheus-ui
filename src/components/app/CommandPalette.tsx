@@ -47,7 +47,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       ? [
           {
             key: "ask",
-            label: `Search or ask: ${q}`,
+            label: `Ask: ${q}`,
             hint: "Enter",
             run: go(`/search?q=${encodeURIComponent(q)}`),
             icon: <Sparkle size={19} />,

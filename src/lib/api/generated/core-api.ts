@@ -558,6 +558,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/internal/retrieval/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retrieval Records */
+        post: operations["retrieval_records"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/retrieval/scope": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Retrieval Scope */
+        get: operations["retrieval_scope"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -980,6 +1014,82 @@ export interface components {
              */
             type: string;
         };
+        /** RecordsRequest */
+        RecordsRequest: {
+            /** Action Ids */
+            action_ids?: string[];
+            /** Decision Ids */
+            decision_ids?: string[];
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** RetrievalScope */
+        RetrievalScope: {
+            /** Meetings */
+            meetings: components["schemas"]["ScopeMeeting"][];
+            /** People */
+            people: components["schemas"]["ScopePerson"][];
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** RetrievedAction */
+        RetrievedAction: {
+            /** Assignee Id */
+            assignee_id: string | null;
+            /** Content */
+            content: string;
+            /** Due Date */
+            due_date: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Status */
+            status: string;
+        };
+        /** RetrievedDecision */
+        RetrievedDecision: {
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Rationale */
+            rationale: string | null;
+            /** Status */
+            status: string;
+        };
+        /** RetrievedRecords */
+        RetrievedRecords: {
+            /** Actions */
+            actions: components["schemas"]["RetrievedAction"][];
+            /** Decisions */
+            decisions: components["schemas"]["RetrievedDecision"][];
+        };
         /** RoomState */
         RoomState: {
             /**
@@ -999,6 +1109,31 @@ export interface components {
             meeting_id: string;
             /** Status */
             status: string;
+        };
+        /** ScopeMeeting */
+        ScopeMeeting: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Title */
+            title: string | null;
+        };
+        /** ScopePerson */
+        ScopePerson: {
+            /** Email */
+            email: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
         };
         /** SpeakerAssign */
         SpeakerAssign: {
@@ -2619,6 +2754,110 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RoomStateResult"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    retrieval_records: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetrievedRecords"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    retrieval_scope: {
+        parameters: {
+            query?: {
+                user_id?: string | null;
+                clerk_user_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetrievalScope"];
                 };
             };
             /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */

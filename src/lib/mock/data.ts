@@ -248,21 +248,6 @@ export const mockSourcedAnswer: SourcedAnswer = {
   lineage: ["Q2 Planning", "Q3 Planning"],
 };
 
-export type SearchResult = {
-  id: string;
-  type: "meeting" | "decision" | "action";
-  title: string;
-  snippet: string;
-  meetingId: string;
-};
-
-export const mockSearchIndex: SearchResult[] = [
-  { id: "mtg_4", type: "meeting", title: "Vendor Call - Deepgram Renewal", snippet: "Discussed annual vs. monthly transcription pricing tiers.", meetingId: "mtg_4" },
-  { id: "dec_1", type: "decision", title: "Renew Deepgram at the annual tier", snippet: "Annual commit saves ~18% over month-to-month.", meetingId: "mtg_4" },
-  { id: "act_2", type: "action", title: "Send signed order form to Deepgram", snippet: "Assigned to Sushan Shetty, due 2026-07-03.", meetingId: "mtg_4" },
-  { id: "mtg_5", type: "meeting", title: "Investor Update - June", snippet: "Runway, headcount, and Series A timing.", meetingId: "mtg_5" },
-  { id: "dec_2", type: "decision", title: "Push Series A outreach to August", snippet: "Wait for the P4 transcription demo to stabilize first.", meetingId: "mtg_5" },
-];
 
 /* ---- meeting detail: agenda + wrap-up per meeting (Part 4b) ---- */
 

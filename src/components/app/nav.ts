@@ -4,8 +4,8 @@ import {
   GearSix,
   Gauge,
   House,
-  MagnifyingGlass,
   Scales,
+  Sparkle,
   ShieldCheck,
   TreeStructure,
   VideoCamera,
@@ -33,7 +33,7 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Organization",
     items: [
       { href: "/org", label: "Org chart", icon: TreeStructure },
-      { href: "/search", label: "Search", icon: MagnifyingGlass },
+      { href: "/search", label: "Ask", icon: Sparkle },
     ],
   },
   {
