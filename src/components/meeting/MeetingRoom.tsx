@@ -7,10 +7,11 @@ import { RoomEvent, Track, type LocalTrackPublication } from "livekit-client";
 import { AgentSidebar, type AgentAttention } from "@/components/sidebar/AgentSidebar";
 import { LiveVideoGrid } from "@/components/meeting/LiveVideoGrid";
 import { LiveCaptions } from "@/components/meeting/LiveCaptions";
-import { CallToastProvider } from "@/components/call/CallToast";
+import { CallToastProvider, useCallToast } from "@/components/call/CallToast";
 import { CallTopBar } from "@/components/call/CallTopBar";
 import { CALL_PREFS_KEY } from "@/components/call/prefs";
 import { ChatPanel } from "@/components/room/ChatPanel";
+import { ConnectionPill } from "@/components/room/ConnectionPill";
 import { ControlBar } from "@/components/room/ControlBar";
 import { NotesView } from "@/components/room/NotesView";
 import { PeoplePanel, type RoomPerson } from "@/components/room/PeoplePanel";
@@ -50,11 +51,35 @@ function joinProblem(code: string | null): string {
       return "You are not on this meeting's participant list, so the call cannot let you in. Ask the host to add you.";
     case "CONSENT_REQUIRED":
       return "This workspace needs your recording consent before you can join. Go back to the pre-join and accept it.";
+    case "VERSION_CONFLICT":
+      return "This meeting has ended.";
     case "NOT_FOUND":
       return "This meeting could not be found. It may have been removed.";
     default:
       return "Could not connect to the call. Check your connection and try again.";
   }
+}
+
+/** Why the browser would not give the call a device, in words a person can act on. */
+function deviceProblem(device: "microphone" | "camera", err: unknown): string {
+  const name = err instanceof Error ? err.name : "";
+  if (name === "NotAllowedError" || name === "SecurityError")
+    return `Your browser is blocking the ${device}. Allow it from the icon in the address bar, then try again.`;
+  if (name === "NotReadableError" || name === "AbortError")
+    return `Another app is using your ${device}. Close it, then try again.`;
+  if (name === "NotFoundError" || name === "OverconstrainedError")
+    return `No ${device} was found. Plug one in, then try again.`;
+  return `Could not turn on your ${device}. Try again.`;
+}
+
+/* Raises a device problem as a call toast; it lives inside CallToastProvider, which the room
+   renders itself. `at` makes the same message twice still show twice. */
+function DeviceNote({ note }: { note: { text: string; at: number } | null }) {
+  const toast = useCallToast();
+  useEffect(() => {
+    if (note) toast(note.text);
+  }, [note, toast]);
+  return null;
 }
 
 export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; names?: RoomNames }) {
@@ -139,23 +164,65 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
   // A real call follows the controls: publish, mute and unpublish your actual mic, camera and
   // screen. If the browser refuses (permission denied, no device, share picker cancelled), the
   // control flips back so it never claims a state the call is not in.
+  // Device changes run one at a time per device: a mute clicked while the mic is still being
+  // published on join used to land before the publication existed and be dropped, leaving the
+  // button saying "muted" over a live mic (and the next click looking like it did nothing).
+  // After each change the button follows what LiveKit actually reports, and a refusal (blocked
+  // permission, device in use, no device) says why instead of silently flipping back.
+  const micQueue = useRef<Promise<unknown>>(Promise.resolve());
+  const camQueue = useRef<Promise<unknown>>(Promise.resolve());
+  const micQueueSeq = useRef(0);
+  const camQueueSeq = useRef(0);
+  const [deviceNote, setDeviceNote] = useState<{ text: string; at: number } | null>(null);
   useEffect(() => {
     if (!liveRoom) return;
+    const lp = liveRoom.localParticipant;
     const id = deviceIds.current.mic;
-    liveRoom.localParticipant
-      .setMicrophoneEnabled(micOn, micOn && id ? { deviceId: id } : undefined)
-      .catch(() => setMicOn(false));
+    const seq = ++micQueueSeq.current;
+    micQueue.current = micQueue.current.then(() =>
+      lp
+        .setMicrophoneEnabled(micOn, micOn && id ? { deviceId: id } : undefined)
+        // Only the latest click may correct the button; an older one finishing must not undo it.
+        .then(() => {
+          if (seq === micQueueSeq.current) setMicOn(lp.isMicrophoneEnabled);
+        })
+        .catch((err: unknown) => {
+          if (seq === micQueueSeq.current) setMicOn(false);
+          setDeviceNote({ text: deviceProblem("microphone", err), at: Date.now() });
+        }),
+    );
   }, [liveRoom, micOn]);
   useEffect(() => {
     if (!liveRoom) return;
+    const lp = liveRoom.localParticipant;
     const id = deviceIds.current.cam;
-    liveRoom.localParticipant
-      .setCameraEnabled(camOn, camOn && id ? { deviceId: id } : undefined)
-      .catch(() => setCamOn(false));
+    const seq = ++camQueueSeq.current;
+    camQueue.current = camQueue.current.then(() =>
+      lp
+        .setCameraEnabled(camOn, camOn && id ? { deviceId: id } : undefined)
+        // Only the latest click may correct the button; an older one finishing must not undo it.
+        .then(() => {
+          if (seq === camQueueSeq.current) setCamOn(lp.isCameraEnabled);
+        })
+        .catch((err: unknown) => {
+          if (seq === camQueueSeq.current) setCamOn(false);
+          setDeviceNote({ text: deviceProblem("camera", err), at: Date.now() });
+        }),
+    );
   }, [liveRoom, camOn]);
   useEffect(() => {
     if (!liveRoom) return;
-    liveRoom.localParticipant.setScreenShareEnabled(screenOn).catch(() => setScreenOn(false));
+    // Ask for sound with the picture: a shared tab's or the whole screen's audio rides along as
+    // its own track (RoomAudioRenderer plays ScreenShareAudio for everyone else). Without
+    // `audio` the browser offers no "Share audio" option and a shared video plays silent.
+    liveRoom.localParticipant
+      .setScreenShareEnabled(
+        screenOn,
+        screenOn
+          ? { audio: true, systemAudio: "include", suppressLocalAudioPlayback: false, selfBrowserSurface: "exclude" }
+          : undefined,
+      )
+      .catch(() => setScreenOn(false));
   }, [liveRoom, screenOn]);
   // Stopping the share from the browser's own "Stop sharing" bar must update the button too.
   useEffect(() => {
@@ -304,22 +371,8 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
     <RoomNamesProvider names={names}>
     <CallToastProvider>
       <div className="mx-meet cx-call">
-        {(live.status === "connecting" || live.status === "reconnecting" || live.status === "error") ? (
-          <div
-            role={live.status === "error" ? "alert" : "status"}
-            className={`fixed left-1/2 top-[72px] z-50 w-[min(560px,calc(100vw-32px))] -translate-x-1/2 rounded-[14px] px-4 py-3 text-[13.5px] font-semibold shadow-[var(--shadow-card)] ${
-              live.status === "error"
-                ? "bg-[var(--prioHighBg)] text-[var(--prioHigh)]"
-                : "bg-[var(--surface)] text-[var(--body)]"
-            }`}
-          >
-            {live.status === "error"
-              ? joinProblem(live.error)
-              : live.status === "reconnecting"
-                ? "Reconnecting to the call..."
-                : "Connecting to the call..."}
-          </div>
-        ) : null}
+        <ConnectionPill status={live.status} message={joinProblem(live.error)} />
+        <DeviceNote note={deviceNote} />
         <div className="app">
           <CallTopBar
             room={{
