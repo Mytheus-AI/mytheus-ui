@@ -7,8 +7,8 @@ import { Badge } from "@/components/ui/Badge";
 import { formatLong, type Task } from "./dates";
 import { CheckButton, DueChip, PriorityBadge } from "./task-ui";
 
-/* Read-only quick view. Every field here comes from the action item; nothing is editable
-   until the tasks endpoint and its Server Actions exist. */
+/* Quick view. Every field comes from the confirmed action item; the only write is completing
+   it, through the same check button as the list. */
 export function TaskDetailHeader({ task, onToggle }: { task: Task; onToggle: () => void }) {
   return (
     <>
@@ -45,12 +45,14 @@ export function TaskDetailBody({ task, isMine }: { task: Task; isMine: boolean }
           </dd>
           <dd className="mt-1.5 text-[12.5px] text-ink-3">{formatLong(task.dueDate)}</dd>
         </div>
-        <div>
-          <dt className="kicker uppercase">Priority</dt>
-          <dd className="mt-2">
-            <PriorityBadge priority={task.priority} />
-          </dd>
-        </div>
+        {task.priority ? (
+          <div>
+            <dt className="kicker uppercase">Priority</dt>
+            <dd className="mt-2">
+              <PriorityBadge priority={task.priority} />
+            </dd>
+          </div>
+        ) : null}
       </dl>
 
       <section aria-labelledby="task-meeting-heading">

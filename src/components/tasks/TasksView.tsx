@@ -16,15 +16,18 @@ import { Button, LinkButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useOrgContext } from "@/lib/org-context";
-import type { ActionItem } from "@/lib/mock/data";
+import { markTaskDone } from "@/app/actions/tasks";
+import type { TaskItem } from "@/lib/tasks";
 import { SidePanel } from "./SidePanel";
 import { TaskDetailBody, TaskDetailHeader } from "./TaskDetail";
 import { CheckButton, DueChip, PriorityBadge } from "./task-ui";
 import { daysUntil, groupOf, sortTasks, type Task, type TaskGroup } from "./dates";
 
-/* My Tasks. Completion is visual state only (the Server Action + optimistic reconcile wires in
-   when the backend lands). Everything else here (view, filters, groups, quick view) is client-side
-   presentation of the same action items the page always read. */
+/* My Tasks. With a gateway (`live`), completing a task is optimistic: it moves to Completed at
+   once, `markTaskDone` (POST /api/v1/actions/{id}/done) runs, and a refusal rolls it back with
+   the server's reason. Done is final server-side, so a live completed task cannot be reopened.
+   In sample mode (no gateway) the toggle stays local. Everything else (view, filters, groups,
+   quick view) is client-side presentation of the tasks the page read. */
 
 type View = "list" | "board";
 type FilterKey = "mine" | "week" | "high";
@@ -50,7 +53,7 @@ function matchesOne(t: Task, key: FilterKey, userName: string): boolean {
   if (key === "mine") return t.assignee === userName;
   if (key === "high") return t.priority === "high";
   const d = daysUntil(t.dueDate);
-  return d >= 0 && d <= 7;
+  return d !== null && d >= 0 && d <= 7;
 }
 
 function passes(t: Task, f: Filters, userName: string, skip?: FilterKey): boolean {
@@ -117,7 +120,7 @@ function TaskRow({
           <DueChip dueDate={task.dueDate} done={task.done} />
         </span>
         <span className="flex sm:w-[92px] sm:justify-end">
-          <PriorityBadge priority={task.priority} />
+          {task.priority ? <PriorityBadge priority={task.priority} /> : null}
         </span>
       </div>
     </li>
@@ -242,7 +245,7 @@ function BoardCard({
         <Avatar name={task.assignee} size="sm" />
         <DueChip dueDate={task.dueDate} done={task.done} />
         <span className="ml-auto">
-          <PriorityBadge priority={task.priority} />
+          {task.priority ? <PriorityBadge priority={task.priority} /> : null}
         </span>
       </div>
     </article>
@@ -298,7 +301,7 @@ function BoardView({
 
 /* ---------------- screen ---------------- */
 
-export function TasksView({ actions }: { actions: ActionItem[] }) {
+export function TasksView({ actions, live = false }: { actions: TaskItem[]; live?: boolean }) {
   const { user } = useOrgContext();
   const [view, setView] = useState<View>("list");
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
@@ -322,7 +325,7 @@ export function TasksView({ actions }: { actions: ActionItem[] }) {
   const anyFilter = FILTER_DEFS.some(({ key }) => filters[key]);
 
   const open = tasks.filter((t) => !t.done);
-  const overdueCount = open.filter((t) => daysUntil(t.dueDate) < 0).length;
+  const overdueCount = open.filter((t) => (daysUntil(t.dueDate) ?? 0) < 0).length;
   const todayCount = open.filter((t) => daysUntil(t.dueDate) === 0).length;
   const summary =
     tasks.length === 0
@@ -335,7 +338,31 @@ export function TasksView({ actions }: { actions: ActionItem[] }) {
           .filter(Boolean)
           .join(", ") + ".";
 
-  const toggleDone = useCallback((id: string) => setDoneMap((m) => ({ ...m, [id]: !m[id] })), []);
+  const [notice, setNotice] = useState<string | null>(null);
+  const toggleDone = useCallback(
+    (id: string) => {
+      if (!live) {
+        setDoneMap((m) => ({ ...m, [id]: !m[id] }));
+        return;
+      }
+      if (doneMap[id]) {
+        setNotice("Completed tasks stay completed.");
+        return;
+      }
+      setNotice(null);
+      setDoneMap((m) => ({ ...m, [id]: true }));
+      void markTaskDone(id).then((result) => {
+        if (!result.ok) {
+          setDoneMap((m) => ({ ...m, [id]: false }));
+          setNotice(result.message);
+        }
+      });
+    },
+    [live, doneMap],
+  );
+  const filterDefs = tasks.some((t) => t.priority)
+    ? FILTER_DEFS
+    : FILTER_DEFS.filter((f) => f.key !== "high");
   const openTask = useCallback((id: string) => {
     setSelectedId(id);
     setPanelOpen(true);
@@ -367,6 +394,11 @@ export function TasksView({ actions }: { actions: ActionItem[] }) {
           <p className="mt-2 text-[14px] text-ink-3" aria-live="polite">
             {summary}
           </p>
+          {notice ? (
+            <p role="status" className="mt-1 text-[13px] font-medium text-priority-high">
+              {notice}
+            </p>
+          ) : null}
         </div>
 
         {tasks.length > 0 && (
@@ -408,7 +440,7 @@ export function TasksView({ actions }: { actions: ActionItem[] }) {
 
       {tasks.length > 0 && (
         <div role="group" aria-label="Filter tasks" className="mt-6 flex flex-wrap items-center gap-2">
-          {FILTER_DEFS.map(({ key, label, Icon }) => {
+          {filterDefs.map(({ key, label, Icon }) => {
             const count = tasks.filter(
               (t) => !t.done && passes(t, filters, user.name, key) && matchesOne(t, key, user.name),
             ).length;

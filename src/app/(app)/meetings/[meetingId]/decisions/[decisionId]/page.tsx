@@ -1,21 +1,29 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, CheckCircle, CheckSquare, GitCommit, Scales } from "@phosphor-icons/react/dist/ssr";
+import { ArrowLeft, ArrowRight, CheckCircle, ClockCounterClockwise, GitCommit, Scales } from "@phosphor-icons/react/dist/ssr";
 import { Badge } from "@/components/ui/Badge";
 import { LinkButton } from "@/components/ui/Button";
 import { Note, SectionCard } from "@/components/settings/primitives";
-import { mockActions, mockDecisions, mockMeetings } from "@/lib/mock/data";
+import { fetchDecisionLineage, type LineageDecision } from "@/lib/api/lineage";
+import { mockDecisions } from "@/lib/mock/data";
 
 export const metadata: Metadata = { title: "Decision lineage | Mytheus" };
 
-/* Decision lineage (Plan 7-9 section 3.8): the FOLLOWS_FROM chain behind one confirmed
-   decision, oldest first, ending at this one. Later it reads the `decision lineage` template
-   through `bff` -> `knowledge-graph-service`; today it renders the mock chain. */
+/* Decision lineage (Plan 7-9 section 3.8 step 3): the FOLLOWS_FROM chain around one confirmed
+   decision, oldest first. What it superseded comes before it, what superseded it comes after.
+   Read from `bff` -> `knowledge-graph-service`'s `decision_lineage` template, which only ever
+   holds confirmed decisions. With no gateway configured (a UI-only run) the sample decision is
+   shown as a chain of one. */
 
-export function generateStaticParams() {
-  return mockDecisions.map((d) => ({ meetingId: d.meetingId, decisionId: d.id }));
-}
+type ChainNode = {
+  id: string;
+  meetingId: string | null;
+  content: string | null;
+  status: string | null;
+  confirmedAt: string | null;
+  role: "ancestor" | "subject" | "descendant";
+};
 
 const dateTime = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -25,66 +33,132 @@ const dateTime = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
   timeZone: "UTC",
 });
-const shortDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+const shortDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 
-const priorityTone = { high: "high", medium: "medium", low: "low" } as const;
+function fromLive(d: LineageDecision): ChainNode {
+  return {
+    id: d.id,
+    meetingId: d.meeting_id ?? null,
+    content: d.content ?? null,
+    status: d.status ?? null,
+    confirmedAt: d.confirmed_at ?? null,
+    role: d.role,
+  };
+}
 
-export default function DecisionLineagePage({
+function caption(node: ChainNode, index: number): string {
+  if (node.role === "subject") return "This decision";
+  if (node.role === "descendant") return "Replaced this decision";
+  return index === 0 ? "Where the thread started" : "Superseded by the next decision";
+}
+
+async function loadChain(meetingId: string, decisionId: string): Promise<ChainNode[] | "unavailable"> {
+  if (!process.env.API_GATEWAY_URL && !process.env.NEXT_PUBLIC_API_GATEWAY_URL) {
+    const d = mockDecisions.find((x) => x.id === decisionId && x.meetingId === meetingId);
+    if (!d) notFound();
+    return [
+      { id: d.id, meetingId: d.meetingId, content: d.title, status: "confirmed", confirmedAt: d.confirmedAt, role: "subject" },
+    ];
+  }
+  const result = await fetchDecisionLineage(meetingId, decisionId);
+  if (result.kind === "not-found") notFound();
+  if (result.kind === "unavailable") return "unavailable";
+  return result.lineage.chain.map(fromLive);
+}
+
+export default async function DecisionLineagePage({
   params,
 }: {
   params: { meetingId: string; decisionId: string };
 }) {
-  const decision = mockDecisions.find((d) => d.id === params.decisionId && d.meetingId === params.meetingId);
-  if (!decision) notFound();
+  const chain = await loadChain(params.meetingId, params.decisionId);
+  const backLink = (
+    <Link
+      href={`/meetings/${params.meetingId}#decisions`}
+      className="inline-flex items-center gap-1.5 self-start rounded-md text-[13px] font-semibold text-ink-3 transition-colors hover:text-ink"
+    >
+      <ArrowLeft size={15} weight="bold" aria-hidden />
+      Back to the meeting
+    </Link>
+  );
 
-  const meeting = mockMeetings.find((m) => m.id === decision.meetingId);
-  const chain = decision.lineage && decision.lineage.length ? decision.lineage : [decision.meetingTitle];
-  const earlier = chain.slice(0, -1);
-  const actions = mockActions.filter((a) => a.meetingId === decision.meetingId);
-  const siblings = mockDecisions.filter((d) => d.meetingId === decision.meetingId && d.id !== decision.id);
+  if (chain === "unavailable") {
+    return (
+      <div className="mx-auto flex max-w-5xl flex-col gap-6">
+        {backLink}
+        <div role="alert" className="rounded-card border border-line bg-surface px-6 py-12 text-center">
+          <h1 className="text-[17px] font-semibold text-ink">Decision history is unavailable</h1>
+          <p className="mx-auto mt-2 max-w-sm text-[13.5px] text-ink-3">
+            We could not reach the knowledge graph just now. The decision itself is safe. Try again in a moment.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const subject = chain.find((n) => n.role === "subject");
+  if (!subject) notFound();
+  const earlier = chain.filter((n) => n.role === "ancestor").length;
+  const later = chain.filter((n) => n.role === "descendant").length;
+  const superseded = subject.status === "superseded";
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
-      <Link
-        href={`/meetings/${decision.meetingId}#decisions`}
-        className="inline-flex items-center gap-1.5 self-start rounded-md text-[13px] font-semibold text-ink-3 transition-colors hover:text-ink"
-      >
-        <ArrowLeft size={15} weight="bold" aria-hidden />
-        {decision.meetingTitle}
-      </Link>
+      {backLink}
 
       <header className="rounded-card border border-line bg-surface p-6 shadow-sm sm:p-8">
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <Badge tone="success">
-            <CheckCircle size={14} weight="fill" className="mr-1.5" aria-hidden />
-            Confirmed {dateTime.format(new Date(decision.confirmedAt))}
-          </Badge>
-          <Badge tone={priorityTone[decision.priority]} className="capitalize">
-            {decision.priority} priority
-          </Badge>
+          {superseded ? (
+            <Badge tone="medium">
+              <ClockCounterClockwise size={14} weight="bold" className="mr-1.5" aria-hidden />
+              Superseded
+            </Badge>
+          ) : (
+            <Badge tone="success">
+              <CheckCircle size={14} weight="fill" className="mr-1.5" aria-hidden />
+              Confirmed{subject.confirmedAt ? ` ${dateTime.format(new Date(subject.confirmedAt))}` : ""}
+            </Badge>
+          )}
         </div>
-        <h1 className="display max-w-[30ch] text-balance text-[clamp(1.8rem,3.2vw,2.4rem)] text-ink-display">
-          {decision.title}
+        <h1 className="display max-w-[40ch] text-balance text-[clamp(1.6rem,3vw,2.2rem)] text-ink-display">
+          {subject.content ?? "Confirmed decision"}
         </h1>
-        <p className="mt-3 max-w-[64ch] text-[15px] leading-relaxed text-ink-2">{decision.summary}</p>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <SectionCard
           title="Lineage"
           description={
-            earlier.length
-              ? `Follows from ${earlier.length} earlier ${earlier.length === 1 ? "meeting" : "meetings"}, oldest first.`
-              : "No earlier meetings feed into this decision. It starts its own thread."
+            earlier || later
+              ? [
+                  earlier ? `Replaces ${earlier} earlier ${earlier === 1 ? "decision" : "decisions"}` : null,
+                  later ? `replaced by ${later} later ${later === 1 ? "one" : "ones"}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(", ")
+                  .replace(/^./, (c) => c.toUpperCase()) + ". Oldest first."
+              : "Nothing came before this decision and nothing has replaced it."
           }
         >
           <ol className="relative px-4 py-5 sm:px-[22px]">
-            {chain.map((title, i) => {
-              const current = i === chain.length - 1;
+            {chain.map((node, i) => {
+              const current = node.role === "subject";
+              const last = i === chain.length - 1;
+              const body = (
+                <>
+                  <p className={`text-[14.5px] ${current ? "font-semibold text-ink" : "font-medium text-ink-2"}`}>
+                    {node.content ?? "An earlier decision"}
+                  </p>
+                  <p className="mt-0.5 text-[12.5px] text-ink-3">
+                    {caption(node, i)}
+                    {node.confirmedAt ? ` · ${shortDate.format(new Date(node.confirmedAt))}` : ""}
+                  </p>
+                </>
+              );
               return (
-                <li key={`${title}-${i}`} className="relative flex gap-4 pb-6 last:pb-0">
+                <li key={node.id} className="relative flex gap-4 pb-6 last:pb-0">
                   {/* the FOLLOWS_FROM edge to the next node */}
-                  {!current ? (
+                  {!last ? (
                     <span aria-hidden className="absolute left-[15px] top-8 h-[calc(100%-1.5rem)] w-px bg-line-2" />
                   ) : null}
                   <span
@@ -96,15 +170,20 @@ export default function DecisionLineagePage({
                     {current ? <Scales size={16} weight="fill" /> : <GitCommit size={16} />}
                   </span>
                   <div className="min-w-0 pt-1">
-                    <p className={`text-[14.5px] ${current ? "font-semibold text-ink" : "font-medium text-ink-2"}`}>{title}</p>
-                    <p className="mt-0.5 text-[12.5px] text-ink-3">
-                      {current
-                        ? `This decision · ${shortDate.format(new Date(decision.confirmedAt))}`
-                        : i === 0
-                          ? "Where the thread started"
-                          : "Earlier context, carried forward"}
-                    </p>
+                    {!current && node.meetingId ? (
+                      <Link
+                        href={`/meetings/${node.meetingId}/decisions/${node.id}`}
+                        className="group inline-flex flex-col rounded-md hover:text-ink"
+                      >
+                        {body}
+                      </Link>
+                    ) : (
+                      <div aria-current={current ? "step" : undefined}>{body}</div>
+                    )}
                   </div>
+                  {!current && node.meetingId ? (
+                    <ArrowRight size={15} className="mt-2 shrink-0 text-ink-3" aria-hidden />
+                  ) : null}
                 </li>
               );
             })}
@@ -112,51 +191,10 @@ export default function DecisionLineagePage({
         </SectionCard>
 
         <div className="flex min-w-0 flex-col gap-6">
-          <SectionCard title="Actions from this meeting">
-            {actions.length ? (
-              actions.map((a) => (
-                <div key={a.id} className="flex items-start gap-3 px-4 py-3.5 sm:px-[22px]">
-                  <CheckSquare
-                    size={18}
-                    weight={a.status === "done" ? "fill" : "regular"}
-                    className={`mt-0.5 shrink-0 ${a.status === "done" ? "text-signal-deep" : "text-ink-3"}`}
-                    aria-hidden
-                  />
-                  <div className="min-w-0">
-                    <p className={`text-[14px] font-medium ${a.status === "done" ? "text-ink-3 line-through" : "text-ink"}`}>{a.title}</p>
-                    <p className="mt-0.5 text-[12.5px] text-ink-3">
-                      {a.assignee} &middot; due {shortDate.format(new Date(a.dueDate))}
-                    </p>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="px-4 py-4 text-[14px] text-ink-3 sm:px-[22px]">No action items came out of this meeting.</p>
-            )}
-          </SectionCard>
-
-          {siblings.length ? (
-            <SectionCard title="Also decided in this meeting">
-              {siblings.map((d) => (
-                <Link
-                  key={d.id}
-                  href={`/meetings/${d.meetingId}/decisions/${d.id}`}
-                  className="group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-bg sm:px-[22px]"
-                >
-                  <span className="min-w-0 flex-1 text-[14px] font-medium text-ink">{d.title}</span>
-                  <ArrowRight size={15} className="shrink-0 text-ink-3 transition-transform group-hover:translate-x-0.5" aria-hidden />
-                </Link>
-              ))}
-            </SectionCard>
-          ) : null}
-
           <Note>Only confirmed decisions appear in a lineage. Nothing your agent proposed is saved until someone confirms it.</Note>
-
-          {meeting ? (
-            <LinkButton href={`/meetings/${meeting.id}`} variant="outline" className="self-start">
-              Open meeting
-            </LinkButton>
-          ) : null}
+          <LinkButton href={`/meetings/${params.meetingId}`} variant="outline" className="self-start">
+            Open meeting
+          </LinkButton>
         </div>
       </div>
     </div>
