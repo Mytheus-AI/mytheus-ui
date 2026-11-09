@@ -106,7 +106,7 @@ const details = (rows) => {
     return ifVar ? `{{#if ${ifVar}}}${row}{{/if}}` : row;
   };
   return `
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${c.soft}" style="margin:24px 0 0;background-color:${c.soft};border:1px solid ${c.line};border-left:3px solid ${c.signal};border-radius:4px 14px 14px 4px;border-collapse:separate;">${rows.map(tr).join("")}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${c.soft}" style="margin:24px 0 0;background-color:${c.soft};border:1px solid ${c.line};border-radius:16px;border-collapse:separate;">${rows.map(tr).join("")}
 </table>`;
 };
 
@@ -123,9 +123,9 @@ const perks = (items) => `
   .join("")}
 </table>`;
 
-/** The "didn't do this?" note, set like an agent card: coral priority strip, mono label. */
+/** The "didn't do this?" note, set like an agent card: a soft coral panel with a mono label. */
 const aside = (title, html) => `
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${c.signalSoft}" style="margin:32px 0 0;background-color:${c.signalSoft};border-left:3px solid ${c.signal};border-radius:4px 14px 14px 4px;border-collapse:separate;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${c.signalSoft}" style="margin:32px 0 0;background-color:${c.signalSoft};border-radius:16px;border-collapse:separate;">
   <tr>
     <td style="padding:16px 20px 18px;">
       <p style="margin:0;font-family:${MONO};font-size:10.5px;line-height:14px;font-weight:600;letter-spacing:2px;color:${c.signalDeep};">&#9679;&nbsp; AGENT NOTE</p>
