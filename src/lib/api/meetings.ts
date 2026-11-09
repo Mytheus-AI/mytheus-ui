@@ -24,7 +24,15 @@ export interface CallMeeting {
   invited: number;
   /** Internal user ids of those participants, for leaving them out of an invite picker. */
   participantIds: string[];
+  /** Who is in it and in what role (`host`, or null for an attendee). */
+  participants: { id: string; role: string | null }[];
+  /** Its time came and went with nobody ever joining: shown as ended, never as joinable. */
+  missed: boolean;
 }
+
+/** A scheduled meeting this long past its end with nobody having joined is over. Matches the
+ *  five minutes a LiveKit room stays open after its last participant leaves. */
+const GRACE_MS = 5 * 60_000;
 
 /** A meeting without a scheduled end is shown as the default half hour. */
 const DEFAULT_MINUTES = 30;
@@ -34,14 +42,22 @@ export function toCallMeeting(m: ApiMeeting): CallMeeting {
     m.scheduled_start && m.scheduled_end
       ? Math.max(1, Math.round((Date.parse(m.scheduled_end) - Date.parse(m.scheduled_start)) / 60000))
       : DEFAULT_MINUTES;
+  // The server keeps a meeting `scheduled` until its call starts. One whose end is well past
+  // with no call is shown as over, so its Join button goes away (meeting-service also closes an
+  // empty room after five minutes and marks the meeting ended).
+  const startMs = Date.parse(m.scheduled_start ?? m.created_at);
+  const missed =
+    m.status === "scheduled" && Number.isFinite(startMs) && Date.now() > startMs + minutes * 60_000 + GRACE_MS;
   return {
     id: m.id,
     title: m.title ?? "Untitled meeting",
     startTime: m.scheduled_start ?? m.created_at,
     durationMinutes: minutes,
-    status: toMockStatus(m.status),
+    status: missed ? "past" : toMockStatus(m.status),
     invited: m.participants?.length ?? 0,
     participantIds: (m.participants ?? []).map((p) => p.user_id),
+    participants: (m.participants ?? []).map((p) => ({ id: p.user_id, role: p.role_in_meeting ?? null })),
+    missed,
   };
 }
 

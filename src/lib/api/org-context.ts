@@ -60,6 +60,28 @@ function profileFor(userId: string): Promise<Profile> {
 }
 
 /** Once per request: the layout and a page that both ask share the one lookup. */
+export const orgTag = (orgId: string) => `clerk-org:${orgId}`;
+
+/**
+ * The organization's display name. The session only carries its slug (e.g.
+ * `salian-s-lovers-17941611...`, the name plus Clerk's numeric suffix), which is what the
+ * sidebar used to show. Cached like the profile, keyed by the verified org id.
+ */
+function orgNameFor(orgId: string): Promise<string | null> {
+  return unstable_cache(
+    async () => {
+      try {
+        const org = await (await clerkClient()).organizations.getOrganization({ organizationId: orgId });
+        return org.name || null;
+      } catch {
+        return null;
+      }
+    },
+    ["clerk-org-name", orgId],
+    { revalidate: 300, tags: [orgTag(orgId)] },
+  )();
+}
+
 export const resolveOrgContext = cache(async (): Promise<OrgContextValue | null> => {
   const { orgId, orgSlug, orgRole, userId } = await auth();
   if (!userId) return null; // signed out; middleware should already have redirected
@@ -71,7 +93,7 @@ export const resolveOrgContext = cache(async (): Promise<OrgContextValue | null>
       // Clerk's opaque org id, for display only. A personal account has no organization; the
       // gateway rejects its token, so the shell shows a name rather than crashing first.
       id: orgId ?? "",
-      name: orgSlug ?? "Your workspace",
+      name: (orgId ? await orgNameFor(orgId) : null) ?? orgSlug ?? "Your workspace",
       plan: "starter",
     },
     user: {
