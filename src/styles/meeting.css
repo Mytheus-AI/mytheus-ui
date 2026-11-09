@@ -1525,6 +1525,8 @@
   .mx-meet .nfy-text b { font-weight: 700; color: var(--ink); }
 
   .mx-meet .nfy-acts { display: flex; align-items: center; gap: 14px; }
+  .mx-meet .nfy-cites { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-bottom: 8px; }
+  .mx-meet .nfy-cites .cite-chip { margin-top: 0; text-decoration: none; }
 
   .mx-meet .nfy-act {
     font-size: 10.5px;

@@ -55,6 +55,16 @@ import {
   type CandidateRow,
   type CandidatesState,
 } from "./candidates";
+import {
+  applyLiveSuggestions,
+  emptySuggestionsState,
+  hydrateSuggestions,
+  resolveSuggestion as resolveSuggestionIn,
+  saveSuggestion as saveSuggestionIn,
+  type SuggestionEventPayload,
+  type SuggestionRow,
+  type SuggestionsState,
+} from "./suggestions";
 
 export type SocketStatus =
   | "disabled" // no NEXT_PUBLIC_REALTIME_WS_URL: caller falls back to mock captions
@@ -79,6 +89,12 @@ export interface MeetingSocketState {
     id: string,
     patch: Partial<Pick<Candidate, "content" | "rationale" | "assigneeId" | "dueDate">>,
   ) => void;
+  /** This participant's own QuestionAgent suggestions, open and saved (Plan 7-9 §3.10, ADR-0034). */
+  suggestions: SuggestionsState;
+  /** Drop a suggestion this participant asked or dismissed. */
+  resolveSuggestion: (id: string, outcome: "asked" | "dismissed") => void;
+  /** Move a suggestion the server saved into Saved for later. */
+  markSuggestionSaved: (id: string) => void;
 }
 
 interface JoinAck {
@@ -94,6 +110,7 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
   const [presence, setPresence] = useState<string[]>([]);
   const [notes, setNotes] = useState<NotesState>(emptyNotesState);
   const [candidates, setCandidates] = useState<CandidatesState>(emptyCandidatesState);
+  const [suggestions, setSuggestions] = useState<SuggestionsState>(emptySuggestionsState);
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -160,10 +177,27 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
       }
     };
 
+    // And for this participant's suggestions: this meeting's open ones plus the ones saved in
+    // any meeting (ADR-0034 D8), merged by id. core-api decides whose they are from the session.
+    const rehydrateSuggestions = async () => {
+      try {
+        const response = await fetch(
+          `/api/meeting-suggestions?meeting_id=${encodeURIComponent(meetingId)}`,
+        );
+        if (!response.ok) return;
+        const body = (await response.json()) as { open?: SuggestionRow[]; saved?: SuggestionRow[] };
+        if (cancelled) return;
+        setSuggestions((prev) => hydrateSuggestions(prev, body));
+      } catch {
+        // Same reasoning as captions: the live stream keeps working without it.
+      }
+    };
+
     const join = () => {
       void rehydrate();
       void rehydrateNotes();
       void rehydrateCandidates();
+      void rehydrateSuggestions();
       socket.emit("join", { meetingId }, (ack: JoinAck) => {
         if (cancelled) return;
         if (ack?.ok) {
@@ -210,6 +244,13 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
       setCandidates((prev) => applyLiveCandidates(prev, event.payload));
     });
 
+    // Private to this participant, like notes: the gateway emits a suggestion only to its owner's
+    // sockets (ADR-0034 D6).
+    socket.on("agent-suggestion", (event: { meetingId: string; payload: SuggestionEventPayload }) => {
+      if (cancelled || event?.meetingId !== meetingId || !event.payload) return;
+      setSuggestions((prev) => applyLiveSuggestions(prev, event.payload));
+    });
+
     socket.on("presence", (members: string[]) => {
       if (!cancelled) setPresence(Array.isArray(members) ? members : []);
     });
@@ -233,8 +274,40 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
     [],
   );
 
+  const resolveSuggestion = useCallback(
+    (id: string, outcome: "asked" | "dismissed") =>
+      setSuggestions((prev) => resolveSuggestionIn(prev, id, outcome)),
+    [],
+  );
+  const markSuggestionSaved = useCallback(
+    (id: string) => setSuggestions((prev) => saveSuggestionIn(prev, id)),
+    [],
+  );
+
   return useMemo(
-    () => ({ status, captions, presence, notes, candidates, resolveCandidate, updateCandidate }),
-    [status, captions, presence, notes, candidates, resolveCandidate, updateCandidate],
+    () => ({
+      status,
+      captions,
+      presence,
+      notes,
+      candidates,
+      resolveCandidate,
+      updateCandidate,
+      suggestions,
+      resolveSuggestion,
+      markSuggestionSaved,
+    }),
+    [
+      status,
+      captions,
+      presence,
+      notes,
+      candidates,
+      resolveCandidate,
+      updateCandidate,
+      suggestions,
+      resolveSuggestion,
+      markSuggestionSaved,
+    ],
   );
 }

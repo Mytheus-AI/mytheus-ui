@@ -9,6 +9,8 @@ import type { AgentSidebarCard, SidebarPriority } from "@/lib/mock/data";
 import type { LiveNote } from "@/lib/realtime/notes";
 import type { Candidate } from "@/lib/realtime/candidates";
 import { CandidateCard, type CandidateOutcome } from "@/components/sidebar/CandidateCard";
+import type { Suggestion } from "@/lib/realtime/suggestions";
+import { SuggestionCard, type SuggestionOutcome } from "@/components/sidebar/SuggestionCard";
 
 /* The agent sidebar - the product's centerpiece - in the meeting design's shape: a conflict banner
    pinned above everything, then "My agent" with the Needs-you cards, My notes, Saved for later and
@@ -16,6 +18,9 @@ import { CandidateCard, type CandidateOutcome } from "@/components/sidebar/Candi
 
    Decision and action candidates are live (Plan 7-9 section 3.8, ADR-0031): they arrive through
    `candidates` and Confirm calls core-api, which is the only thing that commits them. The other
+   Suggested questions are live too (Plan 7-9 section 3.10, ADR-0034): private to this participant,
+   they arrive through `suggestions` / `savedSuggestions`, and Ask / Save / Dismiss call core-api;
+   a saved one sits in Saved for later and comes back in the next meeting. The other
    card kinds come in through `items` (the 9-section shape of doc 20 §7), which nothing feeds yet,
    so they render nothing rather than sample cards. The UX contract is unchanged:
    Confirm visibly commits (and is the ONLY thing that commits), Dismiss removes, Save for later
@@ -29,7 +34,7 @@ const PRIORITY_LEVEL: Record<SidebarPriority, 1 | 2 | 3> = { high: 1, medium: 2,
 const PRIORITY_LABEL: Record<SidebarPriority, string> = { high: "act now", medium: "attention", low: "info" };
 
 type FeedKind = "conflict" | "question" | "decision" | "note" | "context" | "action";
-type Resolution = "confirmed" | "saved" | "dismissed" | "acknowledged" | "created";
+type Resolution = "confirmed" | "saved" | "dismissed" | "acknowledged" | "created" | "asked";
 
 const KIND_LABEL: Record<FeedKind, string> = {
   conflict: "Conflict",
@@ -46,6 +51,7 @@ const RES_LABEL: Record<Resolution, string> = {
   dismissed: "Dismissed",
   acknowledged: "Acknowledged",
   created: "Task created",
+  asked: "Asked",
 };
 
 type FeedEntry = {
@@ -90,6 +96,11 @@ export function AgentSidebar({
   candidates = [],
   onCandidateResolved,
   onCandidateUpdated,
+  meetingId = "",
+  suggestions = [],
+  savedSuggestions = [],
+  onSuggestionResolved,
+  onSuggestionSaved,
 }: {
   /** The agent's cards for this meeting. Empty until the `agent-results` stream is wired, which
    *  renders the empty state rather than invented cards. */
@@ -105,6 +116,14 @@ export function AgentSidebar({
   candidates?: Candidate[];
   onCandidateResolved?: (id: string, outcome: "confirmed" | "dismissed") => void;
   onCandidateUpdated?: (id: string, patch: Partial<Pick<Candidate, "content" | "rationale" | "dueDate">>) => void;
+  /** The meeting this sidebar is open on; a citation without its own meeting points here. */
+  meetingId?: string;
+  /** This participant's open suggested questions for this meeting, most urgent first. */
+  suggestions?: Suggestion[];
+  /** This participant's saved suggested questions, from this meeting and earlier ones. */
+  savedSuggestions?: Suggestion[];
+  onSuggestionResolved?: (id: string, outcome: "asked" | "dismissed") => void;
+  onSuggestionSaved?: (id: string) => void;
 }) {
   const toast = useCallToast();
   const [decisionState, setDecisionState] = useState<"pending" | "confirmed" | "dismissed">(
@@ -115,6 +134,7 @@ export function AgentSidebar({
   const [leaving, setLeaving] = useState<Set<CardId>>(new Set());
   const [log, setLog] = useState<FeedEntry[]>([]);
   const [leavingCandidates, setLeavingCandidates] = useState<Set<string>>(new Set());
+  const [leavingSuggestions, setLeavingSuggestions] = useState<Set<string>>(new Set());
   const joinedAt = useRef<number>(0);
   useEffect(() => {
     joinedAt.current = Date.now();
@@ -134,6 +154,7 @@ export function AgentSidebar({
 
   const count =
     candidates.length +
+    suggestions.filter((s) => s.priority !== 3).length +
     (conflict ? 1 : 0) +
     (decision && decisionState === "pending" ? 1 : 0) +
     (suggestion && suggestion.priority !== "low" && isOpen("suggestion") ? 1 : 0) +
@@ -195,6 +216,28 @@ export function AgentSidebar({
         ...l,
       ]);
       if (confirmed) toast(c.kind === "decision" ? "Decision confirmed" : "Task added");
+    }, 230);
+  };
+
+  /** A suggestion was asked, saved or dismissed here (or turned out to be gone): slide it out,
+   *  then move it in the room's state and record it in Activity. */
+  const settleSuggestion = (s: Suggestion, outcome: SuggestionOutcome) => {
+    const time = now();
+    setLeavingSuggestions((l) => new Set(l).add(s.id));
+    window.setTimeout(() => {
+      setLeavingSuggestions((l) => {
+        const next = new Set(l);
+        next.delete(s.id);
+        return next;
+      });
+      if (outcome === "saved") onSuggestionSaved?.(s.id);
+      else onSuggestionResolved?.(s.id, outcome === "asked" ? "asked" : "dismissed");
+      if (outcome === "gone") return;
+      setLog((l) => [
+        { id: `${s.id}-${Date.now()}`, kind: "question", text: s.question, time, isNew: true, resolved: outcome },
+        ...l,
+      ]);
+      if (outcome === "asked") toast("Question copied. Paste it into chat.");
     }, 230);
   };
 
@@ -393,7 +436,13 @@ export function AgentSidebar({
     feed.push({ id: "context", kind: "context", text: context.text, cite: context.source, saveAs: "Context from Sarah's agent" });
   }
 
-  if (items.length === 0 && notes.length === 0 && candidates.length === 0) {
+  if (
+    items.length === 0 &&
+    notes.length === 0 &&
+    candidates.length === 0 &&
+    suggestions.length === 0 &&
+    savedSuggestions.length === 0
+  ) {
     return (
       <div className="reveal" id={id} style={{ animationDelay: ".14s" }}>
         <CollapseSection title="My agent">
@@ -449,11 +498,21 @@ export function AgentSidebar({
           }
         >
           <div className="agent-panel">
-            {cards.length > 0 || candidates.length > 0 ? (
+            {cards.length > 0 || candidates.length > 0 || suggestions.length > 0 ? (
               <div className="nfy">
                 <div className="nfy-head">
                   Needs you <b>{count}</b>
                 </div>
+                {suggestions.map((s) => (
+                  <SuggestionCard
+                    key={s.id}
+                    suggestion={s}
+                    currentMeetingId={meetingId}
+                    leaving={leavingSuggestions.has(s.id)}
+                    onResolved={(outcome) => settleSuggestion(s, outcome)}
+                    onError={(message) => toast(message)}
+                  />
+                ))}
                 {candidates.map((c) => (
                   <CandidateCard
                     key={c.id}
@@ -528,9 +587,19 @@ export function AgentSidebar({
 
             <div className="mynotes">
               <div className="nfy-head">
-                Saved for later {saved.length ? <b>{saved.length}</b> : null}
+                Saved for later {saved.length + savedSuggestions.length ? <b>{saved.length + savedSuggestions.length}</b> : null}
               </div>
-              {saved.length === 0 ? (
+              {savedSuggestions.map((s) => (
+                <SuggestionCard
+                  key={s.id}
+                  suggestion={s}
+                  currentMeetingId={meetingId}
+                  leaving={leavingSuggestions.has(s.id)}
+                  onResolved={(outcome) => settleSuggestion(s, outcome)}
+                  onError={(message) => toast(message)}
+                />
+              ))}
+              {saved.length === 0 && savedSuggestions.length === 0 ? (
                 <p className="saved-empty">Nothing saved yet. Use Save for later on any card to keep it here.</p>
               ) : (
                 saved.map((s) => (
