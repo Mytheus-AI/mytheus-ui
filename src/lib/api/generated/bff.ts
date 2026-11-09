@@ -100,7 +100,7 @@ export interface components {
             action_items: components["schemas"]["UnbuiltArm"];
             decisions: components["schemas"]["UnbuiltArm"];
             upcoming_meetings: components["schemas"]["MeetingsArm"];
-            worklogs: components["schemas"]["UnbuiltArm"];
+            worklogs: components["schemas"]["WorklogsArm"];
         };
         /**
          * DashboardMeeting
@@ -129,6 +129,32 @@ export interface components {
             status: "scheduled" | "live" | "ended" | "cancelled";
             /** Title */
             title: string | null;
+        };
+        /**
+         * DashboardNote
+         * @description One of the caller's own notes (a surfaced `worklogs` row, PersonalListenerAgent output)
+         *     with the meeting it came from, for the dashboard's My notes panel.
+         */
+        DashboardNote: {
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Meeting Title */
+            meeting_title: string | null;
         };
         /** DepartmentNode */
         DepartmentNode: {
@@ -347,6 +373,16 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** WorklogsArm */
+        WorklogsArm: {
+            /** Items */
+            items: components["schemas"]["DashboardNote"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "degraded" | "empty";
         };
     };
     responses: never;

@@ -27,7 +27,7 @@
  * real window. Folding the fetched finals into whatever is current keeps both.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import {
   applyCaption,
@@ -44,6 +44,17 @@ import {
   type NoteFinalPayload,
   type NotesState,
 } from "./notes";
+import {
+  applyLiveCandidates,
+  emptyCandidatesState,
+  hydrateCandidates,
+  resolveCandidate as resolveCandidateIn,
+  updateCandidate as updateCandidateIn,
+  type Candidate,
+  type CandidateEventPayload,
+  type CandidateRow,
+  type CandidatesState,
+} from "./candidates";
 
 export type SocketStatus =
   | "disabled" // no NEXT_PUBLIC_REALTIME_WS_URL: caller falls back to mock captions
@@ -59,6 +70,15 @@ export interface MeetingSocketState {
   presence: string[];
   /** This participant's own PersonalListener notes (Plan 7-9 §3.4): live drafts and finals. */
   notes: NotesState;
+  /** The meeting's decision and action candidates awaiting Confirm (Plan 7-9 §3.8, ADR-0031). */
+  candidates: CandidatesState;
+  /** Drop a candidate this participant confirmed or dismissed. */
+  resolveCandidate: (id: string, outcome: "confirmed" | "dismissed") => void;
+  /** Apply an edit the server accepted. */
+  updateCandidate: (
+    id: string,
+    patch: Partial<Pick<Candidate, "content" | "rationale" | "assigneeId" | "dueDate">>,
+  ) => void;
 }
 
 interface JoinAck {
@@ -73,6 +93,7 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
   const [captions, setCaptions] = useState<CaptionState>(emptyCaptionState);
   const [presence, setPresence] = useState<string[]>([]);
   const [notes, setNotes] = useState<NotesState>(emptyNotesState);
+  const [candidates, setCandidates] = useState<CandidatesState>(emptyCandidatesState);
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -124,9 +145,25 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
       }
     };
 
+    // And for candidates: the meeting's still-proposed decisions and actions, merged by id.
+    const rehydrateCandidates = async () => {
+      try {
+        const response = await fetch(
+          `/api/meeting-candidates?meeting_id=${encodeURIComponent(meetingId)}`,
+        );
+        if (!response.ok) return;
+        const body = (await response.json()) as { decisions?: CandidateRow[]; actions?: CandidateRow[] };
+        if (cancelled) return;
+        setCandidates((prev) => hydrateCandidates(prev, body));
+      } catch {
+        // Same reasoning as captions: the live stream keeps working without it.
+      }
+    };
+
     const join = () => {
       void rehydrate();
       void rehydrateNotes();
+      void rehydrateCandidates();
       socket.emit("join", { meetingId }, (ack: JoinAck) => {
         if (cancelled) return;
         if (ack?.ok) {
@@ -166,6 +203,13 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
       setNotes((prev) => applyNoteFinal(prev, event.payload));
     });
 
+    // Shared with the whole meeting: a decision or action belongs to the meeting, not to one
+    // participant (ADR-0031 D4). Only surfaced candidates are forwarded.
+    socket.on("agent-candidate", (event: { meetingId: string; payload: CandidateEventPayload }) => {
+      if (cancelled || event?.meetingId !== meetingId || !event.payload) return;
+      setCandidates((prev) => applyLiveCandidates(prev, event.payload));
+    });
+
     socket.on("presence", (members: string[]) => {
       if (!cancelled) setPresence(Array.isArray(members) ? members : []);
     });
@@ -178,8 +222,19 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
     };
   }, [url, token, meetingId]);
 
+  const resolveCandidate = useCallback(
+    (id: string, outcome: "confirmed" | "dismissed") =>
+      setCandidates((prev) => resolveCandidateIn(prev, id, outcome)),
+    [],
+  );
+  const updateCandidate = useCallback(
+    (id: string, patch: Partial<Pick<Candidate, "content" | "rationale" | "assigneeId" | "dueDate">>) =>
+      setCandidates((prev) => updateCandidateIn(prev, id, patch)),
+    [],
+  );
+
   return useMemo(
-    () => ({ status, captions, presence, notes }),
-    [status, captions, presence, notes],
+    () => ({ status, captions, presence, notes, candidates, resolveCandidate, updateCandidate }),
+    [status, captions, presence, notes, candidates, resolveCandidate, updateCandidate],
   );
 }

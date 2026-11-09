@@ -7,14 +7,17 @@ import { CollapseSection } from "@/components/call/CollapseSection";
 import { useCallToast } from "@/components/call/CallToast";
 import type { AgentSidebarCard, SidebarPriority } from "@/lib/mock/data";
 import type { LiveNote } from "@/lib/realtime/notes";
+import type { Candidate } from "@/lib/realtime/candidates";
+import { CandidateCard, type CandidateOutcome } from "@/components/sidebar/CandidateCard";
 
 /* The agent sidebar - the product's centerpiece - in the meeting design's shape: a conflict banner
    pinned above everything, then "My agent" with the Needs-you cards, My notes, Saved for later and
    the Activity feed.
 
-   The cards come in through `items` (the 9-section shape of doc 20 §7). Nothing feeds them yet:
-   the room passes the `agent-results` cards once that stream is wired, and until then an empty
-   list renders an honest empty state instead of sample cards. The UX contract is unchanged:
+   Decision and action candidates are live (Plan 7-9 section 3.8, ADR-0031): they arrive through
+   `candidates` and Confirm calls core-api, which is the only thing that commits them. The other
+   card kinds come in through `items` (the 9-section shape of doc 20 §7), which nothing feeds yet,
+   so they render nothing rather than sample cards. The UX contract is unchanged:
    Confirm visibly commits (and is the ONLY thing that commits), Dismiss removes, Save for later
    collects into Saved for later. The conflict is always pinned to the top and cannot be dismissed.
    Acknowledging a warning only moves it into the Activity feed; nothing is sent anywhere.
@@ -84,6 +87,9 @@ export function AgentSidebar({
   id,
   items,
   notes = [],
+  candidates = [],
+  onCandidateResolved,
+  onCandidateUpdated,
 }: {
   /** The agent's cards for this meeting. Empty until the `agent-results` stream is wired, which
    *  renders the empty state rather than invented cards. */
@@ -95,6 +101,10 @@ export function AgentSidebar({
   /** This participant's live PersonalListener notes (Plan 7-9 §3.4), oldest first. Only
    *  surfaced notes ever reach the client; a draft is one still streaming. */
   notes?: LiveNote[];
+  /** The meeting's decision and action candidates waiting for a person, oldest first. */
+  candidates?: Candidate[];
+  onCandidateResolved?: (id: string, outcome: "confirmed" | "dismissed") => void;
+  onCandidateUpdated?: (id: string, patch: Partial<Pick<Candidate, "content" | "rationale" | "dueDate">>) => void;
 }) {
   const toast = useCallToast();
   const [decisionState, setDecisionState] = useState<"pending" | "confirmed" | "dismissed">(
@@ -104,6 +114,7 @@ export function AgentSidebar({
   const [closed, setClosed] = useState<Set<CardId>>(new Set());
   const [leaving, setLeaving] = useState<Set<CardId>>(new Set());
   const [log, setLog] = useState<FeedEntry[]>([]);
+  const [leavingCandidates, setLeavingCandidates] = useState<Set<string>>(new Set());
   const joinedAt = useRef<number>(0);
   useEffect(() => {
     joinedAt.current = Date.now();
@@ -122,6 +133,7 @@ export function AgentSidebar({
   const isOpen = (cid: CardId) => !closed.has(cid);
 
   const count =
+    candidates.length +
     (conflict ? 1 : 0) +
     (decision && decisionState === "pending" ? 1 : 0) +
     (suggestion && suggestion.priority !== "low" && isOpen("suggestion") ? 1 : 0) +
@@ -153,6 +165,36 @@ export function AgentSidebar({
       setClosed((s) => new Set(s).add(cid));
       after?.();
       setLog((l) => [{ ...entry, id: `${cid}-${Date.now()}`, time, isNew: true }, ...l]);
+    }, 230);
+  };
+
+  /** A candidate was confirmed or dismissed here (or turned out to be gone): slide it out, then
+   *  drop it from the room's state and record it in Activity. */
+  const settleCandidate = (c: Candidate, outcome: CandidateOutcome | "gone") => {
+    const time = now();
+    setLeavingCandidates((s) => new Set(s).add(c.id));
+    window.setTimeout(() => {
+      setLeavingCandidates((s) => {
+        const next = new Set(s);
+        next.delete(c.id);
+        return next;
+      });
+      onCandidateResolved?.(c.id, outcome === "confirmed" ? "confirmed" : "dismissed");
+      if (outcome === "gone") return;
+      const confirmed = outcome === "confirmed";
+      setLog((l) => [
+        {
+          id: `${c.id}-${Date.now()}`,
+          kind: c.kind,
+          text: c.content,
+          time,
+          isNew: true,
+          resolved: confirmed ? "confirmed" : "dismissed",
+          cite: confirmed ? (c.kind === "decision" ? "Saved for the team" : "Added to My Tasks") : undefined,
+        },
+        ...l,
+      ]);
+      if (confirmed) toast(c.kind === "decision" ? "Decision confirmed" : "Task added");
     }, 230);
   };
 
@@ -351,7 +393,7 @@ export function AgentSidebar({
     feed.push({ id: "context", kind: "context", text: context.text, cite: context.source, saveAs: "Context from Sarah's agent" });
   }
 
-  if (items.length === 0 && notes.length === 0) {
+  if (items.length === 0 && notes.length === 0 && candidates.length === 0) {
     return (
       <div className="reveal" id={id} style={{ animationDelay: ".14s" }}>
         <CollapseSection title="My agent">
@@ -407,11 +449,21 @@ export function AgentSidebar({
           }
         >
           <div className="agent-panel">
-            {cards.length > 0 ? (
+            {cards.length > 0 || candidates.length > 0 ? (
               <div className="nfy">
                 <div className="nfy-head">
                   Needs you <b>{count}</b>
                 </div>
+                {candidates.map((c) => (
+                  <CandidateCard
+                    key={c.id}
+                    candidate={c}
+                    leaving={leavingCandidates.has(c.id)}
+                    onResolved={(outcome) => settleCandidate(c, outcome)}
+                    onUpdated={(patch) => onCandidateUpdated?.(c.id, patch)}
+                    onError={(message) => toast(message)}
+                  />
+                ))}
                 {cards.map((card) => (
                   <div
                     className={`nfy-card is-${card.kind} is-p${card.prio}${leaving.has(card.id) ? " is-leaving" : ""}`}
