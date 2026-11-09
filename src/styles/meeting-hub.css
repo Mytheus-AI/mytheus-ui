@@ -97,6 +97,19 @@
   .mx-meet .mh-facts > span + span { border-left: 0; border-top: 1px solid var(--navBorder); }
 }
 
+/* The hub's entrance animation (`nm-reveal`, generated in meeting.css) fills `both`, so after it
+   ends the header keeps an animated transform. Any transform makes an element the containing
+   block for `position: fixed` children and gives it its own stacking context, which trapped the
+   New meeting dialog inside the 70px header, under the meeting list. Here the visible end state
+   is the element's own style and the animation only fills backwards, so nothing is left behind
+   once it finishes. */
+.mx-meet .mh-page .reveal {
+  opacity: 1;
+  transform: none;
+  transition: none;
+  animation-fill-mode: backwards;
+}
+
 /* "New meeting" dialog. Built from the meeting design's own tokens so it reads as part of the
    hub rather than the app-wide modal. */
 .mx-meet .screen-head .mh-new-open { margin-left: auto; flex-shrink: 0; }
