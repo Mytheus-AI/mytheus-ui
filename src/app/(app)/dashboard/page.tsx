@@ -7,6 +7,7 @@ import { openConflicts, myOpenTasks } from "@/components/app/dashboard/data";
 import { DashboardHeader } from "@/components/app/dashboard/DashboardHeader";
 import { HeroUpNext } from "@/components/app/dashboard/HeroUpNext";
 import { NeedsYou } from "@/components/app/dashboard/NeedsYou";
+import { MyNotes, type DashboardNote } from "@/components/app/dashboard/MyNotes";
 import { RecentDecisions } from "@/components/app/dashboard/RecentDecisions";
 import { RecentMeetings } from "@/components/app/dashboard/RecentMeetings";
 import { TaskList } from "@/components/app/dashboard/TaskList";
@@ -26,9 +27,9 @@ export const metadata: Metadata = {
  * how `bff` already reports a per-arm status instead of failing the composite.
  *
  * The meetings arm is real and drives the hero, the header and the Today timeline. The task,
- * decision, recent-meeting and conflict panels still read the mock, because `action_items`,
- * `worklogs` and `decisions` are shaped-but-empty on the server until Plan 7-9: wiring them now
- * would replace a populated demo with permanently empty boxes and no new information.
+ * decision, recent-meeting and conflict panels still read the mock, because `action_items` and
+ * `decisions` are shaped-but-empty on the server until Plan 8: wiring them now would replace a
+ * populated demo with permanently empty boxes. Your notes (`worklogs`) are real.
  *
  * Server Component throughout. The only client code is small leaf islands: the live countdown
  * and relative time, local-timezone times, the greeting word, and the retry button.
@@ -46,6 +47,13 @@ export default async function DashboardPage() {
     ...toMeetingView(m),
     endTime: meetingsArm?.items[i]?.scheduled_end ?? undefined,
   }));
+  // `worklogs` is real since Plan 7: the caller's own notes. Read loosely so a client generated
+  // before the arm was typed still compiles.
+  const notesArm = dashboard.ok
+    ? (dashboard.data.worklogs as { status: string; items: unknown[] } | undefined)
+    : undefined;
+  const notes = (notesArm?.items ?? []) as DashboardNote[];
+  const notesFailed = !dashboard.ok || notesArm?.status === "degraded";
   // A failed fetch and a server-reported degraded arm are the same thing to the panels.
   const calendarFailed = !dashboard.ok || meetingsArm?.status === "degraded";
 
@@ -101,6 +109,7 @@ export default async function DashboardPage() {
             nowMs={nowMs}
             {...reveal(3)}
           />
+          <MyNotes notes={notes} failed={notesFailed} {...reveal(4)} />
           <TaskList {...reveal(4)} />
           <RecentDecisions
             className={`${reveal(6).className} min-[721px]:col-span-2 min-[1101px]:col-span-1`}
