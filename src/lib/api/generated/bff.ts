@@ -264,6 +264,11 @@ export interface components {
             /** Decision Id */
             decision_id?: string | null;
             /**
+             * Document Id
+             * @description The company-brain document a `document` passage came from.
+             */
+            document_id?: string | null;
+            /**
              * Kind
              * @description transcript | document | decision | action
              */
@@ -281,6 +286,11 @@ export interface components {
             occurred_at?: string | null;
             /** Speaker */
             speaker?: string | null;
+            /**
+             * Start Ms
+             * @description Where a `transcript` passage starts, in ms from the meeting's start.
+             */
+            start_ms?: number | null;
             /** Text */
             text: string;
         };

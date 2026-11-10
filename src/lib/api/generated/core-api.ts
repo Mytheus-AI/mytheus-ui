@@ -128,6 +128,114 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/actions/{action_id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reopen
+         * @description Move a `done` action back to `confirmed` (wave 3: the "done" Undo on web and phone,
+         *     and reopening a task finished by mistake).
+         *
+         *     For its assignee or its owner (the person who confirmed or created it, `confirmed_by`);
+         *     anyone else is 403, another tenant's or a deleted task 404. Idempotent: an open
+         *     (`confirmed`) task answers 200 unchanged; a `proposed` or `dismissed` candidate is 409.
+         *     Audited (`action.reopened`); emits nothing, like `done` (the `actions` topic carries
+         *     confirmations only).
+         */
+        post: operations["reopen"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/capture/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Capture
+         * @description authz: member. Start recording an in-person meeting on the caller's phone.
+         */
+        post: operations["start_capture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/capture/sessions/{meeting_id}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End Capture
+         * @description authz: member (a participant of the meeting). End the recording and the meeting, with
+         *     its real start and end. Idempotent: an ended meeting answers 200 unchanged.
+         */
+        post: operations["end_capture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/capture/sessions/{meeting_id}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Capture
+         * @description authz: member (a participant of the meeting). A fresh token for a running capture.
+         */
+        post: operations["refresh_capture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/capture/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Capture Status
+         * @description authz: member. Whether in-person recording is connected on this server.
+         */
+        get: operations["capture_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/chat": {
         parameters: {
             query?: never;
@@ -2213,6 +2321,92 @@ export interface components {
             /** Why */
             why?: string | null;
         };
+        /** CaptureEnded */
+        CaptureEnded: {
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /**
+             * Status
+             * @default ended
+             * @constant
+             */
+            status: "ended";
+        };
+        /** CaptureRefresh */
+        CaptureRefresh: {
+            /**
+             * Consent At
+             * Format: date-time
+             */
+            consent_at: string;
+        };
+        /** CaptureSession */
+        CaptureSession: {
+            /** Capture Token */
+            capture_token: string;
+            /** Consent At */
+            consent_at: string;
+            /**
+             * Encoding
+             * @default pcm_s16le
+             * @constant
+             */
+            encoding: "pcm_s16le";
+            /**
+             * Expires At
+             * @description Unix seconds; mint a fresh token after this.
+             */
+            expires_at: number;
+            /**
+             * Ingest Url
+             * @description transcription-service's `/capture/audio` WebSocket.
+             */
+            ingest_url: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /**
+             * Sample Rate
+             * @default 16000
+             */
+            sample_rate: number;
+            /**
+             * Source
+             * @default in_person
+             * @constant
+             */
+            source: "in_person";
+            /** Title */
+            title: string;
+        };
+        /** CaptureStart */
+        CaptureStart: {
+            /**
+             * Consent
+             * @description The caller confirms everyone in the room knows it is being recorded.
+             */
+            consent: boolean;
+            /**
+             * Consent At
+             * @description When they confirmed; now when omitted. At most a day old.
+             */
+            consent_at?: string | null;
+            /** Title */
+            title?: string | null;
+        };
+        /** CaptureStatus */
+        CaptureStatus: {
+            /**
+             * Configured
+             * @description False until the server has a capture secret and URL.
+             */
+            configured: boolean;
+        };
         /**
          * CarryForward
          * @description `GET /meetings/{id}/carry-forward`: what the previous meeting left open. Empty lists and
@@ -3316,7 +3510,7 @@ export interface components {
              * @default mytheus
              * @enum {string}
              */
-            source: "mytheus" | "meet" | "teams" | "zoom";
+            source: "mytheus" | "meet" | "teams" | "zoom" | "in_person";
             /**
              * Status
              * @enum {string}
@@ -3353,7 +3547,7 @@ export interface components {
             /** Scheduled Start */
             scheduled_start?: string | null;
             /** Source */
-            source?: ("mytheus" | "meet" | "teams" | "zoom") | null;
+            source?: ("mytheus" | "meet" | "teams" | "zoom" | "in_person") | null;
             /** Template Id */
             template_id?: string | null;
             /** Title */
@@ -3406,7 +3600,7 @@ export interface components {
              * @default mytheus
              * @enum {string}
              */
-            source: "mytheus" | "meet" | "teams" | "zoom";
+            source: "mytheus" | "meet" | "teams" | "zoom" | "in_person";
             /**
              * Status
              * @enum {string}
@@ -3728,6 +3922,12 @@ export interface components {
         MemoryCalibration: {
             /** Agent */
             agent: string;
+            /**
+             * Dismissed
+             * @description Of `samples`, about how many you dismissed (the recency-weighted dismiss share times `samples`), for a plain-language "you dismissed 4 of the last 10"
+             * @default 0
+             */
+            dismissed: number;
             /**
              * Personal
              * @description True when tuned from your own feedback
@@ -5470,6 +5670,258 @@ export interface operations {
             };
             /** @description Validation Error */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    reopen: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                action_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyTask"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    start_capture: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaptureStart"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaptureSession"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    end_capture: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaptureEnded"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    refresh_capture: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaptureRefresh"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaptureSession"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    capture_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaptureStatus"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
