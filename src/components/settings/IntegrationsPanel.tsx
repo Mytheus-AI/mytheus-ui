@@ -2,6 +2,7 @@ import type { Icon } from "@phosphor-icons/react";
 import { CalendarDots, Kanban, SlackLogo, SquaresFour } from "@phosphor-icons/react/dist/ssr";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Note } from "./primitives";
 
 /* Integration connections, the deliberately small surface (guardrail R8): Google Calendar and
    Slack, plus ONE project tracker (Jira or Linear) per workspace. `integration-service` serves
@@ -42,35 +43,41 @@ const INTEGRATIONS: Integration[] = [
 export function IntegrationsPanel() {
   return (
     <>
-      <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,290px),1fr))] gap-5">
+      <Note>
+        Integrations are not connected yet. When they are, one project tracker can be connected per workspace, and only
+        action items someone has confirmed will sync to it.
+      </Note>
+
+      <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))] gap-5">
         {INTEGRATIONS.map(({ key, name, description, icon: Glyph, tracker }) => (
-          <li key={key} className="flex flex-col gap-4 rounded-card border border-line bg-surface p-5 shadow-sm">
+          <li
+            key={key}
+            className="flex flex-col gap-4 rounded-card border border-line bg-surface p-5 shadow-warm-1 sm:px-[22px]"
+          >
             <div className="flex items-start gap-3.5">
-              <span className="grid h-[46px] w-[46px] shrink-0 place-items-center rounded-pill bg-bg-2 text-ink">
-                <Glyph size={24} aria-hidden="true" />
+              <span
+                className="grid h-[46px] w-[46px] shrink-0 place-items-center rounded-ctl bg-bg-2 text-ink"
+                aria-hidden="true"
+              >
+                <Glyph size={24} />
               </span>
               <div className="min-w-0 flex-1">
-                <h3 className="text-[16px] font-semibold text-ink">{name}</h3>
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  <Badge>Not available yet</Badge>
-                  {tracker ? <Badge>Tracker</Badge> : null}
-                </div>
+                <h3 className="text-[17px] font-semibold leading-snug text-ink">{name}</h3>
+                <p className="mt-1 text-[14px] leading-relaxed text-ink-3">{description}</p>
               </div>
             </div>
-            <p className="text-[13.5px] text-ink-3">{description}</p>
-            <div className="mt-auto">
-              <Button variant="secondary" size="sm" disabled aria-label={`Connect ${name} (not available yet)`}>
+            <div className="flex flex-wrap gap-1.5">
+              <Badge>Not available yet</Badge>
+              {tracker ? <Badge tone="low">Project tracker</Badge> : null}
+            </div>
+            <div className="mt-auto border-t border-line pt-4">
+              <Button variant="outline" size="sm" disabled aria-label={`Connect ${name}, not available yet`}>
                 Connect
               </Button>
             </div>
           </li>
         ))}
       </ul>
-
-      <p className="max-w-[70ch] text-[13px] text-ink-3">
-        Integrations are not connected yet. When they are, one project tracker can be connected per workspace, and
-        only action items someone has confirmed will sync to it.
-      </p>
     </>
   );
 }

@@ -3,11 +3,12 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useClerk, useOrganizationList, useUser } from "@clerk/nextjs";
+import { CaretRight, Check, Copy, Plus } from "@phosphor-icons/react";
 import { AuthShell } from "./AuthShell";
 import { FormAlert, PrimaryButton, Spinner, StepHeader, TextButton, TextField } from "./fields";
 import { AFTER_AUTH_URL, firstError } from "./clerk-helpers";
-import { ArrowRight } from "@/components/landing/ui";
-import { Doodle } from "@/components/ui/Doodle";
+import { Avatar } from "@/components/ui/Avatar";
+import { Button } from "@/components/ui/Button";
 import { defaultDoodleSeed, isDoodleSeed } from "@/lib/doodle";
 import { provisionActiveWorkspace } from "@/app/actions/workspace";
 
@@ -132,32 +133,15 @@ export function ChooseOrganization() {
   return (
     <AuthShell
       stage={{
-        kicker: "Your workspace",
-        title: "Every team needs",
-        accent: "a table.",
-        blurb: "A workspace is where a decision made in one meeting becomes context in the next, for everyone in it.",
+        title: "Every team needs one shared memory.",
+        lead: "A workspace is where a decision made in one meeting becomes context in the next, for everyone in it.",
       }}
-      scene={{
-        you: youSeed,
-        label: path === "create" ? name.trim() || "your team" : undefined,
-        lines:
-          path === "create"
-            ? [
-                { text: "New table, who's in?" },
-                { text: "Invite the team later." },
-                { text: "Start the workspace.", decision: true },
-              ]
-            : [
-                { text: "Got an invite?" },
-                { text: "Your admin can send one." },
-                { text: "Pull up a chair with us.", decision: true },
-              ],
-        note: path === "create" ? "Workspace created" : "New teammate joined",
-      }}
+      art="workspace"
+      artLabel={path === "create" ? name : undefined}
       aside={
         user ? (
-          <span className="inline-flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
-            <span className="max-w-[22ch] truncate">{email}</span>
+          <span className="inline-flex items-center justify-end gap-x-3">
+            <span className="hidden max-w-[24ch] truncate sm:inline">{email}</span>
             <TextButton onClick={() => void clerk.signOut({ redirectUrl: "/sign-in" })}>Sign out</TextButton>
           </span>
         ) : null
@@ -170,17 +154,13 @@ export function ChooseOrganization() {
       {error ? <FormAlert>{error}</FormAlert> : null}
 
       {loading || path === null ? (
-        <div className="flex h-40 items-center justify-center text-ink-3">
+        <div className="flex h-40 items-center justify-center text-ink-3" role="status">
           <Spinner />
+          <span className="sr-only">Loading your workspaces</span>
         </div>
       ) : (
         <>
-          <div
-            role="tablist"
-            aria-label="Join or create a workspace"
-            className="auth-rise mb-6 grid grid-cols-2 gap-1 rounded-full border-[1.5px] border-line-2 bg-surface p-1"
-            style={{ ["--d" as string]: "60ms" }}
-          >
+          <div role="tablist" aria-label="Join or create a workspace" className="mb-6 grid grid-cols-2 gap-1 rounded-ctl bg-bg-2 p-1">
             {(
               [
                 ["join", "Join a team", joinable],
@@ -196,15 +176,15 @@ export function ChooseOrganization() {
                   setPath(key);
                   setError(null);
                 }}
-                className={`inline-flex h-10 items-center justify-center gap-2 rounded-full text-[14px] font-semibold transition-colors focus-visible:!rounded-full ${
-                  path === key ? "bg-[var(--doodle-ink)] text-[#fffaf0]" : "text-ink-3 hover:text-ink"
+                className={`inline-flex h-10 items-center justify-center gap-2 rounded-ctl px-2 text-[14px] font-semibold transition-[background-color,color,box-shadow] duration-150 ${
+                  path === key ? "bg-surface text-ink shadow-warm-1" : "text-ink-3 hover:text-ink"
                 }`}
               >
-                {label}
+                <span className="truncate">{label}</span>
                 {count ? (
                   <span
-                    className={`grid h-5 min-w-[20px] place-items-center rounded-full px-1.5 text-[11px] tabular-nums ${
-                      path === key ? "bg-signal text-white" : "bg-bg-2 text-ink-2"
+                    className={`grid h-5 min-w-[20px] place-items-center rounded-full px-1.5 text-[12.5px] tabular-nums ${
+                      path === key ? "bg-signal-soft text-signal-ink" : "bg-surface text-ink-3"
                     }`}
                   >
                     {count}
@@ -215,13 +195,13 @@ export function ChooseOrganization() {
           </div>
 
           {path === "join" ? (
-            <div role="tabpanel" className="auth-rise space-y-3" style={{ ["--d" as string]: "100ms" }}>
+            <div role="tabpanel" className="space-y-2.5">
               {memberships.map((m) => (
                 <OrgRow
                   key={m.id}
                   name={m.organization.name}
                   imageUrl={m.organization.hasImage ? m.organization.imageUrl : undefined}
-                  meta={`You're a ${m.role.replace(/^org:/, "")} · ${m.organization.membersCount} member${m.organization.membersCount === 1 ? "" : "s"}`}
+                  meta={`${m.role.replace(/^org:/, "").replace(/^\w/, (c) => c.toUpperCase())}, ${m.organization.membersCount} member${m.organization.membersCount === 1 ? "" : "s"}`}
                   action="Continue"
                   busy={busy === m.id}
                   disabled={!!busy}
@@ -258,7 +238,7 @@ export function ChooseOrganization() {
                     key={s.id}
                     name={s.publicOrganizationData.name}
                     imageUrl={s.publicOrganizationData.hasImage ? s.publicOrganizationData.imageUrl : undefined}
-                    meta={requested ? "Requested · waiting for an admin" : `Matches your ${email.split("@")[1] ?? "email"} address`}
+                    meta={requested ? "Requested, waiting for an admin" : `Matches your ${email.split("@")[1] ?? "email"} address`}
                     action={requested ? "Requested" : "Ask to join"}
                     busy={busy === s.id}
                     disabled={!!busy || requested}
@@ -279,22 +259,18 @@ export function ChooseOrganization() {
               })}
 
               {joinable === 0 ? (
-                <div className="rounded-[20px] border-[1.5px] border-dashed border-line-2 bg-surface/70 p-5">
-                  <div className="flex items-start gap-4">
-                    <span className="block h-14 w-14 shrink-0 -rotate-3 overflow-hidden rounded-full border-[2px] border-[var(--doodle-ink)]">
-                      <Doodle seed="waiting-room" className="block h-full w-full" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-[15.5px] font-semibold text-ink">No invitations yet</p>
-                      <p className="mt-1 text-[14px] leading-relaxed text-ink-3">
-                        Ask an admin of your team&rsquo;s workspace to invite this email. If your company has verified
-                        its email domain, workspaces you can ask to join show up here on their own.
-                      </p>
-                    </div>
-                  </div>
+                <div className="rounded-card border border-line bg-surface-2 p-5">
+                  <p className="text-[15.5px] font-semibold text-ink">No invitations yet</p>
+                  <p className="mt-1 text-[14px] leading-relaxed text-ink-3">
+                    Ask an admin of your team&rsquo;s workspace to invite this email. If your company has verified its
+                    email domain, workspaces you can ask to join show up here on their own.
+                  </p>
                   <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="max-w-full"
+                      aria-label={copied ? "Email copied" : `Copy ${email}`}
                       onClick={async () => {
                         try {
                           await navigator.clipboard.writeText(email);
@@ -304,45 +280,37 @@ export function ChooseOrganization() {
                           setCopied(false);
                         }
                       }}
-                      className="inline-flex h-9 max-w-full items-center gap-2 rounded-full border-[1.5px] border-line-2 bg-surface px-3.5 text-[13.5px] font-semibold text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
                     >
+                      {copied ? <Check size={15} aria-hidden /> : <Copy size={15} aria-hidden />}
                       <span className="truncate">{copied ? "Copied" : email}</span>
-                      {!copied ? <span className="text-ink-3">Copy</span> : null}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={refresh}
-                      className="inline-flex h-9 items-center rounded-full px-3 text-[13.5px] font-semibold text-ink-3 transition-colors hover:text-ink"
-                    >
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={refresh}>
                       Check again
-                    </button>
+                    </Button>
+                    <span className="sr-only" aria-live="polite">
+                      {copied ? "Email copied" : ""}
+                    </span>
                   </div>
                 </div>
               ) : null}
 
-              <p className="pt-2 text-center text-[14px] text-ink-3">
-                Not here?{" "}
-                <TextButton onClick={() => setPath("create")}>Start a workspace instead</TextButton>
+              <p className="pt-3 text-center text-[14px] text-ink-3">
+                Not here? <TextButton onClick={() => setPath("create")}>Start a workspace instead</TextButton>
               </p>
             </div>
           ) : (
-            <form role="tabpanel" onSubmit={create} noValidate className="auth-rise space-y-5" style={{ ["--d" as string]: "100ms" }}>
+            <form role="tabpanel" onSubmit={create} noValidate className="space-y-5">
               {/* the workspace being named, with its first seat taken */}
-              <div className="rounded-[20px] border-[1.5px] border-line-2 bg-surface p-4">
-                <p className="font-hand -rotate-1 truncate text-[28px] font-bold leading-tight text-ink">
-                  {name.trim() || "Your workspace"}
-                </p>
+              <div className="rounded-card border border-line bg-surface-2 p-4" aria-hidden>
+                <p className="display truncate text-[24px] leading-tight">{name.trim() || "Your workspace"}</p>
                 <div className="mt-3 flex items-center">
-                  <span className="block h-10 w-10 overflow-hidden rounded-full border-[2px] border-[var(--doodle-ink)] shadow-[0_0_0_3px_var(--signal)]">
-                    <Doodle key={youSeed} seed={youSeed} className="block h-full w-full" />
-                  </span>
+                  <Avatar name="You" seed={youSeed} size="md" ring />
                   {[0, 1, 2].map((i) => (
                     <span
                       key={i}
-                      className="-ml-1.5 grid h-10 w-10 place-items-center rounded-full border-[2px] border-dashed border-line-2 bg-bg text-[18px] font-semibold text-ink-3 first:ml-2"
-                      aria-hidden
+                      className="-ml-1.5 grid h-9 w-9 place-items-center rounded-full border border-dashed border-line-2 bg-surface text-ink-4 first-of-type:ml-1.5"
                     >
-                      +
+                      <Plus size={13} weight="bold" />
                     </span>
                   ))}
                   <span className="ml-3 text-[13px] text-ink-3">You, then your team</span>
@@ -362,8 +330,7 @@ export function ChooseOrganization() {
               </PrimaryButton>
               {joinable > 0 ? (
                 <p className="text-center text-[14px] text-ink-3">
-                  Your team already has one?{" "}
-                  <TextButton onClick={() => setPath("join")}>Join it instead</TextButton>
+                  Your team already has one? <TextButton onClick={() => setPath("join")}>Join it instead</TextButton>
                 </p>
               ) : null}
             </form>
@@ -398,25 +365,26 @@ function OrgRow({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`group flex w-full items-center gap-4 rounded-[20px] border-[1.5px] bg-surface p-3.5 pr-4 text-left transition-colors duration-150 enabled:hover:bg-bg-2 disabled:cursor-not-allowed disabled:opacity-75 ${
-        highlight ? "border-signal" : "border-line-2 enabled:hover:border-ink-3"
+      aria-busy={busy || undefined}
+      className={`group flex min-h-[64px] w-full items-center gap-3.5 rounded-card border bg-surface p-3 pr-4 text-left transition-colors duration-150 enabled:hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-70 ${
+        highlight ? "border-signal-line" : "border-line enabled:hover:border-line-2"
       }`}
     >
       {imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-[14px] object-cover" />
+        <img src={imageUrl} alt="" className="h-11 w-11 shrink-0 rounded-ctl object-cover" />
       ) : (
-        <span className="block h-12 w-12 shrink-0 overflow-hidden rounded-[14px] border-[1.5px] border-[var(--doodle-ink)]">
-          <Doodle seed={`org:${name.toLowerCase()}`} className="block h-full w-full scale-[1.15]" />
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-ctl bg-tint-peach font-display text-[20px] font-medium text-ink" aria-hidden>
+          {name.trim().charAt(0).toUpperCase() || "W"}
         </span>
       )}
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[16px] font-semibold tracking-[-0.01em] text-ink">{name}</span>
-        <span className={`mt-0.5 block truncate text-[13px] ${highlight ? "text-signal-deep" : "text-ink-3"}`}>{meta}</span>
+        <span className="block truncate text-[16px] font-semibold text-ink">{name}</span>
+        <span className={`mt-0.5 block truncate text-[13px] ${highlight ? "text-signal-ink" : "text-ink-3"}`}>{meta}</span>
       </span>
-      <span className="inline-flex shrink-0 items-center gap-1.5 text-[14px] font-semibold text-ink-2 transition-colors group-hover:text-ink">
+      <span className="inline-flex shrink-0 items-center gap-1 text-[14px] font-semibold text-ink-2 transition-colors group-hover:text-ink">
         {busy ? <Spinner /> : action}
-        {!busy && !disabled ? <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" /> : null}
+        {!busy && !disabled ? <CaretRight size={14} weight="bold" aria-hidden /> : null}
       </span>
     </button>
   );

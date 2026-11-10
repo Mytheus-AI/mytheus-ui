@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "r
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth, useClerk, useSignUp } from "@clerk/nextjs";
 import { AuthShell, type StageCopy } from "./AuthShell";
-import type { SceneProps } from "./DoodleTable";
+import { LinkButton } from "@/components/ui/Button";
 import { DoodlePicker } from "@/components/ui/DoodlePicker";
 import { isDoodleSeed, randomDoodleSeed } from "@/lib/doodle";
 import {
@@ -36,45 +36,20 @@ import { SsoCallback } from "./SsoCallback";
 
 type Step = "start" | "verify" | "continue" | "sso-callback";
 
+/* The brand panel's headline on each step. The drawing (a fresh line) stays the same. */
 const STAGE: Record<Exclude<Step, "sso-callback">, StageCopy> = {
   start: {
-    kicker: "Start free",
-    title: "Every meeting,",
-    accent: "on repeat.",
-    blurb: "A personal agent for every person in the room. It listens, proposes, and remembers across meetings.",
+    title: "Your first meeting starts the line.",
+    lead: "A personal agent for every person in the room. It listens, proposes, and remembers across meetings.",
   },
   verify: {
-    kicker: "One last step",
-    title: "Check your inbox.",
-    accent: "We’ll wait.",
-    blurb: "Confirming your email keeps your meetings, and everything your agent remembers, tied to you.",
+    title: "Confirm your email, then you’re in.",
+    lead: "Confirming your email keeps your meetings, and everything your agent remembers, tied to you.",
   },
   continue: {
-    kicker: "Almost there",
-    title: "A few details",
-    accent: "and you’re in.",
-    blurb: "Your agent works better when it knows who it's working for.",
+    title: "A few details and you’re in.",
+    lead: "Your agent works better when it knows who it's working for.",
   },
-};
-
-const SCENE_LINES: Record<Step, SceneProps["lines"]> = {
-  start: [
-    { text: "Who's joining us today?" },
-    { text: "Saved them a seat." },
-    { text: "Let's welcome the new teammate.", decision: true },
-    { text: "Their agent's already listening." },
-  ],
-  verify: [
-    { text: "Did the code arrive?" },
-    { text: "Check the inbox, then spam." },
-    { text: "Email checked. Come on in.", decision: true },
-  ],
-  continue: [
-    { text: "Almost there." },
-    { text: "Just a couple of details." },
-    { text: "Then you're in.", decision: true },
-  ],
-  "sso-callback": undefined,
 };
 
 export function SignUpFlow({ segments }: { segments: string[] }) {
@@ -114,25 +89,16 @@ export function SignUpFlow({ segments }: { segments: string[] }) {
 
   const qs = params.toString() ? `?${params.toString()}` : "";
   const go = (path: string) => router.push(`${path}${qs}`);
-  const scene: SceneProps = {
-    you: isDoodleSeed(doodle) ? doodle : "empty",
-    lines: SCENE_LINES[step],
-    note: step === "start" ? "Welcome the new teammate" : "Email checked",
-  };
-
   return (
     <AuthShell
       stage={STAGE[step]}
-      scene={scene}
+      art="sign-up"
       aside={
         <span className="inline-flex items-center gap-3">
           <span className="hidden whitespace-nowrap md:inline">Have an account?</span>
-          <Link
-            href={`/sign-in${qs}`}
-            className="inline-flex h-10 items-center whitespace-nowrap rounded-full border-[1.5px] border-line-2 bg-surface px-4 text-[14px] font-semibold text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
-          >
+          <LinkButton href={`/sign-in${qs}`} variant="outline" size="sm" className="h-10">
             Sign in
-          </Link>
+          </LinkButton>
         </span>
       }
     >
@@ -218,16 +184,13 @@ function StartStep({ go, doodle, onDoodle }: { go: (p: string) => void; doodle: 
 
   return (
     <>
-      <StepHeader kicker="Create your account" title="Pull up a chair.">
+      <StepHeader title="Create your account">
         Free to start. Your agent proposes; nothing is saved until you confirm it.
       </StepHeader>
 
       {errors.form ? <FormAlert>{errors.form}</FormAlert> : null}
 
-      <div
-        className="auth-rise mb-6 rounded-[20px] border-[1.5px] border-dashed border-line-2 bg-surface/70 px-4 py-4"
-        style={{ ["--d" as string]: "40ms" }}
-      >
+      <div className="mb-6 rounded-card border border-line bg-surface-2 px-4 py-3.5">
         {doodle ? (
           <DoodlePicker value={doodle} onChange={onDoodle} size="sm" label="This is you. Deal again if it isn't." />
         ) : (
@@ -235,7 +198,7 @@ function StartStep({ go, doodle, onDoodle }: { go: (p: string) => void; doodle: 
         )}
       </div>
 
-      <div className="auth-rise" style={{ ["--d" as string]: "80ms" }}>
+      <div>
         <GoogleButton onClick={google} loading={busy === "google"} disabled={!!busy}>
           Sign up with Google
         </GoogleButton>
@@ -243,11 +206,11 @@ function StartStep({ go, doodle, onDoodle }: { go: (p: string) => void; doodle: 
       <OrDivider>or with email</OrDivider>
 
       <form onSubmit={submit} noValidate className="space-y-4">
-        <div className="auth-rise grid grid-cols-2 gap-3" style={{ ["--d" as string]: "140ms" }}>
+        <div className="grid grid-cols-2 gap-3">
           <TextField label="First name" autoComplete="given-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} error={errors.firstName} autoFocus />
           <TextField label="Last name" autoComplete="family-name" value={lastName} onChange={(e) => setLastName(e.target.value)} error={errors.lastName} />
         </div>
-        <div className="auth-rise space-y-4" style={{ ["--d" as string]: "190ms" }}>
+        <div className="space-y-4">
           <TextField
             label="Work email"
             type="email"
@@ -270,20 +233,20 @@ function StartStep({ go, doodle, onDoodle }: { go: (p: string) => void; doodle: 
         </div>
 
         {/* Clerk's bot protection mounts its widget here when it decides to show one. */}
-        <div id="clerk-captcha" className="flex justify-center rounded-2xl border border-line bg-surface p-3" />
+        <div id="clerk-captcha" className="flex justify-center rounded-card border border-line bg-surface p-3" />
 
-        <div className="auth-rise pt-3" style={{ ["--d" as string]: "250ms" }}>
+        <div className="pt-3">
           <PrimaryButton loading={busy === "form"} disabled={busy === "google"}>
             Create account
           </PrimaryButton>
         </div>
-        <p className="auth-rise text-center text-[13px] leading-relaxed text-ink-3" style={{ ["--d" as string]: "300ms" }}>
+        <p className="text-center text-[13px] leading-relaxed text-ink-3">
           By creating an account you agree to our{" "}
-          <Link href="/terms" className="link-underline text-ink-2">
+          <Link href="/terms" className="rounded-[4px] font-medium text-ink-2 underline decoration-line-2 underline-offset-4 transition-colors hover:decoration-signal-line">
             Terms
           </Link>{" "}
           and{" "}
-          <Link href="/privacy" className="link-underline text-ink-2">
+          <Link href="/privacy" className="rounded-[4px] font-medium text-ink-2 underline decoration-line-2 underline-offset-4 transition-colors hover:decoration-signal-line">
             Privacy Policy
           </Link>
           .
@@ -337,8 +300,8 @@ function VerifyStep({ go }: { go: (p: string) => void }) {
           e.preventDefault();
           void verify();
         }}
-        className="auth-rise space-y-7"
-        style={{ ["--d" as string]: "100ms" }}
+        className="space-y-7"
+       
       >
         <CodeInput value={code} onChange={setCode} onComplete={(v) => void verify(v)} error={error} disabled={busy} />
         <PrimaryButton loading={busy} disabled={code.length < 6}>
@@ -430,7 +393,7 @@ function ContinueStep({ go }: { go: (p: string) => void }) {
         )}
       </StepHeader>
       {errors.form ? <FormAlert>{errors.form}</FormAlert> : null}
-      <form onSubmit={submit} noValidate className="auth-rise space-y-4" style={{ ["--d" as string]: "100ms" }}>
+      <form onSubmit={submit} noValidate className="space-y-4">
         {needs.firstName || needs.lastName ? (
           <div className="grid grid-cols-2 gap-3">
             {needs.firstName ? <TextField label="First name" autoComplete="given-name" value={values.firstName} onChange={set("firstName")} error={errors.firstName} autoFocus /> : null}
@@ -445,27 +408,27 @@ function ContinueStep({ go }: { go: (p: string) => void }) {
           </div>
         ) : null}
         {needs.legal ? (
-          <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-line bg-surface p-4 text-[14px] leading-relaxed text-ink-2">
+          <label className="flex cursor-pointer items-start gap-3 rounded-ctl border border-line bg-surface-2 p-4 text-[14px] leading-relaxed text-ink-2">
             <input
               type="checkbox"
               checked={legal}
               onChange={(e) => setLegal(e.target.checked)}
-              className="mt-0.5 h-[18px] w-[18px] shrink-0 accent-[var(--signal)]"
+              className="mt-0.5 h-[18px] w-[18px] shrink-0 accent-signal"
             />
             <span>
               I agree to the{" "}
-              <Link href="/terms" className="link-underline text-ink">
+              <Link href="/terms" className="rounded-[4px] font-medium text-ink underline decoration-line-2 underline-offset-4 transition-colors hover:decoration-signal-line">
                 Terms
               </Link>{" "}
               and{" "}
-              <Link href="/privacy" className="link-underline text-ink">
+              <Link href="/privacy" className="rounded-[4px] font-medium text-ink underline decoration-line-2 underline-offset-4 transition-colors hover:decoration-signal-line">
                 Privacy Policy
               </Link>
               .
             </span>
           </label>
         ) : null}
-        <div id="clerk-captcha" className="flex justify-center rounded-2xl border border-line bg-surface p-3" />
+        <div id="clerk-captcha" className="flex justify-center rounded-card border border-line bg-surface p-3" />
         <div className="pt-3">
           <PrimaryButton loading={busy}>Continue</PrimaryButton>
         </div>

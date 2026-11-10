@@ -1,314 +1,168 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
 import Link from "next/link";
-import { PageShell } from "@/components/marketing/PageShell";
+import { Graph, Key, ShieldCheck, SlidersHorizontal } from "@phosphor-icons/react/dist/ssr";
 import { PageHero } from "@/components/marketing/PageHero";
-import { PillCTA, IconChip, Eyebrow } from "@/components/landing/ui";
-import { Reveal, Stagger, StaggerItem } from "@/components/landing/motion";
+import { Loop } from "@/components/site/Loop";
+import { Chip, Section, SectionHead, Stage, Win, WinBar, Wrap } from "@/components/site/Section";
+import { CloseCTA } from "@/components/site/CloseCTA";
+import { Flow } from "@/components/company/Flow";
+import { FactList, IconFacts } from "@/components/company/Facts";
 
-export const metadata: Metadata = { title: "Enterprise — Mytheus" };
+export const metadata: Metadata = { title: "Enterprise | Mytheus" };
 
-/* ------------------------------------------------------------------ */
-/*  Inline glyphs — stroke uses currentColor so they inherit the chip  */
-/*  colour. 24×24, 1.6 stroke, rounded joins to match the brand.       */
-/* ------------------------------------------------------------------ */
+const CONTACT = "mailto:enterprise@reprise.ai";
 
-type IconProps = { className?: string };
+const VALUES = [
+  {
+    icon: <Graph />,
+    title: "Shared memory across teams",
+    body: "Agents carry context between meetings and between teams. A decision on Monday becomes context on Friday, org-wide, not siloed per person.",
+  },
+  {
+    icon: <SlidersHorizontal />,
+    title: "Admin and roles control",
+    body: "A central admin console with roles and permissions, so you decide who can create, join, and review what, across every workspace.",
+  },
+  {
+    icon: <ShieldCheck />,
+    title: "Security and data residency",
+    body: "Encryption in transit and at rest, strict per-tenant isolation, and data-residency options so each organization's meetings stay its own.",
+  },
+  {
+    icon: <Key />,
+    title: "SSO and provisioning",
+    body: "SSO via SAML plus SCIM provisioning. Connect your identity provider and deprovision instantly when someone leaves.",
+  },
+];
 
-function MemoryIcon({ className = "h-5 w-5" }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
-      <circle cx="6" cy="6" r="2.4" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="18" cy="6" r="2.4" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="12" cy="18" r="2.4" stroke="currentColor" strokeWidth="1.6" />
-      <path
-        d="M7.6 7.7 11 15.7m5.4-8-3.4 8M8.2 6h7.6"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function AdminIcon({ className = "h-5 w-5" }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
-      <path
-        d="M5 7h9M5 12h14M5 17h9"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-      <circle cx="17.5" cy="7" r="2" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="17.5" cy="17" r="2" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  );
-}
-
-function ShieldIcon({ className = "h-5 w-5" }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
-      <path
-        d="M12 3 5 5.5v5.2c0 4.3 2.9 7.5 7 9.3 4.1-1.8 7-5 7-9.3V5.5L12 3Z"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinejoin="round"
-      />
-      <path
-        d="m9.2 12 2 2 3.6-3.8"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function KeyIcon({ className = "h-5 w-5" }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
-      <circle cx="8" cy="8" r="3.6" stroke="currentColor" strokeWidth="1.6" />
-      <path
-        d="m10.6 10.6 7 7m-2.4-.2 1.7-1.7m-3.7-3.7 1.9 1.9"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function CheckIcon({ className = "h-4 w-4" }: IconProps) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
-      <path
-        d="m3.5 8.5 2.8 2.8L12.5 5"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Small presentational helpers                                        */
-/* ------------------------------------------------------------------ */
-
-function ValueCard({
-  icon,
-  title,
-  body,
-}: {
-  icon: ReactNode;
-  title: string;
-  body: string;
-}) {
-  return (
-    <StaggerItem className="h-full">
-      <div className="card-interactive flex h-full flex-col rounded-card border border-line bg-white p-7">
-        <IconChip>{icon}</IconChip>
-        <h3 className="mt-5 text-[18px] font-medium tracking-tight text-ink">
-          {title}
-        </h3>
-        <p className="mt-2 text-[15px] leading-relaxed text-ink-3">{body}</p>
-      </div>
-    </StaggerItem>
-  );
-}
-
-function TrustPoint({ title, body }: { title: string; body: string }) {
-  return (
-    <StaggerItem className="h-full">
-      <div className="flex h-full gap-3.5">
-        <span className="mt-0.5 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-signal-soft text-signal-deep">
-          <CheckIcon />
-        </span>
-        <div>
-          <h3 className="text-[15px] font-medium tracking-tight text-ink">
-            {title}
-          </h3>
-          <p className="mt-1.5 text-[14px] leading-relaxed text-ink-3">{body}</p>
-        </div>
-      </div>
-    </StaggerItem>
-  );
-}
-
-function RolloutStep({
-  n,
-  title,
-  body,
-}: {
-  n: string;
-  title: string;
-  body: string;
-}) {
-  return (
-    <StaggerItem className="h-full">
-      <div className="flex h-full flex-col rounded-card border border-line bg-white p-7">
-        <span className="font-mono text-[13px] tracking-[0.18em] text-signal">
-          {n}
-        </span>
-        <h3 className="mt-4 text-[17px] font-medium tracking-tight text-ink">
-          {title}
-        </h3>
-        <p className="mt-2 text-[15px] leading-relaxed text-ink-3">{body}</p>
-      </div>
-    </StaggerItem>
-  );
-}
-
-/* ------------------------------------------------------------------ */
+const TRUST = [
+  {
+    term: "Tenant isolation by design",
+    detail: "Every organization's data is partitioned and scoped server-side, never co-mingled and never filtered in the browser.",
+  },
+  {
+    term: "Encrypted in transit and at rest",
+    detail: "Traffic is encrypted end to end and stored encrypted, with access scoped to the people you provision.",
+  },
+  {
+    term: "Confirm before write",
+    detail: "Agents draft; people decide. Nothing becomes a durable decision or action until a participant confirms it.",
+  },
+  {
+    term: "Compliance in progress",
+    detail: "We're actively working toward SOC 2, with audit-minded logging and least-privilege access built in from the start.",
+  },
+];
 
 export default function Page() {
   return (
-    <PageShell>
+    <>
       <PageHero
         eyebrow="Enterprise"
-        title="Mytheus for your whole organization."
-        blurb="Give every team a personal meeting agent — with the security, control, and shared memory a large organization needs."
-        ctaHref="/dashboard"
-        ctaLabel="Talk to sales"
+        title={
+          <>
+            Mytheus for your whole <Loop>organization.</Loop>
+          </>
+        }
+        blurb="Give every team a personal meeting agent, with the security, control, and shared memory a large organization needs."
+        ctaHref={CONTACT}
+        ctaLabel="Talk to the team"
+        secondaryHref="/security"
+        secondaryLabel="Read the security overview"
       />
 
-      {/* Value props */}
-      <section className="mx-auto max-w-[1340px] px-6 py-20 sm:px-8 sm:py-24">
-        <Reveal>
-          <Eyebrow className="text-signal">Built for scale</Eyebrow>
-          <h2 className="display mt-4 max-w-[18ch] text-[clamp(2rem,4vw,3.2rem)]">
-            Everything an organization needs to run on Mytheus.
-          </h2>
-        </Reveal>
-
-        <Stagger className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <ValueCard
-            icon={<MemoryIcon />}
-            title="Shared memory across teams"
-            body="Agents carry context between meetings and between teams — a decision on Monday becomes context on Friday, org-wide, not siloed per person."
+      <Section cross>
+        <Wrap>
+          <SectionHead
+            title="Everything an organization needs to run on Mytheus."
+            lead="One meeting platform for every team, with the identity, control and memory that only matter once there are hundreds of people in it."
           />
-          <ValueCard
-            icon={<AdminIcon />}
-            title="Admin & roles control"
-            body="Central admin console with roles and permissions, so you decide who can create, join, and review what — across every workspace."
-          />
-          <ValueCard
-            icon={<ShieldIcon />}
-            title="Security & data residency"
-            body="Encryption in transit and at rest, strict per-tenant isolation, and data-residency options so each organization's meetings stay its own."
-          />
-          <ValueCard
-            icon={<KeyIcon />}
-            title="SSO & provisioning"
-            body="SSO via SAML plus SCIM provisioning — connect your identity provider and deprovision instantly when someone leaves."
-          />
-        </Stagger>
-      </section>
+          <IconFacts items={VALUES} cols={4} />
+        </Wrap>
+      </Section>
 
-      {/* Security & control band */}
-      <section className="mx-auto max-w-[1340px] px-6 pb-20 sm:px-8 sm:pb-24">
-        <div className="rounded-[22px] border border-line bg-bg-3 p-8 sm:p-12">
-          <Reveal>
-            <Eyebrow className="text-signal">Security &amp; control</Eyebrow>
-            <h2 className="display mt-4 max-w-[20ch] text-[clamp(1.8rem,3.4vw,2.8rem)]">
-              Your meetings stay yours.
-            </h2>
-            <p className="mt-5 max-w-[58ch] text-[17px] leading-relaxed text-ink-3">
-              Mytheus is its own meeting platform — there are no third-party
-              meeting tools in the loop, so the data never leaves your tenant for
-              someone else&apos;s. The agent never writes silently: every decision
-              and action waits for a person to confirm.
-            </p>
-          </Reveal>
-
-          <Stagger className="mt-10 grid gap-x-10 gap-y-7 sm:grid-cols-2">
-            <TrustPoint
-              title="Tenant isolation by design"
-              body="Every organization's data is partitioned and scoped server-side — never co-mingled and never filtered in the browser."
-            />
-            <TrustPoint
-              title="Encrypted in transit and at rest"
-              body="Traffic is encrypted end to end and stored encrypted, with access scoped to the people you provision."
-            />
-            <TrustPoint
-              title="Confirm-before-write"
-              body="Agents draft; people decide. Nothing becomes a durable decision or action until a participant confirms it."
-            />
-            <TrustPoint
-              title="Compliance in progress"
-              body="We're actively working toward SOC 2, with audit-minded logging and least-privilege access baked in from the start."
-            />
-          </Stagger>
-
-          <Reveal delay={120}>
+      {/* the mechanism: nothing is written until a person confirms it */}
+      <Section cross>
+        <Wrap>
+          <SectionHead
+            title="Your meetings stay yours."
+            lead="Mytheus is its own meeting platform, so there are no third-party meeting tools in the loop and the data never leaves your tenant for someone else's. And the agent never writes silently."
+          />
+          <Stage tone="ochre">
+            <Win>
+              <WinBar title="Confirm before write" meta="How a decision becomes memory" right={<Chip tone="ok">Nothing saved silently</Chip>} />
+              <div className="px-[clamp(20px,3vw,32px)] py-8">
+                <Flow
+                  steps={[
+                    {
+                      tag: <Chip tone="accent">Decision</Chip>,
+                      title: "Your agent drafts",
+                      body: "It files a decision or action the moment it is said in the meeting.",
+                    },
+                    {
+                      title: "You review",
+                      body: "Edit or dismiss anything first. A draft is only a suggestion.",
+                    },
+                    {
+                      title: "You confirm",
+                      body: "Nothing becomes a durable decision or action until a participant confirms it.",
+                    },
+                    {
+                      tag: <Chip tone="ok">Saved</Chip>,
+                      title: "It joins shared memory",
+                      body: "Then it is kept in your organization's memory, ready as context for the next meeting.",
+                    },
+                  ]}
+                />
+              </div>
+            </Win>
+          </Stage>
+          <FactList items={TRUST} className="mt-[clamp(40px,5vw,64px)]" />
+          <p className="mt-7">
             <Link
               href="/security"
-              className="link-underline mt-9 inline-flex items-center gap-1.5 text-[15px] font-medium text-signal-deep"
+              className="font-semibold text-ink underline decoration-signal-line decoration-2 underline-offset-[6px] hover:decoration-signal"
             >
               See our security overview
-              <span aria-hidden>→</span>
             </Link>
-          </Reveal>
-        </div>
-      </section>
+          </p>
+        </Wrap>
+      </Section>
 
-      {/* Rollout */}
-      <section className="mx-auto max-w-[1340px] px-6 pb-20 sm:px-8 sm:pb-24">
-        <Reveal>
-          <Eyebrow className="text-signal">Rollout</Eyebrow>
-          <h2 className="display mt-4 max-w-[18ch] text-[clamp(1.8rem,3.4vw,2.8rem)]">
-            From pilot to whole organization.
-          </h2>
-        </Reveal>
+      <Section>
+        <Wrap>
+          <SectionHead
+            title="From pilot to whole organization."
+            lead="Three steps, in the order teams take them. Each one stands on the one before."
+          />
+          <Flow
+            steps={[
+              {
+                title: "Connect your identity",
+                body: "Wire up SSO and SCIM so the right people are in on day one, and out the moment they leave.",
+              },
+              {
+                title: "Set roles and guardrails",
+                body: "Define roles, permissions, and data residency in the admin console so each team works inside the boundaries you set.",
+              },
+              {
+                title: "Scale shared memory",
+                body: "As more teams adopt Mytheus, their agents build on each other's context, turning every meeting into compounding organizational memory.",
+              },
+            ]}
+          />
+        </Wrap>
+      </Section>
 
-        <Stagger className="mt-12 grid gap-5 sm:grid-cols-3">
-          <RolloutStep
-            n="01"
-            title="Connect your identity"
-            body="Wire up SSO and SCIM so the right people are in on day one — and out the moment they leave."
-          />
-          <RolloutStep
-            n="02"
-            title="Set roles & guardrails"
-            body="Define roles, permissions, and data-residency in the admin console so each team works inside the boundaries you set."
-          />
-          <RolloutStep
-            n="03"
-            title="Scale shared memory"
-            body="As more teams adopt Mytheus, their agents build on each other's context — turning every meeting into compounding organizational memory."
-          />
-        </Stagger>
-      </section>
-
-      {/* Closing CTA */}
-      <section className="mx-auto max-w-[1340px] px-6 pb-24 sm:px-8 sm:pb-28">
-        <div className="mesh-field grain relative overflow-hidden rounded-[22px] border border-line px-8 py-16 text-center sm:px-12 sm:py-20">
-          <Reveal>
-            <h2 className="display display-tight mx-auto max-w-[22ch] text-[clamp(2.2rem,5vw,3.8rem)]">
-              Bring Mytheus to every team.
-            </h2>
-            <p className="mx-auto mt-6 max-w-[52ch] text-[18px] leading-relaxed text-ink-3">
-              Tell us about your organization and we&apos;ll help you plan a
-              secure, org-wide rollout.
-            </p>
-          </Reveal>
-          <Reveal delay={120}>
-            <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <PillCTA href="/dashboard">Talk to sales</PillCTA>
-              <a
-                href="mailto:enterprise@reprise.ai"
-                className="link-underline text-[15px] font-medium text-ink-2"
-              >
-                enterprise@reprise.ai
-              </a>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-    </PageShell>
+      <CloseCTA
+        title="Bring Mytheus to every team."
+        lead="Tell us about your organization and we'll help you plan a secure, org-wide rollout."
+        ctaHref={CONTACT}
+        ctaLabel="Talk to the team"
+        secondaryHref="/pricing"
+        secondaryLabel="Compare plans"
+        note="Or write to enterprise@reprise.ai."
+      />
+    </>
   );
 }

@@ -1,10 +1,10 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { Sparkle } from "@phosphor-icons/react";
+import { CheckCircle } from "@phosphor-icons/react";
 
-/* The call's toast, ported from the meeting design's ToastContext: one dark pill at the bottom
-   centre that confirms a local action ("Meeting link copied"). Only the latest message shows. */
+/* The call's toast: one dark pill at the top centre (clear of the control bar and the chat
+   composer) that confirms a local action ("Meeting link copied"). Only the latest message shows. */
 
 type Toast = (message: string) => void;
 
@@ -28,9 +28,7 @@ export function CallToastProvider({ children }: { children: ReactNode }) {
       <div className="toast-host" role="status" aria-live="polite">
         {message ? (
           <div className="toast" key={message.id}>
-            <span className="spark" aria-hidden>
-              <Sparkle size={13} weight="fill" />
-            </span>
+            <CheckCircle size={18} weight="fill" aria-hidden />
             {message.text}
           </div>
         ) : null}

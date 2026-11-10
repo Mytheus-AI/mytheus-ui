@@ -66,7 +66,7 @@ export function SidePanel({
           tabIndex={-1}
           aria-label={closeLabel}
           onClick={onClose}
-          className="fixed inset-0 z-30 bg-black/25 lg:hidden"
+          className="fixed inset-0 z-30 bg-[rgba(26,22,18,0.45)] lg:hidden"
         />
       )}
       <aside
@@ -74,7 +74,7 @@ export function SidePanel({
         aria-modal="false"
         aria-label={label}
         aria-hidden={!open}
-        className={`fixed inset-y-0 right-0 z-40 flex w-full flex-col border-l border-line bg-surface shadow-[-24px_0_48px_-32px_rgba(40,30,20,0.35)] transition-[transform,visibility] duration-300 ease-out motion-reduce:transition-none sm:w-[440px] ${
+        className={`fixed inset-y-0 right-0 z-40 flex w-full flex-col border-l border-line bg-surface shadow-warm-3 transition-[transform,visibility] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none sm:w-[440px] ${
           open ? "visible translate-x-0" : "invisible translate-x-full"
         }`}
       >
@@ -85,12 +85,12 @@ export function SidePanel({
             type="button"
             onClick={onClose}
             aria-label={closeLabel}
-            className="ml-auto grid h-10 w-10 shrink-0 place-items-center rounded-pill text-ink-2 transition-colors hover:bg-bg-2 hover:text-ink active:bg-bg-3"
+            className="ml-auto grid h-10 w-10 shrink-0 place-items-center rounded-ctl text-ink-2 transition-colors hover:bg-bg-2 hover:text-ink active:bg-bg-3"
           >
             <X size={18} aria-hidden />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-5 py-6 sm:px-6">{children}</div>
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-6 sm:px-6">{children}</div>
       </aside>
     </>,
     host,

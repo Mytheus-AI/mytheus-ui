@@ -1,103 +1,106 @@
 /* ================================================================== */
-/*  Auth pages: the sketchbook.                                        */
-/*  Scoped to `.mx-auth` so nothing here leaks into the marketing      */
-/*  site or the app. Type is the app's own pair (Hanken Grotesk for    */
-/*  the interface, Newsreader for titles) so signing in feels like the */
-/*  product you are about to enter, plus Caveat for anything the       */
-/*  doodles "write".                                                   */
+/*  Auth pages (sign-in, sign-up, workspace onboarding, SSO callback). */
+/*  Scoped to `.mx-auth`. Type is the app pair (Hanken Grotesk for the */
+/*  interface, Newsreader for titles). The only drawing is the coral   */
+/*  line on the brand panel: a memory line with beads that draws once  */
+/*  on arrival. Everything else is quiet and still.                    */
 /* ================================================================== */
 
 .mx-auth {
-  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --doodle-ink: #2a2620;
-  --doodle-paper: #fffaf0;
-  --doodle-sheet: #f7f2e7;
-  --doodle-dot: rgba(42, 38, 32, 0.13);
-  --doodle-cup: #f6c9b4;
-  --doodle-pad: #f2e3b3;
-  --doodle-decision: #f8dccd;
-  --doodle-note: #fff3b8;
-  --doodle-tape: #e8a489;
   font-family: var(--font-sans);
 }
 
-.mx-auth .display {
-  font-family: var(--font-newsreader), Georgia, serif;
+/* The peach stage behind the brand illustration (same wash as the marketing hero). */
+.auth-stage {
+  background-image: var(--wash-glow), var(--wash);
+}
+
+/* ---------------- the memory line ---------------- */
+
+.auth-art .art-line {
+  fill: none;
+  stroke: var(--signal-line);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* a meeting that happened: hollow bead on the line */
+.auth-art .art-bead {
+  fill: var(--surface-2);
+  stroke: var(--signal-line);
+  stroke-width: 2.4;
+}
+/* where you are now: a solid bead with a soft halo */
+.auth-art .art-bead-now {
+  fill: var(--signal);
+  stroke: var(--signal-soft);
+  stroke-width: 8;
+  paint-order: stroke;
+}
+/* a meeting that has not happened yet */
+.auth-art .art-bead-ghost {
+  fill: var(--surface);
+  stroke: var(--line-2);
+  stroke-width: 2;
+}
+.auth-art .art-title {
+  font-family: var(--font-display);
+  font-size: 21px;
   font-weight: 500;
-  letter-spacing: -0.025em;
-  line-height: 1.02;
+  letter-spacing: -0.01em;
+  fill: var(--ink);
 }
-.mx-auth .display-tight {
-  line-height: 0.98;
+.auth-art .art-note {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 17px;
+  fill: var(--ink-3);
 }
-.mx-auth .kicker {
+.auth-art .art-strong {
   font-family: var(--font-sans);
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-3);
+  font-size: 16px;
+  font-weight: 600;
+  fill: var(--ink);
 }
 
-.font-hand {
-  font-family: var(--font-hand), "Comic Sans MS", cursive;
-}
-
-/* the sketchbook sheet: a faint dot grid */
-.doodle-sheet {
-  background-color: var(--doodle-sheet);
-  background-image: radial-gradient(var(--doodle-dot) 1.1px, transparent 1.5px);
-  background-size: 22px 22px;
-  background-position: -11px -11px;
-}
-
-/* a speech bubble pops out of the speaker, then settles */
-.doodle-bubble {
-  animation: doodleBubble 0.42s var(--ease-soft) both;
-}
-@keyframes doodleBubble {
-  from {
-    opacity: 0;
-    margin-top: 10px;
-    scale: 0.86;
-  }
-  to {
-    opacity: 1;
-    margin-top: 0;
-    scale: 1;
-  }
-}
-
-/* whoever is talking bobs a little */
-.doodle-talk {
-  animation: doodleTalk 0.9s ease-in-out infinite;
-}
-@keyframes doodleTalk {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-3px);
-  }
-}
-
-/* a pencil ring around the decided words */
-.doodle-circle::after {
-  content: "";
-  position: absolute;
-  inset: -5px -9px -3px -8px;
-  border: 2px solid var(--signal);
-  border-radius: 52% 46% 55% 44% / 58% 50% 52% 46%;
-  transform: rotate(-2.5deg);
-  pointer-events: none;
-}
-
-/* the hand-drawn underline under a headline's accent words */
-.doodle-underline {
+/* Draws once on arrival. `--du` / `--dl` set duration and delay per stroke or bead. */
+.auth-draw {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  animation: doodleDraw 0.8s var(--ease-soft) 0.7s forwards;
+  animation: authLineDraw var(--du, 1.4s) var(--ease-draw) var(--dl, 0s) forwards;
+}
+.auth-appear {
+  opacity: 0;
+  animation: authAppear 0.45s ease var(--dl, 0s) forwards;
+}
+@keyframes authLineDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes authAppear {
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---------------- the SSO callback loader ---------------- */
+
+/* The mark draws, holds, and draws again while Clerk finishes the handshake. */
+.auth-logo-loop .logo-path {
+  animation: authLogoLoop 2.6s var(--ease-draw) infinite;
+}
+@keyframes authLogoLoop {
+  0% {
+    stroke-dashoffset: 1;
+  }
+  55%,
+  80% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -1;
+  }
 }
 
 /* the challenge slot only takes space when Clerk actually puts a challenge in it */
@@ -106,33 +109,20 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .doodle-bubble,
-  .doodle-talk {
-    animation: none;
-  }
-  .doodle-underline {
+  .auth-draw {
     animation: none;
     stroke-dasharray: none;
     stroke-dashoffset: 0;
   }
-}
-
-/* the magnifying glass sweeps back and forth over the doodle being checked */
-.sso-glass {
-  transform-origin: 30% 30%;
-  animation: ssoGlass 2.6s ease-in-out infinite;
-}
-@keyframes ssoGlass {
-  0%,
-  100% {
-    transform: translate(0, 0) rotate(0deg);
+  .auth-appear {
+    animation: none;
+    opacity: 1;
   }
-  50% {
-    transform: translate(-52px, 38px) rotate(-12deg);
+  .auth-logo-loop .logo-path {
+    animation: none !important;
+    stroke-dashoffset: 0;
   }
-}
-@media (prefers-reduced-motion: reduce) {
-  .sso-glass {
+  .mx-auth .auth-caret {
     animation: none;
   }
 }

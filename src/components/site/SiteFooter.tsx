@@ -1,12 +1,10 @@
 import Link from "next/link";
-import { FEATURES } from "@/lib/marketing/features";
+import { AGENT_SLUGS as AGENT, FEATURES } from "@/lib/marketing/features";
 import { MARK_PATH } from "@/components/Logo";
 
 /* The marketing footer: a rounded, slightly sunk panel. The page-long line (Thread) ends in the
    tail of the large mark, which then draws itself (`[data-thread-end]` gets `.in`). Columns are
    plain links; the base row holds the legal links and a way back to the top. */
-
-const AGENT = ["personal-agent", "live-notes", "smart-questions", "decisions", "action-items", "context-gaps"];
 
 const COLS: { title: string; links: { label: string; href: string }[] }[] = [
   {

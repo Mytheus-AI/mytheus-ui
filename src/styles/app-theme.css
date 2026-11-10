@@ -39,6 +39,7 @@
   --pill: #f3f0e8;
   --pill-2: #e2ddd2;
   --pill-on: #1a1816;
+  --danger-on: #1a1816;
   --tint-peach: #4a3226;
   --tint-ochre: #46391f;
   --tint-sage: #313a2b;
@@ -93,6 +94,40 @@
 
 /* No slide while the saved sidebar mode is first applied on load. */
 .mx-app.sb-instant .sb-slot, .mx-app.sb-instant .sb-panel { transition: none; }
+
+/* The active nav marker: the marketing nav's coral squiggle, drawn once when an item becomes
+   current. `pathLength="1"` on the path makes the dash maths length-free. */
+.mx-app .sb-squiggle path { stroke-dasharray: 1; stroke-dashoffset: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .mx-app .sb-squiggle path { animation: mx-squiggle 0.5s var(--ease-draw) 0.05s both; }
+}
+@keyframes mx-squiggle { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+
+/* Overlays (command palette, account menu) answer the action that opened them: a short settle,
+   never a bounce. */
+@media (prefers-reduced-motion: no-preference) {
+  .mx-app .mx-pop { animation: mx-pop 0.18s var(--ease-out) both; }
+}
+@keyframes mx-pop {
+  from { opacity: 0; transform: translateY(4px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+/* The memory line on Home: one coral thread that joins recent meetings, drawn segment by segment
+   when the page loads (the view's one orchestrated moment). `--dl` staggers each segment. */
+.mx-app .mx-thread { transform-origin: 50% 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .mx-app .mx-thread { animation: mx-thread 0.42s var(--ease-draw) var(--dl, 0s) both; }
+  .mx-app .mx-bead-in { animation: mx-bead 0.3s var(--ease-out) var(--dl, 0s) both; }
+}
+@keyframes mx-thread { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes mx-bead { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: none; } }
+
+/* Skeleton bones pulse gently, and only when motion is allowed. */
+@media (prefers-reduced-motion: no-preference) {
+  .mx-app .mx-bone { animation: mx-bone 1.6s ease-in-out infinite; }
+}
+@keyframes mx-bone { 50% { opacity: 0.55; } }
 
 @media (prefers-reduced-motion: reduce) {
   .mx-app .sb-slot, .mx-app .sb-panel, .mx-app .sb-fade { transition: none; }

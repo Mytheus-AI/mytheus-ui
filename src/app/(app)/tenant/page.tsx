@@ -5,8 +5,9 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { InlineRow, Note, PageHeader, SectionCard } from "@/components/settings/primitives";
-import { StatCard, thClass } from "@/components/admin/StatCard";
+import { StatCard, theadRowClass, thClass } from "@/components/admin/StatCard";
 import { resolveOrgContext } from "@/lib/api/org-context";
 import { listMembers, type MemberTier } from "@/lib/api/members";
 import { WorkspaceInvite } from "@/components/admin/WorkspaceInvite";
@@ -20,11 +21,32 @@ export const metadata: Metadata = { title: "Workspace admin | Mytheus" };
    (`integration-service` and `admin-ops-service` serve no routes), so they say "not
    available yet" and their buttons stay off rather than pretend to work. */
 
-const tierTone: Record<MemberTier, "default" | "medium" | "low"> = {
-  owner: "medium",
-  admin: "low",
-  member: "default",
-};
+const TIER_LABEL: Record<MemberTier, string> = { owner: "Owner", admin: "Admin", member: "Member" };
+
+function TierChip({ tier }: { tier: MemberTier }) {
+  return (
+    <Badge
+      className={
+        tier === "owner"
+          ? "!bg-signal-soft !text-signal-ink"
+          : tier === "member"
+            ? "!bg-transparent !text-ink-3 ring-1 ring-inset ring-line-2"
+            : "!text-ink"
+      }
+    >
+      {TIER_LABEL[tier]}
+    </Badge>
+  );
+}
+
+function StatusChip({ status }: { status: Row["status"] }) {
+  return status === "active" ? <Badge tone="success">Active</Badge> : <Badge tone="medium">Invited</Badge>;
+}
+
+/** The quiet destructive button: red text and edge on the card, a red wash on hover. */
+const dangerButton =
+  "!border-[color:color-mix(in_srgb,var(--priority-high)_45%,var(--line))] !bg-transparent !text-priority-high hover:!bg-priority-high-soft focus-visible:!rounded-ctl";
+
 const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
 type Row = {
@@ -81,146 +103,175 @@ export default async function TenantAdminPage() {
   const members = [...active, ...invited];
 
   return (
-    <div className="flex flex-col gap-8 motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="Workspace admin"
-        description={`Who is in ${ctx?.org.name ?? "this workspace"}, what it runs on, and the requests only an admin can make.`}
+        description={`Who is in ${ctx?.org.name || "this workspace"}, what it runs on, and the requests only an admin can make.`}
         actions={<WorkspaceInvite />}
       />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Active members" value={real ? active.length : "-"} />
-        <StatCard label="Pending invites" value={invited.length} />
-        <StatCard label="Plan" value={plan?.name ?? "-"} />
-        <StatCard label="Integrations" value="None yet" />
+      <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Active members" value={real ? active.length : "Not loaded"} hint="Signed in at least once" />
+        <StatCard label="Pending invites" value={invited.length} hint={invited.length ? "Waiting to accept" : "None waiting"} />
+        <StatCard label="Plan" value={plan?.name ?? "Not loaded"} hint={plan ? "From billing" : "Billing did not answer"} />
+        <StatCard label="Integrations" value="None yet" hint="Not available yet" />
       </div>
 
-      <section aria-labelledby="members-heading" className="overflow-hidden rounded-card border border-line bg-surface shadow-sm">
-        <div className="flex items-center justify-between gap-4 px-4 pb-3 pt-4 sm:px-[22px] sm:pt-[18px]">
-          <div>
-            <h2 id="members-heading" className="text-[16px] font-semibold text-ink">
-              Members
-            </h2>
-            <p className="mt-0.5 text-[13.5px] text-ink-3">Owners and admins can manage the workspace. Members use it.</p>
+      <SectionCard
+        title="Members"
+        headingLevel={2}
+        headingId="members-heading"
+        description="Owners and admins manage the workspace. Members use it."
+        aside={members.length > 0 ? <span className="text-[14px] font-medium text-ink-3">{members.length} in total</span> : undefined}
+      >
+        {real === null ? (
+          <div className="px-4 py-4 sm:px-[22px]">
+            <Note tone="warning">The member list could not be loaded just now. Reload the page to try again.</Note>
           </div>
-        </div>
+        ) : null}
 
-        <table className="hidden w-full border-collapse border-t border-line text-left text-[14px] md:table">
-          <thead>
-            <tr className="bg-bg">
-              <th scope="col" className={thClass}>Person</th>
-              <th scope="col" className={thClass}>Access</th>
-              <th scope="col" className={thClass}>Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {members.map((m) => (
-              <tr key={m.key} className="transition-colors hover:bg-bg">
-                <td className="max-w-[360px] px-5 py-3">
-                  <span className="flex min-w-0 items-center gap-3">
-                    <Avatar name={m.name} id={m.email} src={m.imageUrl ?? undefined} size="md" />
-                    <span className="min-w-0">
-                      <span className="block truncate font-semibold text-ink">
-                        {m.name}
-                        {m.isYou && <span className="ml-1.5 font-normal text-ink-3">(you)</span>}
+        {members.length === 0 ? (
+          real === null ? null : (
+            <EmptyState
+              className="!rounded-none !border-0 !bg-transparent"
+              title="No one here yet"
+              description="Invite people by email. They appear here as soon as the invitation is sent."
+            />
+          )
+        ) : (
+          <div>
+            <table className="hidden w-full border-collapse text-left text-[14.5px] md:table">
+              <caption className="sr-only">Workspace members, their access and status</caption>
+              <thead>
+                <tr className={theadRowClass}>
+                  <th scope="col" className={`${thClass} sm:pl-[22px]`}>Person</th>
+                  <th scope="col" className={thClass}>Access</th>
+                  <th scope="col" className={`${thClass} sm:pr-[22px]`}>Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {members.map((m) => (
+                  <tr key={m.key} className="transition-colors duration-150 hover:bg-surface-2">
+                    <td className="max-w-[420px] py-3 pl-[22px] pr-5">
+                      <span className="flex min-w-0 items-center gap-3">
+                        <Avatar name={m.name} id={m.email} src={m.imageUrl ?? undefined} size="md" />
+                        <span className="min-w-0">
+                          <span className="flex min-w-0 items-center gap-2">
+                            <span className="truncate font-semibold text-ink">{m.name}</span>
+                            {m.isYou ? <Badge className="shrink-0">You</Badge> : null}
+                          </span>
+                          <span className="block truncate text-[13.5px] text-ink-3">{m.email}</span>
+                        </span>
                       </span>
-                      <span className="block truncate text-[12.5px] text-ink-3">{m.email}</span>
+                    </td>
+                    <td className="px-5 py-3">
+                      <TierChip tier={m.tier} />
+                    </td>
+                    <td className="py-3 pl-5 pr-[22px]">
+                      <StatusChip status={m.status} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <ul className="divide-y divide-line md:hidden">
+              {members.map((m) => (
+                <li key={m.key} className="flex items-center gap-3 px-4 py-3.5">
+                  <Avatar name={m.name} id={m.email} src={m.imageUrl ?? undefined} size="md" />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="truncate text-[15px] font-semibold text-ink">{m.name}</span>
+                      {m.isYou ? <Badge className="shrink-0">You</Badge> : null}
+                    </span>
+                    <span className="block truncate text-[13.5px] text-ink-3">{m.email}</span>
+                    <span className="mt-1.5 flex flex-wrap items-center gap-2">
+                      <TierChip tier={m.tier} />
+                      <StatusChip status={m.status} />
                     </span>
                   </span>
-                </td>
-                <td className="px-5 py-3">
-                  <Badge tone={tierTone[m.tier]} className="capitalize">
-                    {m.tier}
-                  </Badge>
-                </td>
-                <td className="px-5 py-3">
-                  <Badge tone={m.status === "active" ? "success" : "default"} className="capitalize">
-                    {m.status}
-                  </Badge>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </SectionCard>
 
-        <ul className="divide-y divide-line border-t border-line md:hidden">
-          {members.map((m) => (
-            <li key={m.key} className="flex items-center gap-3 px-4 py-3.5">
-              <Avatar name={m.name} id={m.email} src={m.imageUrl ?? undefined} size="md" />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[14px] font-semibold text-ink">
-                  {m.name}
-                  {m.isYou && <span className="ml-1.5 font-normal text-ink-3">(you)</span>}
-                </span>
-                <span className="block truncate text-[12.5px] text-ink-3">
-                  {m.status === "invited" ? `Invited · ${m.email}` : m.email}
-                </span>
-              </span>
-              <Badge tone={tierTone[m.tier]} className="shrink-0 capitalize">
-                {m.tier}
-              </Badge>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-2">
         <Link
           href="/billing"
-          className="group flex items-start gap-4 rounded-card border border-line bg-surface p-5 shadow-sm transition-colors hover:border-line-2"
+          className="group flex items-start gap-4 rounded-card border border-line bg-surface p-5 shadow-warm-1 transition-colors duration-150 hover:border-line-2 hover:bg-surface-2 focus-visible:!rounded-card"
         >
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-bg-2 text-ink-2">
-            <CreditCard size={20} aria-hidden />
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-ctl bg-bg-2 text-ink-2" aria-hidden="true">
+            <CreditCard size={20} />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[15px] font-semibold text-ink">{plan ? `${plan.name} plan` : "Plan and billing"}</span>
-            <span className="mt-0.5 block text-[13.5px] text-ink-3">
+            <span className="block text-[16px] font-semibold text-ink">{plan ? `${plan.name} plan` : "Plan and billing"}</span>
+            <span className="mt-0.5 block text-[14px] leading-relaxed text-ink-3">
               {plan
-                ? `${plan.seat_price_cents > 0 ? `${currency.format(plan.seat_price_cents / 100)} per seat on the price list` : "No charge on this plan"} · payments not connected yet`
-                : "The plan could not be loaded just now"}
+                ? `${plan.seat_price_cents > 0 ? `${currency.format(plan.seat_price_cents / 100)} per seat on the price list.` : "No charge on this plan."} Payments are not connected yet.`
+                : "The plan could not be loaded just now."}
             </span>
           </span>
-          <ArrowRight size={16} className="mt-1 shrink-0 text-ink-3 transition-transform group-hover:translate-x-0.5" aria-hidden />
+          <ArrowRight
+            size={16}
+            className="mt-1 shrink-0 text-ink-3 transition-transform duration-150 group-hover:translate-x-0.5 motion-reduce:transition-none"
+            aria-hidden
+          />
         </Link>
         <Link
           href="/settings/integrations"
-          className="group flex items-start gap-4 rounded-card border border-line bg-surface p-5 shadow-sm transition-colors hover:border-line-2"
+          className="group flex items-start gap-4 rounded-card border border-line bg-surface p-5 shadow-warm-1 transition-colors duration-150 hover:border-line-2 hover:bg-surface-2 focus-visible:!rounded-card"
         >
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-bg-2 text-ink-2">
-            <PlugsConnected size={20} aria-hidden />
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-ctl bg-bg-2 text-ink-2" aria-hidden="true">
+            <PlugsConnected size={20} />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[15px] font-semibold text-ink">Integrations</span>
-            <span className="mt-0.5 block text-[13.5px] text-ink-3">
-              Calendar, Slack and project tracker connections are not available yet
+            <span className="block text-[16px] font-semibold text-ink">Integrations</span>
+            <span className="mt-0.5 block text-[14px] leading-relaxed text-ink-3">
+              Calendar, Slack and project tracker connections are not available yet.
             </span>
           </span>
-          <ArrowRight size={16} className="mt-1 shrink-0 text-ink-3 transition-transform group-hover:translate-x-0.5" aria-hidden />
+          <ArrowRight
+            size={16}
+            className="mt-1 shrink-0 text-ink-3 transition-transform duration-150 group-hover:translate-x-0.5 motion-reduce:transition-none"
+            aria-hidden
+          />
         </Link>
       </div>
 
-      <SectionCard title="Data and privacy" description="Requests that act on everything the workspace holds. Each one is logged to the audit trail.">
+      <SectionCard
+        tone="danger"
+        headingLevel={2}
+        headingId="data-requests-heading"
+        title="Data requests"
+        description="Requests that act on everything the workspace holds. Each one is logged to the audit trail."
+      >
+        <div className="px-4 py-4 sm:px-[22px]">
+          <Note>
+            Not available yet. The admin service that runs and audits these requests is still being built, so the buttons
+            stay off rather than pretend to work.
+          </Note>
+        </div>
         <InlineRow
           label="Export workspace data"
           help="Meetings, transcripts, confirmed decisions and action items, as a downloadable archive."
         >
-          <Button variant="outline" size="sm" disabled>
+          <Button variant="outline" size="sm" disabled className="focus-visible:!rounded-ctl">
             <DownloadSimple size={16} aria-hidden />
             Request export
           </Button>
         </InlineRow>
         <InlineRow
           label="Erase a person's data"
-          help="Removes one person's transcripts, notes and agent memory from every store, then confirms when it is done."
+          help="Removes one person's transcripts, notes and agent memory from every store, then confirms when it is done. This cannot be undone."
         >
-          <Button variant="outline" size="sm" disabled>
+          <Button variant="outline" size="sm" disabled className={dangerButton}>
             <Trash size={16} aria-hidden />
             Start erasure
           </Button>
         </InlineRow>
       </SectionCard>
-
-      <Note>Export and erasure requests are not available yet. The admin service that runs and audits them is still being built, so these buttons stay off rather than pretend to work.</Note>
     </div>
   );
 }

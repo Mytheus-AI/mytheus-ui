@@ -6,7 +6,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LinkButton } from "@/components/ui/Button";
-import { Note, PageHeader } from "@/components/settings/primitives";
+import { Note } from "@/components/settings/primitives";
 import { StatCard, thClass } from "@/components/admin/StatCard";
 import { resolveCallMeeting } from "@/components/call/resolve-meeting";
 import { ApiError } from "@/lib/api/client";
@@ -88,7 +88,7 @@ function Pair({ row }: { row: CollaborationRow }) {
     <span className="flex min-w-0 items-center gap-2">
       <Avatar name={from} size="sm" />
       <span className="truncate font-semibold text-ink">{from}</span>
-      <ArrowRight size={13} className="shrink-0 text-ink-3" aria-label="asked" />
+      <ArrowRight size={14} className="shrink-0 text-ink-3" aria-label="asked" />
       {row.responder === "rag" ? (
         <Books size={18} className="shrink-0 text-ink-3" aria-hidden />
       ) : (
@@ -135,19 +135,22 @@ export default async function CollaborationsPage({
   const refused = rows.filter(isRefused);
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
-      <Link
-        href={`/meetings/${meeting.id}`}
-        className="inline-flex items-center gap-1.5 self-start rounded-md text-[13px] font-semibold text-ink-3 transition-colors hover:text-ink"
-      >
-        <ArrowLeft size={15} weight="bold" aria-hidden />
-        {meeting.title}
-      </Link>
-
-      <PageHeader
-        title="Agent collaboration"
-        description="When someone's agent needed context they were missing, it asked another agent or their own knowledge base. Every request is logged here, including the ones policy refused. What was shared is never shown here."
-      />
+    <div className="mx-page flex flex-col gap-6">
+      <div>
+        <Link href={`/meetings/${meeting.id}`} className="mx-back">
+          <ArrowLeft size={16} weight="bold" aria-hidden />
+          {meeting.title}
+        </Link>
+        <header className="mx-head" style={{ paddingBottom: 0 }}>
+          <div className="mx-head-main">
+            <h1 className="mx-title">Agent collaboration</h1>
+            <p className="mx-sub">
+              When someone&rsquo;s agent needed context they were missing, it asked another agent or their own knowledge
+              base. Every request is logged here, including the ones policy refused. What was shared is never shown here.
+            </p>
+          </div>
+        </header>
+      </div>
 
       {page === null ? (
         <Note tone="error">The collaboration log could not be loaded just now. Try again in a moment.</Note>
@@ -166,12 +169,12 @@ export default async function CollaborationsPage({
               description="Agents only ask for context when the conversation refers to something a participant was missing."
             />
           ) : (
-            <section aria-label="Collaboration log" className="overflow-hidden rounded-card border border-line bg-surface shadow-sm">
+            <section aria-label="Collaboration log" className="overflow-hidden rounded-card border border-line bg-surface shadow-warm-1">
               <table className="hidden w-full border-collapse text-left text-[14px] md:table">
                 <thead>
-                  <tr className="bg-bg">
+                  <tr className="bg-surface-2">
                     <th scope="col" className={thClass}>Time</th>
-                    <th scope="col" className={thClass}>Requester &rarr; responder</th>
+                    <th scope="col" className={thClass}>Who asked whom</th>
                     <th scope="col" className={thClass}>Where</th>
                     <th scope="col" className={thClass}>Asked for</th>
                     <th scope="col" className={thClass}>Scope</th>
@@ -181,8 +184,8 @@ export default async function CollaborationsPage({
                 </thead>
                 <tbody className="divide-y divide-line">
                   {rows.map((r) => (
-                    <tr key={r.id} className={isRefused(r) ? "bg-priority-high-soft" : "transition-colors hover:bg-bg"}>
-                      <td className="whitespace-nowrap px-5 py-3.5 font-mono text-[12.5px] tabular-nums text-ink-3">
+                    <tr key={r.id} className={isRefused(r) ? "bg-priority-high-soft" : "transition-colors hover:bg-surface-2"}>
+                      <td className="whitespace-nowrap px-5 py-3.5 text-[13px] tabular-nums text-ink-3">
                         {time.format(new Date(r.created_at))}
                       </td>
                       <td className="max-w-[300px] px-5 py-3.5">
@@ -209,10 +212,26 @@ export default async function CollaborationsPage({
                         <Result row={r} />
                       </span>
                     </div>
-                    <p className="mt-2 text-ink-3">
-                      {HOP_LABEL[r.hop] ?? r.hop} &middot; {CLASS_LABEL[r.query_class] ?? r.query_class} &middot; {scope(r)} &middot;{" "}
-                      {time.format(new Date(r.created_at))} &middot; {r.latency_ms} ms
-                    </p>
+                    <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
+                      <div>
+                        <dt className="text-ink-3">Where</dt>
+                        <dd className="text-ink-2">{HOP_LABEL[r.hop] ?? r.hop}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-ink-3">Asked for</dt>
+                        <dd className="text-ink-2">{CLASS_LABEL[r.query_class] ?? r.query_class}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-ink-3">Scope</dt>
+                        <dd className="text-ink-2">{scope(r)}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-ink-3">When</dt>
+                        <dd className="tabular-nums text-ink-2">
+                          {time.format(new Date(r.created_at))}, {r.latency_ms} ms
+                        </dd>
+                      </div>
+                    </dl>
                   </li>
                 ))}
               </ul>

@@ -12,37 +12,36 @@ import {
   CheckSquare,
   ChartBar,
   UsersThree,
-} from "@phosphor-icons/react";
+} from "@phosphor-icons/react/ssr";
 
 export type NavItem = { href: string; label: string; icon: Icon };
 export type NavSection = { label: string | null; items: NavItem[] };
 
-/* The app nav, sectioned to match the doc-20 screen inventory. One list feeds the sidebar, the
-   topbar title and the command palette, so a new screen is added in exactly one place. */
+/* The app nav, grouped as in the design previews. One list feeds the sidebar, the topbar title
+   and the command palette, so a new screen is added in exactly one place. */
 export const NAV_SECTIONS: NavSection[] = [
-  { label: null, items: [{ href: "/dashboard", label: "Home", icon: House }] },
   {
     label: "Workspace",
     items: [
+      { href: "/dashboard", label: "Home", icon: House },
       { href: "/meetings", label: "Meetings", icon: VideoCamera },
       { href: "/decisions", label: "Decisions", icon: Scales },
       { href: "/tasks", label: "Tasks", icon: CheckSquare },
     ],
   },
   {
-    label: "Organization",
+    label: "Find",
     items: [
+      { href: "/search", label: "Ask Mytheus", icon: Sparkle },
       { href: "/org", label: "Org chart", icon: TreeStructure },
-      { href: "/search", label: "Ask", icon: Sparkle },
     ],
   },
-  {
-    label: "Account",
-    items: [
-      { href: "/settings", label: "Settings", icon: GearSix },
-      { href: "/billing", label: "Billing", icon: CreditCard },
-    ],
-  },
+];
+
+/* Account screens sit at the foot of the sidebar, apart from the work. */
+export const FOOT_ITEMS: NavItem[] = [
+  { href: "/settings", label: "Settings", icon: GearSix },
+  { href: "/billing", label: "Billing", icon: CreditCard },
 ];
 
 /* Shown to workspace owners and admins: the tenant admin console (doc 20 section 7). */
@@ -57,6 +56,14 @@ export const PLATFORM_ITEMS: NavItem[] = [
   { href: "/admin", label: "Admin console", icon: ShieldCheck },
   { href: "/ops", label: "Ops console", icon: Gauge },
 ];
+
+/** Where the primary "New meeting" control goes: the meetings hub, asked to open its form. */
+export const NEW_MEETING_HREF = "/meetings?new=1";
+
+/** Every screen a signed-in person can jump to, for the palette and the topbar title. */
+export function allNavItems(isAdmin: boolean): NavItem[] {
+  return [...NAV_SECTIONS.flatMap((s) => s.items), ...FOOT_ITEMS, ...(isAdmin ? ADMIN_ITEMS : [])];
+}
 
 export function isActive(pathname: string | null, href: string): boolean {
   return pathname === href || !!pathname?.startsWith(`${href}/`);

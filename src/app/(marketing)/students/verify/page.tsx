@@ -1,110 +1,62 @@
-"use client";
+import type { Metadata } from "next";
+import { Stage, Wrap } from "@/components/site/Section";
+import { CloseCTA } from "@/components/site/CloseCTA";
+import { VerifyForm } from "./VerifyForm";
 
-import { useState, type FormEvent } from "react";
-import { PageShell } from "@/components/marketing/PageShell";
-import { Eyebrow } from "@/components/landing/ui";
+export const metadata: Metadata = { title: "Verify your student status | Mytheus" };
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const STEPS = [
+  "Enter your school email: .edu or your institution's address.",
+  "Open the verification link we send to that inbox.",
+  "Mytheus Pro unlocks, free for as long as you're enrolled.",
+];
 
-function CheckBadge({ className = "h-7 w-7" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
-      <path
-        d="m5 12.5 4.5 4.5L19 7"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
+/* Student verification: what happens, plainly, beside the form on a peach stage. The form is
+   the only client island. */
 export default function Page() {
-  const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-
-  const trimmed = email.trim();
-  const valid = EMAIL_RE.test(trimmed);
-
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!valid) return;
-    setSubmitted(true);
-  }
-
   return (
-    <PageShell>
-      <section className="mesh-field grain relative isolate flex min-h-[calc(100vh-9rem)] items-center justify-center overflow-hidden px-6 py-20 sm:py-24">
-        <div className="relative z-10 w-full max-w-md rounded-card border border-line bg-white p-8 shadow-[0_30px_80px_-40px_rgba(40,30,20,0.35)] sm:p-10">
-          {submitted ? (
-            <div className="text-center">
-              <span className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-signal-soft text-signal-deep">
-                <CheckBadge />
-              </span>
-              <h1 className="display mt-6 text-[clamp(1.6rem,3vw,2rem)]">
-                You&apos;re all set.
-              </h1>
-              <p className="mt-4 text-[16px] leading-relaxed text-ink-3">
-                Check your inbox — we sent a verification link to{" "}
-                <span className="font-medium text-ink">{trimmed}</span>.
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setSubmitted(false);
-                  setEmail("");
-                }}
-                className="mt-5 inline-flex min-h-10 items-center justify-center px-2 text-[14px] font-medium text-signal transition-colors hover:text-signal-deep"
-              >
-                Use a different email
-              </button>
-            </div>
-          ) : (
-            <>
-              <Eyebrow className="text-signal">Verify</Eyebrow>
-              <h1 className="display mt-4 text-[clamp(1.7rem,3.2vw,2.2rem)]">
+    <>
+      <section className="pb-[clamp(64px,9vw,120px)] pt-[clamp(48px,6vw,88px)]">
+        <Wrap>
+          <div className="grid items-center gap-x-16 gap-y-10 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <div>
+              <p className="kicker">Students</p>
+              <h1 className="display mt-4 max-w-[12ch] text-[clamp(2.6rem,5.6vw,4.25rem)] leading-[1] tracking-[-0.03em]">
                 Confirm you&apos;re a student.
               </h1>
-              <p className="mt-4 text-[16px] leading-relaxed text-ink-3">
-                Enter your school email and we&apos;ll send a link to unlock
-                Mytheus Pro — free for as long as you&apos;re enrolled.
+              <p className="mt-6 max-w-[44ch] text-[clamp(1.08rem,1.5vw,1.22rem)] leading-relaxed text-ink-3">
+                Enter your school email and we&apos;ll send a link to unlock Mytheus Pro, free for as long as you&apos;re
+                enrolled.
               </p>
-
-              <form onSubmit={onSubmit} className="mt-7" noValidate>
-                <label
-                  htmlFor="school-email"
-                  className="kicker mb-2 block text-ink-2"
-                >
-                  School email
-                </label>
-                <input
-                  id="school-email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="you@university.edu"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-pill border border-line bg-bg-2 px-5 py-3.5 text-[15px] text-ink placeholder:text-ink-3 outline-none transition-colors focus:border-signal focus:bg-white"
-                />
-                <button
-                  type="submit"
-                  disabled={!valid}
-                  className="mt-4 w-full rounded-pill bg-signal px-6 py-3.5 text-[15px] font-medium text-white transition-colors duration-300 hover:bg-signal-deep disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Send verification link
-                </button>
-              </form>
-
-              <p className="mt-5 text-center text-[13px] text-ink-3">
-                Takes under a minute. We&apos;ll only use this to confirm your
-                status.
-              </p>
-            </>
-          )}
-        </div>
+              <ol className="mt-8 max-w-[46ch] border-b border-line-2">
+                {STEPS.map((s, i) => (
+                  <li key={s} className="flex gap-4 border-t border-line-2 py-4 text-[16px] leading-relaxed text-ink-2">
+                    <span className="w-5 flex-none font-display text-[1.2rem] font-medium leading-[1.4] text-signal-ink">
+                      {i + 1}
+                    </span>
+                    {s}
+                  </li>
+                ))}
+              </ol>
+            </div>
+            <Stage glow className="!p-[clamp(12px,3.5vw,40px)]">
+              <div className="rounded-card bg-surface p-6 shadow-warm-3 sm:p-8">
+                <VerifyForm />
+              </div>
+            </Stage>
+          </div>
+        </Wrap>
       </section>
-    </PageShell>
+
+      <CloseCTA
+        title="Free for as long as you're enrolled."
+        lead="Renew your verification once each academic year to stay on Pro."
+        ctaHref="/students"
+        ctaLabel="Read the student offer"
+        secondaryHref="/pricing"
+        secondaryLabel="See what Pro includes"
+        note={null}
+      />
+    </>
   );
 }

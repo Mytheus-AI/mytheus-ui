@@ -1,163 +1,126 @@
 import Link from "next/link";
-import { PageShell } from "./PageShell";
+import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
+import { PageHero } from "./PageHero";
 import { FeatureVisual } from "./feature-visuals";
-import { getFeature, FEATURES } from "@/lib/marketing/features";
-import {
-  WordReveal,
-  Reveal,
-  Stagger,
-  StaggerItem,
-  ScrollScale,
-  Tilt,
-} from "@/components/landing/motion";
-import { PillCTA, Eyebrow } from "@/components/landing/ui";
+import { FEATURES, getFeature } from "@/lib/marketing/features";
+import { Section, SectionHead, Stage, Wrap } from "@/components/site/Section";
+import { Loop } from "@/components/site/Loop";
+import { CloseCTA } from "@/components/site/CloseCTA";
+import { neighbours } from "@/components/features/groups";
+import { FeatureGlyph } from "@/components/features/glyphs";
 
-/* The shared template every /features/* page renders through: an editorial
-   WordReveal hero, the scroll-scaled product visual, three benefit blocks,
-   the honest capability note, related features, and a CTA that drops straight
-   into the app. Server component; motion primitives are the client islands. */
+/* The template every /features/* page renders through, in the one-line language:
+
+   1. PageHero: the coral Loop circles the feature's key phrase (`accent`), then the lead, one
+      dark CTA and a quiet link back to all features; the feature's product window sits on a warm
+      Stage below (peach and ochre alternate down the feature list).
+   2. Benefits: SectionHead, then the three benefits as one aligned editorial row divided by
+      hairlines, not three identical cards.
+   3. How it behaves: the honest capability note, set large in the serif.
+   4. Related: two or three neighbours from the same footer group, as quiet linked rows.
+   5. CloseCTA, which every marketing page ends on.
+
+   Server component. The only client code is the InView inside the window and the glyphs. */
 
 export function FeaturePage({ slug }: { slug: string }) {
   const f = getFeature(slug);
-  const related = FEATURES.filter((x) => x.slug !== slug).slice(0, 3);
+  const index = FEATURES.findIndex((x) => x.slug === slug);
+  const related = neighbours(slug, 3);
 
   return (
-    <PageShell>
-      {/* hero */}
-      <section className="mesh-field mesh-anim grain relative isolate overflow-hidden border-b border-line">
-        <div className="relative z-10 mx-auto max-w-[1340px] px-6 pb-14 pt-20 sm:px-8 sm:pb-20 sm:pt-28">
-          <Reveal y={14}>
-            <Eyebrow className="text-signal">{f.eyebrow}</Eyebrow>
-          </Reveal>
-          <WordReveal
-            as="h1"
-            text={f.title}
-            accent={f.accent}
-            accentClass="italic text-gradient-signal"
-            className="display display-tight mt-5 max-w-[22ch] text-balance text-[clamp(2.3rem,6.5vw,4.8rem)]"
-            delay={90}
-          />
-          <Reveal delay={260}>
-            <p className="mt-6 max-w-[54ch] text-[17px] leading-relaxed text-ink-3 sm:text-[18px]">
-              {f.blurb}
-            </p>
-          </Reveal>
-          <Reveal delay={360}>
-            <div className="mt-9">
-              <PillCTA href="/dashboard">Get started free</PillCTA>
-            </div>
-          </Reveal>
-        </div>
-      </section>
+    <>
+      <PageHero
+        eyebrow={f.eyebrow}
+        title={
+          <>
+            {f.title} <Loop>{f.accent}</Loop>
+          </>
+        }
+        blurb={f.blurb}
+        ctaHref="/sign-up"
+        ctaLabel="Get started free"
+        secondaryHref="/features"
+        secondaryLabel="See all features"
+      >
+        <Stage tone={index % 2 === 0 ? "peach" : "ochre"} glow={index % 2 === 0}>
+          <FeatureVisual visual={f.visual} />
+        </Stage>
+      </PageHero>
 
-      {/* the product visual, pushed in by the scroll camera */}
-      <section className="mx-auto max-w-[1340px] px-6 pt-14 sm:px-8 sm:pt-20">
-        <ScrollScale from={0.92} className="flex justify-center">
-          <Tilt max={5} className="w-full max-w-[560px]">
-            <FeatureVisual visual={f.visual} />
-          </Tilt>
-        </ScrollScale>
-      </section>
+      <Section cross>
+        <Wrap>
+          <SectionHead title={f.benefitsTitle} lead={f.benefitsLead} />
+          <ul className="grid border-t border-line-2 md:grid-cols-3">
+            {f.benefits.map((b, i) => (
+              <li
+                key={b.title}
+                className={`border-line-2 py-7 md:py-8 ${i > 0 ? "border-t md:border-l md:border-t-0 md:pl-8" : ""} ${i < 2 ? "md:pr-8" : ""}`}
+              >
+                <h3 className="font-display text-[1.6rem] font-medium leading-[1.12] tracking-[-0.015em] text-ink">{b.title}</h3>
+                <p className="mt-3 max-w-[38ch] text-[1rem] leading-relaxed text-ink-3">{b.body}</p>
+              </li>
+            ))}
+          </ul>
+        </Wrap>
+      </Section>
 
-      {/* benefits */}
-      <section className="mx-auto max-w-[1340px] px-6 py-14 sm:px-8 sm:py-20">
-        <Stagger className="grid gap-4 sm:gap-5 md:grid-cols-3">
-          {f.benefits.map((b) => (
-            <StaggerItem key={b.title} className="h-full">
-              <div className="card-interactive flex h-full flex-col rounded-card border border-line bg-white p-6 sm:p-7">
-                <h2 className="text-[18px] font-medium tracking-tight text-ink">
-                  {b.title}
-                </h2>
-                <p className="mt-2.5 text-[15px] leading-relaxed text-ink-3">
-                  {b.body}
-                </p>
-              </div>
-            </StaggerItem>
-          ))}
-        </Stagger>
-
-        {/* the honest capability note */}
-        <Reveal delay={100}>
-          <div className="mt-8 flex items-start gap-3.5 rounded-card border border-line bg-bg-3 p-5 sm:mt-10 sm:p-7">
-            <span
-              aria-hidden
-              className="mt-0.5 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-signal-soft text-signal-deep"
-            >
-              <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5" aria-hidden>
-                <path
-                  d="m3.5 8.5 2.8 2.8L12.5 5"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-            <div className="min-w-0">
-              <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-3">
-                How it actually behaves
+      <Section cross>
+        <Wrap>
+          <div className="grid gap-x-14 gap-y-6 border-y border-line-2 py-[clamp(32px,4.5vw,56px)] md:grid-cols-[minmax(0,.8fr)_minmax(0,1.2fr)]">
+            <div>
+              <h2 className="display text-[clamp(2rem,3.6vw,2.75rem)]">How it behaves</h2>
+              <p className="mt-3 max-w-[30ch] text-[1rem] leading-relaxed text-ink-3">
+                The honest version, in plain terms: what it does and where its limits are.
               </p>
-              <p className="mt-2 max-w-[70ch] text-[15px] leading-relaxed text-ink-2">
+            </div>
+            <div>
+              <p className="max-w-[34ch] font-display text-[clamp(1.45rem,2.5vw,1.95rem)] leading-[1.28] tracking-[-0.012em] text-ink">
                 {f.note}
               </p>
+              <Link
+                href="/security"
+                className="mt-6 inline-block font-semibold text-ink underline decoration-signal-line decoration-2 underline-offset-[6px] hover:decoration-signal"
+              >
+                How we handle your data
+              </Link>
             </div>
           </div>
-        </Reveal>
-      </section>
+        </Wrap>
+      </Section>
 
-      {/* related features */}
-      <section className="mx-auto max-w-[1340px] px-6 pb-14 sm:px-8 sm:pb-20">
-        <Reveal>
-          <Eyebrow className="text-signal">Keep exploring</Eyebrow>
-        </Reveal>
-        <Stagger className="mt-6 grid gap-4 md:grid-cols-3">
-          {related.map((r) => (
-            <StaggerItem key={r.slug}>
-              <Link
-                href={`/features/${r.slug}`}
-                className="card-interactive group flex h-full flex-col rounded-card border border-line bg-white p-6"
-              >
-                <span className="text-[16px] font-medium tracking-tight text-ink">
-                  {r.nav}
-                </span>
-                <span className="mt-1.5 line-clamp-2 text-[13.5px] leading-relaxed text-ink-3">
-                  {r.blurb}
-                </span>
-                <span className="mt-4 inline-flex items-center gap-1.5 text-[13.5px] font-medium text-signal-deep">
-                  Learn more
-                  <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-0.5">
-                    →
+      <Section cross>
+        <Wrap>
+          <SectionHead title="It works alongside these." lead="Each feature hands its work to the next. These are the closest neighbours." />
+          <ul className="border-t border-line-2">
+            {related.map((r) => (
+              <li key={r.slug} className="border-b border-line-2">
+                <Link
+                  href={`/features/${r.slug}`}
+                  className="group grid grid-cols-[minmax(0,1fr)_40px] items-center gap-x-5 gap-y-1 py-5 transition-colors duration-200 hover:bg-surface-2 sm:grid-cols-[64px_minmax(0,1fr)_40px] sm:px-3 md:grid-cols-[64px_minmax(0,.9fr)_minmax(0,1.3fr)_40px] md:py-6"
+                >
+                  <span className="hidden sm:row-span-2 sm:block md:row-span-1">
+                    <FeatureGlyph slug={r.slug} className="in" />
                   </span>
-                </span>
-              </Link>
-            </StaggerItem>
-          ))}
-        </Stagger>
-      </section>
+                  <span className="font-display text-[1.45rem] font-medium leading-[1.15] tracking-[-0.012em] text-ink decoration-signal-line decoration-2 underline-offset-[6px] group-hover:underline">
+                    {r.nav}
+                  </span>
+                  <span className="col-start-1 row-start-2 text-[15px] leading-relaxed text-ink-3 sm:col-start-2 md:col-start-3 md:row-start-1">
+                    {r.blurb}
+                  </span>
+                  <span
+                    aria-hidden
+                    className="col-start-2 row-span-2 row-start-1 grid h-10 w-10 place-items-center rounded-full border border-line-2 text-ink-2 transition-colors duration-200 group-hover:border-ink group-hover:text-ink sm:col-start-3 md:col-start-4 md:row-span-1"
+                  >
+                    <ArrowRight size={17} />
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Wrap>
+      </Section>
 
-      {/* closing CTA */}
-      <section className="mx-auto max-w-[1340px] px-6 pb-20 sm:px-8 sm:pb-28">
-        <div className="mesh-field grain relative overflow-hidden rounded-[22px] border border-line px-6 py-14 text-center sm:px-12 sm:py-20">
-          <WordReveal
-            as="h2"
-            text="Bring your own agent to the next"
-            accent="meeting."
-            accentClass="italic text-gradient-signal"
-            className="display display-tight mx-auto max-w-[22ch] text-balance text-[clamp(2rem,5vw,3.8rem)]"
-          />
-          <Reveal delay={140}>
-            <p className="mx-auto mt-6 max-w-[52ch] text-[17px] leading-relaxed text-ink-3 sm:text-[18px]">
-              No bot to invite, nothing to install for the room — it starts
-              working the first time you join.
-            </p>
-          </Reveal>
-          <Reveal delay={240}>
-            <div className="mt-9 flex justify-center">
-              <PillCTA href="/dashboard">Get started free</PillCTA>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-    </PageShell>
+      <CloseCTA />
+    </>
   );
 }

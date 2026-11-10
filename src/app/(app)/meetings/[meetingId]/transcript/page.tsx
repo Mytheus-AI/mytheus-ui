@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ApiError } from "@/lib/api/client";
-import { Article, User } from "@phosphor-icons/react/ssr";
+import { UserCircle } from "@phosphor-icons/react/ssr";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { LinkButton } from "@/components/ui/Button";
 import { TranscriptView } from "@/components/meeting/TranscriptView";
 import { listMembers } from "@/lib/api/members";
 import { SpeakerMapping } from "@/components/meeting/SpeakerMapping";
@@ -60,29 +62,28 @@ export default async function TranscriptPage({
   const distinctSpeakers = new Set(chunks.map((c) => c.speaker_id)).size;
   const when = dateFormatter.format(new Date(meeting.startTime));
 
-  const meta = [
-    "Transcript",
-    when,
-    `${meeting.durationMinutes} min`,
+  const meta = `${[
+    `Transcript, ${when}`,
+    `${meeting.durationMinutes} minutes`,
     distinctSpeakers > 0 ? `${distinctSpeakers} ${distinctSpeakers === 1 ? "speaker" : "speakers"}` : null,
   ]
     .filter(Boolean)
-    .join(" · ");
+    .join(", ")}.`;
   const backHref = `/meetings/${meeting.id}`;
 
-  /* The design's "Who is Speaker 2?" banner. The assignment itself happens in the Speakers panel
-     (one field per voice), so the banner points there rather than duplicating the control. */
+  /* The "Who is Speaker 2?" notice. The assignment itself happens in the Speakers card (one field
+     per voice), so the notice points there rather than duplicating the control. */
   const firstOpen = unassigned[0];
   const openLines = firstOpen ? (lineCounts[firstOpen.speaker_id] ?? 0) : 0;
   const notice = firstOpen ? (
-    <div className="assign-banner tx-banner">
-      <User size={14} aria-hidden />
+    <div className="tx-assign">
+      <UserCircle size={20} weight="fill" aria-hidden />
       <span>
         {unassigned.length === 1
           ? `Who is Speaker ${firstOpen.speaker_id}? ${openLines} ${openLines === 1 ? "line is" : "lines are"} not yet matched to a teammate.`
           : `${unassigned.length} speakers are not yet matched to a teammate.`}
       </span>
-      <a href={`#sp-${firstOpen.speaker_id}`} className="assign-btn tap">
+      <a href={`#sp-${firstOpen.speaker_id}`} className="mx-btn is-outline is-sm tap">
         Assign
       </a>
     </div>
@@ -90,24 +91,23 @@ export default async function TranscriptPage({
 
   if (chunks.length === 0) {
     return (
-      <section className="page" id="page-transcript">
-        <div className="page-inner tx-inner">
-          <TranscriptHead title={meeting.title} meta={meta} backHref={backHref} />
-          <div className="panel reveal tx-empty-page" style={{ animationDelay: ".09s" }}>
-            <div className="tx-empty">
-              <span className="tx-empty-icon" aria-hidden>
-                <Article size={28} />
-              </span>
-              <h3>No transcript yet</h3>
-              <p>
-                {meeting.status === "past"
-                  ? "This meeting ran before transcription was enabled."
-                  : "The transcript appears here once the meeting has run."}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <div className="mx-page tx" id="page-transcript">
+        <TranscriptHead title={meeting.title} meta={meta} backHref={backHref} />
+        <EmptyState
+          className="tx-empty-page"
+          title="No transcript yet"
+          description={
+            meeting.status === "past"
+              ? "This meeting ran before transcription was enabled, so there are no lines to read."
+              : "The transcript appears here once the meeting has run. Lines arrive as people speak."
+          }
+          action={
+            <LinkButton href={backHref} variant="outline">
+              Back to meeting
+            </LinkButton>
+          }
+        />
+      </div>
     );
   }
 

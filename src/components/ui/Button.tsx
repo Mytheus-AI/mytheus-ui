@@ -11,7 +11,7 @@ const variantClass: Record<Variant, string> = {
   secondary: "border border-pill bg-pill text-pill-on hover:bg-pill-2 hover:shadow-warm-2 active:shadow-none",
   outline: "border border-line-2 bg-surface text-ink hover:bg-surface-2",
   ghost: "border border-transparent bg-transparent text-ink-2 hover:bg-bg-2 hover:text-ink",
-  danger: "border border-priority-high bg-priority-high text-white hover:opacity-90",
+  danger: "border border-priority-high bg-priority-high text-[var(--danger-on)] hover:opacity-90",
 };
 
 const sizeClass: Record<Size, string> = {

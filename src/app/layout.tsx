@@ -33,7 +33,12 @@ export default function RootLayout({
       // Session tasks render on our own pages instead of Clerk's hosted UI.
       taskUrls={{ "choose-organization": "/onboarding/organization" }}
     >
-      <html lang="en">
+      {/* `js` on <html> before paint: drawn lines and timed reveals start hidden only when a
+          script will reveal them, so the page is complete without JavaScript. */}
+      <html lang="en" suppressHydrationWarning>
+        <head>
+          <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
+        </head>
         <body
           className={`${hanken.variable} ${newsreader.variable} antialiased`}
         >

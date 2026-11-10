@@ -1,12 +1,12 @@
 "use client";
 
 import { Microphone, MicrophoneSlash } from "@phosphor-icons/react";
-import { CollapseSection } from "@/components/call/CollapseSection";
+import { initials, toneOf } from "@/components/room/tone";
 
-/* Who is in the call, as the design's "Participants" section. Rows come from the live LiveKit
-   participants when connected, otherwise just you, so this is a projection of
-   whatever the stage is showing. The design's invite and options buttons are left out (no invite
-   flow exists in the app yet). */
+/* Who is in the call, the People tab of the room's panel. Rows come from the live LiveKit
+   participants when connected, otherwise just you, so this is a projection of whatever the stage
+   is showing. Each person keeps the tint they have on their tile. No invite flow exists in the
+   room yet, so there is no invite button. */
 
 export type RoomPerson = {
   id: string;
@@ -17,52 +17,46 @@ export type RoomPerson = {
   speaking?: boolean;
 };
 
-function initials(name: string) {
-  return name
-    .split(" ")
-    .map((p) => p[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
-
 export function PeoplePanel({ people, id }: { people: RoomPerson[]; id?: string }) {
   return (
-    <div className="participants reveal" id={id} style={{ animationDelay: ".18s" }}>
-      <CollapseSection title="Participants" countChip={<span className="count-chip">{people.length}</span>}>
-        {people.length === 0 ? (
-          <p className="saved-empty">No one is in the room yet.</p>
-        ) : (
-          <div className="p-list" role="list">
-            {people.map((p) => (
-              <div className="p-row" role="listitem" key={p.id}>
-                <span className="p-av cx-av" aria-hidden>
-                  {initials(p.name)}
+    <div className="ppl" id={id}>
+      <div className="side-sec">
+        <h3>In the call</h3>
+        <span className="mx-count">{people.length}</span>
+      </div>
+      {people.length === 0 ? (
+        <p className="saved-empty">No one is in the room yet.</p>
+      ) : (
+        <ul className="ppl-list">
+          {people.map((p) => (
+            <li className="ppl-row" key={p.id}>
+              <span className={`mx-av ${toneOf(p.id)}`} aria-hidden>
+                {initials(p.name)}
+              </span>
+              <span className="ppl-name">
+                <strong>{p.name}</strong>
+                {p.isLocal || p.role ? <small>{p.isLocal ? "You" : p.role}</small> : null}
+              </span>
+              {p.speaking && p.micOn ? (
+                <span className="ppl-state wave" role="img" aria-label="Speaking">
+                  <i></i>
+                  <i></i>
+                  <i></i>
+                  <i></i>
                 </span>
-                <span className="p-id">
-                  <strong>{p.isLocal ? `${p.name} (You)` : p.name}</strong>
-                  {p.role ? <small>{p.role}</small> : null}
+              ) : p.micOn ? (
+                <span className="ppl-state">
+                  <Microphone size={18} role="img" aria-label="Mic on" />
                 </span>
-                <span className="p-status">
-                  {p.speaking && p.micOn ? (
-                    <span className="st-speaking wave" role="img" aria-label="Speaking">
-                      <i></i>
-                      <i></i>
-                      <i></i>
-                      <i></i>
-                    </span>
-                  ) : p.micOn ? (
-                    <Microphone size={14} role="img" aria-label="Mic on" />
-                  ) : (
-                    <MicrophoneSlash size={14} weight="fill" role="img" aria-label="Muted" />
-                  )}
+              ) : (
+                <span className="ppl-state is-muted">
+                  <MicrophoneSlash size={18} weight="fill" role="img" aria-label="Muted" />
                 </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </CollapseSection>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

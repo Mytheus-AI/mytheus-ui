@@ -12,13 +12,14 @@ const dueToneClass: Record<DueTone, string> = {
   quiet: "bg-bg-2 text-ink-2",
 };
 
-/** Due date chip: tinted when overdue or due today, with an icon so colour is never the only cue. */
+/** Due date chip: red when overdue (acts now), amber when due today (attention), neutral otherwise,
+ *  always with an icon so colour is never the only cue. */
 export function DueChip({ dueDate, done }: { dueDate: string | null; done: boolean }) {
   const info = dueInfo(dueDate, done);
   const Icon = info.icon === "warning" ? WarningCircle : info.icon === "done" ? CalendarCheck : CalendarBlank;
   return (
     <span
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[12px] font-medium ${dueToneClass[info.tone]}`}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-[3px] text-[12.5px] font-semibold leading-[1.35] ${dueToneClass[info.tone]}`}
     >
       <Icon size={14} weight={info.tone === "overdue" ? "fill" : "regular"} aria-hidden />
       {info.label}
@@ -28,7 +29,7 @@ export function DueChip({ dueDate, done }: { dueDate: string | null; done: boole
 
 export function PriorityBadge({ priority }: { priority: Priority }) {
   return (
-    <Badge tone={priority} className="gap-1.5 whitespace-nowrap">
+    <Badge tone={priority}>
       <Flag size={12} weight="fill" aria-hidden />
       <span className="capitalize">{priority}</span>
       <span className="sr-only"> priority</span>
@@ -58,15 +59,15 @@ export function CheckButton({
         stop(e);
         onToggle();
       }}
-      className="group/check -m-2 grid h-10 w-10 shrink-0 place-items-center rounded-full"
+      className="group/check -m-2 grid h-10 w-10 shrink-0 place-items-center rounded-full focus-visible:!outline-offset-0"
     >
       <span
         className={`grid place-items-center rounded-full border transition-[background-color,border-color,transform] duration-150 motion-safe:group-active/check:scale-90 ${
           large ? "h-7 w-7" : "h-6 w-6"
         } ${
           done
-            ? "border-signal bg-signal text-white"
-            : "border-line-2 bg-surface text-transparent group-hover/check:border-signal group-hover/check:text-signal"
+            ? "border-signal bg-signal text-pill-on"
+            : "border-ink-4 bg-surface text-transparent group-hover/check:border-signal group-hover/check:text-signal"
         }`}
       >
         <Check size={large ? 15 : 13} weight="bold" aria-hidden />

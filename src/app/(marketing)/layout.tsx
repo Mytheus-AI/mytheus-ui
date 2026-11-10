@@ -8,7 +8,7 @@ import { Thread } from "@/components/site/Thread";
    the Thread's absolute SVG depends on. Pages render only their own sections. */
 export default function MarketingLayout({ children }: { children: ReactNode }) {
   return (
-    <div id="top" className="relative min-h-screen bg-bg text-ink-2">
+    <div id="top" className="relative min-h-screen overflow-x-clip bg-bg text-ink-2">
       <SiteNav />
       <main>{children}</main>
       <SiteFooter />

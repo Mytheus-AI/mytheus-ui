@@ -1,9 +1,7 @@
-import type { CSSProperties } from "react";
 import Link from "next/link";
-import { Card } from "@/components/ui/Card";
-import { CaretRight, CheckSquare, Clock } from "@phosphor-icons/react/dist/ssr";
+import { CaretRight, Clock } from "@phosphor-icons/react/dist/ssr";
 import type { DashboardTask } from "@/lib/api/types";
-import { CardHead, Chip, EmptyBlock, ErrorBlock, TextLink } from "./parts";
+import { CardEmpty, CardHead, Chip, ErrorBlock, TextLink, cardClass } from "./parts";
 import { daysFromNow, dueLabel } from "./format";
 
 const SHOWN = 5;
@@ -15,21 +13,19 @@ export function TaskList({
   tasks,
   failed,
   nowIso,
-  className,
-  style,
+  className = "",
 }: {
   tasks: DashboardTask[];
   failed: boolean;
   nowIso: string;
   className?: string;
-  style?: CSSProperties;
 }) {
   const now = new Date(nowIso);
   const shown = tasks.slice(0, SHOWN);
   const more = tasks.length - shown.length;
 
   return (
-    <Card role="region" aria-labelledby="tasks-title" className={`p-0 ${className ?? ""}`} style={style}>
+    <section aria-labelledby="tasks-title" className={`${cardClass} ${className}`}>
       <CardHead
         id="tasks-title"
         title="Your tasks"
@@ -45,14 +41,15 @@ export function TaskList({
       {failed ? (
         <ErrorBlock title="We could not load your tasks" text="Your tasks are safe. Try again in a moment." />
       ) : shown.length > 0 ? (
-        <ul className="divide-y divide-line">
+        <ul className="divide-y divide-line border-t border-line">
           {shown.map((task) => {
-            const overdue = task.due_date ? daysFromNow(task.due_date, now) < 0 : false;
+            const diff = task.due_date ? daysFromNow(task.due_date, now) : null;
+            const tone = diff === null ? "neutral" : diff < 0 ? "high" : diff === 0 ? "medium" : "neutral";
             return (
               <li key={task.id}>
                 <Link
                   href="/tasks"
-                  className="group flex min-h-[44px] items-center gap-3 px-[18px] py-[11px] transition-colors duration-150 hover:bg-bg-2 active:bg-bg-3 sm:px-[22px]"
+                  className="group flex min-h-[52px] items-center gap-3 px-[18px] py-[11px] transition-colors duration-150 hover:bg-surface-2 active:bg-bg-2 sm:px-[22px]"
                 >
                   <span className="min-w-0 flex-1">
                     <span className="block text-[14px] font-medium leading-snug text-ink">{task.content}</span>
@@ -61,8 +58,8 @@ export function TaskList({
                     </span>
                   </span>
                   {task.due_date ? (
-                    <Chip tone={overdue ? "high" : "neutral"} className="shrink-0">
-                      {overdue ? <Clock size={13} weight="fill" aria-hidden /> : null}
+                    <Chip tone={tone} className="shrink-0">
+                      {tone === "high" ? <Clock size={13} weight="fill" aria-hidden /> : null}
                       {dueLabel(task.due_date, now)}
                     </Chip>
                   ) : null}
@@ -70,7 +67,7 @@ export function TaskList({
                     size={14}
                     weight="bold"
                     aria-hidden
-                    className="shrink-0 text-ink-3 transition-transform duration-150 motion-safe:group-hover:translate-x-0.5"
+                    className="shrink-0 text-ink-4 transition-[transform,color] duration-150 group-hover:text-ink motion-safe:group-hover:translate-x-0.5"
                   />
                 </Link>
               </li>
@@ -78,17 +75,18 @@ export function TaskList({
           })}
         </ul>
       ) : (
-        <EmptyBlock
-          icon={<CheckSquare size={24} aria-hidden />}
+        <CardEmpty
           title="No open tasks"
           text="Action items assigned to you and confirmed in meetings show up here until they are done."
         />
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-x-3 px-[18px] pb-3.5 pt-1.5 sm:px-[22px]">
-        <TextLink href="/tasks">All tasks</TextLink>
-        {more > 0 ? <span className="text-[12.5px] text-ink-3">{more} more open</span> : null}
-      </div>
-    </Card>
+      {!failed ? (
+        <div className="flex flex-wrap items-center justify-between gap-x-3 border-t border-line px-[18px] py-1.5 sm:px-[22px]">
+          <TextLink href="/tasks">All tasks</TextLink>
+          {more > 0 ? <span className="text-[12.5px] text-ink-3">{more} more open</span> : null}
+        </div>
+      ) : null}
+    </section>
   );
 }

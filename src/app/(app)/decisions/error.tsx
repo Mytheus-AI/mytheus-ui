@@ -1,35 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
-import { WarningCircle } from "@phosphor-icons/react";
-import { Button } from "@/components/ui/Button";
+import { RouteError } from "@/components/app/RouteError";
 
-export default function DecisionsError({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
-  useEffect(() => {
-    console.error(error);
-  }, [error]);
-
+export default function DecisionsError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
-    <div className="mx-auto max-w-[1240px]">
-      <div
-        role="alert"
-        className="flex flex-col items-center rounded-card border border-line bg-surface px-6 py-16 text-center"
-      >
-        <WarningCircle size={36} className="text-priority-high" aria-hidden />
-        <h1 className="mt-4 text-[17px] font-semibold text-ink">Decisions did not load</h1>
-        <p className="mt-2 max-w-sm text-[13.5px] text-ink-3">
-          We could not reach the decision log just now. Nothing was lost. Try again in a moment.
-        </p>
-        <Button className="mt-6" onClick={reset}>
-          Try again
-        </Button>
-      </div>
-    </div>
+    <RouteError
+      error={error}
+      reset={reset}
+      page="Decisions"
+      title="The decision log did not load"
+      text="We could not reach the decision log just now. Nothing was lost. Try again in a moment."
+    />
   );
 }

@@ -3,29 +3,21 @@
 import { useEffect, useRef, useState } from "react";
 import { RoomEvent, type RemoteParticipant, type Room } from "livekit-client";
 import { PaperPlaneRight } from "@phosphor-icons/react";
-import { CollapseSection } from "@/components/call/CollapseSection";
+import { initials, toneOf } from "@/components/room/tone";
 import { useOrgContext } from "@/lib/org-context";
 import { useRoomName } from "@/lib/realtime/room-names";
 import type { ChatMessage } from "@/lib/mock/data";
 
-/* In-meeting chat, as the design's "Live Chat" section. In a real call it travels over LiveKit's
-   data channel (topic CHAT_TOPIC), so everyone connected sees it; it is not stored, so someone who
-   joins later sees only what is sent after they arrive. The design's attachment button, reactions and typing indicator are left out. */
+/* In-meeting chat, the Chat tab of the room's panel (and the chat column of the Notes view). In a
+   real call it travels over LiveKit's data channel (topic CHAT_TOPIC), so everyone connected sees
+   it; it is not stored, so someone who joins later sees only what is sent after they arrive.
+   Attachments, reactions and a typing indicator are left out: nothing behind them exists. */
 
 const CHAT_TOPIC = "mx-chat";
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 const clock = () => new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-function initials(name: string) {
-  return name
-    .split(" ")
-    .map((p) => p[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
 
 export function ChatPanel({
   id,
@@ -83,45 +75,48 @@ export function ChatPanel({
   };
 
   return (
-    <div className="livechat reveal" id={id} style={{ animationDelay: ".27s" }}>
-      <CollapseSection title="Live Chat" countChip={<span className="count-chip">{messages.length}</span>}>
-        <div className="chat-card">
-          <div className="chat-body" ref={bodyRef} role="log" aria-live="polite" aria-label="Chat messages">
-            {messages.length === 0 ? <p className="chat-empty">No messages yet.</p> : null}
-            {messages.map((m) => {
-              const me = m.from === user.name;
-              return (
-                <div className={`cmsg${me ? " is-sent" : ""}${m.isNew ? " is-new" : ""}`} key={m.id}>
-                  <div className="cmsg-meta">
-                    {me ? null : (
-                      <span className="c-av cx-av" aria-hidden>
-                        {initials(m.from)}
-                      </span>
-                    )}
-                    <strong>{me ? "You" : m.from}</strong>
-                    <span className="time">{m.at}</span>
-                  </div>
-                  {me ? <div className="cbubble-sent">{m.text}</div> : <div className="cbubble">{m.text}</div>}
-                </div>
-              );
-            })}
-          </div>
+    <div className="chat" id={id}>
+      <div className="chat-body" ref={bodyRef} role="log" aria-live="polite" aria-label="Chat messages">
+        {messages.length === 0 ? (
+          <p className="chat-empty">
+            {offline
+              ? "Chat opens once you are connected to the call."
+              : "No messages yet. Chat is not stored, so people who join later only see what is sent after they arrive."}
+          </p>
+        ) : null}
+        {messages.map((m) => {
+          const me = m.from === user.name;
+          return (
+            <div className={`cmsg${me ? " is-sent" : ""}`} key={m.id}>
+              {me ? null : (
+                <span className={`mx-av ${toneOf(m.from)}`} aria-hidden>
+                  {initials(m.from)}
+                </span>
+              )}
+              <div className="cmsg-meta">
+                <strong>{me ? "You" : m.from}</strong>
+                <time>{m.at}</time>
+              </div>
+              <div className="cbubble">{m.text}</div>
+            </div>
+          );
+        })}
+      </div>
 
-          <form className="composer" onSubmit={send} autoComplete="off">
-            <input
-              type="text"
-              placeholder={offline ? "Chat opens when you are connected" : "Message everyone"}
-              aria-label="Message everyone"
-              disabled={offline}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-            />
-            <button type="submit" className="comp-send tap" data-tip="Send" aria-label="Send message" disabled={offline}>
-              <PaperPlaneRight size={15} weight="fill" aria-hidden />
-            </button>
-          </form>
-        </div>
-      </CollapseSection>
+      <form className="composer" onSubmit={send} autoComplete="off">
+        <input
+          type="text"
+          className="composer-input"
+          placeholder={offline ? "Chat opens when you are connected" : "Message everyone"}
+          aria-label="Message everyone"
+          disabled={offline}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+        />
+        <button type="submit" className="comp-send tap tip-end" data-tip="Send" aria-label="Send message" disabled={offline}>
+          <PaperPlaneRight size={18} weight="fill" aria-hidden />
+        </button>
+      </form>
     </div>
   );
 }

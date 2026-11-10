@@ -51,7 +51,7 @@ export function MemberPicker({
     <div className="mh-pick">
       {members.length > 6 && (
         <label className="mh-pick-search">
-          <MagnifyingGlass size={14} aria-hidden="true" />
+          <MagnifyingGlass size={16} aria-hidden="true" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -73,7 +73,7 @@ export function MemberPicker({
                 onClick={() => toggle(m.id)}
               >
                 <span className="mh-pick-box" aria-hidden="true">
-                  {on && <Check size={12} weight="bold" />}
+                  {on && <Check size={13} weight="bold" />}
                 </span>
                 <span className="mh-pick-who">
                   <strong>{m.name}</strong>

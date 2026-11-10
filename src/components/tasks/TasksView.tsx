@@ -15,6 +15,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { PageHead } from "@/components/app/PageHead";
 import { useOrgContext } from "@/lib/org-context";
 import { markTaskDone } from "@/app/actions/tasks";
 import type { TaskItem } from "@/lib/tasks";
@@ -66,7 +67,7 @@ function MeetingLink({ task }: { task: Task }) {
     <Link
       href={`/meetings/${task.meetingId}`}
       onClick={(e) => e.stopPropagation()}
-      className="inline-flex max-w-full items-center gap-1.5 text-[12.5px] text-ink-3 transition-colors hover:text-ink active:text-ink"
+      className="inline-flex w-fit max-w-full items-center gap-1.5 rounded-ctl text-[13px] text-ink-3 underline-offset-4 transition-colors hover:text-ink hover:underline"
     >
       <VideoCamera size={14} className="shrink-0" aria-hidden />
       <span className="truncate">{task.meetingTitle}</span>
@@ -89,7 +90,7 @@ function TaskRow({
     <li
       onClick={() => onOpen(task.id)}
       className={`flex min-h-[64px] cursor-pointer flex-wrap items-start gap-x-3.5 gap-y-2 px-4 py-3 transition-colors duration-150 sm:flex-nowrap sm:items-center sm:px-5 ${
-        selected ? "bg-signal-soft" : "hover:bg-bg active:bg-bg-2"
+        selected ? "bg-signal-soft" : "hover:bg-surface-2 active:bg-bg-2"
       }`}
     >
       <div className="mt-0.5 pl-2 sm:mt-0">
@@ -103,8 +104,8 @@ function TaskRow({
             onOpen(task.id);
           }}
           aria-haspopup="dialog"
-          className={`w-fit max-w-full rounded-md text-left text-[14.5px] font-medium leading-snug transition-colors hover:text-signal-deep active:text-signal-deep ${
-            task.done ? "text-ink-3 line-through" : "text-ink"
+          className={`w-fit max-w-full rounded-ctl text-left text-[15px] font-semibold leading-snug transition-colors hover:text-signal-ink ${
+            task.done ? "text-ink-3 line-through decoration-ink-4" : "text-ink"
           }`}
         >
           {task.title}
@@ -115,7 +116,7 @@ function TaskRow({
         <span className="flex sm:w-8 sm:justify-center">
           <Avatar name={task.assignee} size="sm" />
         </span>
-        <span className="flex sm:w-[124px]">
+        <span className="flex sm:w-[132px]">
           <DueChip dueDate={task.dueDate} done={task.done} />
         </span>
         <span className="flex sm:w-[92px] sm:justify-end">
@@ -158,7 +159,7 @@ function ListView({
               aria-expanded={!isCollapsed}
               aria-controls={`task-group-${g.key}`}
               onClick={() => onToggleGroup(g.key)}
-              className={`flex h-12 w-full items-center gap-2.5 bg-bg/50 px-4 text-left transition-colors hover:bg-bg active:bg-bg-2 focus-visible:outline-offset-[-2px] sm:px-5 ${
+              className={`flex h-12 w-full items-center gap-2.5 bg-surface-2 px-4 text-left transition-colors hover:bg-bg-2 active:bg-bg-3 focus-visible:outline-offset-[-2px] sm:px-5 ${
                 isCollapsed ? "" : "border-b border-line"
               }`}
             >
@@ -175,12 +176,12 @@ function ListView({
               >
                 {g.label}
               </span>
-              <span className="rounded-full bg-bg-2 px-2 py-0.5 text-[11.5px] font-medium text-ink-2">
+              <span className="rounded-full bg-bg-2 px-2 py-px text-[12.5px] font-semibold text-ink-2">
                 {items.length}
               </span>
-              {g.hint ? <span className="ml-auto text-[12.5px] text-ink-3">{g.hint}</span> : null}
+              {g.hint ? <span className="ml-auto text-[13px] text-ink-3">{g.hint}</span> : null}
               {g.key === "done" ? (
-                <span className="ml-auto text-[12.5px] text-ink-3">{isCollapsed ? "Show" : "Hide"}</span>
+                <span className="ml-auto text-[13px] font-semibold text-ink-3">{isCollapsed ? "Show" : "Hide"}</span>
               ) : null}
             </button>
             <ul id={`task-group-${g.key}`} hidden={isCollapsed} className="divide-y divide-line">
@@ -217,8 +218,8 @@ function BoardCard({
   return (
     <article
       onClick={() => onOpen(task.id)}
-      className={`flex cursor-pointer flex-col gap-3 rounded-pill border bg-surface p-3.5 transition-[border-color,box-shadow] duration-150 hover:border-line-2 hover:shadow-[0_10px_28px_-22px_rgba(40,30,20,0.45)] ${
-        selected ? "border-signal" : "border-line"
+      className={`flex cursor-pointer flex-col gap-3 rounded-ctl border bg-surface p-3.5 shadow-warm-1 transition-[border-color,box-shadow] duration-150 ${
+        selected ? "border-signal shadow-[0_0_0_4px_var(--signal-soft)]" : "border-line hover:border-line-2 hover:shadow-warm-2"
       }`}
     >
       <div className="flex items-start gap-3">
@@ -232,8 +233,8 @@ function BoardCard({
             onOpen(task.id);
           }}
           aria-haspopup="dialog"
-          className={`min-w-0 flex-1 rounded-md text-left text-[14px] font-medium leading-snug transition-colors hover:text-signal-deep active:text-signal-deep ${
-            task.done ? "text-ink-3 line-through" : "text-ink"
+          className={`min-w-0 flex-1 rounded-ctl text-left text-[14.5px] font-semibold leading-snug transition-colors hover:text-signal-ink ${
+            task.done ? "text-ink-3 line-through decoration-ink-4" : "text-ink"
           }`}
         >
           {task.title}
@@ -279,7 +280,7 @@ function BoardView({
         >
           <div className="flex items-center gap-2 px-1.5 pt-1">
             <h2 className="text-[14px] font-semibold text-ink">{c.label}</h2>
-            <span className="rounded-full bg-surface px-2 py-0.5 text-[11.5px] font-medium text-ink-2">
+            <span className="rounded-full bg-surface px-2 py-px text-[12.5px] font-semibold text-ink-2">
               {c.items.length}
             </span>
           </div>
@@ -288,7 +289,7 @@ function BoardView({
               <BoardCard key={t.id} task={t} selected={selectedId === t.id} onOpen={onOpen} onToggle={onToggle} />
             ))
           ) : (
-            <p className="grid min-h-[80px] place-items-center rounded-pill border border-dashed border-line-2 p-3 text-center text-[13px] text-ink-3">
+            <p className="grid min-h-[80px] place-items-center rounded-ctl border border-dashed border-line-2 p-3 text-center text-[13.5px] text-ink-3">
               {c.empty}
             </p>
           )}
@@ -379,62 +380,59 @@ export function TasksView({ actions }: { actions: TaskItem[] }) {
   return (
     <div
       data-panel={panelOpen ? "open" : "closed"}
-      className={`group/page mx-auto max-w-[1240px] motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both] ${
+      className={`group/page mx-auto max-w-[1240px] ${
         panelOpen ? "min-[1560px]:pr-[460px]" : ""
       }`}
     >
-      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
-        <div className="min-w-0">
-          <h1 className="display text-[clamp(1.8rem,4vw,2.4rem)]">Tasks</h1>
-          <p className="mt-2 text-[14px] text-ink-3" aria-live="polite">
-            {summary}
+      <PageHead
+        title="Tasks"
+        context={summary}
+        liveContext
+        action={
+          tasks.length > 0 ? (
+            <div
+              role="tablist"
+              aria-label="Task view"
+              onKeyDown={onTabKey}
+              className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-bg-2 p-1"
+            >
+              {([
+                ["list", "List", ListBullets],
+                ["board", "Board", Kanban],
+              ] as const).map(([key, label, Icon]) => (
+                <button
+                  key={key}
+                  ref={(el) => {
+                    tabRefs.current[key] = el;
+                  }}
+                  type="button"
+                  role="tab"
+                  id={`tasks-tab-${key}`}
+                  aria-selected={view === key}
+                  aria-controls="tasks-panel"
+                  tabIndex={view === key ? 0 : -1}
+                  onClick={() => setView(key)}
+                  className={`inline-flex h-9 items-center gap-2 rounded-full px-4 text-[13.5px] font-semibold transition-colors duration-150 focus-visible:!rounded-full ${
+                    view === key ? "bg-surface text-ink shadow-warm-1" : "text-ink-3 hover:text-ink active:bg-bg-3"
+                  }`}
+                >
+                  <Icon size={16} aria-hidden />
+                  {label}
+                </button>
+              ))}
+            </div>
+          ) : null
+        }
+      >
+        {notice ? (
+          <p role="status" className="mt-1.5 text-[14px] font-medium text-priority-high">
+            {notice}
           </p>
-          {notice ? (
-            <p role="status" className="mt-1 text-[13px] font-medium text-priority-high">
-              {notice}
-            </p>
-          ) : null}
-        </div>
-
-        {tasks.length > 0 && (
-          <div
-            role="tablist"
-            aria-label="Task view"
-            onKeyDown={onTabKey}
-            className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-bg-2 p-1"
-          >
-            {([
-              ["list", "List", ListBullets],
-              ["board", "Board", Kanban],
-            ] as const).map(([key, label, Icon]) => (
-              <button
-                key={key}
-                ref={(el) => {
-                  tabRefs.current[key] = el;
-                }}
-                type="button"
-                role="tab"
-                id={`tasks-tab-${key}`}
-                aria-selected={view === key}
-                aria-controls="tasks-panel"
-                tabIndex={view === key ? 0 : -1}
-                onClick={() => setView(key)}
-                className={`inline-flex h-9 items-center gap-2 rounded-full px-4 text-[13.5px] font-medium transition-colors duration-150 focus-visible:!rounded-full ${
-                  view === key
-                    ? "bg-surface text-ink shadow-sm"
-                    : "text-ink-3 hover:text-ink active:bg-bg-3"
-                }`}
-              >
-                <Icon size={16} aria-hidden />
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+        ) : null}
+      </PageHead>
 
       {tasks.length > 0 && (
-        <div role="group" aria-label="Filter tasks" className="mt-6 flex flex-wrap items-center gap-2">
+        <div role="group" aria-label="Filter tasks" className="mb-5 flex flex-wrap items-center gap-2">
           {filterDefs.map(({ key, label, Icon }) => {
             const count = tasks.filter(
               (t) => !t.done && passes(t, filters, user.name, key) && matchesOne(t, key, user.name),
@@ -446,17 +444,17 @@ export function TasksView({ actions }: { actions: TaskItem[] }) {
                 type="button"
                 aria-pressed={on}
                 onClick={() => setFilters((f) => ({ ...f, [key]: !f[key] }))}
-                className={`inline-flex h-9 items-center gap-2 rounded-full border px-3.5 text-[13.5px] font-medium transition-[background-color,color,border-color,transform] duration-150 motion-safe:active:scale-[0.97] ${
+                className={`inline-flex h-10 items-center gap-2 rounded-full border px-3.5 text-[13.5px] font-semibold transition-[background-color,color,border-color,transform] duration-150 motion-safe:active:scale-[0.97] ${
                   on
-                    ? "border-signal bg-signal-soft text-signal-deep"
+                    ? "border-signal bg-signal-soft text-signal-ink"
                     : "border-line-2 text-ink-2 hover:bg-surface hover:text-ink"
                 }`}
               >
                 <Icon size={15} aria-hidden />
                 {label}
                 <span
-                  className={`rounded-full px-1.5 text-[11.5px] leading-[18px] ${
-                    on ? "bg-surface text-signal-deep" : "bg-bg-2 text-ink-2"
+                  className={`rounded-full px-1.5 text-[12.5px] leading-[18px] ${
+                    on ? "bg-surface text-signal-ink" : "bg-bg-2 text-ink-2"
                   }`}
                 >
                   {count}
@@ -477,13 +475,13 @@ export function TasksView({ actions }: { actions: TaskItem[] }) {
         role="tabpanel"
         aria-labelledby={`tasks-tab-${view}`}
         tabIndex={-1}
-        className="mt-6"
+        className="focus:outline-none"
       >
         {tasks.length === 0 ? (
           <EmptyState
             title="Nothing assigned yet"
-            description="When an action item is captured in a meeting and you confirm it, it lands here with its due date and owner."
-            action={<LinkButton href="/meetings">View meetings</LinkButton>}
+            description="When an action item is captured in a meeting and someone confirms it, it lands here with its owner and due date."
+            action={<LinkButton href="/meetings">Open meetings</LinkButton>}
           />
         ) : visible.length === 0 ? (
           <EmptyState

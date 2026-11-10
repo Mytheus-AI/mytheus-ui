@@ -10,7 +10,7 @@ import { useRoomNames } from "@/lib/realtime/room-names";
 
 /* Context the agent found for THIS participant when the conversation referred to something they
    were missing (Phase P10, plan 3.5). From a teammate's agent or from their own knowledge base,
-   always with its sources. Private: nobody else in the meeting sees it. Dismiss only hides it;
+   always with its sources, joined to them by the coral line. Private: nobody else in the meeting sees it. Dismiss only hides it;
    nothing is committed or told to anyone. The card reserves its height so the panel does not
    jump when it lands. */
 
@@ -48,16 +48,15 @@ export function ContextFillCard({
   return (
     <div className={`nfy-card is-context is-p3${leaving ? " is-leaving" : ""}`} aria-live="polite">
       <div className="nfy-kind">
-        Shared context <span className="nfy-meta">only you</span>
+        <Icon size={16} weight="bold" aria-hidden />
+        Shared context
+        <span className="nfy-meta">Only you</span>
       </div>
-      <p className="nfy-from">
-        <Icon size={12} weight="bold" aria-hidden />
-        {headline}
-      </p>
+      <p className="nfy-from">{headline}</p>
       <p className="nfy-text">{fill.content}</p>
       {fill.rationale ? <p className="nfy-sub">{fill.rationale}</p> : null}
       {fill.citations.length > 0 ? (
-        <div className="nfy-cites">
+        <div className="nfy-cites" aria-label="Sources">
           {fill.citations.map((c, i) => {
             const { label, href } = citationLink(c, currentMeetingId);
             return href ? (

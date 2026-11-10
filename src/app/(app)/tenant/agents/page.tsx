@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Badge } from "@/components/ui/Badge";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Note, PageHeader, SectionCard } from "@/components/settings/primitives";
-import { thClass } from "@/components/admin/StatCard";
+import { theadRowClass, thClass } from "@/components/admin/StatCard";
 import { AgentCollaborationControl } from "@/components/tenant/AgentCollaborationControl";
 import { ApiError } from "@/lib/api/client";
 import { listAgentAuthzScopes, type AgentAuthzScope } from "@/lib/api/agent-authz";
@@ -55,7 +56,7 @@ export default async function AgentCollaborationPage() {
     : [];
 
   return (
-    <div className="flex flex-col gap-8 motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="Agent collaboration"
         description="During a meeting, an agent can ask a teammate's agent for context its person is missing. Choose how far that reaches. Every request, allowed or refused, shows in the meeting's collaboration log."
@@ -63,55 +64,63 @@ export default async function AgentCollaborationPage() {
 
       {res.ok ? (
         <>
-          <SectionCard title="Who agents may ask" description="Applies to everyone in the workspace, whatever their role.">
+          <SectionCard
+            title="Who agents may ask"
+            headingLevel={2}
+            headingId="level-heading"
+            description="Applies to everyone in the workspace, whatever their role."
+          >
             <AgentCollaborationControl current={currentLevel(rows)} />
           </SectionCard>
 
-          <section aria-labelledby="grants-heading" className="overflow-hidden rounded-card border border-line bg-surface shadow-sm">
-            <div className="px-4 pb-3 pt-4 sm:px-[22px] sm:pt-[18px]">
-              <h2 id="grants-heading" className="text-[16px] font-semibold text-ink">
-                Current grants
-              </h2>
-              <p className="mt-0.5 text-[13.5px] text-ink-3">
-                The rules behind the setting above. No rule means no access; a deny rule always wins.
-              </p>
-            </div>
+          <SectionCard
+            title="Current grants"
+            headingLevel={2}
+            headingId="grants-heading"
+            description="The rules behind the setting above. No rule means no access, and a deny rule always wins."
+          >
             {rows.length === 0 ? (
-              <p className="border-t border-line px-4 py-4 text-[13.5px] text-ink-3 sm:px-[22px]">
-                No grants. Agents do not ask each other in this workspace.
-              </p>
+              <EmptyState
+                className="!rounded-none !border-0 !bg-transparent !py-10"
+                title="No grants"
+                description="Agents do not ask each other in this workspace. Pick a level above to let them."
+              />
             ) : (
-              <>
-                <table className="hidden w-full border-collapse border-t border-line text-left text-[14px] md:table">
+              <div>
+                <table className="hidden w-full border-collapse text-left text-[14.5px] md:table">
+                  <caption className="sr-only">Agent collaboration grants</caption>
                   <thead>
-                    <tr className="bg-bg">
-                      <th scope="col" className={thClass}>Who asks</th>
+                    <tr className={theadRowClass}>
+                      <th scope="col" className={`${thClass} sm:pl-[22px]`}>Who asks</th>
                       <th scope="col" className={thClass}>For</th>
                       <th scope="col" className={thClass}>Reaching</th>
                       <th scope="col" className={thClass}>Rule</th>
-                      <th scope="col" className={thClass}>Since</th>
+                      <th scope="col" className={`${thClass} sm:pr-[22px]`}>Since</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line">
                     {rows.map((r) => (
-                      <tr key={r.id} className={r.effect === "deny" ? "bg-priority-high-soft" : undefined}>
-                        <td className="px-5 py-3 text-ink">{ROLE_LABEL[r.grantee_role] ?? r.grantee_role}</td>
+                      <tr key={r.id} className="transition-colors duration-150 hover:bg-surface-2">
+                        <td className="py-3 pl-[22px] pr-5 font-semibold text-ink">{ROLE_LABEL[r.grantee_role] ?? r.grantee_role}</td>
                         <td className="px-5 py-3 text-ink-2">{CLASS_LABEL[r.query_class] ?? r.query_class}</td>
                         <td className="px-5 py-3 text-ink-2">{SCOPE_LABEL[r.target_scope] ?? r.target_scope}</td>
                         <td className="px-5 py-3">
                           <Badge tone={r.effect === "deny" ? "danger" : "success"}>{r.effect === "deny" ? "Deny" : "Allow"}</Badge>
                         </td>
-                        <td className="whitespace-nowrap px-5 py-3 tabular-nums text-ink-3">{date.format(new Date(r.created_at))}</td>
+                        <td className="whitespace-nowrap py-3 pl-5 pr-[22px] tabular-nums text-ink-3">{date.format(new Date(r.created_at))}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                <ul className="divide-y divide-line border-t border-line md:hidden">
+                <ul className="divide-y divide-line md:hidden">
                   {rows.map((r) => (
-                    <li key={r.id} className={`flex items-center justify-between gap-3 px-4 py-3 text-[13.5px] ${r.effect === "deny" ? "bg-priority-high-soft" : ""}`}>
-                      <span className="min-w-0 text-ink-2">
-                        <span className="font-semibold text-ink">{ROLE_LABEL[r.grantee_role] ?? r.grantee_role}</span> &middot;{" "}
-                        {CLASS_LABEL[r.query_class] ?? r.query_class} &middot; {SCOPE_LABEL[r.target_scope] ?? r.target_scope}
+                    <li key={r.id} className="flex items-start justify-between gap-3 px-4 py-3.5">
+                      <span className="min-w-0">
+                        <span className="block text-[15px] font-semibold text-ink">{ROLE_LABEL[r.grantee_role] ?? r.grantee_role}</span>
+                        <span className="block text-[14px] text-ink-2">
+                          {CLASS_LABEL[r.query_class] ?? r.query_class}, reaching {(SCOPE_LABEL[r.target_scope] ?? r.target_scope).toLowerCase()}
+                        </span>
+                        <span className="block text-[13px] tabular-nums text-ink-3">Since {date.format(new Date(r.created_at))}</span>
                       </span>
                       <Badge tone={r.effect === "deny" ? "danger" : "success"} className="shrink-0">
                         {r.effect === "deny" ? "Deny" : "Allow"}
@@ -119,9 +128,9 @@ export default async function AgentCollaborationPage() {
                     </li>
                   ))}
                 </ul>
-              </>
+              </div>
             )}
-          </section>
+          </SectionCard>
         </>
       ) : (
         <Note tone="error">{res.message}</Note>

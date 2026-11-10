@@ -16,7 +16,7 @@ export function EmptyState({
 }) {
   return (
     <div
-      className={`flex flex-col items-center justify-center rounded-card border border-dashed border-line-2 bg-surface-2/60 px-6 py-14 text-center ${className}`}
+      className={`flex flex-col items-center justify-center rounded-card border border-dashed border-line-2 bg-surface-2 px-6 py-14 text-center ${className}`}
     >
       <svg viewBox="0 0 120 40" className="mb-4 h-8 w-24" aria-hidden>
         <path

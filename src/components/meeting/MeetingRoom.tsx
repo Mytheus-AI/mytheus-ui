@@ -31,11 +31,11 @@ import { useMeetingSocket } from "@/lib/realtime/useMeetingSocket";
 import type { CallMeeting } from "@/components/call/resolve-meeting";
 import type { AgentSidebarCard } from "@/lib/mock/data";
 
-/* The meeting room, in the meeting design's shape and full screen in the (call) layout: the app
-   bar (counts, title, Share link, panel toggle), the stage (a large speaker frame with thumbnails,
-   or a grid) with the timer, captions and the dark control pill floating over it, and the side
-   panel (agent, participants, chat) that collapses to a rail. Under 960px it is one column with
-   the panel as a bottom sheet.
+/* The meeting room, full screen in the (call) layout: the top bar (title, who is here, the
+   Call / Notes switch, Share link, panel toggle), the stage (a large speaker frame with
+   thumbnails, or a grid) with the clock, captions and the dark control bar floating over it, and
+   the side panel (Agent, Chat, People tabs) that collapses to a rail. Under 960px it is one
+   column with the panel as a sheet under the stage.
 
    Video is live LiveKit once the room is connected; before that the stage shows only your own
    tile. Captions are the real socket stream once joined and nothing otherwise. Once the call is
@@ -299,7 +299,7 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
 
   const onAttention = useCallback((a: AgentAttention) => setAttention(a), []);
 
-  // The design's keyboard shortcuts: M mic, V camera, C captions, L layout; 1 Call, 2 Notes.
+  // Keyboard shortcuts: M mic, V camera, C captions, L layout; 1 Call, 2 Notes.
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       const target = e.target as HTMLElement;
@@ -395,7 +395,7 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
     weekday: "short",
     month: "short",
     day: "numeric",
-  })} · ${people.length} in call`;
+  })}, ${people.length} in call`;
   const notesView = (tiles: RoomTile[]) => (
     <NotesView
       title={meeting.title}
@@ -417,10 +417,10 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
   return (
     <RoomNamesProvider names={names}>
     <CallToastProvider>
-      <div className="mx-meet cx-call">
+      <div className="mx-meet cx-call cx-room">
         <ConnectionPill status={live.status} message={joinProblem(live.error)} />
         <DeviceNote note={deviceNote} />
-        <div className="app">
+        <div className="cx-shell">
           <CallTopBar
             room={{
               title: meeting.title,
@@ -433,45 +433,42 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
               onMode: switchMode,
             }}
           />
-          <div className="app-row">
-            <main className="main">
-              <section
-                className={`page meeting-page${sideOpen ? "" : " side-collapsed"}${mode === "notes" ? " is-notes" : ""}`}
-                id="page-meeting"
-              >
-                {/* video stage - live LiveKit tracks once the room is connected, otherwise your own
-                    tile while it connects (or if it cannot). */}
-                {mode === "notes"
-                  ? liveRoom
-                    ? <LiveVideoGrid room={liveRoom}>{notesView}</LiveVideoGrid>
-                    : notesView(selfTiles)
-                  : liveRoom
-                    ? <LiveVideoGrid room={liveRoom}>{stage}</LiveVideoGrid>
-                    : stage(selfTiles)}
-                {/* Everyone else's microphone. The grid only attaches VIDEO; without this every
-                    remote audio track was subscribed and never played, so nobody could hear
-                    anybody. Your own mic is never rendered back to you. */}
-                {liveRoom && <RoomAudioRenderer room={liveRoom} />}
-                {/* Shown only when the browser blocked autoplay; one click unblocks the call. */}
-                {liveRoom && (
-                  <StartAudio room={liveRoom} label="Click to hear the call" className="call-start-audio tap" />
-                )}
+          <main
+            className={`cx-body${sideOpen ? "" : " side-collapsed"}${mode === "notes" ? " is-notes" : ""}`}
+            id="page-meeting"
+          >
+            {/* video stage - live LiveKit tracks once the room is connected, otherwise your own
+                tile while it connects (or if it cannot). */}
+            {mode === "notes"
+              ? liveRoom
+                ? <LiveVideoGrid room={liveRoom}>{notesView}</LiveVideoGrid>
+                : notesView(selfTiles)
+              : liveRoom
+                ? <LiveVideoGrid room={liveRoom}>{stage}</LiveVideoGrid>
+                : stage(selfTiles)}
+            {/* Everyone else's microphone. The grid only attaches VIDEO; without this every
+                remote audio track was subscribed and never played, so nobody could hear
+                anybody. Your own mic is never rendered back to you. */}
+            {liveRoom && <RoomAudioRenderer room={liveRoom} />}
+            {/* Shown only when the browser blocked autoplay; one click unblocks the call. */}
+            {liveRoom && (
+              <StartAudio room={liveRoom} label="Click to hear the call" className="call-start-audio tap" />
+            )}
 
-                {mode === "call" && (
-                <RoomPanel
-                  open={sideOpen}
-                  onOpen={() => setSideOpen(true)}
-                  attention={attention.count}
-                  conflict={attention.conflict}
-                  peopleCount={people.length}
-                  agent={<AgentSidebar onAttentionChange={onAttention} id={SECTION_IDS.agent} items={NO_AGENT_CARDS} notes={myNotes} candidates={candidates} onCandidateResolved={socket.resolveCandidate} onCandidateUpdated={socket.updateCandidate} meetingId={meeting.id} suggestions={suggestions} savedSuggestions={saved} onSuggestionResolved={socket.resolveSuggestion} onSuggestionSaved={socket.markSuggestionSaved} contextFills={contextFills} onContextFillDismissed={socket.dismissContextFill} alerts={alerts} onAlertRead={socket.markAlertRead} onAlertDismissed={socket.dismissAlert} />}
-                  people={<PeoplePanel people={people} id={SECTION_IDS.people} />}
-                  chat={<ChatPanel id={SECTION_IDS.chat} room={liveRoom} />}
-                />
-                )}
-              </section>
-            </main>
-          </div>
+            {mode === "call" && (
+            <RoomPanel
+              open={sideOpen}
+              onOpen={() => setSideOpen(true)}
+              onClose={() => setSideOpen(false)}
+              attention={attention.count}
+              conflict={attention.conflict}
+              peopleCount={people.length}
+              agent={<AgentSidebar onAttentionChange={onAttention} id={SECTION_IDS.agent} items={NO_AGENT_CARDS} notes={myNotes} candidates={candidates} onCandidateResolved={socket.resolveCandidate} onCandidateUpdated={socket.updateCandidate} meetingId={meeting.id} suggestions={suggestions} savedSuggestions={saved} onSuggestionResolved={socket.resolveSuggestion} onSuggestionSaved={socket.markSuggestionSaved} contextFills={contextFills} onContextFillDismissed={socket.dismissContextFill} alerts={alerts} onAlertRead={socket.markAlertRead} onAlertDismissed={socket.dismissAlert} />}
+              people={<PeoplePanel people={people} id={SECTION_IDS.people} />}
+              chat={<ChatPanel id={SECTION_IDS.chat} room={liveRoom} />}
+            />
+            )}
+          </main>
         </div>
       </div>
     </CallToastProvider>

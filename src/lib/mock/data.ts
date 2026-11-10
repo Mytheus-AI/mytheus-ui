@@ -1,6 +1,6 @@
 /* No data lives here any more. Every authenticated screen reads the backend through
    `api-gateway`, and the public marketing vignettes keep their copy in
-   `components/landing/sample-content.ts`.
+   the marketing home page sample content.
 
    This module survives only as a type re-export, because a few meeting-room files
    (`components/sidebar/AgentSidebar.tsx`, `components/meeting/MeetingRoom.tsx`,

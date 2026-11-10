@@ -28,14 +28,16 @@ export function ThemeToggle() {
     setTheme(next);
   };
 
+  const label = theme === "dark" ? "Switch to light theme" : "Switch to dark theme";
   return (
     <button
       type="button"
       onClick={flip}
-      aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-      className="grid h-10 w-10 place-items-center rounded-pill text-ink-3 transition-colors duration-150 hover:bg-bg-2 hover:text-ink active:scale-95"
+      aria-label={label}
+      title={label}
+      className="grid h-10 w-10 shrink-0 place-items-center rounded-ctl text-ink-3 transition-[background-color,color,transform] duration-150 hover:bg-bg-2 hover:text-ink motion-safe:active:scale-95"
     >
-      {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
+      {theme === "dark" ? <Sun size={19} aria-hidden /> : <Moon size={19} aria-hidden />}
     </button>
   );
 }

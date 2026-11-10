@@ -1,8 +1,6 @@
-import type { CSSProperties } from "react";
 import Link from "next/link";
-import { Notepad } from "@phosphor-icons/react/dist/ssr";
-import { Card } from "@/components/ui/Card";
-import { CardHead, EmptyBlock } from "./parts";
+import { CardEmpty, CardHead, cardClass } from "./parts";
+import { RetryButton } from "./RetryButton";
 import { formatShortDate } from "./format";
 
 /** The dashboard's slice of `/bff/dashboard` `worklogs`: the caller's own surfaced notes. */
@@ -19,29 +17,25 @@ export type DashboardNote = {
 export function MyNotes({
   notes,
   failed,
-  className,
-  style,
+  className = "",
 }: {
   notes: DashboardNote[];
   failed: boolean;
   className?: string;
-  style?: CSSProperties;
 }) {
   const recent = notes.slice(0, 4);
   return (
-    <Card role="region" aria-labelledby="notes-title" className={`p-0 ${className ?? ""}`} style={style}>
-      <CardHead id="notes-title" title="Your notes" />
+    <section aria-labelledby="notes-title" className={`${cardClass} ${className}`}>
+      <CardHead id="notes-title" title="Your notes" caption="What your agent kept for you" />
       {recent.length > 0 ? (
-        <ul className="divide-y divide-line pb-2">
+        <ul className="divide-y divide-line border-t border-line pb-1">
           {recent.map((n) => (
             <li key={n.id}>
               <Link
                 href={`/meetings/${n.meeting_id}`}
-                className="block min-h-[44px] px-[18px] py-[13px] transition-colors duration-150 hover:bg-bg-2 active:bg-bg-3 sm:px-[22px]"
+                className="block min-h-[44px] px-[18px] py-[13px] transition-colors duration-150 hover:bg-surface-2 active:bg-bg-2 sm:px-[22px]"
               >
-                <span className="line-clamp-3 block whitespace-pre-line text-[13.5px] leading-snug text-ink">
-                  {n.content}
-                </span>
+                <span className="line-clamp-3 block whitespace-pre-line text-[14px] leading-snug text-ink">{n.content}</span>
                 <span className="mt-1.5 block text-[12.5px] text-ink-3">
                   {n.meeting_title ?? "Untitled meeting"}, {formatShortDate(n.created_at)}
                 </span>
@@ -49,17 +43,15 @@ export function MyNotes({
             </li>
           ))}
         </ul>
+      ) : failed ? (
+        <div role="alert" className="mx-[18px] mb-[18px] mt-1.5 rounded-ctl bg-bg-2 p-5 sm:mx-[22px] sm:mb-[22px]">
+          <h3 className="text-[15px] font-semibold text-ink">Notes are unavailable</h3>
+          <p className="mb-3.5 mt-1 text-[14px] text-ink-3">They could not be loaded right now. They are still saved.</p>
+          <RetryButton />
+        </div>
       ) : (
-        <EmptyBlock
-          icon={<Notepad size={24} aria-hidden />}
-          title={failed ? "Notes are unavailable" : "No notes yet"}
-          text={
-            failed
-              ? "Your notes could not be loaded right now. They are still saved."
-              : "During a call, your agent writes notes that matter to you. They collect here."
-          }
-        />
+        <CardEmpty title="No notes yet" text="During a call, your agent writes notes that matter to you. They collect here." />
       )}
-    </Card>
+    </section>
   );
 }

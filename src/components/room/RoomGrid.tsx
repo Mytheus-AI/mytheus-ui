@@ -2,19 +2,20 @@
 
 import type { CSSProperties, ReactNode } from "react";
 import { MicrophoneSlash, Microphone, PushPin, UsersThree } from "@phosphor-icons/react";
+import { initials, toneOf } from "@/components/room/tone";
 
-/* The meeting stage, in the meeting design's shape, shared by your own pre-connect tile and the
-   live LiveKit tiles so connecting is not also a visual change. Each tile is plain data
-   (`RoomTile`); the live grid passes a <VideoTrack> as `media`, a tile without media gets a lit
-   room (camera on) or a dark room (camera off) with initials.
+/* The meeting stage, shared by your own pre-connect tile and the live LiveKit tiles so connecting
+   is not also a visual change. Each tile is plain data (`RoomTile`); the live grid passes a
+   <VideoTrack> as `media`. A tile without media shows the person's tint with their initials in
+   the display serif, the same faces as the marketing room window.
 
    Layouts:
-   - spotlight (the design): one large frame for the pinned person, else whoever shares a screen,
-     else whoever is speaking, with up to three thumbnails beside it (a strip on a phone) and a
-     "+N" pill that opens the grid when there are more.
+   - spotlight: one large frame for the pinned person, else whoever shares a screen, else whoever
+     is speaking, with up to three thumbnails beside it (a strip on a phone) and a "+N" button
+     that opens the grid when there are more.
    - grid: everyone as equal tiles inside the same frame.
 
-   `overlay` is drawn inside the frame on top of the video: the timer, captions and controls. */
+   `overlay` is drawn inside the frame on top of the video: the clock, captions and controls. */
 
 export type RoomLayout = "grid" | "spotlight";
 
@@ -36,14 +37,9 @@ export type RoomTile = {
 
 const MAX_THUMBS = 3;
 
-function initials(name: string) {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+/** The person behind a tile, without the `:camera` / `:screen` suffix, so their tint is stable. */
+function personKey(tile: RoomTile): string {
+  return tile.id.split(":")[0] ?? tile.id;
 }
 
 export function pickMain(tiles: RoomTile[], pinnedId: string | null | undefined): RoomTile | undefined {
@@ -76,7 +72,7 @@ export function RoomGrid({
   pinnedId?: string | null;
   /** Pin (or, with null, unpin) a participant to the main frame. */
   onPin?: (id: string | null) => void;
-  /** Opens the grid; used by the "+N" pill when not everyone fits beside the main frame. */
+  /** Opens the grid; used by the "+N" button when not everyone fits beside the main frame. */
   onShowAll?: () => void;
   overlay?: ReactNode;
 }) {
@@ -86,31 +82,27 @@ export function RoomGrid({
   const others = main ? tiles.filter((t) => t.id !== main.id) : [];
   const thumbs = others.slice(0, MAX_THUMBS);
   const hidden = others.length - thumbs.length;
+  const mainSpeaking = Boolean(main?.speaking && main.micOn && main.kind !== "screen");
 
   return (
     <section className="stage" aria-label="Meeting stage">
       <div
-        className="main-video reveal"
-        style={{ animationDelay: ".09s" }}
+        className={`main-video ${main ? toneOf(personKey(main)) : ""}`}
         role="group"
-        aria-label={main ? `${main.name}${main.speaking ? ", speaking" : ""}` : "Participants"}
+        aria-label={main ? `${main.name}${mainSpeaking ? ", speaking" : ""}` : "Participants"}
       >
         {n === 0 ? (
           <div className="cx-waiting">Waiting for people to join.</div>
         ) : main ? (
           <>
-            <TileSurface tile={main} size="lg" />
-            <span className="name-pill scrim-pill">
-              {main.speaking && main.micOn ? <Wave /> : null}
+            <TileSurface tile={main} />
+            <span className="name-pill">
+              {mainSpeaking ? <Wave /> : null}
               {!main.micOn && main.kind !== "screen" ? (
-                <MicrophoneSlash size={13} weight="fill" className="cx-muted" aria-label="Muted" role="img" />
+                <MicrophoneSlash size={14} weight="fill" className="cx-muted" aria-label="Muted" role="img" />
               ) : null}
-              {main.isLocal ? `${main.name} (You)` : main.name}
-              {main.speaking && main.micOn ? (
-                <>
-                  &nbsp;<small>· Speaking</small>
-                </>
-              ) : null}
+              {main.isLocal ? `${main.name} (you)` : main.name}
+              {mainSpeaking ? <small>Speaking</small> : null}
             </span>
           </>
         ) : (
@@ -121,7 +113,7 @@ export function RoomGrid({
             aria-label="Participants"
           >
             {tiles.map((t) => (
-              <Thumb key={t.id} tile={t} pinned={false} pinLabel="Spotlight" onPin={onPin ? () => onPin(t.id) : undefined} />
+              <Thumb key={t.id} tile={t} pinLabel="Spotlight" onPin={onPin ? () => onPin(t.id) : undefined} />
             ))}
           </div>
         )}
@@ -129,41 +121,27 @@ export function RoomGrid({
         {overlay}
       </div>
 
-      {spot && thumbs.length > 0 ? (
+      {spot && (thumbs.length > 0 || (pinnedId && main?.id === pinnedId)) ? (
         <div className="thumbs" aria-label="Participant videos">
-          {thumbs.map((t, i) => (
-            <Thumb
-              key={t.id}
-              tile={t}
-              className="reveal"
-              style={{ animationDelay: `${0.18 + i * 0.09}s` }}
-              pinned={false}
-              pinLabel="Pin"
-              onPin={onPin ? () => onPin(t.id) : undefined}
-            />
+          {thumbs.map((t) => (
+            <Thumb key={t.id} tile={t} pinLabel="Pin" onPin={onPin ? () => onPin(t.id) : undefined} />
           ))}
           {hidden > 0 ? (
             <button
               type="button"
-              className="more-pill tap reveal"
-              style={{ animationDelay: ".45s" }}
+              className="more-pill tap"
               aria-label={`Show all ${n} participants`}
               data-tip="Show everyone"
               onClick={onShowAll}
             >
-              <UsersThree size={20} aria-hidden />
-              <b>{hidden}+</b>
+              <UsersThree size={18} aria-hidden />
+              {hidden} more
             </button>
           ) : null}
           {pinnedId && main?.id === pinnedId && onPin ? (
-            <button
-              type="button"
-              className="more-pill tap"
-              aria-label={`Unpin ${main.name}`}
-              onClick={() => onPin(null)}
-            >
+            <button type="button" className="more-pill tap" aria-label={`Unpin ${main.name}`} onClick={() => onPin(null)}>
               <PushPin size={16} weight="fill" aria-hidden />
-              <b style={{ fontSize: 12.5 }}>Unpin</b>
+              Unpin
             </button>
           ) : null}
         </div>
@@ -172,7 +150,7 @@ export function RoomGrid({
   );
 }
 
-function TileSurface({ tile, size }: { tile: RoomTile; size: "lg" | "md" | "sm" }) {
+function TileSurface({ tile }: { tile: RoomTile }) {
   const showMedia = Boolean(tile.media) && tile.camOn;
   if (showMedia) {
     return (
@@ -182,11 +160,11 @@ function TileSurface({ tile, size }: { tile: RoomTile; size: "lg" | "md" | "sm" 
       </>
     );
   }
-  if (tile.kind === "screen") return <span className="cx-tile-bg is-dark" aria-hidden />;
+  if (tile.kind === "screen") return <span className="cx-tile-bg is-screen" aria-hidden />;
   return (
     <>
-      <span className={`cx-tile-bg ${tile.camOn ? "is-lit" : "is-dark"}`} aria-hidden />
-      <span className={`cx-initials${size === "lg" ? "" : ` is-${size}`}`} aria-hidden>
+      <span className="cx-tile-bg" aria-hidden />
+      <span className="cx-initials" aria-hidden>
         {tile.imageUrl ? (
           // A profile photo from Clerk's CDN; a plain <img> keeps it out of next/image's domain list.
           // eslint-disable-next-line @next/next/no-img-element
@@ -199,21 +177,7 @@ function TileSurface({ tile, size }: { tile: RoomTile; size: "lg" | "md" | "sm" 
   );
 }
 
-function Thumb({
-  tile,
-  pinned,
-  pinLabel,
-  onPin,
-  className = "",
-  style,
-}: {
-  tile: RoomTile;
-  pinned: boolean;
-  pinLabel: string;
-  onPin?: () => void;
-  className?: string;
-  style?: CSSProperties;
-}) {
+function Thumb({ tile, pinLabel, onPin }: { tile: RoomTile; pinLabel: string; onPin?: () => void }) {
   const screen = tile.kind === "screen";
   const speaking = Boolean(tile.speaking) && tile.micOn && !screen;
   const label = [tile.name, tile.isLocal ? "you" : null, !tile.micOn && !screen ? "muted" : null, speaking ? "speaking" : null]
@@ -221,33 +185,27 @@ function Thumb({
     .join(", ");
 
   return (
-    <div className={`thumb${speaking ? " is-speaking" : ""} ${className}`} style={style} role="group" aria-label={label}>
-      <TileSurface tile={tile} size="sm" />
+    <div className={`thumb ${toneOf(personKey(tile))}${speaking ? " is-speaking" : ""}`} role="group" aria-label={label}>
+      <TileSurface tile={tile} />
       {onPin ? (
-        <button
-          type="button"
-          className={`thumb-pin tap${pinned ? " is-pinned" : ""}`}
-          data-tip={pinLabel}
-          aria-label={`${pinLabel} ${tile.name}`}
-          onClick={onPin}
-        >
-          <PushPin size={13} aria-hidden />
+        <button type="button" className="thumb-pin tap tip-below tip-end" data-tip={pinLabel} aria-label={`${pinLabel} ${tile.name}`} onClick={onPin}>
+          <PushPin size={15} aria-hidden />
         </button>
       ) : null}
-      <span className="thumb-name scrim-pill">
+      <span className="thumb-name">
         {speaking ? <Wave /> : null}
         {tile.isLocal ? "You" : tile.name.split(" ")[0]}
       </span>
       {screen ? null : (
         <span className={`thumb-mic is-${tile.micOn ? "on" : "muted"}`} aria-hidden>
-          {tile.micOn ? <Microphone size={11} /> : <MicrophoneSlash size={11} weight="fill" />}
+          {tile.micOn ? <Microphone size={13} /> : <MicrophoneSlash size={13} weight="fill" />}
         </span>
       )}
     </div>
   );
 }
 
-/* Four bars that breathe while someone speaks (the design's wave). */
+/* Four bars that breathe while someone speaks. */
 function Wave() {
   return (
     <span className="wave" aria-hidden="true">

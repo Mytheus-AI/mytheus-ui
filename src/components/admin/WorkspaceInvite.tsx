@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { UserPlus } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { Select } from "@/components/ui/Select";
+import { Note, focusPill } from "@/components/settings/primitives";
 import { inviteToWorkspace } from "@/app/actions/workspace-invites";
 
 /* "Invite people" on the workspace page. Clerk owns workspace membership, so the invitation is
@@ -60,6 +62,7 @@ export function WorkspaceInvite() {
     <>
       <Button
         variant="primary"
+        className={focusPill}
         onClick={() => {
           reset();
           setOpen(true);
@@ -72,48 +75,55 @@ export function WorkspaceInvite() {
       <Modal open={open} onClose={() => !busy && setOpen(false)} title="Invite people">
         <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
           <label className="block" htmlFor="invite-emails">
-            <span className="mb-1.5 block text-[13px] font-medium text-ink-2">Email addresses</span>
+            <span className="mb-1.5 block text-[14px] font-semibold text-ink">Email addresses</span>
+            <span id="invite-emails-help" className="mb-2 block text-[13.5px] text-ink-3">
+              Separate addresses with commas or new lines.
+            </span>
             <textarea
               id="invite-emails"
               value={emails}
               onChange={(e) => setEmails(e.target.value)}
               rows={3}
+              aria-describedby="invite-emails-help"
+              aria-invalid={error && sent.length === 0 ? true : undefined}
               placeholder="samar@example.com, yash@example.com"
-              className="w-full resize-none rounded-md border border-line bg-surface px-4 py-2.5 text-[14px] text-ink placeholder:text-ink-3 focus-visible:border-signal"
+              className="block w-full resize-none rounded-ctl border border-line-2 bg-surface px-3.5 py-2.5 text-[15px] text-ink transition-[border-color,box-shadow] duration-150 placeholder:text-ink-4 hover:border-ink-4 focus-visible:!rounded-ctl focus-visible:border-signal focus-visible:shadow-[0_0_0_4px_var(--signal-soft)] focus-visible:outline-none"
               autoFocus
             />
           </label>
-          <label className="block" htmlFor="invite-role">
-            <span className="mb-1.5 block text-[13px] font-medium text-ink-2">Access</span>
-            <select
-              id="invite-role"
+          <div>
+            <span className="mb-1.5 block text-[14px] font-semibold text-ink" aria-hidden="true">
+              Access
+            </span>
+            <Select
+              label="Access"
               value={role}
-              onChange={(e) => setRole(e.target.value as typeof role)}
-              className="w-full rounded-md border border-line bg-surface px-4 py-2.5 text-[14px] text-ink focus-visible:border-signal"
-            >
-              <option value="org:member">Member: joins meetings and uses the workspace</option>
-              <option value="org:admin">Admin: can also invite people and manage the workspace</option>
-            </select>
-          </label>
-          <p className="text-[12.5px] text-ink-3">
+              onChange={setRole}
+              className="w-full"
+              options={[
+                { value: "org:member", label: "Member" },
+                { value: "org:admin", label: "Admin" },
+              ]}
+            />
+            <p className="mt-1.5 text-[13.5px] text-ink-3">
+              {role === "org:admin"
+                ? "Admins can also invite people and manage the workspace."
+                : "Members join meetings and use the workspace."}
+            </p>
+          </div>
+          <p className="text-[13.5px] text-ink-3">
             Each person gets an email from Clerk. Once they accept, they can be invited to meetings here.
           </p>
-          {sent.length > 0 && (
-            <p className="text-[13px] text-ink-2" role="status">
-              Invitation sent to {sent.join(", ")}.
-            </p>
-          )}
-          {error && (
-            <p className="text-[13px] text-[#b3432f]" role="alert">
-              {error}
-            </p>
-          )}
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" type="button" onClick={() => setOpen(false)} disabled={busy}>
+          <div aria-live="polite">
+            {sent.length > 0 ? <Note tone="success">Invitations sent to {sent.join(", ")}.</Note> : null}
+          </div>
+          {error ? <Note tone="error">{error}</Note> : null}
+          <div className="mt-1 flex flex-wrap justify-end gap-2 border-t border-line pt-4">
+            <Button variant="outline" type="button" className={focusPill} onClick={() => setOpen(false)} disabled={busy}>
               {sent.length > 0 ? "Done" : "Cancel"}
             </Button>
-            <Button variant="primary" type="submit" disabled={busy}>
-              {busy ? "Sending…" : "Send invitations"}
+            <Button variant="primary" type="submit" className={focusPill} disabled={busy}>
+              {busy ? "Sending invitations" : "Send invitations"}
             </Button>
           </div>
         </form>

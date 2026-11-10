@@ -1,7 +1,7 @@
 import { resolveSpeaker, wordCount } from "@/components/meetings/transcript-utils";
 import type { MeetingSpeaker, TranscriptChunk } from "@/lib/api/transcript";
 
-/* Talk time in the meeting design's panel. Share of words per speaker, counted from the
+/* Talk time, as a card in the transcript's rail. Share of words per speaker, counted from the
    transcript lines themselves, with the same label resolution as the reader. */
 export function TalkTimePanel({
   chunks,
@@ -36,27 +36,24 @@ export function TalkTimePanel({
     });
 
   return (
-    <div className="panel reveal tx-talk" style={{ animationDelay: ".2s" }}>
-      <div className="panel-head">
-        <h2>Talk time</h2>
+    <section className="mx-card mx-card-pad" aria-labelledby="tx-talk-h">
+      <div className="mx-card-head">
+        <h2 className="mx-card-title" id="tx-talk-h">
+          Talk time
+        </h2>
+        <span className="mx-card-note">Share of words</span>
       </div>
-      <div className="panel-body">
-        {rows.map((s) => (
-          <div className="speaker-row" key={s.id}>
-            <span className="speaker-name" title={s.full}>
-              {s.label}
-            </span>
-            <span
-              className="meter"
-              role="img"
-              aria-label={`${s.full} spoke ${s.share} percent of the words`}
-            >
-              <i style={{ width: `${s.share}%` }}></i>
-            </span>
-            <span className="speaker-share">{s.share}%</span>
-          </div>
-        ))}
-      </div>
-    </div>
+      {rows.map((s) => (
+        <div className="md-talk-row tx-talk-row" key={s.id}>
+          <span className="md-talk-name" title={s.full}>
+            {s.label}
+          </span>
+          <span className="md-bar" role="img" aria-label={`${s.full} spoke ${s.share} percent of the words`}>
+            <i style={{ width: `${s.share}%` }}></i>
+          </span>
+          <span className="md-talk-pct">{s.share}%</span>
+        </div>
+      ))}
+    </section>
   );
 }
