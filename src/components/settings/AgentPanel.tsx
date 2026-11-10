@@ -24,9 +24,19 @@ import { FormFooter, Note, SaveStatus, SectionCard, SettingsRow, cardPadX, focus
    self only on the API. A face left at the derived default is saved as NULL, so every surface
    (the meeting room included) keeps deriving the same one from `users.id`. */
 
-type Persona = { name: string; seed: string; personality: AgentPersonality; instructions: string };
+export type Persona = { name: string; seed: string; personality: AgentPersonality; instructions: string };
 
-export function AgentPanel({ profile }: { profile: UserProfile | null }) {
+export function AgentPanel({
+  profile,
+  hidePreview = false,
+  onChange,
+}: {
+  profile: UserProfile | null;
+  /** the agent page draws its own live portrait, so it hides this one */
+  hidePreview?: boolean;
+  /** every change to the form, saved or not, for a preview drawn elsewhere */
+  onChange?: (persona: Persona) => void;
+}) {
   const { user } = useOrgContext();
   const defaultSeed = profile ? agentSeed(null, profile.id) : "";
   const initial: Persona | null = profile
@@ -61,7 +71,9 @@ export function AgentPanel({ profile }: { profile: UserProfile | null }) {
     form.instructions !== saved.instructions;
 
   const set = <K extends keyof Persona>(key: K, value: Persona[K]) => {
-    setForm({ ...form, [key]: value });
+    const nextForm = { ...form, [key]: value };
+    setForm(nextForm);
+    onChange?.(nextForm);
     setState("idle");
     setMessage(null);
     const field = ({ name: "agent_name", seed: "agent_avatar_seed", personality: "agent_personality", instructions: "agent_instructions" } as const)[key];
@@ -88,6 +100,7 @@ export function AgentPanel({ profile }: { profile: UserProfile | null }) {
       };
       setSaved(next);
       setForm(next);
+      onChange?.(next);
       setState("saved");
       return;
     }
@@ -102,21 +115,23 @@ export function AgentPanel({ profile }: { profile: UserProfile | null }) {
   const instructionsLength = form.instructions.trim().length;
 
   return (
-    <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
-      <div className="xl:sticky xl:top-4 xl:col-start-2 xl:row-span-3 xl:row-start-1">
-        <AgentPreviewCard
-          name={agentDisplayName(form.name, user.name)}
-          seed={form.seed}
-          personality={form.personality}
-          instructions={form.instructions}
-          ownerName={user.name}
-        />
-      </div>
+    <div className={`grid items-start gap-5 ${hidePreview ? "" : "xl:grid-cols-[minmax(0,1fr)_300px]"}`}>
+      {hidePreview ? null : (
+        <div className="xl:sticky xl:top-4 xl:col-start-2 xl:row-span-3 xl:row-start-1">
+          <AgentPreviewCard
+            name={agentDisplayName(form.name, user.name)}
+            seed={form.seed}
+            personality={form.personality}
+            instructions={form.instructions}
+            ownerName={user.name}
+          />
+        </div>
+      )}
 
       <SectionCard
         title="Who it is"
         description="Your agent works only for you. Teammates see its name and face next to yours in meetings."
-        className="xl:col-start-1 xl:row-start-1"
+        className={hidePreview ? "" : "xl:col-start-1 xl:row-start-1"}
       >
         <SettingsRow label="Name" htmlFor="ag-name" help={`Leave it blank to keep "${defaultName}".`}>
           <Input
@@ -157,7 +172,7 @@ export function AgentPanel({ profile }: { profile: UserProfile | null }) {
       <SectionCard
         title="How it writes"
         description="Changes how your notes and suggestions are worded, never what is kept or who can see it."
-        className="xl:col-start-1 xl:row-start-2"
+        className={hidePreview ? "" : "xl:col-start-1 xl:row-start-2"}
       >
         <div className={`${cardPadX} py-4 md:py-[18px]`}>
           <PersonalityPicker
@@ -213,6 +228,7 @@ export function AgentPanel({ profile }: { profile: UserProfile | null }) {
               className={focusPill}
               onClick={() => {
                 setForm(saved);
+                onChange?.(saved);
                 setErrors({});
                 setMessage(null);
               }}

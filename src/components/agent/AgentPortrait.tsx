@@ -24,16 +24,16 @@ export function AgentPortrait({
   return (
     <section
       aria-labelledby="agent-name"
-      className="relative overflow-hidden rounded-hero px-5 py-7 shadow-[inset_0_0_0_1px_rgba(255,255,255,.35)] sm:px-8 sm:py-9"
+      className="relative overflow-hidden rounded-hero px-5 py-6 shadow-[inset_0_0_0_1px_rgba(255,255,255,.35)] sm:px-7 sm:py-7"
       style={{ backgroundImage: "var(--wash-glow), var(--wash)" }}
     >
-      <div className="grid items-center gap-7 md:grid-cols-[auto_minmax(0,1fr)] md:gap-10">
-        <div className="relative mx-auto grid h-[168px] w-[168px] place-items-center md:mx-0">
-          <svg viewBox="0 0 168 168" aria-hidden className="agent-orbit absolute inset-0 h-full w-full">
-            <circle cx="84" cy="84" r="80" fill="none" stroke="var(--signal-line)" strokeWidth="2" strokeLinecap="round" />
-            <circle cx="84" cy="4" r="5" fill="var(--signal)" stroke="var(--signal-soft)" strokeWidth="4" paintOrder="stroke" />
+      <div className="grid items-center gap-6 md:grid-cols-[auto_minmax(0,1fr)] md:gap-8">
+        <div className="relative mx-auto grid h-[148px] w-[148px] place-items-center md:mx-0">
+          <svg viewBox="0 0 148 148" aria-hidden className="agent-orbit absolute inset-0 h-full w-full overflow-visible">
+            <circle cx="74" cy="74" r="70" fill="none" stroke="var(--signal-line)" strokeWidth="2" strokeLinecap="round" />
+            <circle cx="74" cy="4" r="5" fill="var(--signal)" stroke="var(--signal-soft)" strokeWidth="4" paintOrder="stroke" />
           </svg>
-          <span className="block h-[136px] w-[136px] overflow-hidden rounded-full bg-surface shadow-warm-2 ring-4 ring-surface">
+          <span className="block h-[110px] w-[110px] overflow-hidden rounded-full bg-surface shadow-warm-2 ring-4 ring-surface">
             <Doodle seed={seed} draw className="block h-full w-full" />
           </span>
         </div>
@@ -44,10 +44,10 @@ export function AgentPortrait({
             {name}
           </h1>
           <p className="mt-2 text-[15.5px] text-ink-2">
-            Works for {ownerFirstName}, in every meeting you join. Writes in a {preset.label.toLowerCase()} voice.
+            Works for {ownerFirstName} in every meeting they join, and writes in a {preset.label.toLowerCase()} voice.
           </p>
 
-          <figure className="mt-5 text-left">
+          <figure className="mt-4 text-left">
             <div className="rounded-card border border-line bg-surface px-4 py-3.5 shadow-warm-1 sm:px-5">
               <figcaption className="text-[12.5px] font-semibold text-ink-3">How it writes your notes</figcaption>
               <blockquote className="mt-1.5 font-display text-[18px] italic leading-snug text-ink">{preset.sample}</blockquote>
