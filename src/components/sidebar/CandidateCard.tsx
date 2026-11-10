@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { CheckCircle, CheckSquare, EyeSlash, PencilSimple, Scales, Trash } from "@phosphor-icons/react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { ArrowsClockwise, CheckCircle, CheckSquare, EyeSlash, PencilSimple, Scales, Trash } from "@phosphor-icons/react";
 import { confirmCandidate, dismissCandidate, editCandidate } from "@/app/actions/candidates";
 import type { Candidate, Settlement } from "@/lib/realtime/candidates";
 import { useRoomName } from "@/lib/realtime/room-names";
@@ -33,6 +33,8 @@ export type CandidateRoomAck = { ok: boolean; error?: string; holder?: unknown }
 
 export function CandidateCard({
   candidate,
+  asPart = false,
+  moment,
   leaving,
   meId,
   canDismissForEveryone,
@@ -46,6 +48,10 @@ export function CandidateCard({
   onNotice,
 }: {
   candidate: Candidate;
+  /** Drawn as one linked row of a moment card (MomentCard), without a card of its own. */
+  asPart?: boolean;
+  /** The quote, speaker and time line, drawn under the kind on a stand-alone card. */
+  moment?: ReactNode;
   leaving: boolean;
   /** Your internal user id. */
   meId: string | null;
@@ -166,7 +172,7 @@ export function CandidateCard({
   const sub = isDecision
     ? candidate.rationale || undefined
     : [owner, dueLabel(candidate.dueDate)].filter(Boolean).join(", ") || undefined;
-  const label = isDecision ? "Decision detected" : "Action item";
+  const label = asPart ? (isDecision ? "Decision" : "Task") : isDecision ? "Decision detected" : "Action item";
   const KindIcon = isDecision ? Scales : CheckSquare;
   const editedBy = candidate.editedBy
     ? candidate.editedBy.userId === meId
@@ -177,14 +183,20 @@ export function CandidateCard({
 
   return (
     <div
-      className={`nfy-card is-${isDecision ? "decision" : "action"} is-p3${leaving ? " is-leaving" : ""}${locked ? " is-locked" : ""}`}
+      className={
+        asPart
+          ? `mc-part-body is-${isDecision ? "decision" : "action"}${locked ? " is-locked" : ""}`
+          : `nfy-card is-${isDecision ? "decision" : "action"} is-p3${leaving ? " is-leaving" : ""}${locked ? " is-locked" : ""}${candidate.updatedAt ? " is-updated" : ""}`
+      }
       aria-busy={busy !== null || undefined}
     >
-      <div className="nfy-kind">
-        <KindIcon size={16} weight="bold" aria-hidden />
+      <div className={asPart ? "mc-part-kind" : "nfy-kind"}>
+        <KindIcon size={asPart ? 14 : 16} weight="bold" aria-hidden />
         {label}
-        <span className="nfy-meta is-medium">Not saved yet</span>
+        {asPart ? null : candidate.updatedAt ? <UpdatedMark /> : null}
+        {asPart ? null : <span className="nfy-meta is-medium">Not saved yet</span>}
       </div>
+      {asPart ? null : moment}
 
       {editing ? (
         <form
@@ -284,6 +296,16 @@ export function CandidateCard({
         </>
       )}
     </div>
+  );
+}
+
+/** The agent changed this card in place (an update, never a second card). */
+export function UpdatedMark() {
+  return (
+    <span className="mc-updated" title="Your agent updated this card from what was said next">
+      <ArrowsClockwise size={12} weight="bold" aria-hidden />
+      Updated
+    </span>
   );
 }
 

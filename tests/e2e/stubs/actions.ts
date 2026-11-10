@@ -45,3 +45,33 @@ export async function draftAgenda() {
 export async function inviteToMeeting() {
   return { ok: false as const, message: "Not available in this test." };
 }
+// Ask your agent (the room's private ask box) and the promise lookup.
+let askFailures = 0;
+export async function askAgent(question: string) {
+  // "offline" fails once, as an unreachable rag-service would, so the test can retry.
+  if (question.includes("offline") && askFailures++ === 0) {
+    return { ok: false as const, reason: "unavailable" as const, message: "Your agent could not answer just now. Try again in a moment." };
+  }
+  return {
+    ok: true as const,
+    data: {
+      question,
+      answer: "Launch moved to 2 December after QA signed off [1]. Pricing stays at 25 dollars [2].",
+      abstained: false,
+      degraded: false,
+      citations: [
+        { n: 1, text: "QA signed off on the beta, so we ship on the second.", kind: "decision", meeting_id: "8a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d", decision_id: "33333333-3333-4333-8333-333333333333", meeting_title: "Q4 launch review" },
+        { n: 2, text: "Pro stays at 25 dollars a seat.", kind: "transcript", meeting_id: "44444444-4444-4444-8444-444444444444", meeting_title: "Pricing review", occurred_at: "2026-11-04T10:00:00Z", speaker: "Raj Patel" },
+      ],
+    },
+  };
+}
+export async function findMeetingPromise() {
+  return { ok: true as const, id: "55555555-5555-4555-8555-555555555555", status: "open" as const };
+}
+export async function setCommitmentStatus() {
+  return { ok: true as const };
+}
+export async function askQuestion() {
+  return { ok: false as const, message: "Not available in this test." };
+}

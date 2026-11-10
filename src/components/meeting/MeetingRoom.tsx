@@ -621,6 +621,11 @@ function Room({
       alerts={alerts}
       onAlertRead={socket.markAlertRead}
       onAlertDismissed={socket.dismissAlert}
+      agendaItems={socket.agenda.items}
+      startedAt={startedAt}
+      captions={socket.captions.lines}
+      speakerLabel={speakerLabel}
+      localSpeaking={Boolean(live.participants.find((p) => p.isLocal)?.isSpeaking)}
     />
   );
 

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { ApiError } from "@/lib/api/client";
-import { patchCommitment } from "@/lib/api/commitments";
+import { fetchCommitments, patchCommitment } from "@/lib/api/commitments";
 import type { CommitmentStatus } from "@/lib/api/personal-types";
 
 /* Mark a promise done, dismiss it, or put it back to open (the undo of either). Promises are the
@@ -32,4 +32,27 @@ export async function setCommitmentStatus(id: string, status: CommitmentStatus):
   revalidatePath("/work/promises");
   revalidatePath("/dashboard");
   return { ok: true };
+}
+
+export type FindPromiseResult = { ok: true; id: string; status: CommitmentStatus } | { ok: false; message: string; pending?: boolean };
+
+/* The room shows a promise the moment your agent hears it, from the live note; core-api writes the
+   row a moment later from the same record. To act on it the room finds that row: yours, in this
+   meeting, from that agent window, with that text. Not there yet means core-api is still writing
+   it (`pending`), never that it is gone. */
+export async function findMeetingPromise(meetingId: string, windowId: string, content: string): Promise<FindPromiseResult> {
+  if (!UUID.test(meetingId) || !windowId) return { ok: false, message: "That promise could not be found." };
+  try {
+    const rows = await fetchCommitments();
+    const wanted = content.trim().toLowerCase();
+    const mine = rows.filter((r) => r.meeting_id === meetingId && r.status !== "dismissed");
+    const row =
+      mine.find((r) => r.source_window_id === windowId && r.content.trim().toLowerCase() === wanted) ??
+      mine.find((r) => r.content.trim().toLowerCase() === wanted);
+    if (!row) return { ok: false, pending: true, message: "Your promise is still being saved. Try again in a moment." };
+    return { ok: true, id: row.id, status: row.status };
+  } catch (err) {
+    if (err instanceof ApiError && err.isAuthFailure) return { ok: false, message: "Your session expired. Sign in again." };
+    return { ok: false, message: "Your promises could not be read just now. Try again in a moment." };
+  }
 }
