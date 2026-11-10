@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
+  ArrowBendUpLeft,
   ArrowLeft,
   ArrowRight,
   Article,
@@ -12,6 +13,7 @@ import {
   Robot,
   Scales,
   ShieldCheck,
+  UserCircle,
   UsersThree,
   VideoCamera,
 } from "@phosphor-icons/react/ssr";
@@ -19,15 +21,21 @@ import type { Icon } from "@phosphor-icons/react";
 import { resolveCallMeeting } from "@/components/call/resolve-meeting";
 import { LinkButton } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
+import type { AgendaPerson } from "@/components/meetings/AgendaEditor";
+import { CarryForwardCard } from "@/components/meetings/CarryForwardCard";
 import { Chip } from "@/components/meetings/Chip";
+import { MeetingAgendaCard } from "@/components/meetings/MeetingAgendaCard";
 import { InviteToMeeting } from "@/components/meetings/InviteToMeeting";
 import type { PickableMember } from "@/components/meetings/MemberPicker";
 import { wordCount } from "@/components/meetings/transcript-utils";
 import { initials, toneOf } from "@/components/room/tone";
+import { fetchCarryForward } from "@/lib/api/meeting";
+import type { CarryForward } from "@/lib/api/meeting-agenda-types";
 import type { CallMeeting } from "@/lib/api/meetings";
 import { listMembers, type WorkspaceMemberView } from "@/lib/api/members";
 import { fetchTranscriptSurface, type TranscriptChunk } from "@/lib/api/transcript";
 import "@/styles/meeting-hub.css";
+import "@/styles/meeting-agenda.css";
 
 export const metadata: Metadata = { title: "Meeting | Mytheus" };
 
@@ -41,7 +49,11 @@ export const metadata: Metadata = { title: "Meeting | Mytheus" };
      refuses new tokens for an ended meeting).
    - Missed: its time passed and nobody joined. Said plainly, with who was invited.
 
-   Every person is an internal user id; names come from the workspace's members. */
+   Every person is an internal user id; names come from the workspace's members.
+
+   ADR-0038 D11: the host is named in the title row, a follow-up links the meeting it follows, the
+   agenda shows each item's status and the meeting agent's note (the host or creator can edit it
+   and set statuses), and a follow-up shows what the earlier meeting left open. */
 
 export const dynamic = "force-dynamic";
 
@@ -66,6 +78,26 @@ function relative(from: Date, to: Date): string {
 
 type Person = { id: string; name: string; email: string; imageUrl: string | null; isYou: boolean; host: boolean };
 
+/** The parts of the page that ADR-0038 adds, assembled once in the page and passed down. */
+type Plan = {
+  agenda: AgendaItemsProps;
+  carry: { previous: { id: string; title: string }; data: CarryForward | null } | null;
+  nameOf: (id: string) => string;
+};
+type AgendaItemsProps = {
+  meetingId: string;
+  items: CallMeeting["agenda"];
+  people: AgendaPerson[];
+  canEdit: boolean;
+  ended: boolean;
+  meetingMinutes: number;
+};
+
+function PlanCards({ plan, side }: { plan: Plan; side: "main" | "aside" }) {
+  if (side === "main") return <MeetingAgendaCard {...plan.agenda} />;
+  return plan.carry ? <CarryForwardCard previous={plan.carry.previous} data={plan.carry.data} nameOf={plan.nameOf} /> : null;
+}
+
 function people(meeting: CallMeeting, members: WorkspaceMemberView[] | null): Person[] {
   const byId = new Map((members ?? []).map((m) => [m.id, m]));
   return meeting.participants
@@ -77,7 +109,7 @@ function people(meeting: CallMeeting, members: WorkspaceMemberView[] | null): Pe
         email: m?.email ?? "",
         imageUrl: m?.imageUrl ?? null,
         isYou: m?.isYou ?? false,
-        host: p.role === "host",
+        host: meeting.hostUserId ? p.id === meeting.hostUserId : p.role === "host",
       };
     })
     .sort((a, b) => Number(b.host) - Number(a.host) || Number(b.isYou) - Number(a.isYou) || a.name.localeCompare(b.name));
@@ -197,7 +229,17 @@ function AgentCard() {
   );
 }
 
-function UpcomingDetail({ meeting, list, hasTranscript }: { meeting: CallMeeting; list: Person[]; hasTranscript: boolean }) {
+function UpcomingDetail({
+  meeting,
+  list,
+  hasTranscript,
+  plan,
+}: {
+  meeting: CallMeeting;
+  list: Person[];
+  hasTranscript: boolean;
+  plan: Plan;
+}) {
   const live = meeting.status === "live";
   const start = new Date(meeting.startTime);
   const now = new Date();
@@ -211,6 +253,7 @@ function UpcomingDetail({ meeting, list, hasTranscript }: { meeting: CallMeeting
     <div className="md-cols">
       <div className="md-col">
         <WhenCard meeting={meeting} note={note} live={live} />
+        <PlanCards plan={plan} side="main" />
         {hasTranscript ? (
           <Link href={`/meetings/${meeting.id}/transcript`} className="mx-card md-linkcard tap">
             <span className="md-plan-ico" aria-hidden="true">
@@ -226,6 +269,7 @@ function UpcomingDetail({ meeting, list, hasTranscript }: { meeting: CallMeeting
         <AgentCard />
       </div>
       <div className="md-col">
+        <PlanCards plan={plan} side="aside" />
         <PeopleCard list={list} title="Invited" />
       </div>
     </div>
@@ -252,11 +296,13 @@ function EndedDetail({
   list,
   chunks,
   names,
+  plan,
 }: {
   meeting: CallMeeting;
   list: Person[];
   chunks: TranscriptChunk[];
   names: Map<string, string>;
+  plan: Plan;
 }) {
   const talk = talkTime(chunks, names);
   const spokenMs = chunks.length > 0 ? Math.max(...chunks.map((c) => c.end_ms)) - Math.min(...chunks.map((c) => c.start_ms)) : 0;
@@ -279,8 +325,10 @@ function EndedDetail({
                 : "The call ran without transcription, so there are no notes, decisions or tasks from it here."
             }
           />
+          {plan.agenda.items.length > 0 ? <PlanCards plan={plan} side="main" /> : null}
         </div>
         <div className="md-col">
+          <PlanCards plan={plan} side="aside" />
           <PeopleCard list={list} title="Invited" />
         </div>
       </div>
@@ -353,6 +401,8 @@ function EndedDetail({
           )}
         </section>
 
+        <PlanCards plan={plan} side="main" />
+
         <section className="mx-card mx-card-pad" aria-labelledby="md-thread-h">
           <div className="mx-card-head">
             <h2 className="mx-card-title" id="md-thread-h">
@@ -381,6 +431,7 @@ function EndedDetail({
       </div>
 
       <div className="md-col">
+        <PlanCards plan={plan} side="aside" />
         <PeopleCard list={list} title="Took part" />
       </div>
     </div>
@@ -390,9 +441,10 @@ function EndedDetail({
 export default async function MeetingDetailPage({ params }: { params: { meetingId: string } }) {
   const meeting = await resolveCallMeeting(params.meetingId);
   // A transcript that cannot be reached is shown as no transcript; the meeting itself still loads.
-  const [transcript, members] = await Promise.all([
+  const [transcript, members, carried] = await Promise.all([
     fetchTranscriptSurface(meeting.id).catch(() => null),
     listMembers(),
+    meeting.previousMeetingId ? fetchCarryForward(meeting.id) : Promise.resolve(null),
   ]);
   // Older transcripts saved silence as empty lines.
   const chunks = (transcript?.chunks ?? []).filter((c) => c.text.trim().length > 0);
@@ -407,6 +459,31 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
   const start = new Date(meeting.startTime);
   const end = new Date(start.getTime() + meeting.durationMinutes * 60000);
   const shown = list.slice(0, 4);
+  const host = list.find((p) => p.host) ?? null;
+  const you = members?.find((m) => m.isYou) ?? null;
+  const canEdit = !!you && (you.id === meeting.hostUserId || you.id === meeting.createdBy);
+  const nameOf = (id: string) => names.get(id) ?? "Former member";
+  const previous = meeting.previousMeetingId
+    ? {
+        id: meeting.previousMeetingId,
+        title:
+          meeting.previousMeeting?.title ??
+          (carried?.ok ? carried.data.previous_meeting?.title : null) ??
+          "The earlier meeting",
+      }
+    : null;
+  const plan: Plan = {
+    agenda: {
+      meetingId: meeting.id,
+      items: meeting.agenda,
+      people: list.map((p) => ({ id: p.id, name: p.isYou ? `${p.name} (you)` : p.name })),
+      canEdit,
+      ended,
+      meetingMinutes: meeting.durationMinutes,
+    },
+    carry: previous ? { previous, data: carried?.ok ? carried.data : null } : null,
+    nameOf,
+  };
 
   return (
     <div className="mx-page md" id="page-meeting-detail">
@@ -432,6 +509,12 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
             ) : (
               <Chip tone="low">Scheduled</Chip>
             )}
+            {host ? (
+              <Chip title={host.isYou ? "You host this meeting" : `${host.name} hosts this meeting`}>
+                <UserCircle size={14} aria-hidden="true" />
+                {host.isYou ? "You host" : `Hosted by ${host.name}`}
+              </Chip>
+            ) : null}
             {ended && chunks.length > 0 ? (
               <Chip>
                 <Article size={14} aria-hidden="true" />
@@ -461,6 +544,17 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
               )}
               {plural(meeting.invited, "person", "people")}
             </span>
+            {previous ? (
+              <span>
+                <ArrowBendUpLeft size={18} aria-hidden="true" />
+                <span>
+                  Follow-up to{" "}
+                  <Link href={`/meetings/${previous.id}`} className="md-follow">
+                    {previous.title}
+                  </Link>
+                </span>
+              </span>
+            ) : null}
           </div>
         </div>
         <div className="mx-actions">
@@ -484,9 +578,9 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
       </header>
 
       {ended ? (
-        <EndedDetail meeting={meeting} list={list} chunks={chunks} names={names} />
+        <EndedDetail meeting={meeting} list={list} chunks={chunks} names={names} plan={plan} />
       ) : (
-        <UpcomingDetail meeting={meeting} list={list} hasTranscript={chunks.length > 0} />
+        <UpcomingDetail meeting={meeting} list={list} hasTranscript={chunks.length > 0} plan={plan} />
       )}
     </div>
   );

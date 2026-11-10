@@ -19,7 +19,7 @@ import { Button, LinkButton } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { initials, toneOf } from "@/components/room/tone";
 import { Chip } from "./Chip";
-import { NewMeeting } from "./NewMeeting";
+import { NewMeeting, type NewMeetingMe } from "./NewMeeting";
 import type { PickableMember } from "./MemberPicker";
 import { MONTHS, addDays, dayKey, dayLabel, formatTime, mondayOf, sameDay, shortDate, startOfDay } from "./date-utils";
 import type { HubMeeting } from "./types";
@@ -87,6 +87,7 @@ export function MeetingsHub({
   meetings,
   people = {},
   invitable = null,
+  me = null,
   unavailable = false,
 }: {
   meetings: HubMeeting[];
@@ -94,6 +95,8 @@ export function MeetingsHub({
   people?: Record<string, HubPerson>;
   /** Members the empty state's New meeting can invite. */
   invitable?: PickableMember[] | null;
+  /** You, for the empty state's New meeting host and owner pickers. */
+  me?: NewMeetingMe | null;
   /** The list could not be loaded, which is not the same as having no meetings. */
   unavailable?: boolean;
 }) {
@@ -234,7 +237,7 @@ export function MeetingsHub({
       <EmptyState
         title="No meetings yet"
         description="Start or schedule a meeting. Your agent joins it with you, takes notes and holds decisions for you to confirm."
-        action={<NewMeeting members={invitable} />}
+        action={<NewMeeting members={invitable} me={me} />}
       />
     );
   } else if (groups.length === 0) {

@@ -1,8 +1,9 @@
 import { MeetingsHub, type HubPerson } from "@/components/meetings/MeetingsHub";
-import { NewMeeting } from "@/components/meetings/NewMeeting";
+import { NewMeeting, type FollowUpOption } from "@/components/meetings/NewMeeting";
 import { listMeetings, toCallMeeting } from "@/lib/api/meetings";
 import { listMembers } from "@/lib/api/members";
 import "@/styles/meeting-hub.css";
+import "@/styles/meeting-agenda.css";
 
 /* The meetings hub. A Server Component that reads the caller's meetings and the workspace's
    members from core-api and hands plain data to one client island for the tabs, search, the
@@ -19,6 +20,16 @@ export default async function MeetingsPage() {
     (members ?? []).map((m) => [m.id, { name: m.name, imageUrl: m.imageUrl ?? null, isYou: m.isYou }]),
   );
   const meetings = (real ?? []).map(toCallMeeting);
+  const you = members?.find((m) => m.isYou);
+  const me = you ? { id: you.id, name: you.name } : null;
+  // "Follow-up to" offers the meetings that have already started, newest first (ADR-0038 D11).
+  // One that never happened has nothing to carry forward, so it is left out.
+  const now = Date.now();
+  const recent: FollowUpOption[] = meetings
+    .filter((m) => !m.missed && Date.parse(m.startTime) <= now)
+    .sort((a, b) => Date.parse(b.startTime) - Date.parse(a.startTime))
+    .slice(0, 20)
+    .map((m) => ({ id: m.id, title: m.title, startTime: m.startTime }));
 
   return (
     <div className="mx-page">
@@ -27,9 +38,9 @@ export default async function MeetingsPage() {
           <h1 className="mx-title">Meetings</h1>
           <p className="mx-sub">Every call on your calendar, what your agent captured, and where to pick it up.</p>
         </div>
-        <NewMeeting members={invitable} openFromLink />
+        <NewMeeting members={invitable} openFromLink recent={recent} me={me} />
       </header>
-      <MeetingsHub meetings={meetings} people={people} invitable={invitable} unavailable={real === null} />
+      <MeetingsHub meetings={meetings} people={people} invitable={invitable} me={me} unavailable={real === null} />
     </div>
   );
 }

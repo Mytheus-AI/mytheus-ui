@@ -1,16 +1,29 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CalendarPlus, X } from "@phosphor-icons/react";
 import { createMeeting } from "@/app/actions/meetings";
+import { AgendaEditor, type AgendaPerson } from "./AgendaEditor";
+import { validateAgenda, type AgendaDraftRow, type AgendaRowErrors } from "./agenda-editor-model";
 import { MemberPicker, type PickableMember } from "./MemberPicker";
 import { useDialogKeys } from "./useDialogKeys";
 
 /* "New meeting": the primary button on the meetings hub (and its empty state) and its dialog. Start now creates the
    meeting from this minute and goes straight to its join screen; Schedule creates it at the
    chosen local date and time and opens its detail page. Times are read in the browser, so they
-   are the visitor's own time zone, and sent as ISO 8601 with the offset already applied. */
+   are the visitor's own time zone, and sent as ISO 8601 with the offset already applied.
+
+   ADR-0038 D11 adds three optional parts: "Follow-up to" (one of your recent meetings), the host
+   (you by default, or one of the people you invite) and an agenda (title, owner, minutes). Owners
+   are chosen from the people in the meeting; un-inviting someone who owns an item flags it. */
+
+/** An earlier meeting the new one can follow up. */
+export type FollowUpOption = { id: string; title: string; startTime: string };
+/** The signed-in person, as the host and owner pickers name them. */
+export type NewMeetingMe = { id: string; name: string };
+
+const followDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
 
 type When = "now" | "later";
 const DURATIONS = [15, 30, 45, 60, 90] as const;
@@ -33,8 +46,14 @@ function defaultSlot(): { date: string; time: string } {
 export function NewMeeting({
   members,
   openFromLink = false,
+  recent = [],
+  me = null,
 }: {
   members: PickableMember[] | null;
+  /** Your recent meetings, newest first, for "Follow-up to". */
+  recent?: FollowUpOption[];
+  /** You, for the host and owner pickers. Null when the member list could not be loaded. */
+  me?: NewMeetingMe | null;
   /** Open the dialog when the page is reached with `?new=1` (the sidebar's New meeting button).
       Set on one instance only, so a page with two buttons opens one dialog. */
   openFromLink?: boolean;
@@ -54,8 +73,25 @@ export function NewMeeting({
   const [time, setTime] = useState("");
   const [duration, setDuration] = useState<number>(30);
   const [invitees, setInvitees] = useState<string[]>([]);
+  const [hostId, setHostId] = useState("");
+  const [previousId, setPreviousId] = useState("");
+  const [agenda, setAgenda] = useState<AgendaDraftRow[]>([]);
+  const [agendaErrors, setAgendaErrors] = useState<Record<string, AgendaRowErrors>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Everyone who will be in the meeting: you, then the people picked so far.
+  const inMeeting = useMemo<AgendaPerson[]>(() => {
+    const byId = new Map((members ?? []).map((m) => [m.id, m.name]));
+    const list: AgendaPerson[] = me ? [{ id: me.id, name: `${me.name} (you)` }] : [];
+    for (const id of invitees) list.push({ id, name: byId.get(id) ?? "Invited member" });
+    return list;
+  }, [members, me, invitees]);
+
+  // A host who is no longer invited falls back to you.
+  useEffect(() => {
+    if (hostId && !invitees.includes(hostId)) setHostId("");
+  }, [hostId, invitees]);
 
   const close = () => {
     if (busy) return;
@@ -71,6 +107,10 @@ export function NewMeeting({
     setTime(slot.time);
     setDuration(30);
     setInvitees([]);
+    setHostId("");
+    setPreviousId("");
+    setAgenda([]);
+    setAgendaErrors({});
     setError(null);
     setOpen(true);
   };
@@ -98,6 +138,14 @@ export function NewMeeting({
       if (start.getTime() < Date.now() - 60_000) return setError("Pick a time that hasn't passed yet.");
     }
 
+    const participantIds = [...(me ? [me.id] : []), ...invitees];
+    const checked = validateAgenda(agenda, participantIds);
+    if (!checked.ok) {
+      setAgendaErrors(checked.rows);
+      return setError(checked.message);
+    }
+    setAgendaErrors({});
+
     setBusy(true);
     setError(null);
     const result = await createMeeting({
@@ -105,6 +153,9 @@ export function NewMeeting({
       scheduledStart: start.toISOString(),
       durationMinutes: duration,
       participantIds: invitees,
+      hostUserId: hostId || null,
+      previousMeetingId: previousId || null,
+      agenda: checked.items.map(({ title: t, owner_user_id, duration_minutes }) => ({ title: t, owner_user_id, duration_minutes })),
     });
     if (!result.ok) {
       setBusy(false);
@@ -124,7 +175,7 @@ export function NewMeeting({
       {open && (
         <div className="mh-new-layer">
           <button type="button" className="mh-new-scrim" aria-label="Close" onClick={close} tabIndex={-1} />
-          <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={`${ids}-h`} className="mh-new">
+          <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={`${ids}-h`} className="mh-new is-wide">
             <form onSubmit={submit} noValidate>
               <div className="mh-new-head">
                 <h2 id={`${ids}-h`}>New meeting</h2>
@@ -198,6 +249,63 @@ export function NewMeeting({
                   </span>
                   <MemberPicker members={members} selected={invitees} onChange={setInvitees} />
                 </div>
+
+                <div className="mh-new-row ag-new-pair">
+                  <label className="mh-new-field" htmlFor={`${ids}-host`}>
+                    <span>Host</span>
+                    <select id={`${ids}-host`} value={hostId} onChange={(e) => setHostId(e.target.value)}>
+                      <option value="">{me ? `${me.name} (you)` : "You"}</option>
+                      {inMeeting
+                        .filter((p) => p.id !== me?.id)
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                  <label className="mh-new-field" htmlFor={`${ids}-prev`}>
+                    <span>
+                      Follow-up to <small className="mh-new-hint">Optional</small>
+                    </span>
+                    <select
+                      id={`${ids}-prev`}
+                      value={previousId}
+                      disabled={recent.length === 0}
+                      aria-describedby={recent.length === 0 ? `${ids}-prev-note` : undefined}
+                      onChange={(e) => setPreviousId(e.target.value)}
+                    >
+                      <option value="">{recent.length === 0 ? "No earlier meetings" : "Not a follow-up"}</option>
+                      {recent.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.title}, {followDate.format(new Date(m.startTime))}
+                        </option>
+                      ))}
+                    </select>
+                    {recent.length === 0 ? (
+                      <small id={`${ids}-prev-note`} className="mh-new-hint">
+                        Meetings you have had show here.
+                      </small>
+                    ) : null}
+                  </label>
+                </div>
+
+                <fieldset className="mh-new-when ag-new-agenda">
+                  <legend>
+                    Agenda <small className="mh-new-hint">Optional, up to 20 items</small>
+                  </legend>
+                  <AgendaEditor
+                    rows={agenda}
+                    onChange={(rows) => {
+                      setAgenda(rows);
+                      if (Object.keys(agendaErrors).length > 0) setAgendaErrors({});
+                    }}
+                    people={inMeeting}
+                    errors={agendaErrors}
+                    meetingMinutes={duration}
+                    disabled={busy}
+                  />
+                </fieldset>
 
                 {error && (
                   <p className="mh-new-error" role="alert">
