@@ -231,7 +231,7 @@ function KeptStrip({ keeps, shown }: { keeps: Keep[]; shown: number }) {
   const cols = Math.max(keeps.length, 1);
   const reach = Math.max(shown - 1, 0) / cols;
   return (
-    <div className="mt-5 px-1">
+    <div className="mt-3 px-1">
       <div className="flex items-center justify-between gap-3">
         <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-ink-2">
           <LogoMark size={16} />
@@ -263,7 +263,7 @@ function KeptStrip({ keeps, shown }: { keeps: Keep[]; shown: number }) {
                       : "border-line-2 bg-surface"
                 }`}
               />
-              <div className={`mt-2.5 transition-[opacity,transform] duration-300 ease-out ${on ? "opacity-100" : "translate-y-1 opacity-0"}`}>
+              <div className={`mt-2 transition-[opacity,transform] duration-300 ease-out ${on ? "opacity-100" : "translate-y-1 opacity-0"}`}>
                 <Chip tone={TONE[k.tag]}>{k.tag}</Chip>
                 <p className="mt-1.5 line-clamp-2 text-[14px] leading-snug text-ink-2">{k.text}</p>
               </div>
@@ -302,13 +302,20 @@ export function AuthRoom({ title, when, lines, you, label }: SceneProps) {
   );
 
   return (
-    <div className="auth-room mx-auto w-full max-w-[min(620px,calc((100dvh-470px)*1.23))]" aria-hidden>
-      {/* no window frame: the meeting sits straight on the peach stage, its name and timer above */}
-      <div className="auth-appear mb-1 flex items-baseline gap-3 px-1" style={delay(0.1)}>
-        <span className="truncate font-display text-[19px] font-semibold tracking-[-0.01em] text-ink">{name}</span>
-        <span className="hidden truncate text-[14px] text-ink-3 xl:inline">{at}</span>
-      </div>
+    <div
+      className="auth-room mx-auto"
+      // As wide as the panel allows, unless the height left above the headline runs out first:
+      // the room's own height is its width scaled by RW:rh, plus ~140px for the kept strip.
+      style={{ width: `min(100%, 780px, calc((100cqh - 140px) * ${RW / rh}))` }}
+      aria-hidden
+    >
+      {/* no window frame: the meeting sits straight on the peach stage */}
       <div className="relative w-full [container-type:inline-size]" style={{ aspectRatio: `${RW} / ${rh}` }}>
+        {/* the meeting's name and when, in the room's empty top-left corner */}
+        <div className="auth-appear absolute left-0 top-0 z-10 max-w-[25%]" style={delay(0.1)}>
+          <p className="truncate font-display text-[clamp(16px,3.6cqw,21px)] font-semibold leading-tight tracking-[-0.01em] text-ink">{name}</p>
+          <p className="truncate text-[13px] text-ink-3">{at}</p>
+        </div>
         <Wall rh={rh} />
         {[0, 1, 2].map(seat)}
         <Table label={label} rh={rh} />

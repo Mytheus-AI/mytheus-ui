@@ -84,12 +84,13 @@ export function AuthShell({
 function BrandPanel({ copy, scene }: { copy: StageCopy; scene?: SceneProps }) {
   return (
     <aside className="hidden p-3 lg:sticky lg:top-0 lg:block lg:h-[100dvh]">
-      <div className="auth-stage flex h-full flex-col overflow-hidden rounded-hero px-10 pb-10 pt-12 xl:px-14 xl:pb-14">
-        <div className="flex min-h-0 flex-1 items-center justify-center [@media(max-height:680px)]:hidden">
+      <div className="auth-stage flex h-full flex-col overflow-hidden rounded-hero px-8 pb-10 pt-8 xl:px-12 xl:pb-12">
+        {/* a size container, so the meeting can fill exactly the space left above the headline */}
+        <div className="flex min-h-0 flex-1 items-center justify-center [container-type:size] [@media(max-height:620px)]:hidden">
           <AuthRoom {...scene} />
         </div>
         <div className="mt-auto pt-6">
-          <p className="display max-w-[15ch] text-[clamp(2.25rem,3.2vw,3.25rem)] leading-[1.02]">{copy.title}</p>
+          <p className="display max-w-[15ch] text-[clamp(2.25rem,3.2vw,3.25rem)] leading-[1.02] [@media(max-height:820px)]:text-[2.25rem]">{copy.title}</p>
           {copy.lead ? (
             <p className="mt-4 max-w-[44ch] text-pretty text-[16px] leading-relaxed text-ink-2 [@media(max-height:760px)]:hidden">
               {copy.lead}
