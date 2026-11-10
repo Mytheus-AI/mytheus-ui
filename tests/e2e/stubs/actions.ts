@@ -1,3 +1,6 @@
+import { applyUpdate, forgotten, type MemoryUpdate, type PersonMemory } from "../../../src/lib/memory";
+import { MEMORY_FIXTURE } from "../memory-fixture";
+
 // The server actions the room calls, answered as core-api would on success.
 const row = (id: string) => ({ id, content: "Ship the beta on 2 December", status: "confirmed", confirmed_by: "u-maya" });
 export async function confirmCandidate(_kind: string, id: string) {
@@ -61,7 +64,13 @@ export async function askAgent(question: string) {
       degraded: false,
       citations: [
         { n: 1, text: "QA signed off on the beta, so we ship on the second.", kind: "decision", meeting_id: "8a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d", decision_id: "33333333-3333-4333-8333-333333333333", meeting_title: "Q4 launch review" },
-        { n: 2, text: "Pro stays at 25 dollars a seat.", kind: "transcript", meeting_id: "44444444-4444-4444-8444-444444444444", meeting_title: "Pricing review", occurred_at: "2026-11-04T10:00:00Z", speaker: "Raj Patel" },
+        { n: 2, text: "Pro stays at 25 dollars a seat.", kind: "transcript", meeting_id: "44444444-4444-4444-8444-444444444444", meeting_title: "Pricing review", occurred_at: "2026-11-04T10:00:00Z", speaker: "Raj Patel", start_ms: 754_200 },
+        {
+          n: 3,
+          text: "Pricing policy: list prices change once a quarter, after the pricing review signs off. Existing customers keep their price until renewal, and any discount above 20 percent needs the finance lead's approval in writing before it is offered.",
+          kind: "document",
+          document_id: "66666666-6666-4666-8666-666666666666",
+        },
       ],
     },
   };
@@ -108,4 +117,16 @@ export async function exportDecision() {
 }
 export async function eraseData() {
   return { ok: true as const, summary: "3 notes and 1 promise removed", label: "Pricing review" };
+}
+
+// Settings > Agent memory (wave 3): answered as core-api would, from the harness's fixture.
+let memoryState: PersonMemory = MEMORY_FIXTURE;
+export async function updateMemory(update: MemoryUpdate) {
+  if ((update.pin_topics ?? []).includes("Refuse me")) return { ok: false as const, message: "Your change could not be saved just now. Try again in a moment." };
+  memoryState = applyUpdate(memoryState, update);
+  return { ok: true as const, memory: memoryState };
+}
+export async function forgetEverything() {
+  memoryState = forgotten(memoryState);
+  return { ok: true as const };
 }
