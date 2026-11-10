@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useClerk, useOrganizationList, useUser } from "@clerk/nextjs";
 import { CaretRight, Check, Copy, Plus } from "@phosphor-icons/react";
@@ -46,6 +46,9 @@ export function ChooseOrganization() {
   const [busy, setBusy] = useState<string | null>(null);
   const [path, setPath] = useState<Path | null>(null);
   const [copied, setCopied] = useState(false);
+  // Set while a workspace is being entered, so the "already has a workspace" redirect above does
+  // not race the hand-off to the next onboarding step once the session turns active.
+  const entering = useRef(false);
 
   // No session at all: this page has nothing to offer. An active session that owes no task
   // has nothing to do here either.
@@ -53,7 +56,7 @@ export function ChooseOrganization() {
   // for someone who already has a workspace, so they can switch or accept an invitation.
   // Read from `window` in the effect, not `useSearchParams`, so the page needs no Suspense.
   useEffect(() => {
-    if (!clerk.loaded) return;
+    if (!clerk.loaded || entering.current) return;
     const switching = new URLSearchParams(window.location.search).get("switch") === "1";
     if (!clerk.session) router.replace("/sign-in");
     else if (!switching && clerk.session.status === "active" && clerk.session.lastActiveOrganizationId)
@@ -81,6 +84,7 @@ export function ChooseOrganization() {
 
   const enter = async (organizationId: string, key: string) => {
     if (!setActive) return;
+    entering.current = true;
     setBusy(key);
     setError(null);
     try {
@@ -98,14 +102,20 @@ export function ChooseOrganization() {
                 : "We couldn't set up your workspace just now. Try again in a moment.",
             );
             setBusy(null);
+            entering.current = false;
             return;
           }
-          router.push(AFTER_AUTH_URL);
+          // A switch (the sidebar's workspace button, an invitation email) goes straight back to
+          // the app; a first workspace goes on to "About you" (ADR-0038 D11), which itself skips
+          // ahead for someone whose agent already knows their role.
+          const switching = new URLSearchParams(window.location.search).get("switch") === "1";
+          router.push(switching ? AFTER_AUTH_URL : "/onboarding/profile?from=workspace");
         },
       });
     } catch (err) {
       setError(firstError(err));
       setBusy(null);
+      entering.current = false;
     }
   };
 
