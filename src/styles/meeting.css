@@ -1519,6 +1519,13 @@
   .mx-meet .nfy-card.is-question .nfy-kind { color: var(--accentDeep); }
   .mx-meet .nfy-card.is-decision .nfy-kind { color: var(--brown); }
 
+  /* Context fills (Phase P10): green like the feed's shared-context entries. The card reserves
+     its height so a fill landing mid-meeting does not shove the panel. */
+  .mx-meet .nfy-card.is-context { min-height: 104px; }
+  .mx-meet .nfy-card.is-context .nfy-kind::before { background: var(--green); }
+  .mx-meet .nfy-card.is-context .nfy-kind { color: var(--green); }
+  .mx-meet .nfy-from { display: flex; align-items: center; gap: 5px; margin: 5px 0 0; font-size: 11px; font-weight: 700; color: var(--mutedDeep); }
+
   .mx-meet .nfy-meta { margin-left: auto; color: var(--mutedAlt); letter-spacing: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
 
   .mx-meet .nfy-text { font-size: 12px; line-height: 1.45; font-weight: 500; color: var(--body); margin: 4px 0 7px; }

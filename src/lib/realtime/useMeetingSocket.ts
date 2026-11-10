@@ -65,6 +65,15 @@ import {
   type SuggestionRow,
   type SuggestionsState,
 } from "./suggestions";
+import {
+  applyLiveContextFill,
+  dismissContextFill as dismissContextFillIn,
+  emptyContextFillsState,
+  hydrateContextFills,
+  type ContextFillEventPayload,
+  type ContextFillRow,
+  type ContextFillsState,
+} from "./contextFills";
 
 export type SocketStatus =
   | "disabled" // no NEXT_PUBLIC_REALTIME_WS_URL: caller falls back to mock captions
@@ -95,6 +104,10 @@ export interface MeetingSocketState {
   resolveSuggestion: (id: string, outcome: "asked" | "dismissed") => void;
   /** Move a suggestion the server saved into Saved for later. */
   markSuggestionSaved: (id: string) => void;
+  /** This participant's own ContextGapAgent context fills (Phase P10, plan 3.5). */
+  contextFills: ContextFillsState;
+  /** Drop a context fill this participant dismissed (or that is gone on the server). */
+  dismissContextFill: (id: string) => void;
 }
 
 interface JoinAck {
@@ -111,6 +124,7 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
   const [notes, setNotes] = useState<NotesState>(emptyNotesState);
   const [candidates, setCandidates] = useState<CandidatesState>(emptyCandidatesState);
   const [suggestions, setSuggestions] = useState<SuggestionsState>(emptySuggestionsState);
+  const [contextFills, setContextFills] = useState<ContextFillsState>(emptyContextFillsState);
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -193,11 +207,28 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
       }
     };
 
+    // And for this participant's context fills: their surfaced, non-dismissed fills for this
+    // meeting, merged by id. A dismissed fill is remembered in the reducer and never returns.
+    const rehydrateContextFills = async () => {
+      try {
+        const response = await fetch(
+          `/api/meeting-context-fills?meeting_id=${encodeURIComponent(meetingId)}`,
+        );
+        if (!response.ok) return;
+        const body = (await response.json()) as { items?: ContextFillRow[] };
+        if (cancelled) return;
+        setContextFills((prev) => hydrateContextFills(prev, body));
+      } catch {
+        // Same reasoning as captions: the live stream keeps working without it.
+      }
+    };
+
     const join = () => {
       void rehydrate();
       void rehydrateNotes();
       void rehydrateCandidates();
       void rehydrateSuggestions();
+      void rehydrateContextFills();
       socket.emit("join", { meetingId }, (ack: JoinAck) => {
         if (cancelled) return;
         if (ack?.ok) {
@@ -251,6 +282,13 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
       setSuggestions((prev) => applyLiveSuggestions(prev, event.payload));
     });
 
+    // Private to the requester, like suggestions: the gateway emits a fill only to their sockets,
+    // and only when it is surfaced (P10 contract section 7).
+    socket.on("agent-context", (event: { meetingId: string; payload: ContextFillEventPayload }) => {
+      if (cancelled || event?.meetingId !== meetingId || !event.payload) return;
+      setContextFills((prev) => applyLiveContextFill(prev, event.payload));
+    });
+
     socket.on("presence", (members: string[]) => {
       if (!cancelled) setPresence(Array.isArray(members) ? members : []);
     });
@@ -284,6 +322,11 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
     [],
   );
 
+  const dismissContextFill = useCallback(
+    (id: string) => setContextFills((prev) => dismissContextFillIn(prev, id)),
+    [],
+  );
+
   return useMemo(
     () => ({
       status,
@@ -296,6 +339,8 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
       suggestions,
       resolveSuggestion,
       markSuggestionSaved,
+      contextFills,
+      dismissContextFill,
     }),
     [
       status,
@@ -308,6 +353,8 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
       suggestions,
       resolveSuggestion,
       markSuggestionSaved,
+      contextFills,
+      dismissContextFill,
     ],
   );
 }

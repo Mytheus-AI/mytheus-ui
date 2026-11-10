@@ -120,6 +120,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/context-fills/{fill_id}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dismiss Context Fill
+         * @description Hide a fill card for good. Requester only; repeating it is 200 and writes nothing.
+         */
+        post: operations["dismiss_context_fill"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/decisions/{decision_id}": {
         parameters: {
             query?: never;
@@ -252,6 +272,46 @@ export interface paths {
          *     stored but never served; the surface threshold is the tenant's, per agent.
          */
         get: operations["list_candidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meetings/{meeting_id}/collaborations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Collaborations
+         * @description The meeting's A2A collaboration log, newest first. Participants and admins only.
+         */
+        get: operations["list_collaborations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meetings/{meeting_id}/context-fills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Context Fills
+         * @description The caller's own surfaced, non-dismissed context fills for this meeting, oldest first.
+         */
+        get: operations["list_context_fills"];
         put?: never;
         post?: never;
         delete?: never;
@@ -623,6 +683,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/internal/meetings/{meeting_id}/post-meeting": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Post Meeting Digest */
+        get: operations["post_meeting_digest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/meetings/{meeting_id}/related-attendees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Related Attendees */
+        get: operations["related_attendees"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/internal/meetings/{meeting_id}/room-state": {
         parameters: {
             query?: never;
@@ -774,6 +868,96 @@ export interface components {
             meeting_id: string;
             /** User Id */
             user_id?: string | null;
+        };
+        /** Collaboration */
+        Collaboration: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Hop */
+            hop: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Latency Ms */
+            latency_ms: number;
+            /** Query Class */
+            query_class: string;
+            /**
+             * Requester Id
+             * Format: uuid
+             */
+            requester_id: string;
+            /** Requester Name */
+            requester_name: string | null;
+            /** Responder */
+            responder: string;
+            /** Responder Label */
+            responder_label: string;
+            /** Result */
+            result: string;
+            /** Success */
+            success: boolean;
+            /** Target Scope */
+            target_scope: string | null;
+        };
+        /** CollaborationPage */
+        CollaborationPage: {
+            /** Items */
+            items: components["schemas"]["Collaboration"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
+        /** ContextFill */
+        ContextFill: {
+            /** Citations */
+            citations: {
+                [key: string]: unknown;
+            }[];
+            /** Confidence */
+            confidence: number;
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Hop */
+            hop: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Rationale */
+            rationale: string | null;
+            /** Responder */
+            responder: string;
+            /** Responder Label */
+            responder_label: string;
+        };
+        /** ContextFillDismissed */
+        ContextFillDismissed: {
+            /**
+             * Dismissed At
+             * Format: date-time
+             */
+            dismissed_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+        };
+        /** ContextFillList */
+        ContextFillList: {
+            /** Items */
+            items: components["schemas"]["ContextFill"][];
         };
         /**
          * Decision
@@ -1077,6 +1261,32 @@ export interface components {
             /** User Ids */
             user_ids: string[];
         };
+        /** PostMeetingDigest */
+        PostMeetingDigest: {
+            /** Actions Confirmed */
+            actions_confirmed: number;
+            /** Actions Proposed */
+            actions_proposed: number;
+            /** Collaborations */
+            collaborations: number;
+            /** Context Fills */
+            context_fills: number;
+            /** Decisions Confirmed */
+            decisions_confirmed: number;
+            /** Decisions Proposed */
+            decisions_proposed: number;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Participants */
+            participants: number;
+            /** Status */
+            status: string;
+            /** Worklogs */
+            worklogs: number;
+        };
         /** @description RFC 7807 problem detail. Every 4xx and 5xx this service emits has this shape, including the ones FastAPI would otherwise return in its own format: `libs/shared/errors.py` registers handlers for `ProblemDetail`, `HTTPException`, `RequestValidationError` and bare `Exception`. */
         Problem: {
             code: components["schemas"]["ErrorCode"];
@@ -1107,6 +1317,11 @@ export interface components {
              * Format: uuid
              */
             user_id: string;
+        };
+        /** RelatedAttendees */
+        RelatedAttendees: {
+            /** User Ids */
+            user_ids: string[];
         };
         /** RetrievalScope */
         RetrievalScope: {
@@ -1777,6 +1992,58 @@ export interface operations {
             };
         };
     };
+    dismiss_context_fill: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                fill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContextFillDismissed"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     update_decision: {
         parameters: {
             query?: never;
@@ -2261,6 +2528,107 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CandidateList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_collaborations: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollaborationPage"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_context_fills: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContextFillList"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
@@ -3078,6 +3446,106 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    post_meeting_digest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PostMeetingDigest"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    related_attendees: {
+        parameters: {
+            query: {
+                user_id: string;
+            };
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RelatedAttendees"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Unhandled server error. Carries a `trace_id` and no internals. */

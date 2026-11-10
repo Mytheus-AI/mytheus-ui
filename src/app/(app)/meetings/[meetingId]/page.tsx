@@ -310,6 +310,12 @@ function EndedDetail({
             },
             { kicker: "Decisions", desc: "Decisions you have confirmed", href: "/decisions", tone: "is-green" },
             { kicker: "Tasks", desc: "Action items, wherever they were captured", href: "/tasks", tone: "is-orange" },
+            {
+              kicker: "Agent collaboration",
+              desc: "When agents asked each other for context, and what policy allowed",
+              href: `/meetings/${meeting.id}/collaborations`,
+              tone: "is-brown",
+            },
           ].map((a) => (
             <Link href={a.href} className="panel-row related-row tap" key={a.kicker} style={{ margin: 0 }}>
               <span className="row-body">

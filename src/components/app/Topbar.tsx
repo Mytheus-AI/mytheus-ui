@@ -12,6 +12,7 @@ function titleFor(pathname: string | null): string {
   if (/^\/meetings\/[^/]+\/collaborations$/.test(pathname)) return "Agent collaboration";
   if (/^\/people\/[^/]+$/.test(pathname)) return "Person";
   if (pathname === "/tenant/usage") return "Usage and budget";
+  if (pathname === "/tenant/agents") return "Agent collaboration";
   if (/^\/meetings\/[^/]+\/transcript$/.test(pathname)) return "Transcript";
   if (/^\/meetings\/[^/]+$/.test(pathname)) return "Meeting";
   const all = [...NAV_SECTIONS.flatMap((s) => s.items), ...ADMIN_ITEMS];
