@@ -66,7 +66,7 @@ export function SiteNav() {
 
   return (
     <header data-site-nav="" className="sticky top-3.5 z-50 mx-auto mt-3.5 w-[min(1120px,100%-40px)] sm:w-[min(1120px,100%-80px)]">
-      <div className="mx-auto flex max-w-[960px] items-center gap-1.5 rounded-full border border-line bg-surface-2/80 py-[7px] pl-[18px] pr-[7px] shadow-warm-2 backdrop-blur-[14px] backdrop-saturate-[1.2]">
+      <div className="mx-auto flex max-w-[960px] items-center gap-1.5 rounded-full border border-line bg-surface-2 py-[7px] pl-[18px] pr-[7px] shadow-warm-2">
         <Link href="/" aria-label="Mytheus home" className="group mr-auto rounded-full">
           <Wordmark size={22} textClassName="text-[22px]" />
         </Link>
@@ -184,7 +184,7 @@ export function SiteNav() {
         <nav
           id="site-sheet"
           aria-label="Site"
-          className="absolute inset-x-0 top-[calc(100%+10px)] max-h-[calc(100dvh-110px)] overflow-y-auto rounded-card border border-line bg-surface-2/95 p-2.5 shadow-warm-3 backdrop-blur-[14px] min-[860px]:hidden"
+          className="absolute inset-x-0 top-[calc(100%+10px)] max-h-[calc(100dvh-110px)] overflow-y-auto rounded-card border border-line bg-surface-2 p-2.5 shadow-warm-3 min-[860px]:hidden"
         >
           {LINKS.map((l) => (
             <Link
