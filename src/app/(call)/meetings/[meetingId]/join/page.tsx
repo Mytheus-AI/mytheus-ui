@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { resolveCallMeeting } from "@/components/call/resolve-meeting";
 import { PreJoin } from "@/components/call/PreJoin";
+import { readRoomSession } from "../session";
 import "@/styles/meeting-call.css";
+import "@/components/room/room-polish.css";
 
 export const metadata: Metadata = { title: "Join meeting | Mytheus" };
 
@@ -15,7 +17,10 @@ export default async function MeetingJoinPage({
 }: {
   params: { meetingId: string };
 }) {
-  const meeting = await resolveCallMeeting(params.meetingId);
+  const [meeting, session] = await Promise.all([
+    resolveCallMeeting(params.meetingId),
+    readRoomSession(params.meetingId),
+  ]);
 
-  return <PreJoin meeting={meeting} />;
+  return <PreJoin meeting={meeting} session={session} />;
 }

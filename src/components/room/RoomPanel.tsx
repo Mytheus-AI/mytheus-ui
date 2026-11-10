@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { ChatCircleText, SidebarSimple, Sparkle, Users, Warning } from "@phosphor-icons/react";
+import { isTypingTarget, keyTargetOf } from "@/lib/realtime/shortcuts";
 
 /* The room's side panel: Agent, Chat and People as tabs over one scrolling body, as in the room
    design. Collapsed, it becomes a rail of icons that keeps the counts and the conflict visible;
@@ -11,12 +12,15 @@ import { ChatCircleText, SidebarSimple, Sparkle, Users, Warning } from "@phospho
    Every tab stays mounted while another is showing (and while the panel is collapsed); inactive
    ones are only `hidden`. So the agent's confirm and dismiss state, a candidate being edited and
    the chat draft all survive switching. A conflict pre-empts: when one arrives the panel moves to
-   the Agent tab, once, so it cannot sit unseen behind Chat. Tabs follow the ARIA pattern: arrow
-   keys, Home and End move between them. */
+   the Agent tab, once, so it cannot sit unseen behind Chat - unless you are typing (a chat message,
+   a card edit), when the tab is never pulled from under you; the Agent tab turns red instead and
+   the conflict waits there (polish program, Phase 0). Tabs follow the ARIA pattern: arrow keys,
+   Home and End move between them. The Chat tab counts messages you have not seen. */
 
 export const SECTION_IDS = { agent: "cx-sec-agent", people: "cx-sec-people", chat: "cx-sec-chat" } as const;
 
-type Tab = "agent" | "chat" | "people";
+export type PanelTab = "agent" | "chat" | "people";
+type Tab = PanelTab;
 const ORDER: Tab[] = ["agent", "chat", "people"];
 
 export function RoomPanel({
@@ -30,6 +34,7 @@ export function RoomPanel({
   agent,
   people,
   chat,
+  onTab,
 }: {
   open: boolean;
   onOpen: () => void;
@@ -42,13 +47,21 @@ export function RoomPanel({
   agent: ReactNode;
   people: ReactNode;
   chat: ReactNode;
+  /** Which tab is on screen (null while the panel is collapsed), e.g. to mark chat as seen. */
+  onTab?: (tab: Tab | null) => void;
 }) {
   const [tab, setTab] = useState<Tab>("agent");
+  useEffect(() => {
+    onTab?.(open ? tab : null);
+  }, [open, tab, onTab]);
   const tabRefs = useRef<Record<Tab, HTMLButtonElement | null>>({ agent: null, chat: null, people: null });
 
   const wasConflict = useRef(false);
   useEffect(() => {
-    if (conflict && !wasConflict.current) setTab("agent");
+    if (conflict && !wasConflict.current) {
+      const typing = typeof document !== "undefined" && isTypingTarget(keyTargetOf(document.activeElement));
+      if (!typing) setTab("agent");
+    }
     wasConflict.current = conflict;
   }, [conflict]);
 
@@ -121,7 +134,7 @@ export function RoomPanel({
             type="button"
             className="mini-btn tap tip-left"
             data-tip="Chat"
-            aria-label={`Open chat${chatCount ? `, ${chatCount} messages` : ""}`}
+            aria-label={`Open chat${chatCount ? `, ${chatCount} unread` : ""}`}
             onClick={() => openAt("chat")}
           >
             <ChatCircleText size={20} aria-hidden />
@@ -169,7 +182,7 @@ export function RoomPanel({
                 {t.count ? (
                   <span className={`mx-count${t.hot ? " is-hot" : ""}`}>
                     {t.count}
-                    <span className="sr-only">{t.id === "people" ? " in the call" : t.id === "agent" ? " need you" : " messages"}</span>
+                    <span className="sr-only">{t.id === "people" ? " in the call" : t.id === "agent" ? " need you" : " unread"}</span>
                   </span>
                 ) : null}
               </button>

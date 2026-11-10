@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
 import { RoomAudioRenderer, StartAudio } from "@livekit/components-react";
 import { ParticipantEvent, RoomEvent, Track, type LocalTrackPublication } from "livekit-client";
-import { AgentSidebar, type AgentAttention } from "@/components/sidebar/AgentSidebar";
+import { ArrowLeft, Record, ShieldCheck } from "@phosphor-icons/react";
+import { AgentSidebar, type AgentAttention, type CandidateLedger } from "@/components/sidebar/AgentSidebar";
 import { AgentHead } from "@/components/sidebar/AgentHead";
 import { AgendaPanel } from "@/components/sidebar/AgendaPanel";
 import { LiveVideoGrid } from "@/components/meeting/LiveVideoGrid";
@@ -12,47 +14,56 @@ import { LiveCaptions } from "@/components/meeting/LiveCaptions";
 import { CallToastProvider, useCallToast } from "@/components/call/CallToast";
 import { CallTopBar } from "@/components/call/CallTopBar";
 import { CALL_PREFS_KEY } from "@/components/call/prefs";
+import { CONSENT_VERSION, ConsentTerms } from "@/components/call/consent";
 import { ChatPanel } from "@/components/room/ChatPanel";
 import { ConnectionPill } from "@/components/room/ConnectionPill";
 import { ControlBar } from "@/components/room/ControlBar";
 import { NotesView } from "@/components/room/NotesView";
-import { PeoplePanel, type RoomPerson } from "@/components/room/PeoplePanel";
+import { PeoplePanel } from "@/components/room/PeoplePanel";
+import { ReactionLayer } from "@/components/room/ReactionLayer";
 import { RoomClock } from "@/components/room/RoomClock";
-import { RoomGrid, type RoomLayout, type RoomTile } from "@/components/room/RoomGrid";
-import { RoomPanel, SECTION_IDS } from "@/components/room/RoomPanel";
-import { useNarrow } from "@/components/room/useNarrow";
+import { RoomDialog } from "@/components/room/RoomDialog";
+import { SteadyRoomGrid, type RoomLayout, type RoomTile } from "@/components/room/RoomGrid";
+import { RoomPanel, SECTION_IDS, type PanelTab } from "@/components/room/RoomPanel";
+import { useCompactBar, useNarrow } from "@/components/room/useNarrow";
+import { endMeetingForEveryone } from "@/components/room/actions";
 import { useOrgContext } from "@/lib/org-context";
 import { useLiveKitRoom } from "@/lib/realtime/useLiveKitRoom";
 import { RoomNamesProvider, type RoomNames } from "@/lib/realtime/room-names";
 import { orderedNotes } from "@/lib/realtime/notes";
-import { orderedCandidates } from "@/lib/realtime/candidates";
+import { decidedItems, lockedBy, orderedCandidates, recentSettlements } from "@/lib/realtime/candidates";
 import { openSuggestions, savedSuggestions } from "@/lib/realtime/suggestions";
 import { visibleContextFills } from "@/lib/realtime/contextFills";
 import { orderedAlerts } from "@/lib/realtime/alerts";
 import { useMeetingSocket } from "@/lib/realtime/useMeetingSocket";
-import { agentFace, type AgentFace } from "@/lib/realtime/agent-persona";
+import { roomConnection } from "@/lib/realtime/connection";
+import { elapsedSeconds } from "@/lib/realtime/meeting-clock";
+import { peopleGroups } from "@/lib/realtime/room-live";
+import { keyTargetOf, loadShortcutsEnabled, saveShortcutsEnabled, shortcutFor } from "@/lib/realtime/shortcuts";
+import { unreadCount } from "@/lib/realtime/chat";
+import { agentFace, agentSeedFor, type AgentFace } from "@/lib/realtime/agent-persona";
 import type { Proxy } from "@/lib/realtime/agenda";
 import type { AgentPersonality } from "@/lib/api/meeting-agenda-types";
 import type { CallMeeting } from "@/components/call/resolve-meeting";
-import type { AgentSidebarCard } from "@/lib/mock/data";
 
 /* The meeting room, full screen in the (call) layout: the top bar (title, who is here, the
    Call / Notes switch, Share link, panel toggle), the stage (a large speaker frame with
-   thumbnails, or a grid) with the clock, captions and the dark control bar floating over it, and
-   the side panel (Agent, Chat, People tabs) that collapses to a rail. Under 960px it is one
-   column with the panel as a sheet under the stage.
+   thumbnails, or a grid) with the clock, captions, reactions and the dark control bar floating
+   over it, and the side panel (Agent, Chat, People tabs) that collapses to a rail. Under 960px it
+   is one column with the panel as a sheet under the stage.
 
-   Video is live LiveKit once the room is connected; before that the stage shows only your own
-   tile. Captions are the real socket stream once joined and nothing otherwise. Once the call is
-   connected the mic, camera and screen-share controls drive it: your devices from the pre-join
-   are published, muted and unpublished for real. Before that they toggle locally.
+   Polish program, Phase 0, in this file:
+   - one honest connection line for the call and the meeting link (ConnectionPill), each of which
+     reconnects by itself with a fresh token;
+   - consent asked right here if the server still needs it (never a loop back to the pre-join);
+   - the shared candidate ledger, host agenda changes, raise hand, reactions, persisted chat,
+     "End for everyone" with a confirm step, all through the meeting link;
+   - Notes mode keeps Needs you, alerts and the agenda in a rail, and is remembered only for this
+     meeting in this tab;
+   - single-key shortcuts with an off switch that never fire while you type.
 
    ADR-0039 B5, C5: everyone who sent their agent instead of coming is on the stage as an agent
-   tile carrying their update (unless they joined after all), and the host's agenda panel shows
-   the `proxy_update` nudge with that update in full. */
-
-/** The agent's cards arrive over `agent-results`, which this room does not subscribe to yet. */
-const NO_AGENT_CARDS: AgentSidebarCard[] = [];
+   tile carrying their update (unless they joined after all). */
 
 export type RoomMode = "call" | "notes";
 
@@ -63,8 +74,16 @@ export type RoomMe = {
   agentName: string | null;
   agentSeed: string | null;
   personality: AgentPersonality | null;
-  /** You host or created the meeting: the agenda controls and nudges are yours. */
+  /** You host or created the meeting: the agenda controls, nudges and End for everyone are yours. */
   steers: boolean;
+};
+
+/** What meeting-service holds about your place in this call (`GET /api/meetings/:id/session`). */
+export type RoomSessionInfo = {
+  consentRequired: boolean;
+  consentedAt: string | null;
+  recording: boolean;
+  startedAt: string | null;
 };
 
 /** The person behind a tile id (`{identity}:{source}`, or "self" before the call connects). */
@@ -72,17 +91,20 @@ function tilePerson(id: string, selfId: string | undefined): string | undefined 
   if (id === "self") return selfId;
   return id.split(":")[0] || undefined;
 }
-const ROOM_MODE_KEY = "mytheus.room-mode";
+
+/* Remembered for this meeting in this tab only (a reload keeps it; the next meeting starts in
+   Call). It used to be remembered for every meeting, silently. */
+const modeKey = (meetingId: string) => `mytheus.room-mode.${meetingId}`;
 
 /** Plain words for why the call would not let you in, keyed by the server's stable code. */
 function joinProblem(code: string | null): string {
   switch (code) {
     case "NOT_A_PARTICIPANT":
       return "You are not on this meeting's participant list, so the call cannot let you in. Ask the host to add you.";
-    case "CONSENT_REQUIRED":
-      return "This workspace needs your recording consent before you can join. Go back to the pre-join and accept it.";
     case "VERSION_CONFLICT":
       return "This meeting has ended.";
+    case "EXTERNAL_MEETING":
+      return "This meeting happens in Google Meet, Teams or Zoom, so it has no Mytheus call to join. Open it from your calendar.";
     case "NOT_FOUND":
       return "This meeting could not be found. It may have been removed.";
     default:
@@ -95,10 +117,8 @@ function deviceProblem(device: "microphone" | "camera", err: unknown): string {
   const name = err instanceof Error ? err.name : "";
   if (name === "NotAllowedError" || name === "SecurityError")
     return `Your browser is blocking the ${device}. Allow it from the icon in the address bar, then try again.`;
-  if (name === "NotReadableError" || name === "AbortError")
-    return `Another app is using your ${device}. Close it, then try again.`;
-  if (name === "NotFoundError" || name === "OverconstrainedError")
-    return `No ${device} was found. Plug one in, then try again.`;
+  if (name === "NotReadableError" || name === "AbortError") return `Another app is using your ${device}. Close it, then try again.`;
+  if (name === "NotFoundError" || name === "OverconstrainedError") return `No ${device} was found. Plug one in, then try again.`;
   return `Could not turn on your ${device}. Try again.`;
 }
 
@@ -107,20 +127,38 @@ function deviceProblem(device: "microphone" | "camera", err: unknown): string {
 function DeviceNote({ note }: { note: { text: string; at: number } | null }) {
   const toast = useCallToast();
   useEffect(() => {
-    if (note) toast(note.text);
+    if (note) toast(note.text, "error");
   }, [note, toast]);
   return null;
 }
 
-export function MeetingRoom({
+export function MeetingRoom(props: {
+  meeting: CallMeeting;
+  names?: RoomNames;
+  me?: RoomMe | null;
+  session?: RoomSessionInfo | null;
+}) {
+  return (
+    <RoomNamesProvider names={props.names ?? {}}>
+      <CallToastProvider>
+        <Room {...props} />
+      </CallToastProvider>
+    </RoomNamesProvider>
+  );
+}
+
+function Room({
   meeting,
   names = {},
   me = null,
+  session = null,
 }: {
   meeting: CallMeeting;
   names?: RoomNames;
   me?: RoomMe | null;
+  session?: RoomSessionInfo | null;
 }) {
+  const toast = useCallToast();
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [captionsOn, setCaptionsOn] = useState(true);
@@ -128,66 +166,84 @@ export function MeetingRoom({
   const [layout, setLayout] = useState<RoomLayout>("grid");
   const [pinnedId, setPinnedId] = useState<string | null>(null);
   const [sideOpen, setSideOpen] = useState(true);
+  const [panelTab, setPanelTab] = useState<PanelTab | null>("agent");
   const [attention, setAttention] = useState<AgentAttention>({ count: 0, conflict: false });
   const [shareUrl, setShareUrl] = useState(`/meetings/${meeting.id}/join`);
   const [screenOn, setScreenOn] = useState(false);
-  // Two views of one live meeting: Call keeps the video up front, Notes turns the room into the
-  // living document. Remembered per browser, so people keep the view they work in.
+  const [shortcutsOn, setShortcutsOn] = useState(true);
+  const [confirmEnd, setConfirmEnd] = useState(false);
+  const [ending, setEnding] = useState(false);
+  const [endedByMe, setEndedByMe] = useState(false);
   const [mode, setMode] = useState<RoomMode>("call");
   useEffect(() => {
+    setShortcutsOn(loadShortcutsEnabled());
     try {
-      if (localStorage.getItem(ROOM_MODE_KEY) === "notes") setMode("notes");
+      if (sessionStorage.getItem(modeKey(meeting.id)) === "notes") setMode("notes");
     } catch {
       // Storage blocked: start in Call.
     }
-  }, []);
-  const switchMode = useCallback((next: RoomMode) => {
-    setMode(next);
-    try {
-      localStorage.setItem(ROOM_MODE_KEY, next);
-    } catch {
-      // Storage blocked: the switch still works for this visit.
-    }
-  }, []);
-  // The devices picked on the pre-join, applied when the real call publishes them.
+  }, [meeting.id]);
+  const switchMode = useCallback(
+    (next: RoomMode) => {
+      setMode(next);
+      try {
+        sessionStorage.setItem(modeKey(meeting.id), next);
+      } catch {
+        // Storage blocked: the switch still works for this visit.
+      }
+    },
+    [meeting.id],
+  );
+  const changeShortcuts = useCallback(
+    (on: boolean) => {
+      setShortcutsOn(on);
+      saveShortcutsEnabled(on);
+      toast(on ? "Keyboard shortcuts on" : "Keyboard shortcuts off", "success");
+    },
+    [toast],
+  );
+  // The devices picked on the pre-join (or in the call), applied when the call publishes them.
   const deviceIds = useRef<{ mic?: string; cam?: string }>({});
   const { user } = useOrgContext();
   const narrow = useNarrow();
+  const compact = useCompactBar();
 
-  // Mints a token and connects the SFU when NEXT_PUBLIC_LIVEKIT_URL is set; reports
-  // "unconfigured" and does no network work at all when it is not, which is every environment
-  // today. See `useLiveKitRoom` for why that fallback is deliberate rather than a stub.
   const live = useLiveKitRoom(meeting.id);
-  // The Clerk session token is what the gateway's handshake authenticates and resolves
-  // org_id/user_id from; the browser never derives either itself.
+  // The Clerk session token is what the gateway's handshake authenticates. It is asked for on
+  // every connect attempt (it lives about a minute), never captured once.
   const { getToken } = useAuth();
-  const [socketToken, setSocketToken] = useState<string | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    void getToken().then((t) => {
-      if (!cancelled) setSocketToken(t);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [getToken]);
-  const socket = useMeetingSocket(meeting.id, socketToken, meeting.agenda);
+  const getSocketToken = useCallback(() => getToken(), [getToken]);
+  const meId = me?.id ?? null;
+  const socket = useMeetingSocket(meeting.id, { getToken: getSocketToken, meId, initialAgenda: meeting.agenda });
   const myNotes = useMemo(() => orderedNotes(socket.notes), [socket.notes]);
   const candidates = useMemo(() => orderedCandidates(socket.candidates), [socket.candidates]);
+  const settlements = useMemo(() => recentSettlements(socket.candidates), [socket.candidates]);
+  const decided = useMemo(() => decidedItems(socket.candidates), [socket.candidates]);
   const suggestions = useMemo(() => openSuggestions(socket.suggestions), [socket.suggestions]);
   const saved = useMemo(() => savedSuggestions(socket.suggestions), [socket.suggestions]);
   const contextFills = useMemo(() => visibleContextFills(socket.contextFills), [socket.contextFills]);
   const alerts = useMemo(() => orderedAlerts(socket.alerts), [socket.alerts]);
+  const startedAt = live.startedAt ?? session?.startedAt ?? null;
+  const joined = socket.status === "joined";
 
-  const liveRoom = live.status === "connected" ? live.room : null;
-  // Someone starting a screen share is the one moment spotlight is clearly right, so the room
-  // switches to it once per share; the layout button still switches back.
+  const liveRoom = live.status === "connected" || live.status === "reconnecting" ? live.room : null;
+  const ended = useMemo(
+    () => socket.ended ?? (endedByMe ? { byUserId: meId ?? "", at: "" } : null),
+    [socket.ended, endedByMe, meId],
+  );
+  // The meeting is over for everyone: leave the call cleanly (an intended disconnect, so the
+  // call does not try to reconnect).
+  useEffect(() => {
+    if (ended) void live.room?.disconnect();
+  }, [ended, live.room]);
+
+  // Someone starting a screen share is the one moment spotlight is clearly right.
   const sharing = live.participants.some((p) => p.isScreenShareEnabled);
   useEffect(() => {
     if (sharing) setLayout("spotlight");
   }, [sharing]);
   // Your LiveKit identity is your internal user id, the same id captions name a speaker by.
-  const myUserId = liveRoom?.localParticipant.identity;
+  const myUserId = liveRoom?.localParticipant.identity ?? meId ?? undefined;
 
   // The mic and camera you chose on the pre-join carry in; the link to share is the pre-join.
   useEffect(() => {
@@ -205,27 +261,22 @@ export function MeetingRoom({
   }, [meeting.id]);
 
   // A real call follows the controls: publish, mute and unpublish your actual mic, camera and
-  // screen. If the browser refuses (permission denied, no device, share picker cancelled), the
-  // control flips back so it never claims a state the call is not in.
-  // Device changes run one at a time per device: a mute clicked while the mic is still being
-  // published on join used to land before the publication existed and be dropped, leaving the
-  // button saying "muted" over a live mic (and the next click looking like it did nothing).
-  // After each change the button follows what LiveKit actually reports, and a refusal (blocked
-  // permission, device in use, no device) says why instead of silently flipping back.
+  // screen, one change at a time per device; afterwards the button follows what LiveKit reports,
+  // and a refusal says why.
   const micQueue = useRef<Promise<unknown>>(Promise.resolve());
   const camQueue = useRef<Promise<unknown>>(Promise.resolve());
   const micQueueSeq = useRef(0);
   const camQueueSeq = useRef(0);
   const [deviceNote, setDeviceNote] = useState<{ text: string; at: number } | null>(null);
+  const connectedRoom = live.status === "connected" ? live.room : null;
   useEffect(() => {
-    if (!liveRoom) return;
-    const lp = liveRoom.localParticipant;
+    if (!connectedRoom) return;
+    const lp = connectedRoom.localParticipant;
     const id = deviceIds.current.mic;
     const seq = ++micQueueSeq.current;
     micQueue.current = micQueue.current.then(() =>
       lp
         .setMicrophoneEnabled(micOn, micOn && id ? { deviceId: id } : undefined)
-        // Only the latest click may correct the button; an older one finishing must not undo it.
         .then(() => {
           if (seq === micQueueSeq.current) setMicOn(lp.isMicrophoneEnabled);
         })
@@ -234,16 +285,15 @@ export function MeetingRoom({
           setDeviceNote({ text: deviceProblem("microphone", err), at: Date.now() });
         }),
     );
-  }, [liveRoom, micOn]);
+  }, [connectedRoom, micOn]);
   useEffect(() => {
-    if (!liveRoom) return;
-    const lp = liveRoom.localParticipant;
+    if (!connectedRoom) return;
+    const lp = connectedRoom.localParticipant;
     const id = deviceIds.current.cam;
     const seq = ++camQueueSeq.current;
     camQueue.current = camQueue.current.then(() =>
       lp
         .setCameraEnabled(camOn, camOn && id ? { deviceId: id } : undefined)
-        // Only the latest click may correct the button; an older one finishing must not undo it.
         .then(() => {
           if (seq === camQueueSeq.current) setCamOn(lp.isCameraEnabled);
         })
@@ -252,17 +302,12 @@ export function MeetingRoom({
           setDeviceNote({ text: deviceProblem("camera", err), at: Date.now() });
         }),
     );
-  }, [liveRoom, camOn]);
-  // Follow the system's default microphone. Chrome keeps capturing the device a track was
-  // opened on even after the OS default moves (a Bluetooth headset connecting or dropping),
-  // and LiveKit only steps in when that device disappears entirely, so the call stayed on the
-  // laptop mic. On every device change, if you did not pick a mic yourself and the default now
-  // names a different physical device than the live track, restart the track on the default.
-  // A picked mic that vanished falls back to the default too.
+  }, [connectedRoom, camOn]);
+  // Follow the system's default microphone when you did not pick one (a headset connecting).
   useEffect(() => {
-    if (!liveRoom) return;
+    if (!connectedRoom) return;
     const follow = async () => {
-      const track = liveRoom.localParticipant.getTrackPublication(Track.Source.Microphone)?.audioTrack;
+      const track = connectedRoom.localParticipant.getTrackPublication(Track.Source.Microphone)?.audioTrack;
       if (!track || track.isMuted) return;
       const devices = await navigator.mediaDevices.enumerateDevices();
       const inputs = devices.filter((d) => d.kind === "audioinput");
@@ -281,22 +326,17 @@ export function MeetingRoom({
     const onChange = () => {
       follow().catch(() => undefined);
     };
-    // A muted mic is left alone, so check again on unmute: unmuting after a headset
-    // connected should pick the headset up.
-    const lp = liveRoom.localParticipant;
-    liveRoom.on(RoomEvent.MediaDevicesChanged, onChange);
+    const lp = connectedRoom.localParticipant;
+    connectedRoom.on(RoomEvent.MediaDevicesChanged, onChange);
     lp.on(ParticipantEvent.TrackUnmuted, onChange);
     return () => {
-      liveRoom.off(RoomEvent.MediaDevicesChanged, onChange);
+      connectedRoom.off(RoomEvent.MediaDevicesChanged, onChange);
       lp.off(ParticipantEvent.TrackUnmuted, onChange);
     };
-  }, [liveRoom]);
+  }, [connectedRoom]);
   useEffect(() => {
-    if (!liveRoom) return;
-    // Ask for sound with the picture: a shared tab's or the whole screen's audio rides along as
-    // its own track (RoomAudioRenderer plays ScreenShareAudio for everyone else). Without
-    // `audio` the browser offers no "Share audio" option and a shared video plays silent.
-    liveRoom.localParticipant
+    if (!connectedRoom) return;
+    connectedRoom.localParticipant
       .setScreenShareEnabled(
         screenOn,
         screenOn
@@ -304,18 +344,17 @@ export function MeetingRoom({
           : undefined,
       )
       .catch(() => setScreenOn(false));
-  }, [liveRoom, screenOn]);
-  // Stopping the share from the browser's own "Stop sharing" bar must update the button too.
+  }, [connectedRoom, screenOn]);
   useEffect(() => {
-    if (!liveRoom) return;
+    if (!connectedRoom) return;
     const onUnpublished = (pub: LocalTrackPublication) => {
       if (pub.source === Track.Source.ScreenShare) setScreenOn(false);
     };
-    liveRoom.on(RoomEvent.LocalTrackUnpublished, onUnpublished);
+    connectedRoom.on(RoomEvent.LocalTrackUnpublished, onUnpublished);
     return () => {
-      liveRoom.off(RoomEvent.LocalTrackUnpublished, onUnpublished);
+      connectedRoom.off(RoomEvent.LocalTrackUnpublished, onUnpublished);
     };
-  }, [liveRoom]);
+  }, [connectedRoom]);
 
   // On a phone the panel starts folded so the video gets the screen.
   useEffect(() => {
@@ -333,50 +372,72 @@ export function MeetingRoom({
 
   const onAttention = useCallback((a: AgentAttention) => setAttention(a), []);
 
-  // Keyboard shortcuts: M mic, V camera, C captions, L layout; 1 Call, 2 Notes.
+  const handUp = Boolean(meId && socket.hands.raised[meId]);
+  const toggleHand = useCallback(() => {
+    void socket.setHand(!handUp).then((ack) => {
+      if (!ack.ok) toast("Could not reach the meeting to raise your hand. Try again in a moment.", "error");
+      else toast(handUp ? "Hand lowered" : "Hand raised. The host sees you are waiting.", "success");
+    });
+  }, [socket, handUp, toast]);
+
+  // Keyboard shortcuts: M mic, V camera, C captions, L layout, H hand; 1 Call, 2 Notes. Off with
+  // the switch in More; never while typing or with a modifier (WCAG 2.1.4).
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.isContentEditable ||
-        e.metaKey ||
-        e.ctrlKey ||
-        e.altKey
-      )
-        return;
-      const k = e.key.toLowerCase();
-      if (k === "m") setMicOn((v) => !v);
-      else if (k === "v") setCamOn((v) => !v);
-      else if (k === "c") setCaptionsOn((v) => !v);
-      else if (k === "l") setLayout((l) => (l === "grid" ? "spotlight" : "grid"));
-      else if (k === "1") switchMode("call");
-      else if (k === "2") switchMode("notes");
+      const action = shortcutFor(e, keyTargetOf(e.target as Element | null), shortcutsOn);
+      if (!action) return;
+      if (action === "mic") setMicOn((v) => !v);
+      else if (action === "camera") setCamOn((v) => !v);
+      else if (action === "captions") setCaptionsOn((v) => !v);
+      else if (action === "layout") setLayout((l) => (l === "grid" ? "spotlight" : "grid"));
+      else if (action === "hand" && joined) toggleHand();
+      else if (action === "call") switchMode("call");
+      else if (action === "notes") switchMode("notes");
+      else return;
+      e.preventDefault();
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [switchMode]);
+  }, [switchMode, shortcutsOn, joined, toggleHand]);
 
-  /* Before the call connects nobody else is known, so the stage is just you, following the mic
-     and camera controls. */
   const selfTiles = useMemo<RoomTile[]>(
     () => [{ id: "self", name: user.name, isLocal: true, micOn, camOn, speaking: false }],
     [user.name, micOn, camOn],
   );
 
-  const people = useMemo<RoomPerson[]>(
+  // Who is here: the call's participants, plus anyone the meeting link sees (gateway presence)
+  // whose audio and video are not connected (yet, or any more), so a raised hand always has a
+  // person to belong to.
+  const inCall = useMemo(() => {
+    const base = liveRoom
+      ? live.participants.map((p) => ({
+          id: p.identity,
+          name: p.isLocal ? user.name : p.name || names[p.identity]?.name || "Guest",
+          isLocal: p.isLocal,
+          micOn: p.isMicrophoneEnabled,
+          speaking: p.isSpeaking,
+        }))
+      : [{ id: meId ?? "self", name: user.name, isLocal: true, micOn, speaking: false }];
+    const seen = new Set(base.map((p) => p.id));
+    for (const id of socket.presence) {
+      if (seen.has(id) || id === meId) continue;
+      seen.add(id);
+      base.push({ id, name: names[id]?.name ?? "A teammate", isLocal: false, micOn: false, speaking: false });
+    }
+    return base;
+  }, [liveRoom, live.participants, user.name, names, meId, micOn, socket.presence]);
+  const groups = useMemo(
     () =>
-      liveRoom
-        ? live.participants.map((p) => ({
-            id: p.identity,
-            name: p.isLocal ? user.name : p.name || names[p.identity]?.name || "Guest",
-            isLocal: p.isLocal,
-            micOn: p.isMicrophoneEnabled,
-            speaking: p.isSpeaking,
-          }))
-        : selfTiles.map((t) => ({ id: t.id, name: t.name, isLocal: true, micOn: t.micOn, speaking: false })),
-    [liveRoom, live.participants, selfTiles, user.name, names],
+      peopleGroups({
+        inCall,
+        invitees: meeting.participants,
+        hostId: meeting.hostUserId,
+        meId,
+        hands: socket.hands,
+        nameOf: (id) => names[id]?.name ?? "A teammate",
+        agentNameOf: (id) => agentFace(id, names[id]?.name ?? null, names[id]?.agentName, names[id]?.agentSeed).name,
+      }),
+    [inCall, meeting.participants, meeting.hostUserId, meId, socket.hands, names],
   );
 
   // Everyone's agent, for the tile badges; yours also heads the sidebar.
@@ -384,26 +445,24 @@ export function MeetingRoom({
     () => (me ? agentFace(me.id, me.name || user.name, me.agentName, me.agentSeed) : null),
     [me, user.name],
   );
-  const withAgents = useCallback(
+  const decorate = useCallback(
     (tiles: RoomTile[]): RoomTile[] =>
       tiles.map((t) => {
         if (t.kind === "screen") return t;
         const who = tilePerson(t.id, me?.id);
         if (!who) return t;
-        if (me && who === me.id && myFace) return { ...t, agent: myFace };
+        const hand = Boolean(socket.hands.raised[who]);
+        if (me && who === me.id && myFace) return { ...t, agent: myFace, handUp: hand };
         const person = names[who];
-        return { ...t, agent: agentFace(who, person?.name ?? t.name, person?.agentName, person?.agentSeed) };
+        return { ...t, handUp: hand, agent: agentFace(who, person?.name ?? t.name, person?.agentName, person?.agentSeed) };
       }),
-    [me, myFace, names],
+    [me, myFace, names, socket.hands],
   );
 
-  // Who sent their agent (ADR-0039 B5): `attendance` and `proxy_update` are visible to everyone
-  // in the meeting. Someone who joined after all is a person on the stage, not an agent tile.
+  // Who sent their agent (ADR-0039 B5); someone who joined after all is a person on the stage.
   const proxies = useMemo<Proxy[]>(
     () =>
-      meeting.participants
-        .filter((p) => p.attendance === "agent")
-        .map((p) => ({ userId: p.id, update: p.proxyUpdate })),
+      meeting.participants.filter((p) => p.attendance === "agent").map((p) => ({ userId: p.id, update: p.proxyUpdate })),
     [meeting.participants],
   );
   const here = useMemo(() => new Set(live.participants.map((p) => p.identity)), [live.participants]);
@@ -432,17 +491,32 @@ export function MeetingRoom({
     if (id) setLayout("spotlight");
   };
 
+  const speakerLabel = useCallback((id: string) => (id === myUserId ? "You" : names[id]?.name ?? "Someone"), [myUserId, names]);
+
+  const endForEveryone = async () => {
+    setEnding(true);
+    const res = await endMeetingForEveryone(meeting.id);
+    if (!res.ok) {
+      setEnding(false);
+      toast(res.message, "error");
+      return;
+    }
+    // core-api has it ended; now everyone in the room is told (the gateway checks it first).
+    const ack = await socket.announceEnd();
+    setEnding(false);
+    setConfirmEnd(false);
+    setEndedByMe(true);
+    if (!ack.ok) toast("The meeting is ended. Others leave the call when their room next checks in.", "info");
+  };
+
   /* Drawn inside the video frame, over the picture. */
   const overlay = (
     <>
-      <RoomClock />
+      <RoomClock startedAt={startedAt} />
+      <ReactionLayer reactions={socket.reactions} meId={meId} />
 
-      {/* live captions - the real `caption` socket stream once the gateway is reachable and this
-          socket has joined the room. Until then there is no strip at all. */}
-      {captionsOn && socket.status === "joined" ? <LiveCaptions
-          lines={socket.captions.lines}
-          speakerLabel={(id) => (id === myUserId ? "You" : names[id]?.name ?? "Someone")}
-        /> : null}
+      {/* Live captions: the real `caption` stream while the meeting link is joined. */}
+      {captionsOn && joined ? <LiveCaptions lines={socket.captions.lines} speakerLabel={speakerLabel} /> : null}
 
       <ControlBar
         micOn={micOn}
@@ -452,19 +526,36 @@ export function MeetingRoom({
         leaveHref={`/meetings/${meeting.id}`}
         onMic={() => setMicOn((v) => !v)}
         onCam={() => setCamOn((v) => !v)}
-        // Captions exist only once the transcription stream is joined; until then the button would
-        // toggle nothing, so it is not offered.
-        onCaptions={socket.status === "joined" ? () => setCaptionsOn((v) => !v) : undefined}
+        // Captions exist only once the transcription stream is joined.
+        onCaptions={joined ? () => setCaptionsOn((v) => !v) : undefined}
         onLayout={() => setLayout((l) => (l === "grid" ? "spotlight" : "grid"))}
         screenOn={screenOn}
-        onScreen={liveRoom ? () => setScreenOn((v) => !v) : undefined}
+        onScreen={connectedRoom ? () => setScreenOn((v) => !v) : undefined}
+        handUp={handUp}
+        onHand={joined ? toggleHand : undefined}
+        onReact={
+          joined
+            ? (r) =>
+                void socket.react(r).then((ack) => {
+                  if (!ack.ok && ack.error !== "RATE_LIMITED") toast("Could not send the reaction.", "error");
+                })
+            : undefined
+        }
+        room={connectedRoom}
+        onDevicePicked={(kind, id) => {
+          deviceIds.current = { ...deviceIds.current, [kind]: id };
+        }}
+        shortcutsOn={shortcutsOn}
+        onShortcuts={changeShortcuts}
+        onEndForEveryone={me?.steers ? () => setConfirmEnd(true) : undefined}
+        compact={compact}
       />
     </>
   );
 
   const stage = (tiles: RoomTile[]) => (
-    <RoomGrid
-      tiles={[...withAgents(tiles), ...proxyTiles]}
+    <SteadyRoomGrid
+      tiles={[...decorate(tiles), ...proxyTiles]}
       layout={layout}
       pinnedId={pinnedId}
       onPin={pin}
@@ -473,101 +564,226 @@ export function MeetingRoom({
     />
   );
 
+  const ledger = useMemo<CandidateLedger>(
+    () => ({
+      meId,
+      steers: Boolean(me?.steers),
+      settlements,
+      lockedBy: (id) => lockedBy(socket.candidates, id, meId, Date.now()),
+      settle: socket.settleCandidate,
+      announce: socket.announceCandidate,
+      update: socket.updateCandidate,
+      hide: socket.hideCandidate,
+      lock: socket.lockCandidate,
+    }),
+    [meId, me?.steers, settlements, socket.candidates, socket.settleCandidate, socket.announceCandidate, socket.updateCandidate, socket.hideCandidate, socket.lockCandidate],
+  );
+
+  const liveState: "listening" | "paused" | "off" = joined
+    ? "listening"
+    : socket.status === "disabled" || socket.status === "forbidden"
+      ? "off"
+      : "paused";
+  const meetingSeconds = useCallback(() => elapsedSeconds(startedAt, Date.now()), [startedAt]);
+
+  const agenda = (
+    <AgendaPanel
+      meetingId={meeting.id}
+      agenda={socket.agenda}
+      host={socket.agendaHost}
+      nudges={socket.nudges}
+      onDismissNudge={socket.dismissNudge}
+      steers={Boolean(me?.steers)}
+      nameOf={(id) => (id === me?.id ? "You" : names[id]?.name ?? "Former member")}
+      proxies={proxies}
+    />
+  );
+
+  const sidebar = (variant: "full" | "rail") => (
+    <AgentSidebar
+      variant={variant}
+      head={variant === "full" && myFace ? <AgentHead face={myFace} personality={me?.personality ?? null} /> : undefined}
+      agenda={agenda}
+      onAttentionChange={onAttention}
+      id={variant === "full" ? SECTION_IDS.agent : "cx-rail-agent"}
+      live={liveState}
+      notes={myNotes}
+      candidates={candidates}
+      ledger={ledger}
+      meetingId={meeting.id}
+      meetingSeconds={meetingSeconds}
+      suggestions={suggestions}
+      savedSuggestions={saved}
+      onSuggestionResolved={socket.resolveSuggestion}
+      onSuggestionSaved={socket.markSuggestionSaved}
+      contextFills={contextFills}
+      onContextFillDismissed={socket.dismissContextFill}
+      alerts={alerts}
+      onAlertRead={socket.markAlertRead}
+      onAlertDismissed={socket.dismissAlert}
+    />
+  );
+
+  const chatPanel = (visible: boolean) => (
+    <ChatPanel
+      id={SECTION_IDS.chat}
+      chat={socket.chat}
+      connected={joined}
+      visible={visible}
+      onSend={socket.sendChat}
+      onSeen={socket.markChatSeen}
+    />
+  );
+
   const whenLine = `${new Date(meeting.startTime).toLocaleDateString(undefined, {
     weekday: "short",
     month: "short",
     day: "numeric",
-  })}, ${people.length} in call`;
+  })}, ${groups.inCall.length} in call`;
   const notesView = (tiles: RoomTile[]) => (
     <NotesView
       title={meeting.title}
       when={whenLine}
-      tiles={withAgents(tiles)}
+      tiles={decorate(tiles)}
       notes={myNotes}
       lines={socket.captions.lines}
-      speakerLabel={(id) => (id === myUserId ? "You" : names[id]?.name ?? "Someone")}
+      speakerLabel={speakerLabel}
       micOn={micOn}
       camOn={camOn}
       onMic={() => setMicOn((v) => !v)}
       onCam={() => setCamOn((v) => !v)}
       onBackToCall={() => switchMode("call")}
       leaveHref={`/meetings/${meeting.id}`}
-      chat={<ChatPanel id={SECTION_IDS.chat} room={liveRoom} />}
+      chat={chatPanel(true)}
+      rail={sidebar("rail")}
+      decided={decided}
     />
   );
 
-  return (
-    <RoomNamesProvider names={names}>
-    <CallToastProvider>
-      <div className="mx-meet cx-call cx-room">
-        <ConnectionPill status={live.status} message={joinProblem(live.error)} />
-        <DeviceNote note={deviceNote} />
-        <div className="cx-shell">
-          <CallTopBar
-            room={{
-              title: meeting.title,
-              inCall: people.length,
-              invited: meeting.invited,
-              shareUrl,
-              sideVisible: sideOpen,
-              onToggleSide: () => setSideOpen((v) => !v),
-              mode,
-              onMode: switchMode,
-            }}
-          />
-          <main
-            className={`cx-body${sideOpen ? "" : " side-collapsed"}${mode === "notes" ? " is-notes" : ""}`}
-            id="page-meeting"
-          >
-            {/* video stage - live LiveKit tracks once the room is connected, otherwise your own
-                tile while it connects (or if it cannot). */}
-            {mode === "notes"
-              ? liveRoom
-                ? <LiveVideoGrid room={liveRoom}>{notesView}</LiveVideoGrid>
-                : notesView(selfTiles)
-              : liveRoom
-                ? <LiveVideoGrid room={liveRoom}>{stage}</LiveVideoGrid>
-                : stage(selfTiles)}
-            {/* Everyone else's microphone. The grid only attaches VIDEO; without this every
-                remote audio track was subscribed and never played, so nobody could hear
-                anybody. Your own mic is never rendered back to you. */}
-            {liveRoom && <RoomAudioRenderer room={liveRoom} />}
-            {/* Shown only when the browser blocked autoplay; one click unblocks the call. */}
-            {liveRoom && (
-              <StartAudio room={liveRoom} label="Click to hear the call" className="call-start-audio tap" />
-            )}
+  const notice = roomConnection(live.status, socket.status, socket.everJoined);
+  const callError =
+    live.status === "error" ? { tone: "error" as const, text: joinProblem(live.error), retry: "call" as const } : null;
 
-            {mode === "call" && (
+  if (ended) {
+    const byMe = endedByMe || ended.byUserId === meId;
+    return (
+      <div className="mx-meet cx-call cx-room">
+        <div className="cx-shell">
+          <CallTopBar />
+          <main className="room-ended" id="page-meeting">
+            <section className="room-ended-card" aria-labelledby="room-ended-h">
+              <h1 id="room-ended-h">{byMe ? "You ended the meeting for everyone" : "The host ended the meeting"}</h1>
+              <p>
+                {byMe
+                  ? "Everyone has left the call. Confirmed decisions and tasks are saved; cards nobody confirmed stay open for review on the meeting page."
+                  : `${names[ended.byUserId]?.name ?? "The host"} ended this meeting for everyone. Confirmed decisions and tasks are saved.`}
+              </p>
+              <Link href={`/meetings/${meeting.id}`} className="room-ended-link tap" autoFocus>
+                <ArrowLeft size={16} weight="bold" aria-hidden />
+                Back to the meeting
+              </Link>
+            </section>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-meet cx-call cx-room">
+      <ConnectionPill
+        notice={callError ?? notice}
+        joining={live.status === "connecting"}
+        onRetry={(what) => (what === "call" ? live.retry() : socket.retry())}
+      />
+      <DeviceNote note={deviceNote} />
+      <div className="cx-shell">
+        <CallTopBar
+          room={{
+            title: meeting.title,
+            inCall: groups.inCall.length,
+            invited: meeting.invited,
+            shareUrl,
+            sideVisible: sideOpen,
+            onToggleSide: () => setSideOpen((v) => !v),
+            mode,
+            onMode: switchMode,
+            shortcutsOn,
+          }}
+        />
+        <main className={`cx-body${sideOpen ? "" : " side-collapsed"}${mode === "notes" ? " is-notes" : ""}`} id="page-meeting">
+          {live.status === "consent" ? (
+            <section className="room-consent" aria-labelledby="room-consent-h">
+              <div className="pj-consent-head">
+                <span className="pj-consent-ico" aria-hidden="true">
+                  <Record size={22} weight="fill" />
+                </span>
+                <div>
+                  <h2 id="room-consent-h">Before you join: this meeting is transcribed</h2>
+                  <p>Your workspace asks everyone to agree once per meeting. This is what is kept.</p>
+                </div>
+              </div>
+              <ConsentTerms recording={session?.recording ?? null} />
+              <div className="room-consent-acts">
+                <button type="button" className="nfy-act tap" onClick={() => live.acceptConsent(CONSENT_VERSION)} autoFocus>
+                  <ShieldCheck size={16} weight="fill" aria-hidden />
+                  I agree, join the call
+                </button>
+                <Link href={`/meetings/${meeting.id}`} className="nfy-act is-quiet tap">
+                  Not now
+                </Link>
+              </div>
+            </section>
+          ) : mode === "notes" ? (
+            liveRoom ? <LiveVideoGrid room={liveRoom}>{notesView}</LiveVideoGrid> : notesView(selfTiles)
+          ) : liveRoom ? (
+            <LiveVideoGrid room={liveRoom}>{stage}</LiveVideoGrid>
+          ) : (
+            stage(selfTiles)
+          )}
+          {/* Everyone else's microphone; your own is never rendered back to you. */}
+          {liveRoom && <RoomAudioRenderer room={liveRoom} />}
+          {/* Shown only when the browser blocked autoplay; one click unblocks the call. */}
+          {liveRoom && <StartAudio room={liveRoom} label="Click to hear the call" className="call-start-audio tap" />}
+
+          {mode === "call" && live.status !== "consent" && (
             <RoomPanel
               open={sideOpen}
               onOpen={() => setSideOpen(true)}
               onClose={() => setSideOpen(false)}
               attention={attention.count}
               conflict={attention.conflict}
-              peopleCount={people.length}
-              agent={<AgentSidebar
-                head={myFace ? <AgentHead face={myFace} personality={me?.personality ?? null} /> : undefined}
-                agenda={
-                  <AgendaPanel
-                    meetingId={meeting.id}
-                    agenda={socket.agenda}
-                    host={socket.agendaHost}
-                    nudges={socket.nudges}
-                    onDismissNudge={socket.dismissNudge}
-                    steers={Boolean(me?.steers)}
-                    nameOf={(id) => (id === me?.id ? "You" : names[id]?.name ?? "Former member")}
-                    proxies={proxies}
-                  />
-                }
-                onAttentionChange={onAttention} id={SECTION_IDS.agent} items={NO_AGENT_CARDS} notes={myNotes} candidates={candidates} onCandidateResolved={socket.resolveCandidate} onCandidateUpdated={socket.updateCandidate} meetingId={meeting.id} suggestions={suggestions} savedSuggestions={saved} onSuggestionResolved={socket.resolveSuggestion} onSuggestionSaved={socket.markSuggestionSaved} contextFills={contextFills} onContextFillDismissed={socket.dismissContextFill} alerts={alerts} onAlertRead={socket.markAlertRead} onAlertDismissed={socket.dismissAlert} />}
-              people={<PeoplePanel people={people} id={SECTION_IDS.people} />}
-              chat={<ChatPanel id={SECTION_IDS.chat} room={liveRoom} />}
+              peopleCount={groups.inCall.length}
+              chatCount={unreadCount(socket.chat)}
+              onTab={setPanelTab}
+              agent={sidebar("full")}
+              people={
+                <PeoplePanel
+                  groups={groups}
+                  id={SECTION_IDS.people}
+                  agentSeedOf={(id) => agentSeedFor(names[id]?.agentSeed, id)}
+                />
+              }
+              chat={chatPanel(panelTab === "chat")}
             />
-            )}
-          </main>
-        </div>
+          )}
+        </main>
       </div>
-    </CallToastProvider>
-    </RoomNamesProvider>
+
+      <RoomDialog open={confirmEnd} onClose={() => !ending && setConfirmEnd(false)} title="End the meeting for everyone?" tone="danger">
+        <p>
+          Everyone leaves the call and the meeting is marked ended. Confirmed decisions and tasks are saved; cards nobody
+          confirmed stay open for review on the meeting page.
+        </p>
+        <div className="room-dialog-acts">
+          <button type="button" className="nfy-act is-quiet tap" onClick={() => setConfirmEnd(false)} disabled={ending} autoFocus>
+            Keep the meeting going
+          </button>
+          <button type="button" className="nfy-act is-danger tap" onClick={() => void endForEveryone()} disabled={ending}>
+            {ending ? "Ending..." : "End for everyone"}
+          </button>
+        </div>
+      </RoomDialog>
+    </div>
   );
 }

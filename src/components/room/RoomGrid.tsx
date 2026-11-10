@@ -1,9 +1,10 @@
 "use client";
 
 import { useId, type CSSProperties, type ReactNode } from "react";
-import { MicrophoneSlash, Microphone, PushPin, UsersThree } from "@phosphor-icons/react";
+import { HandPalm, MicrophoneSlash, Microphone, PushPin, UsersThree } from "@phosphor-icons/react";
 import { initials, toneOf } from "@/components/room/tone";
 import { Doodle } from "@/components/ui/Doodle";
+import { useSpotlight } from "@/components/room/useSpotlight";
 
 /* The meeting stage, shared by your own pre-connect tile and the live LiveKit tiles so connecting
    is not also a visual change. Each tile is plain data (`RoomTile`); the live grid passes a
@@ -12,8 +13,12 @@ import { Doodle } from "@/components/ui/Doodle";
 
    Layouts:
    - spotlight: one large frame for the pinned person, else whoever shares a screen, else whoever
-     is speaking, with up to three thumbnails beside it (a strip on a phone) and a "+N" button
-     that opens the grid when there are more.
+     holds the floor (`spotlightId`: a new speaker must speak for about 1.5 s before the frame
+     moves to them, so a cough or a one-word answer does not jump the stage; see
+     lib/realtime/spotlight.ts), with up to three thumbnails beside it (a strip on a phone) and a
+     "+N" button that opens the grid when there are more.
+
+   A raised hand shows as a hand badge on the person's tile (and in the People tab, in order).
    - grid: everyone as equal tiles inside the same frame.
 
    `overlay` is drawn inside the frame on top of the video: the clock, captions and controls.
@@ -44,6 +49,8 @@ export type RoomTile = {
   agent?: { name: string; seed: string };
   /** A proxy tile's person and the update they gave their agent for the room. */
   proxy?: { forName: string; update: string | null };
+  /** This person's hand is up. */
+  handUp?: boolean;
 };
 
 /* A participant's agent, as a small doodle badge in their name tag. Its accessible name says
@@ -64,11 +71,15 @@ function personKey(tile: RoomTile): string {
   return tile.id.split(":")[0] ?? tile.id;
 }
 
-export function pickMain(tiles: RoomTile[], pinnedId: string | null | undefined): RoomTile | undefined {
+export function pickMain(
+  tiles: RoomTile[],
+  pinnedId: string | null | undefined,
+  spotlightId?: string | null,
+): RoomTile | undefined {
   return (
     tiles.find((t) => t.id === pinnedId) ??
     tiles.find((t) => t.kind === "screen") ??
-    tiles.find((t) => t.speaking && !t.isLocal && t.kind !== "proxy") ??
+    tiles.find((t) => t.id === spotlightId && !t.isLocal && t.kind !== "proxy") ??
     tiles.find((t) => !t.isLocal && t.kind !== "proxy") ??
     tiles.find((t) => t.kind !== "proxy") ??
     tiles[0]
@@ -86,6 +97,7 @@ export function RoomGrid({
   tiles,
   layout,
   pinnedId,
+  spotlightId = null,
   onPin,
   onShowAll,
   overlay,
@@ -93,6 +105,8 @@ export function RoomGrid({
   tiles: RoomTile[];
   layout: RoomLayout;
   pinnedId?: string | null;
+  /** Who holds the floor (held for about 1.5 s), from `stepSpotlight`. */
+  spotlightId?: string | null;
   /** Pin (or, with null, unpin) a participant to the main frame. */
   onPin?: (id: string | null) => void;
   /** Opens the grid; used by the "+N" button when not everyone fits beside the main frame. */
@@ -101,7 +115,7 @@ export function RoomGrid({
 }) {
   const n = tiles.length;
   const spot = layout === "spotlight" || n <= 1;
-  const main = spot ? pickMain(tiles, pinnedId) : undefined;
+  const main = spot ? pickMain(tiles, pinnedId, spotlightId) : undefined;
   const others = main ? tiles.filter((t) => t.id !== main.id) : [];
   const thumbs = others.slice(0, MAX_THUMBS);
   const hidden = others.length - thumbs.length;
@@ -128,6 +142,9 @@ export function RoomGrid({
               ) : null}
               {main.kind !== "screen" ? <AgentBadge agent={main.agent} /> : null}
               {main.isLocal ? `${main.name} (you)` : main.name}
+              {main.handUp ? (
+                <HandPalm size={15} weight="fill" className="cx-hand" role="img" aria-label="Hand raised" />
+              ) : null}
               {mainSpeaking ? <small>Speaking</small> : null}
             </span>
           </>
@@ -214,7 +231,7 @@ function TileSurface({ tile }: { tile: RoomTile }) {
 function Thumb({ tile, pinLabel, onPin }: { tile: RoomTile; pinLabel: string; onPin?: () => void }) {
   const screen = tile.kind === "screen";
   const speaking = Boolean(tile.speaking) && tile.micOn && !screen;
-  const label = [tile.name, tile.isLocal ? "you" : null, !tile.micOn && !screen ? "muted" : null, speaking ? "speaking" : null]
+  const label = [tile.name, tile.isLocal ? "you" : null, !tile.micOn && !screen ? "muted" : null, speaking ? "speaking" : null, tile.handUp ? "hand raised" : null]
     .filter(Boolean)
     .join(", ");
 
@@ -225,6 +242,11 @@ function Thumb({ tile, pinLabel, onPin }: { tile: RoomTile; pinLabel: string; on
         <button type="button" className="thumb-pin tap tip-below tip-end" data-tip={pinLabel} aria-label={`${pinLabel} ${tile.name}`} onClick={onPin}>
           <PushPin size={15} aria-hidden />
         </button>
+      ) : null}
+      {tile.handUp ? (
+        <span className="thumb-hand" aria-hidden>
+          <HandPalm size={14} weight="fill" />
+        </span>
       ) : null}
       <span className="thumb-name">
         {speaking ? <Wave /> : null}
@@ -288,4 +310,11 @@ function Wave() {
       <i></i>
     </span>
   );
+}
+
+/* The stage with a calm spotlight: RoomGrid plus `useSpotlight`, so the hook runs in a component
+   (the live grid hands the tiles over through a render prop). */
+export function SteadyRoomGrid(props: Omit<Parameters<typeof RoomGrid>[0], "spotlightId">) {
+  const spotlightId = useSpotlight(props.tiles);
+  return <RoomGrid {...props} spotlightId={spotlightId} />;
 }

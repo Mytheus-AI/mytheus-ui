@@ -17,15 +17,20 @@ import type { RoomTile } from "@/components/room/RoomGrid";
 import { initials, toneOf } from "@/components/room/tone";
 import type { CaptionLine } from "@/lib/realtime/captions";
 import type { LiveNote } from "@/lib/realtime/notes";
+import type { Decided } from "@/lib/realtime/candidates";
+import { useRoomName } from "@/lib/realtime/room-names";
 
 /* The room's Notes mode: the same live meeting as a living document. People stay visible as
    small live tiles on the left with what is being said right now; the main column is your
-   agent's notes and the transcript as it is spoken. Everything here comes from the streams the
-   Call mode already uses (LiveKit tiles, the caption socket, My Notes), so switching modes never
-   reconnects or loses anything.
+   agent's notes, the meeting's confirmed decisions and actions, and the transcript as it is
+   spoken. Everything here comes from the streams the Call mode already uses (LiveKit tiles, the
+   caption socket, My Notes, the shared candidate ledger), so switching modes never reconnects or
+   loses anything.
 
-   Decisions and action items are shown as sections with an honest empty state: the agents that
-   produce them (DecisionAgent, ActionAgent) are not running yet, and nothing here invents them. */
+   Notes mode never hides what needs you (polish program, Phase 0): the `rail` on the right keeps
+   pinned alerts, the shared agenda and Needs you (cards to confirm) in view. The Decisions and
+   Actions sections are live: whatever anyone in the meeting confirms appears here, with who
+   confirmed it. */
 
 
 function words(text: string): number {
@@ -110,6 +115,8 @@ export function NotesView({
   onBackToCall,
   leaveHref,
   chat,
+  rail,
+  decided,
 }: {
   title: string;
   /** A short date line, e.g. "Sun, Nov 9, 3 in call". */
@@ -127,7 +134,12 @@ export function NotesView({
   leaveHref: string;
   /** The live call chat, given the left column's remaining height. */
   chat?: ReactNode;
+  /** Pinned alerts, the agenda and Needs you, kept in view beside the document. */
+  rail?: ReactNode;
+  /** The meeting's confirmed decisions and actions, from the shared ledger. */
+  decided: { decisions: Decided[]; actions: Decided[] };
 }) {
+  const nameOf = useRoomName();
   const finals = lines.filter((l) => l.isFinal);
   const talk = talkTime(finals);
   const last = lines[lines.length - 1];
@@ -135,7 +147,7 @@ export function NotesView({
   const transcript = [...finals].reverse();
 
   return (
-    <div className="nv">
+    <div className={`nv${rail ? " has-rail" : ""}`}>
       <aside className="nv-side" aria-label="People in the call">
         <span className="nv-label">In the call</span>
         <div className="nv-tiles">
@@ -191,7 +203,7 @@ export function NotesView({
             onClick={onMic}
             aria-pressed={micOn}
             aria-label="Microphone"
-            data-tip={micOn ? "Mute (M)" : "Unmute (M)"}
+            data-tip={micOn ? "Mute" : "Unmute"}
           >
             {micOn ? <Microphone size={20} aria-hidden /> : <MicrophoneSlash size={20} aria-hidden />}
           </button>
@@ -201,11 +213,11 @@ export function NotesView({
             onClick={onCam}
             aria-pressed={camOn}
             aria-label="Camera"
-            data-tip={camOn ? "Turn camera off (V)" : "Turn camera on (V)"}
+            data-tip={camOn ? "Turn camera off" : "Turn camera on"}
           >
             {camOn ? <VideoCamera size={20} aria-hidden /> : <VideoCameraSlash size={20} aria-hidden />}
           </button>
-          <button type="button" className="ctl tap" onClick={onBackToCall} aria-label="Back to the call view" data-tip="Back to the call (1)">
+          <button type="button" className="ctl tap" onClick={onBackToCall} aria-label="Back to the call view" data-tip="Back to the call">
             <ArrowsOutSimple size={20} aria-hidden />
           </button>
           <span className="ctl-sep" aria-hidden="true"></span>
@@ -249,18 +261,57 @@ export function NotesView({
           <section className="nv-card" aria-labelledby="nv-dec-h">
             <h3 id="nv-dec-h">
               <Scales size={14} aria-hidden />
-              Decisions
+              Decisions <span className="mx-count">{decided.decisions.length}</span>
             </h3>
-            <EmptyLine />
-            <p className="nv-empty">Decisions will appear here for you to confirm once the decision agent is switched on.</p>
+            {decided.decisions.length === 0 ? (
+              <>
+                <EmptyLine />
+                <p className="nv-empty">
+                  When anyone confirms a decision the agent heard, it appears here for everyone.
+                </p>
+              </>
+            ) : (
+              <ul className="nv-decided" aria-live="polite">
+                {decided.decisions.map((d) => (
+                  <li key={d.id}>
+                    <p>{d.content}</p>
+                    {d.rationale ? <p className="nv-decided-why">{d.rationale}</p> : null}
+                    {d.confirmedBy ? <small>Confirmed by {nameOf(d.confirmedBy, "a participant")}</small> : null}
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
           <section className="nv-card" aria-labelledby="nv-act-h">
             <h3 id="nv-act-h">
               <CheckSquare size={14} aria-hidden />
-              Action items
+              Action items <span className="mx-count">{decided.actions.length}</span>
             </h3>
-            <EmptyLine />
-            <p className="nv-empty">Owners and due dates will be picked up from the conversation once the action agent is on.</p>
+            {decided.actions.length === 0 ? (
+              <>
+                <EmptyLine />
+                <p className="nv-empty">
+                  Confirmed tasks appear here with their owner and due date.
+                </p>
+              </>
+            ) : (
+              <ul className="nv-decided" aria-live="polite">
+                {decided.actions.map((a) => (
+                  <li key={a.id}>
+                    <p>{a.content}</p>
+                    <small>
+                      {[
+                        a.assigneeId ? `Owner: ${nameOf(a.assigneeId, "someone")}` : "No owner yet",
+                        a.dueDate ? `due ${a.dueDate}` : null,
+                        a.confirmedBy ? `confirmed by ${nameOf(a.confirmedBy, "a participant")}` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </small>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
         </div>
 
@@ -281,6 +332,12 @@ export function NotesView({
           </ol>
         )}
       </div>
+
+      {rail ? (
+        <aside className="nv-rail" aria-label="Needs you and the agenda">
+          {rail}
+        </aside>
+      ) : null}
     </div>
   );
 }
