@@ -8,10 +8,11 @@ import { thClass } from "@/components/admin/StatCard";
 import { searchAuditLog } from "@/app/actions/ops";
 import type { AuditEntry } from "@/lib/ops";
 
-/* Read-only `audit_logs` across tenants, filtered by one tenant or none, newest first, a page of
-   50 at a time (cursor). Each read is itself written to the ops audit log by the server. The
-   tenant filter rides in the request body, never a URL, so no tenant id ends up in history or
-   referrers. Metadata is shown as compact JSON text, never rendered as markup. */
+/* Read-only `audit_logs` for one tenant at a time (admin-ops-service requires the tenant), newest
+   first, a page of 50 at a time (cursor). Nothing is read until a tenant is picked, and each read
+   is itself written to the ops audit log by the server. The tenant rides in the request body,
+   never a URL, so no tenant id ends up in history or referrers. Metadata is shown as compact JSON
+   text, never rendered as markup. */
 
 const dateTime = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", second: "2-digit" });
 
@@ -26,24 +27,28 @@ function metaText(m: unknown): string {
   }
 }
 
-export function AuditLogViewer({
-  tenants,
-  initial,
-}: {
-  tenants: { org_id: string; name: string }[];
-  initial: { items: AuditEntry[]; next_cursor: string | null } | { error: string };
-}) {
-  const [org, setOrg] = useState<string>("all");
-  const [items, setItems] = useState<AuditEntry[]>("items" in initial ? initial.items : []);
-  const [cursor, setCursor] = useState<string | null>("items" in initial ? initial.next_cursor : null);
-  const [error, setError] = useState<string | null>("error" in initial ? initial.error : null);
+const NONE = "none";
+
+export function AuditLogViewer({ tenants }: { tenants: { org_id: string; name: string }[] }) {
+  const [org, setOrg] = useState<string>(NONE);
+  const [items, setItems] = useState<AuditEntry[]>([]);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const names = new Map(tenants.map((t) => [t.org_id, t.name]));
 
   const fetchPage = (nextOrg: string, after: string | null) => {
     setError(null);
+    if (nextOrg === NONE) {
+      setItems([]);
+      setCursor(null);
+      return;
+    }
+    if (!after) {
+      setItems([]);
+      setCursor(null);
+    }
     startTransition(async () => {
-      const res = await searchAuditLog(nextOrg === "all" ? null : nextOrg, after);
+      const res = await searchAuditLog(nextOrg, after);
       if (!res.ok) {
         setError(res.message);
         return;
@@ -65,7 +70,7 @@ export function AuditLogViewer({
             setOrg(v);
             fetchPage(v, null);
           }}
-          options={[{ value: "all", label: "All tenants" }, ...tenants.map((t) => ({ value: t.org_id, label: t.name }))]}
+          options={[{ value: NONE, label: "Pick a tenant" }, ...tenants.map((t) => ({ value: t.org_id, label: t.name }))]}
           label="Filter by tenant"
           className="w-[260px]"
         />
@@ -80,14 +85,23 @@ export function AuditLogViewer({
 
       <section aria-label="Audit log" className="overflow-hidden rounded-card border border-line bg-surface shadow-sm">
         {items.length === 0 ? (
-          <p className="px-4 py-4 text-[13.5px] text-ink-3 sm:px-[22px]">{error ? "Nothing to show." : "No audit entries for this filter."}</p>
+          <p className="px-4 py-4 text-[13.5px] text-ink-3 sm:px-[22px]">
+            {org === NONE
+              ? tenants.length === 0
+                ? "There are no tenants to show an audit log for."
+                : "Pick a tenant to see its audit log."
+              : pending
+                ? "Loading..."
+                : error
+                  ? "Nothing to show."
+                  : "No audit entries for this tenant."}
+          </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left text-[13.5px]">
               <thead>
                 <tr className="bg-bg">
                   <th scope="col" className={thClass}>When</th>
-                  <th scope="col" className={thClass}>Tenant</th>
                   <th scope="col" className={thClass}>Actor</th>
                   <th scope="col" className={thClass}>Action</th>
                   <th scope="col" className={thClass}>Target</th>
@@ -100,7 +114,6 @@ export function AuditLogViewer({
                     <td className="whitespace-nowrap px-5 py-3 tabular-nums text-ink-3">
                       {Number.isNaN(Date.parse(e.occurred_at)) ? "" : dateTime.format(new Date(e.occurred_at))}
                     </td>
-                    <td className="max-w-[180px] truncate px-5 py-3 text-ink-2">{names.get(e.org_id) ?? e.org_id}</td>
                     <td className="max-w-[200px] px-5 py-3 text-ink-2">
                       <span className="block capitalize">{e.actor_type}</span>
                       {e.actor_id ? <span className="block truncate font-mono text-[11.5px] text-ink-3">{e.actor_id}</span> : null}

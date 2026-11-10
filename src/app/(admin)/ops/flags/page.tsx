@@ -20,11 +20,11 @@ const dateTime = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeri
 
 export default async function OpsFlagsPage() {
   const [res, tenants] = await Promise.all([loadFlags(), loadOpsTenants()]);
-  const names = new Map(tenants.kind === "live" ? tenants.data.map((t) => [t.org_id, t.name]) : []);
+  const names = new Map(tenants.kind === "live" ? tenants.data.tenants.map((t) => [t.org_id, t.name]) : []);
   const flags = res.kind === "live" ? [...res.data].sort((a, b) => a.key.localeCompare(b.key) || Number(a.org_id !== null) - Number(b.org_id !== null)) : [];
   const scopeOptions = [
     { value: "global", label: "All tenants" },
-    ...(tenants.kind === "live" ? tenants.data.map((t) => ({ value: t.org_id, label: t.name })) : []),
+    ...(tenants.kind === "live" ? tenants.data.tenants.map((t) => ({ value: t.org_id, label: t.name })) : []),
   ];
 
   return (

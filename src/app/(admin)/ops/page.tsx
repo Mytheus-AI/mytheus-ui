@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
    and the status flip goes through identity-tenant-service. The staff gate is in the layout. */
 export default async function OpsTenantsPage() {
   const res = await loadOpsTenants();
-  const tenants = res.kind === "live" ? res.data : [];
+  const tenants = res.kind === "live" ? res.data.tenants : [];
   const suspended = tenants.filter((t) => t.status === "suspended").length;
 
   return (
@@ -21,10 +21,13 @@ export default async function OpsTenantsPage() {
       {res.kind === "live" ? (
         <>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-            <StatCard label="Tenants" value={tenants.length} />
+            <StatCard label="Tenants" value={res.data.truncated ? `${tenants.length}+` : tenants.length} />
             <StatCard label="Suspended" value={suspended} />
             <StatCard label="Members" value={tenants.reduce((s, t) => s + (Number(t.member_count) || 0), 0)} />
           </div>
+          {res.data.truncated ? (
+            <Note tone="warning">Showing the newest {tenants.length} tenants. Older tenants are not listed here.</Note>
+          ) : null}
           <TenantDirectory tenants={tenants} />
         </>
       ) : res.kind === "forbidden" ? (

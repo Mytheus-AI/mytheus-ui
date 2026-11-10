@@ -46,6 +46,41 @@ export interface CostsDashboard {
   tenants: CostRow[];
   dlq: { topic: string; count: number }[] | null;
   consumer_lag: { group: string; topic: string; lag: number }[] | null;
+  /** Keyset paging over `tenants` (`?limit=&cursor=`); null on the last page. */
+  next_cursor?: string | null;
+}
+
+/** `GET /admin/ops/tenants`, keyset-paged newest first. */
+export interface OpsTenantPage {
+  items: OpsTenant[];
+  next_cursor: string | null;
+}
+
+export const PAGE_LIMIT = 200;
+export const MAX_PAGES = 10;
+
+/**
+ * Follow a keyset-paged list to the end, up to `maxPages` pages, so the directory, the flag
+ * scope picker and the audit tenant picker all see every tenant. Stops on a null cursor, on a
+ * cursor that repeats (a server bug must not loop forever), or at the cap, which it reports as
+ * `truncated` so the page can say the list is incomplete instead of pretending it is whole.
+ */
+export async function collectPages<T>(
+  fetchPage: (cursor: string | null) => Promise<{ items: T[]; next_cursor: string | null }>,
+  maxPages: number = MAX_PAGES,
+): Promise<{ items: T[]; truncated: boolean }> {
+  const items: T[] = [];
+  const seen = new Set<string>();
+  let cursor: string | null = null;
+  for (let page = 0; page < maxPages; page++) {
+    const res = await fetchPage(cursor);
+    items.push(...res.items);
+    const next = typeof res.next_cursor === "string" && res.next_cursor ? res.next_cursor : null;
+    if (next === null || seen.has(next)) return { items, truncated: false };
+    seen.add(next);
+    cursor = next;
+  }
+  return { items, truncated: true };
 }
 
 export interface AuditEntry {

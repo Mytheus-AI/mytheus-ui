@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { canSubmitSuspend, isFlagKey, opsGate, sortCosts, suspendReducer, type SuspendState } from "../src/lib/ops.ts";
+import { canSubmitSuspend, collectPages, isFlagKey, opsGate, sortCosts, suspendReducer, type SuspendState } from "../src/lib/ops.ts";
 
 test("ops gate: only an explicit staff:true opens the console", () => {
   assert.equal(opsGate({ ok: true, data: { staff: true } }), "staff");
@@ -75,4 +75,31 @@ test("flag keys", () => {
   assert.equal(isFlagKey("Live"), false);
   assert.equal(isFlagKey("a"), false);
   assert.equal(isFlagKey("x y"), false);
+});
+
+test("collectPages follows cursors to the end", async () => {
+  const pages: Record<string, { items: number[]; next_cursor: string | null }> = {
+    start: { items: [1, 2], next_cursor: "b" },
+    b: { items: [3], next_cursor: "c" },
+    c: { items: [4], next_cursor: null },
+  };
+  const seen: (string | null)[] = [];
+  const r = await collectPages(async (cursor) => {
+    seen.push(cursor);
+    return pages[cursor ?? "start"];
+  });
+  assert.deepEqual(r, { items: [1, 2, 3, 4], truncated: false });
+  assert.deepEqual(seen, [null, "b", "c"]);
+});
+
+test("collectPages stops at the cap and on a repeating cursor", async () => {
+  const capped = await collectPages(async () => ({ items: [0], next_cursor: `x${Math.random()}` }), 3);
+  assert.deepEqual(capped, { items: [0, 0, 0], truncated: true });
+  let calls = 0;
+  const looped = await collectPages(async () => {
+    calls++;
+    return { items: [calls], next_cursor: "same" };
+  });
+  assert.equal(looped.truncated, false);
+  assert.equal(calls, 2);
 });

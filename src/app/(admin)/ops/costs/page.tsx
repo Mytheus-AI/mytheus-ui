@@ -44,7 +44,11 @@ export default async function OpsCostsPage() {
 
   return (
     <div className="flex flex-col gap-6 motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
-      <PageHeader title="Cost and lag" description={`Agent token use by tenant for ${periodLabel(d.period)}, and pipeline health. Aggregates only.`} />
+      <PageHeader title="Cost and lag" description={`Agent token use by tenant${d.period ? ` for ${periodLabel(d.period)}` : ""}, and pipeline health. Aggregates only.`} />
+
+      {d.truncated ? (
+        <Note tone="warning">Showing the {rows.length} newest tenants only, so the totals below leave out older tenants.</Note>
+      ) : null}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         <StatCard label="Agent tokens this period" value={compact.format(total)} />

@@ -80,11 +80,12 @@ export async function removeFeatureFlag(id: string): Promise<OpsResult> {
   return { ok: true };
 }
 
+/** One tenant at a time: admin-ops-service requires `org_id` (422 without it). */
 export async function searchAuditLog(
-  orgId: string | null,
+  orgId: string,
   cursor: string | null,
 ): Promise<{ ok: true; page: AuditPage } | { ok: false; message: string }> {
-  if (orgId !== null && !isUuid(orgId)) return { ok: false, message: "Pick a tenant or All tenants." };
+  if (!isUuid(orgId)) return { ok: false, message: "Pick a tenant to see its audit log." };
   if (cursor !== null && (typeof cursor !== "string" || cursor.length > 512)) return { ok: false, message: "That page is not valid." };
   try {
     return { ok: true, page: await searchAudit({ org_id: orgId, cursor, limit: 50 }) };
