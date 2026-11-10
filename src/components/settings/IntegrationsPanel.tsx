@@ -1,5 +1,5 @@
 import type { Icon } from "@phosphor-icons/react";
-import { CalendarDots, Kanban, SlackLogo, SquaresFour } from "@phosphor-icons/react/ssr";
+import { AddressBook, BookOpenText, CalendarDots, Kanban, NotionLogo, SlackLogo, SquaresFour } from "@phosphor-icons/react/ssr";
 import { FormSubmit } from "@/components/admin/FormSubmit";
 import { SectionCard, cardClass } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
@@ -25,6 +25,11 @@ import type { IntegrationsLoad } from "@/lib/api/integrations";
    on the server is "Not configured" and cannot be connected. No token is ever shown: the server
    never returns one and the view model has no field for it.
 
+   Phase 4 reach adds HubSpot (a note per meeting on the matching CRM companies and contacts) and
+   Notion and Confluence (where a decision record can be exported). They sit outside R8, so they
+   are plain cards in their own section. ADR-0037 D3: a provider the server has no app credentials
+   for says "Not available yet" and its Connect stays off; it lights up when the credentials land.
+
    Server component. Connect and Disconnect are form actions, so they work without client JS;
    only the submit buttons are client islands (pending label, confirm step). */
 
@@ -48,8 +53,29 @@ const CARDS: CardMeta[] = [
   },
 ];
 
+const REACH_CARDS: CardMeta[] = [
+  {
+    key: "hubspot",
+    name: "HubSpot",
+    description: "When a meeting with people outside the workspace ends, its confirmed decisions and actions are added as one note on the matching HubSpot companies and contacts. Confidential meetings never go to the CRM.",
+    icon: AddressBook,
+  },
+  {
+    key: "notion",
+    name: "Notion",
+    description: "Export a decision record, with what it follows from and what replaced it, as a page under any Notion page you share with Mytheus.",
+    icon: NotionLogo,
+  },
+  {
+    key: "confluence",
+    name: "Confluence",
+    description: "Export a decision record, with its lineage, as a page in a Confluence space of your choice.",
+    icon: BookOpenText,
+  },
+];
+
 function StatusBadge({ state }: { state: CardState }) {
-  if (state.kind === "not_configured") return <Chip tone="outline">Not configured</Chip>;
+  if (state.kind === "not_configured") return <Chip tone="outline">Not available yet</Chip>;
   if (state.kind === "available") return <Chip>Not connected</Chip>;
   return state.status === "active" ? <Chip tone="ok">Connected</Chip> : <Chip tone="medium">Needs attention</Chip>;
 }
@@ -129,7 +155,9 @@ function ProviderCard({ meta, item, people }: { meta: CardMeta; item: Integratio
         <StatusBadge state={state} />
       </div>
       {state.kind === "not_configured" ? (
-        <p className="text-[14px] text-ink-3">The server has no app credentials for {meta.name} yet, so it cannot be connected.</p>
+        <p className="text-[14px] text-ink-3">
+          {meta.name} is not enabled on this Mytheus server yet, so it cannot be connected. Connect turns on here as soon as it is.
+        </p>
       ) : null}
       {state.kind === "connected" && state.status === "degraded" ? (
         <Note tone="warning">The connection is failing at {meta.name}. Disconnect and connect again to repair it.</Note>
@@ -144,7 +172,7 @@ function ProviderCard({ meta, item, people }: { meta: CardMeta; item: Integratio
 
 const REASON_COPY: Record<NonNullable<TrackerOption["reason"]>, string> = {
   not_available: "Not available",
-  not_configured: "Not configured",
+  not_configured: "Not available yet",
   other_tracker_connected: "Another tracker is connected",
   connected: "Connected",
 };
@@ -251,6 +279,21 @@ export function IntegrationsPanel({
             ))}
           </ul>
           <TrackerSection items={load.items} people={people} />
+          <section aria-labelledby="reach-heading" className="flex flex-col gap-3">
+            <div>
+              <h2 id="reach-heading" className="display text-[22px] text-ink">
+                Share and export
+              </h2>
+              <p className="mt-1 max-w-[70ch] text-[15px] leading-relaxed text-ink-3">
+                Send what the workspace confirmed to the tools other people already read. Each one is optional and independent of the others.
+              </p>
+            </div>
+            <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-5">
+              {REACH_CARDS.map((c) => (
+                <ProviderCard key={c.key} meta={c} item={load.items.get(c.key)} people={people} />
+              ))}
+            </ul>
+          </section>
         </>
       )}
     </>
