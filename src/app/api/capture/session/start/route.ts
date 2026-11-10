@@ -62,7 +62,10 @@ export async function POST(request: Request): Promise<NextResponse> {
   try {
     meeting = await gateway<CreatedMeeting>(caller.bearer, "/api/v1/meetings", {
       method: "POST",
-      body: { title },
+      // `source` (core-api `meetings.source`) keeps meeting-service from opening a LiveKit room
+      // nobody joins, whose empty-room timeout would otherwise end the meeting early. The title
+      // prefix stays for meetings created before the column existed.
+      body: { title, source },
       idempotencyKey: requestId ? `capture-start:${requestId}` : undefined,
     });
     // Live while the capture runs, so the meeting reads as happening now. Best effort: the

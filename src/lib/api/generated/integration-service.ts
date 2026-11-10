@@ -46,6 +46,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/integrations/exports/decisions/{decision_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Decision Exports */
+        get: operations["list_decision_exports"];
+        put?: never;
+        /** Export Decision */
+        post: operations["export_decision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/exports/destinations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Destinations */
+        get: operations["export_destinations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/integrations/{provider}": {
         parameters: {
             query?: never;
@@ -74,6 +109,23 @@ export interface paths {
         put?: never;
         /** Connect */
         post: operations["connect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/crm/meeting-note": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Crm Meeting Note */
+        post: operations["crm_meeting_note"];
         delete?: never;
         options?: never;
         head?: never;
@@ -174,11 +226,154 @@ export interface components {
             /** Authorize Url */
             authorize_url: string;
         };
+        /** CrmNoteResult */
+        CrmNoteResult: {
+            /**
+             * Companies
+             * @default 0
+             */
+            companies: number;
+            /**
+             * Contacts
+             * @default 0
+             */
+            contacts: number;
+            /** Note Id */
+            note_id?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "not_connected" | "skipped_confidential" | "no_match" | "created" | "updated";
+        };
+        /** DecisionExport */
+        DecisionExport: {
+            /**
+             * Decision Id
+             * Format: uuid
+             */
+            decision_id: string;
+            /**
+             * Destination
+             * @description The parent page, space key, channel id or `dm`.
+             */
+            destination: string;
+            /**
+             * Exported At
+             * Format: date-time
+             */
+            exported_at: string;
+            /**
+             * External Id
+             * @description The page id, or `{channel}:{ts}` for Slack.
+             */
+            external_id: string;
+            /**
+             * External Url
+             * @description Open the export in the tool.
+             */
+            external_url?: string | null;
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "notion" | "confluence" | "slack";
+            /**
+             * Replaced
+             * @description An earlier export of this decision was replaced.
+             */
+            replaced: boolean;
+        };
+        /** DecisionExportList */
+        DecisionExportList: {
+            /** Items */
+            items: components["schemas"]["DecisionExportSummary"][];
+        };
+        /** DecisionExportRequest */
+        DecisionExportRequest: {
+            /**
+             * Channel
+             * @description Slack: a channel id the Mytheus app is in. Omit for a direct message.
+             */
+            channel?: string | null;
+            /**
+             * Parent Page Id
+             * @description Notion: the page the export is created under (required for Notion).
+             */
+            parent_page_id?: string | null;
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "notion" | "confluence" | "slack";
+            /**
+             * Space Key
+             * @description Confluence: the space the page is created in (required for Confluence).
+             */
+            space_key?: string | null;
+        };
+        /** DecisionExportSummary */
+        DecisionExportSummary: {
+            /**
+             * Exported At
+             * Format: date-time
+             */
+            exported_at: string;
+            /** External Url */
+            external_url?: string | null;
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "notion" | "confluence" | "slack";
+        };
         /**
          * @description The frozen program-wide error enum. Clients branch on this and never on `detail`, which is human-readable and free to change. Values are added, never removed or repurposed. Emitted verbatim from `libs.shared.errors.ErrorCode`, so this list cannot drift from the code; the no-removal half is asserted by `test_no_published_error_code_is_ever_removed`, because `oasdiff` does not treat narrowing a response enum as a breaking change.
          * @enum {string}
          */
-        ErrorCode: "MALFORMED_BODY" | "INVALID_CURSOR" | "AUTH_REQUIRED" | "TOKEN_EXPIRED" | "FORBIDDEN_ROLE" | "CROSS_TENANT_DENIED" | "NOT_FOUND" | "IDEMPOTENCY_KEY_REUSED" | "VERSION_CONFLICT" | "VALIDATION_FAILED" | "RATE_LIMITED" | "QUOTA_EXCEEDED" | "INTERNAL" | "DEPENDENCY_UNAVAILABLE" | "NOT_IMPLEMENTED" | "NOT_A_PARTICIPANT" | "CONSENT_REQUIRED" | "PROVIDER_NOT_CONFIGURED" | "PM_ALREADY_CONNECTED" | "ACCOUNT_CONNECTED_ELSEWHERE";
+        ErrorCode: "MALFORMED_BODY" | "INVALID_CURSOR" | "AUTH_REQUIRED" | "TOKEN_EXPIRED" | "FORBIDDEN_ROLE" | "CROSS_TENANT_DENIED" | "NOT_FOUND" | "IDEMPOTENCY_KEY_REUSED" | "VERSION_CONFLICT" | "VALIDATION_FAILED" | "RATE_LIMITED" | "QUOTA_EXCEEDED" | "INTERNAL" | "DEPENDENCY_UNAVAILABLE" | "NOT_IMPLEMENTED" | "NOT_A_PARTICIPANT" | "CONSENT_REQUIRED" | "EXTERNAL_MEETING" | "PROVIDER_NOT_CONFIGURED" | "PM_ALREADY_CONNECTED" | "ACCOUNT_CONNECTED_ELSEWHERE";
+        /** ExportDestination */
+        ExportDestination: {
+            /**
+             * Id
+             * @description Pass back as `parent_page_id` (Notion) or `space_key` (Confluence); `dm` for Slack means a direct message to you.
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "page" | "space" | "dm";
+            /** Name */
+            name: string;
+            /** Url */
+            url?: string | null;
+        };
+        /** ExportDestinations */
+        ExportDestinations: {
+            /**
+             * Configured
+             * @description The server has app credentials for this provider.
+             */
+            configured: boolean;
+            /**
+             * Connected
+             * @description The workspace has a live connection to it.
+             */
+            connected: boolean;
+            /** Destinations */
+            destinations: components["schemas"]["ExportDestination"][];
+            /**
+             * Note
+             * @description Guidance for the person, e.g. how to share a Notion page.
+             */
+            note?: string | null;
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "notion" | "confluence" | "slack";
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -354,6 +549,161 @@ export interface operations {
             };
         };
     };
+    list_decision_exports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                decision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionExportList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    export_decision: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                decision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionExportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionExport"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    export_destinations: {
+        parameters: {
+            query: {
+                /** @description Where the record would go. */
+                provider: "notion" | "confluence" | "slack";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportDestinations"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     disconnect: {
         parameters: {
             query?: never;
@@ -425,6 +775,60 @@ export interface operations {
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    crm_meeting_note: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeetingRef"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CrmNoteResult"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
             401: {
                 headers: {
                     [name: string]: unknown;

@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation";
 import { resolveOrgContext } from "@/lib/api/org-context";
 import { Page, PageHead } from "@/components/ui/Page";
-import { TabNav } from "@/components/ui/TabNav";
-import { WORKSPACE_TABS } from "@/components/app/nav";
+import { SectionTabs } from "@/components/app/SectionTabs";
 
 /* The Workspace console (doc 20 section 7), for a workspace's own owners and admins: one console
    with tabs (Overview, Members, Company brain, Usage and billing, Agent collaboration, Data and
@@ -20,8 +19,8 @@ export default async function WorkspaceLayout({ children }: { children: React.Re
   return (
     <Page>
       <PageHead title="Workspace" context={`Who is in ${ctx.org.name || "your workspace"}, what its agents know, what it uses, and how its data is kept.`} />
-      <TabNav
-        items={WORKSPACE_TABS.map(({ href, label, icon }) => ({ href, label, icon }))}
+      <SectionTabs
+        section="workspace"
         label="Workspace sections"
         exact={["/workspace"]}
         className="mb-6"
