@@ -1,25 +1,25 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, DownloadSimple, PlugsConnected, CreditCard, Trash } from "@phosphor-icons/react/dist/ssr";
+import { ArrowRight, DownloadSimple, PlugsConnected, CreditCard, Trash } from "@phosphor-icons/react/ssr";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { Button, LinkButton } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { InlineRow, Note, PageHeader, SectionCard } from "@/components/settings/primitives";
+import { InlineRow, Note, PageHeader, SectionCard, dangerGhost } from "@/components/settings/primitives";
 import { StatCard, theadRowClass, thClass } from "@/components/admin/StatCard";
 import { resolveOrgContext } from "@/lib/api/org-context";
 import { listMembers, type MemberTier } from "@/lib/api/members";
 import { WorkspaceInvite } from "@/components/admin/WorkspaceInvite";
 import { fetchUsage } from "@/lib/api/usage";
+import { loadIntegrations } from "@/lib/api/integrations";
 
 export const metadata: Metadata = { title: "Workspace admin | Mytheus" };
 
 /* Tenant admin console, overview: members (`GET /users` plus pending Clerk invitations), the
-   plan (`GET /usage` on `billing-metering-service`), integrations, and the data-rights requests
-   (export, erasure). Integrations and the data requests have no service behind them yet
-   (`integration-service` and `admin-ops-service` serve no routes), so they say "not
-   available yet" and their buttons stay off rather than pretend to work. */
+   plan (`GET /usage` on `billing-metering-service`), integrations (`GET /integrations` on
+   `integration-service`), and the data-rights requests. Export lives on its own tab over
+   `/admin/tenant/data-export`; erasure has no console route yet, so its button stays off. */
 
 const TIER_LABEL: Record<MemberTier, string> = { owner: "Owner", admin: "Admin", member: "Member" };
 
@@ -42,10 +42,6 @@ function TierChip({ tier }: { tier: MemberTier }) {
 function StatusChip({ status }: { status: Row["status"] }) {
   return status === "active" ? <Badge tone="success">Active</Badge> : <Badge tone="medium">Invited</Badge>;
 }
-
-/** The quiet destructive button: red text and edge on the card, a red wash on hover. */
-const dangerButton =
-  "!border-[color:color-mix(in_srgb,var(--priority-high)_45%,var(--line))] !bg-transparent !text-priority-high hover:!bg-priority-high-soft focus-visible:!rounded-ctl";
 
 const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
@@ -84,12 +80,17 @@ async function pendingInvites(): Promise<Row[]> {
 }
 
 export default async function TenantAdminPage() {
-  const [ctx, real, invited, usage] = await Promise.all([
+  const [ctx, real, invited, usage, integrations] = await Promise.all([
     resolveOrgContext(),
     listMembers(),
     pendingInvites(),
     fetchUsage(),
+    loadIntegrations(),
   ]);
+  const connected =
+    integrations.kind === "live"
+      ? Array.from(integrations.items.values()).filter((i) => i.status === "active" || i.status === "degraded").length
+      : null;
   const plan = usage.kind === "live" ? usage.usage.plan : null;
   const active: Row[] = (real ?? []).map((m) => ({
     key: m.id,
@@ -114,7 +115,11 @@ export default async function TenantAdminPage() {
         <StatCard label="Active members" value={real ? active.length : "Not loaded"} hint="Signed in at least once" />
         <StatCard label="Pending invites" value={invited.length} hint={invited.length ? "Waiting to accept" : "None waiting"} />
         <StatCard label="Plan" value={plan?.name ?? "Not loaded"} hint={plan ? "From billing" : "Billing did not answer"} />
-        <StatCard label="Integrations" value="None yet" hint="Not available yet" />
+        <StatCard
+          label="Integrations"
+          value={connected ?? "Not loaded"}
+          hint={connected === null ? "Did not answer" : connected === 0 ? "Nothing connected" : "Connected"}
+        />
       </div>
 
       <SectionCard
@@ -144,9 +149,9 @@ export default async function TenantAdminPage() {
               <caption className="sr-only">Workspace members, their access and status</caption>
               <thead>
                 <tr className={theadRowClass}>
-                  <th scope="col" className={`${thClass} sm:pl-[22px]`}>Person</th>
+                  <th scope="col" className={`${thClass} !pl-[22px]`}>Person</th>
                   <th scope="col" className={thClass}>Access</th>
-                  <th scope="col" className={`${thClass} sm:pr-[22px]`}>Status</th>
+                  <th scope="col" className={`${thClass} !pr-[22px]`}>Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
@@ -229,7 +234,11 @@ export default async function TenantAdminPage() {
           <span className="min-w-0 flex-1">
             <span className="block text-[16px] font-semibold text-ink">Integrations</span>
             <span className="mt-0.5 block text-[14px] leading-relaxed text-ink-3">
-              Calendar, Slack and project tracker connections are not available yet.
+              {connected === null
+                ? "Calendar, Slack and Jira connections could not be loaded just now."
+                : connected === 0
+                  ? "Nothing connected yet. Connect Calendar, Slack and Jira."
+                  : `${connected} connected. Manage Calendar, Slack and Jira.`}
             </span>
           </span>
           <ArrowRight
@@ -247,30 +256,30 @@ export default async function TenantAdminPage() {
         title="Data requests"
         description="Requests that act on everything the workspace holds. Each one is logged to the audit trail."
       >
-        <div className="px-4 py-4 sm:px-[22px]">
-          <Note>
-            Not available yet. The admin service that runs and audits these requests is still being built, so the buttons
-            stay off rather than pretend to work.
-          </Note>
-        </div>
         <InlineRow
           label="Export workspace data"
           help="Meetings, transcripts, confirmed decisions and action items, as a downloadable archive."
         >
-          <Button variant="outline" size="sm" disabled className="focus-visible:!rounded-ctl">
+          <LinkButton href="/tenant/data" variant="outline" size="sm" className="focus-visible:!rounded-ctl">
             <DownloadSimple size={16} aria-hidden />
-            Request export
-          </Button>
+            Export data
+          </LinkButton>
         </InlineRow>
         <InlineRow
           label="Erase a person's data"
           help="Removes one person's transcripts, notes and agent memory from every store, then confirms when it is done. This cannot be undone."
         >
-          <Button variant="outline" size="sm" disabled className={dangerButton}>
+          <Button variant="outline" size="sm" disabled className={dangerGhost}>
             <Trash size={16} aria-hidden />
             Start erasure
           </Button>
         </InlineRow>
+        <div className="px-4 py-4 sm:px-[22px]">
+          <Note>
+            Erasing one person&apos;s data is not available from this console yet, so that button stays off rather than
+            pretend to work.
+          </Note>
+        </div>
       </SectionCard>
     </div>
   );

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
+import { ArrowLeft } from "@phosphor-icons/react/ssr";
 import { OrgProvider } from "@/lib/org-context";
 import { resolveOrgContext } from "@/lib/api/org-context";
 import { Wordmark } from "@/components/site/Wordmark";
@@ -14,9 +14,9 @@ export const metadata: Metadata = {
 };
 
 /* The platform-staff consoles. Clerk middleware already requires a session here; the org
-   context is the signed-in user's own, from the verified session. There is no staff role yet,
-   so the pages under this layout show no cross-tenant data at all (see
-   `PlatformConsoleUnavailable`); the real gate lands with that role and `admin-ops-service`.
+   context is the signed-in user's own, from the verified session. The staff gate itself is in
+   `ops/layout.tsx` (`GET /admin/ops/whoami`, deny by default); admin-ops-service enforces it
+   again on every `/admin/ops/*` call.
 
    No sidebar: a 64px header in the app shell's rhythm (same height, gutters and theme toggle)
    with the wordmark, an "Admin console" chip so it is never mistaken for the workspace, and the
@@ -35,7 +35,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </a>
         <header className="flex h-16 items-center gap-2 border-b border-line bg-bg px-4 sm:px-6 lg:px-8">
           <Link
-            href="/admin"
+            href="/ops"
             className="group inline-flex min-h-10 shrink-0 items-center focus-visible:!rounded-ctl"
             aria-label="Mytheus admin console"
           >

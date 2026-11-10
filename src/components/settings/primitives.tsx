@@ -1,5 +1,5 @@
 import type { InputHTMLAttributes, ReactNode } from "react";
-import { CheckCircle, Info, WarningCircle, WarningOctagon } from "@phosphor-icons/react/dist/ssr";
+import { CheckCircle, Info, WarningCircle, WarningOctagon } from "@phosphor-icons/react/ssr";
 
 /* Shared building blocks for Settings, Billing, Org, the workspace admin console and the platform
    consoles (also borrowed by People, Ask and the collaboration log). Tokens only, so both themes
@@ -22,6 +22,24 @@ export const fieldClass =
 /** Extra classes for the frozen `components/ui` Input when it sits in a settings row. */
 export const inputClass =
   "focus-visible:!rounded-ctl read-only:cursor-not-allowed read-only:bg-bg-2 read-only:text-ink-3 read-only:hover:border-line-2";
+
+/** A multi-line text field in the same shape as the inputs. */
+export const textareaClass =
+  "block w-full resize-none rounded-ctl border border-line-2 bg-surface px-3.5 py-2.5 text-[15px] text-ink " +
+  "placeholder:text-ink-4 transition-[border-color,box-shadow] duration-150 hover:border-ink-4 " +
+  "focus-visible:!rounded-ctl focus-visible:border-signal focus-visible:shadow-[0_0_0_4px_var(--signal-soft)] focus-visible:outline-none";
+
+/** The quiet destructive button (pass to an `outline` Button): red text and edge, a red wash on hover. */
+export const dangerGhost =
+  "!border-[color:color-mix(in_srgb,var(--priority-high)_45%,var(--line))] !bg-transparent !text-priority-high " +
+  "hover:!bg-priority-high-soft focus-visible:!rounded-ctl";
+
+/** The solid destructive button (pass to a `danger` Button): the label takes the surface colour,
+    so it stays AA on the red in both themes (the frozen variant's white fails on dark red). */
+export const dangerSolid = "!text-surface focus-visible:!rounded-ctl";
+
+/** Card padding for cells, rows and footers, exported for tables that sit in a card. */
+export const cardPadX = "px-4 sm:px-[22px]";
 
 /** Page title row: serif title, one line of context, the page's one primary action on the right. */
 export function PageHeader({

@@ -127,6 +127,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/internal/tenant-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change Tenant Status */
+        post: operations["change_tenant_status"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs": {
         parameters: {
             query?: never;
@@ -481,6 +498,13 @@ export interface components {
             /** Items */
             items: components["schemas"]["AgentAuthzScope"][];
         };
+        /** ConfidenceThresholds */
+        ConfidenceThresholds: {
+            /** Silent */
+            silent: number;
+            /** Surface */
+            surface: number;
+        };
         /** DepartmentRef */
         DepartmentRef: {
             /**
@@ -501,7 +525,7 @@ export interface components {
          * @description The frozen program-wide error enum. Clients branch on this and never on `detail`, which is human-readable and free to change. Values are added, never removed or repurposed. Emitted verbatim from `libs.shared.errors.ErrorCode`, so this list cannot drift from the code; the no-removal half is asserted by `test_no_published_error_code_is_ever_removed`, because `oasdiff` does not treat narrowing a response enum as a breaking change.
          * @enum {string}
          */
-        ErrorCode: "MALFORMED_BODY" | "INVALID_CURSOR" | "AUTH_REQUIRED" | "TOKEN_EXPIRED" | "FORBIDDEN_ROLE" | "CROSS_TENANT_DENIED" | "NOT_FOUND" | "IDEMPOTENCY_KEY_REUSED" | "VERSION_CONFLICT" | "VALIDATION_FAILED" | "RATE_LIMITED" | "QUOTA_EXCEEDED" | "INTERNAL" | "DEPENDENCY_UNAVAILABLE" | "NOT_IMPLEMENTED" | "NOT_A_PARTICIPANT" | "CONSENT_REQUIRED";
+        ErrorCode: "MALFORMED_BODY" | "INVALID_CURSOR" | "AUTH_REQUIRED" | "TOKEN_EXPIRED" | "FORBIDDEN_ROLE" | "CROSS_TENANT_DENIED" | "NOT_FOUND" | "IDEMPOTENCY_KEY_REUSED" | "VERSION_CONFLICT" | "VALIDATION_FAILED" | "RATE_LIMITED" | "QUOTA_EXCEEDED" | "INTERNAL" | "DEPENDENCY_UNAVAILABLE" | "NOT_IMPLEMENTED" | "NOT_A_PARTICIPANT" | "CONSENT_REQUIRED" | "PROVIDER_NOT_CONFIGURED" | "PM_ALREADY_CONNECTED" | "ACCOUNT_CONNECTED_ELSEWHERE";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -758,16 +782,73 @@ export interface components {
         };
         /** TenantSettings */
         TenantSettings: {
+            /** Agent Confidence Overrides */
+            agent_confidence_overrides?: {
+                [key: string]: components["schemas"]["ConfidenceThresholds"];
+            };
             /** Pii Redaction Enabled */
             pii_redaction_enabled: boolean;
+            /**
+             * Retention Days Transcripts
+             * @default 365
+             */
+            retention_days_transcripts: number;
+            /**
+             * Retention Days Worklogs
+             * @default 365
+             */
+            retention_days_worklogs: number;
         };
         /** TenantSettingsUpdate */
         TenantSettingsUpdate: {
             /**
+             * Agent Confidence Overrides
+             * @description Replaces the whole overrides object.
+             */
+            agent_confidence_overrides?: {
+                [key: string]: components["schemas"]["ConfidenceThresholds"];
+            } | null;
+            /**
              * Pii Redaction Enabled
              * @description When true, ingestion redacts detected PII before the chunk reaches Postgres, the object store, or the bus.
              */
-            pii_redaction_enabled: boolean;
+            pii_redaction_enabled?: boolean | null;
+            /** Retention Days Transcripts */
+            retention_days_transcripts?: number | null;
+            /** Retention Days Worklogs */
+            retention_days_worklogs?: number | null;
+        };
+        /** TenantStatusChange */
+        TenantStatusChange: {
+            /** Reason */
+            reason?: string | null;
+            /** Staff User Id */
+            staff_user_id?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "suspended";
+        };
+        /** TenantStatusResult */
+        TenantStatusResult: {
+            /** Changed */
+            changed: boolean;
+            /**
+             * Org Id
+             * Format: uuid
+             */
+            org_id: string;
+            /**
+             * Previous
+             * @enum {string}
+             */
+            previous: "active" | "suspended";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "suspended";
         };
         /**
          * UserContext
@@ -1173,6 +1254,60 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    change_tenant_status: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TenantStatusChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TenantStatusResult"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Unhandled server error. Carries a `trace_id` and no internals. */

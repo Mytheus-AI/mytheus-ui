@@ -1,16 +1,43 @@
 import type { Metadata } from "next";
 import { SettingsShell } from "@/components/settings/SettingsShell";
 import { IntegrationsPanel } from "@/components/settings/IntegrationsPanel";
+import { Note } from "@/components/settings/primitives";
+import { resolveOrgContext } from "@/lib/api/org-context";
+import { loadIntegrations } from "@/lib/api/integrations";
+import { listMembers } from "@/lib/api/members";
+import { parseReturnState } from "@/lib/integrations";
 
 export const metadata: Metadata = { title: "Integrations | Mytheus" };
+export const dynamic = "force-dynamic";
 
-export default function IntegrationsSettingsPage() {
+/* Owner and admin only (P12 contract section 3). The check here only decides what the page
+   offers; integration-service enforces the tier on every call. */
+export default async function IntegrationsSettingsPage({
+  searchParams,
+}: {
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
+  const ctx = await resolveOrgContext();
+  const isAdmin = ctx?.user.role === "admin";
+  const banner = parseReturnState(searchParams);
+
+  if (!isAdmin) {
+    return (
+      <SettingsShell title="Integrations" description="Calendar, Slack and one project tracker for the workspace.">
+        <Note>Only workspace owners and admins can manage integrations. Ask an admin to connect one.</Note>
+      </SettingsShell>
+    );
+  }
+
+  const [load, members] = await Promise.all([loadIntegrations(), listMembers()]);
+  const people = new Map((members ?? []).map((m) => [m.id, m.isYou ? `${m.name} (you)` : m.name]));
+
   return (
     <SettingsShell
       title="Integrations"
       description="Calendar, Slack and one project tracker. Agents use them to prepare for meetings and route what you confirm."
     >
-      <IntegrationsPanel />
+      <IntegrationsPanel load={load} banner={banner} people={people} />
     </SettingsShell>
   );
 }

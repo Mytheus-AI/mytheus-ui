@@ -1,17 +1,7 @@
-import type { Metadata } from "next";
-import { PlatformConsoleUnavailable } from "@/components/admin/PlatformConsoleUnavailable";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Mytheus | Tenant ops",
-};
-
-/* Platform tenant overview: every workspace, its plan, seats and status. Cross-tenant, so it
-   needs `admin-ops-service` and a staff role; neither exists, so it shows no data. */
+/* The platform tenant overview moved into the internal-ops console (Phase P12): its tenant
+   directory at /ops is the one list of every workspace, behind the staff gate. */
 export default function AdminOverviewPage() {
-  return (
-    <PlatformConsoleUnavailable
-      title="Tenants"
-      what="Every workspace on the platform, with its plan, members and status."
-    />
-  );
+  redirect("/ops");
 }

@@ -2,23 +2,27 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChartBar, Handshake, UsersThree } from "@phosphor-icons/react";
+import { Buildings, ChartBar, DownloadSimple, Handshake, Lifebuoy, SlidersHorizontal, UsersThree } from "@phosphor-icons/react";
 
 /* Section switcher for the workspace admin console. A horizontal row in the same language as the
-   settings nav (raised white tab for the current page): the console has three sections, which
-   does not earn a side rail. Scrolls sideways on a narrow screen rather than wrapping. */
+   settings nav (raised white tab for the current page). Seven sections stay in one row that
+   scrolls sideways on narrower screens rather than wrapping. */
 
 const TABS = [
-  { href: "/tenant", label: "Overview", icon: UsersThree },
+  { href: "/tenant", label: "Overview", icon: Buildings },
+  { href: "/tenant/members", label: "Members", icon: UsersThree },
+  { href: "/tenant/settings", label: "Settings", icon: SlidersHorizontal },
   { href: "/tenant/usage", label: "Usage and budget", icon: ChartBar },
   { href: "/tenant/agents", label: "Agent collaboration", icon: Handshake },
+  { href: "/tenant/support", label: "Support access", icon: Lifebuoy },
+  { href: "/tenant/data", label: "Data export", icon: DownloadSimple },
 ] as const;
 
 export function TenantTabs() {
   const pathname = usePathname();
   return (
     <nav aria-label="Workspace admin sections" className="-mx-4 min-w-0 sm:mx-0">
-      <ul className="flex gap-1.5 overflow-x-auto px-4 py-1 [scrollbar-width:none] sm:px-0 [&::-webkit-scrollbar]:hidden">
+      <ul className="flex gap-1.5 overflow-x-auto px-4 py-1 [scrollbar-width:none] sm:px-0 xl:flex-wrap xl:overflow-visible [&::-webkit-scrollbar]:hidden">
         {TABS.map((t) => {
           const active = pathname === t.href;
           const Icon = t.icon;

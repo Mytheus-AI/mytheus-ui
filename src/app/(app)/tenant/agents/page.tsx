@@ -91,11 +91,11 @@ export default async function AgentCollaborationPage() {
                   <caption className="sr-only">Agent collaboration grants</caption>
                   <thead>
                     <tr className={theadRowClass}>
-                      <th scope="col" className={`${thClass} sm:pl-[22px]`}>Who asks</th>
+                      <th scope="col" className={`${thClass} !pl-[22px]`}>Who asks</th>
                       <th scope="col" className={thClass}>For</th>
                       <th scope="col" className={thClass}>Reaching</th>
                       <th scope="col" className={thClass}>Rule</th>
-                      <th scope="col" className={`${thClass} sm:pr-[22px]`}>Since</th>
+                      <th scope="col" className={`${thClass} !pr-[22px]`}>Since</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line">

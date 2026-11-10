@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CalendarBlank, Coins, Timer, UsersThree } from "@phosphor-icons/react/dist/ssr";
+import { CalendarBlank, Coins, Timer, UsersThree } from "@phosphor-icons/react/ssr";
 import { LinkButton } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SettingsShell } from "@/components/settings/SettingsShell";

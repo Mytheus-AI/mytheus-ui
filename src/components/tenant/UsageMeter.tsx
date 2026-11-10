@@ -1,4 +1,4 @@
-import { CheckCircle, Warning, WarningOctagon } from "@phosphor-icons/react/dist/ssr";
+import { CheckCircle, Warning, WarningOctagon } from "@phosphor-icons/react/ssr";
 
 /* One usage dimension against its plan limit: a single magnitude, so one bar in one hue (the dark
    control colour), the figure printed beside it, and the 80% and 95% alert thresholds as ticks

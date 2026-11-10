@@ -50,8 +50,8 @@ export const ADMIN_ITEMS: NavItem[] = [
   { href: "/tenant/usage", label: "Usage", icon: ChartBar },
 ];
 
-/* Platform-staff consoles (every tenant, ops). Not in the workspace nav: no staff role exists
-   in the session yet, so they stay reachable by URL only. */
+/* Platform-staff consoles (every tenant, ops). Not in the workspace nav: staff status is only
+   known after `GET /admin/ops/whoami`, so they stay reachable by URL, behind that gate. */
 export const PLATFORM_ITEMS: NavItem[] = [
   { href: "/admin", label: "Admin console", icon: ShieldCheck },
   { href: "/ops", label: "Ops console", icon: Gauge },
