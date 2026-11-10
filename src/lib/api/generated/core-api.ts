@@ -2082,8 +2082,11 @@ export interface components {
         AgendaItemStatusUpdate: {
             /** Extend Minutes */
             extend_minutes?: number | null;
-            /** Status */
-            status?: ("pending" | "in_progress" | "covered" | "skipped") | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status?: "pending" | "in_progress" | "covered" | "skipped";
         };
         /**
          * AgendaReplace
