@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/Button";
 import { ChipInput } from "@/components/settings/ChipInput";
 import { saveGroundRules } from "@/app/actions/org-brain";
 import { BRAIN_LIMITS, cleanTopics, validateGroundRules } from "@/lib/api/org-brain-types";
-import { FieldMsg, FlashLine, useFlash } from "./ui";
+import { CardFoot, cardClass } from "@/components/ui/Card";
+import { CharCount, FieldMsg } from "@/components/ui/Form";
+import { notifyError, notifySuccess } from "@/lib/toast";
 
 /* Ground rules (ADR-0039 A5, C2): topics agents must never note, suggest or carry forward. The
    page says plainly what this is: an instruction the agents follow, not a technical guarantee.
@@ -36,7 +38,6 @@ export function GroundRulesEditor({ initial, canEdit }: { initial: string[]; can
   const [topics, setTopics] = useState(initial);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [flash, setFlash] = useFlash();
   const dirty = topics.join("\n") !== saved.join("\n");
   const suggestions = SUGGESTED.filter((s) => !topics.some((t) => t.toLowerCase() === s.toLowerCase()));
 
@@ -69,33 +70,29 @@ export function GroundRulesEditor({ initial, canEdit }: { initial: string[]; can
     }
     setSaving(true);
     setError(null);
-    setFlash({ tone: "busy", text: "Saving" });
     const res = await saveGroundRules(checked.value.never_record_topics);
     setSaving(false);
     if (res.ok) {
       setSaved(res.data.never_record_topics);
       setTopics(res.data.never_record_topics);
-      setFlash({
-        tone: "ok",
-        text: res.data.never_record_topics.length ? "Ground rules saved. Agents follow them from the next meeting." : "Saved: no topics are off limits.",
+      notifySuccess(res.data.never_record_topics.length ? "Ground rules saved" : "Ground rules saved with no topics", {
+        description: res.data.never_record_topics.length ? "Agents follow them from the next meeting." : "No topics are off limits.",
       });
     } else {
       setError(res.fieldErrors?.never_record_topics ?? null);
-      setFlash({ tone: "error", text: res.message });
+      notifyError(res.message);
     }
   };
 
   return (
     <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(280px,360px)]">
-      <form onSubmit={submit} noValidate aria-busy={saving || undefined} className="overflow-hidden rounded-card border border-line bg-surface shadow-warm-1">
+      <form onSubmit={submit} noValidate aria-busy={saving || undefined} className={cardClass({ flush: true })}>
         <div className="px-4 py-5 sm:px-[22px]">
           <div className="flex items-baseline justify-between gap-3">
             <label htmlFor="never-record" className="text-[15px] font-semibold text-ink">
               Never record notes about
             </label>
-            <span aria-hidden className="text-[13px] tabular-nums text-ink-3">
-              {topics.length} of {L.max}
-            </span>
+            <CharCount n={topics.length} max={L.max} />
           </div>
           <div className="mt-1.5">
             <ChipInput
@@ -117,7 +114,7 @@ export function GroundRulesEditor({ initial, canEdit }: { initial: string[]; can
 
           {suggestions.length ? (
             <div className="mt-5">
-              <p className="text-[13px] font-semibold text-ink-3">Common choices</p>
+              <p className="text-[12.5px] font-semibold text-ink-3">Common choices</p>
               <ul className="mt-2 flex flex-wrap gap-1.5">
                 {suggestions.map((s) => (
                   <li key={s}>
@@ -126,7 +123,7 @@ export function GroundRulesEditor({ initial, canEdit }: { initial: string[]; can
                       disabled={topics.length >= L.max}
                       onClick={() => setTopics((t) => cleanTopics([...t, s]))}
                       aria-label={`Add ${s}`}
-                      className="inline-flex h-9 items-center gap-1.5 rounded-full border border-dashed border-line-2 px-3 text-[13.5px] font-medium text-ink-2 transition-colors hover:border-solid hover:bg-surface-2 hover:text-ink focus-visible:!rounded-full disabled:opacity-40"
+                      className="inline-flex h-9 items-center gap-1.5 rounded-full border border-dashed border-line-2 px-3 text-[14px] font-medium text-ink-2 transition-colors hover:border-solid hover:bg-surface-2 hover:text-ink disabled:opacity-40"
                     >
                       <Plus size={13} weight="bold" aria-hidden />
                       {s}
@@ -137,17 +134,17 @@ export function GroundRulesEditor({ initial, canEdit }: { initial: string[]; can
             </div>
           ) : null}
         </div>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line bg-surface-2 px-4 py-3.5 sm:px-[22px]">
-          <Button type="submit" disabled={saving || (!dirty && saved.length > 0)} className="focus-visible:!rounded-ctl">
+        <CardFoot>
+          <Button type="submit" disabled={saving || (!dirty && saved.length > 0)}>
             {saving ? "Saving" : saved.length === 0 && topics.length === 0 ? "Save with no topics" : "Save ground rules"}
           </Button>
-          <FlashLine flash={flash ?? (dirty ? { tone: "busy", text: "Unsaved changes" } : null)} />
-        </div>
+          {dirty ? <p className="text-[14px] text-ink-3">Unsaved changes</p> : null}
+        </CardFoot>
       </form>
 
       <aside className="grid gap-4 xl:sticky xl:top-4" aria-label="How agents treat these topics">
         <GroundRulesHonesty />
-        <div className="rounded-card border border-line bg-surface-2 p-5">
+        <div className={cardClass({ tone: "well" })}>
           <p className="text-[15px] font-semibold text-ink">What changes in a meeting</p>
           <ul className="mt-2 list-disc space-y-1.5 pl-5 text-[14px] leading-relaxed text-ink-2 marker:text-ink-4">
             <li>No personal notes, suggestions or action items from that stretch.</li>

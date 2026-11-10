@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
-import { Badge } from "@/components/ui/Badge";
+import { CardFoot, SectionCard } from "@/components/ui/Card";
+import { Chip, type ChipTone } from "@/components/ui/Chip";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Note, PageHeader, SectionCard, SettingsRow, TextInput } from "@/components/settings/primitives";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { FieldRow as SettingsRow, TextInput } from "@/components/ui/Form";
+import { Note } from "@/components/ui/Note";
+import { SectionBar } from "@/components/ui/Page";
 import { theadRowClass, thClass } from "@/components/admin/StatCard";
 import { ActionForm } from "@/components/admin/ActionForm";
 import { FormSelect } from "@/components/admin/FormSelect";
@@ -20,10 +24,10 @@ export const dynamic = "force-dynamic";
 
 const dateTime = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 const fmt = (iso: string | null) => (iso && !Number.isNaN(Date.parse(iso)) ? dateTime.format(new Date(iso)) : "");
-const STATE_BADGE: Record<GrantState, { tone: "success" | "default"; label: string }> = {
-  active: { tone: "success", label: "Active" },
-  expired: { tone: "default", label: "Expired" },
-  revoked: { tone: "default", label: "Revoked" },
+const STATE_BADGE: Record<GrantState, { tone: ChipTone; label: string }> = {
+  active: { tone: "ok", label: "Active" },
+  expired: { tone: "neutral", label: "Expired" },
+  revoked: { tone: "neutral", label: "Revoked" },
 };
 const scopeLabel = (s: string) => GRANT_SCOPES.find((g) => g.value === s)?.label ?? s;
 
@@ -34,20 +38,20 @@ export default async function SupportAccessPage() {
   const grants = res.kind === "live" ? [...res.data].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)) : [];
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
+    <div className="flex flex-col gap-5">
+      <SectionBar
         title="Support access"
-        description="Mytheus staff cannot see your workspace unless you let them. Access is for one person, for a fixed time, and you can end it early."
+        context="Mytheus staff cannot see your workspace unless you let them. Access is for one person, for a fixed time, and you can end it early."
       />
 
       {res.kind === "forbidden" ? (
         <Note tone="error">Only workspace owners and admins can grant support access.</Note>
       ) : res.kind === "unavailable" ? (
-        <Note tone="warning">Support access could not be loaded from the server just now. Try again in a moment.</Note>
+        <ErrorState title="Support access could not be loaded" />
       ) : (
         <>
           <SectionCard title="Grant access" headingLevel={2} headingId="grant-heading" description="Use the staff ID from your support conversation. Nobody else can use the grant.">
-            <ActionForm action={grantSupportAccess} className="flex flex-col" messageClassName="px-4 pb-4 sm:px-[22px]">
+            <ActionForm action={grantSupportAccess} success="Access granted" className="flex flex-col divide-y divide-line">
               <SettingsRow label="Staff ID" htmlFor="staff_user_id" help="The ID support gave you, pasted exactly.">
                 <TextInput
                   id="staff_user_id"
@@ -71,11 +75,11 @@ export default async function SupportAccessPage() {
                   size="md"
                 />
               </SettingsRow>
-              <div className="border-t border-line bg-surface-2 px-4 py-3.5 sm:px-[22px]">
+              <CardFoot className="!border-t-0">
                 <FormSubmit variant="primary" size="md" pendingLabel="Granting access">
                   Grant access
                 </FormSubmit>
-              </div>
+              </CardFoot>
             </ActionForm>
           </SectionCard>
 
@@ -87,13 +91,14 @@ export default async function SupportAccessPage() {
           >
             {grants.length === 0 ? (
               <EmptyState
-                className="!rounded-none !border-0 !bg-transparent !py-10"
+                inCard
+                art="members"
                 title="No grants yet"
                 description="Mytheus staff have no access to this workspace."
               />
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[720px] border-collapse text-left text-[14.5px]">
+              <div>
+                <table className="mx-table w-full border-collapse text-left text-[14px]">
                   <caption className="sr-only">Support access grants</caption>
                   <thead>
                     <tr className={theadRowClass}>
@@ -112,18 +117,24 @@ export default async function SupportAccessPage() {
                       const state = grantState(g, now);
                       return (
                         <tr key={g.id} className="transition-colors duration-150 hover:bg-surface-2">
-                          <td className="max-w-[200px] truncate py-3 pl-[22px] pr-5 font-mono text-[13.5px] text-ink" title={g.staff_user_id}>
+                          <th scope="row" className="max-w-[200px] truncate py-3 pl-[22px] pr-5 text-left text-[14px] font-normal text-ink" title={g.staff_user_id}>
                             {g.staff_user_id}
+                          </th>
+                          <td data-label="Access" className="px-5 py-3 text-ink-2">
+                            {scopeLabel(g.scope)}
                           </td>
-                          <td className="px-5 py-3 text-ink-2">{scopeLabel(g.scope)}</td>
-                          <td className="px-5 py-3 text-ink-2">{names.get(g.granted_by) ?? "A former member"}</td>
-                          <td className="whitespace-nowrap px-5 py-3 tabular-nums text-ink-3">{fmt(g.revoked_at ?? g.expires_at)}</td>
-                          <td className="px-5 py-3">
-                            <Badge tone={STATE_BADGE[state].tone}>{STATE_BADGE[state].label}</Badge>
+                          <td data-label="Granted by" className="px-5 py-3 text-ink-2">
+                            {names.get(g.granted_by) ?? "A former member"}
+                          </td>
+                          <td data-label="Ends" className="whitespace-nowrap px-5 py-3 tabular-nums text-ink-3">
+                            {fmt(g.revoked_at ?? g.expires_at)}
+                          </td>
+                          <td data-label="Status" className="px-5 py-3">
+                            <Chip tone={STATE_BADGE[state].tone}>{STATE_BADGE[state].label}</Chip>
                           </td>
                           <td className="py-3 pl-5 pr-[22px] text-right">
                             {state === "active" ? (
-                              <ActionForm action={revokeSupportAccess} className="flex flex-wrap items-center justify-end gap-2">
+                              <ActionForm action={revokeSupportAccess} success="Access revoked" className="flex flex-wrap items-center gap-2 sm:justify-end">
                                 <input type="hidden" name="grant_id" value={g.id} />
                                 <FormSubmit
                                   destructive

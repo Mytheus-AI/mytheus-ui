@@ -32,7 +32,7 @@ const fillClass: Record<Level, string> = {
 export function LevelLabel({ level, okText = "Within plan" }: { level: Level; okText?: string }) {
   if (level === "ok")
     return (
-      <span className="inline-flex items-center gap-1.5 text-[13.5px] font-medium text-ink-3">
+      <span className="inline-flex items-center gap-1.5 text-[14px] font-medium text-ink-3">
         <CheckCircle size={16} weight="fill" aria-hidden />
         {okText}
       </span>
@@ -41,7 +41,7 @@ export function LevelLabel({ level, okText = "Within plan" }: { level: Level; ok
   const cls = level === "warn" ? "text-priority-medium" : "text-priority-high";
   const text = level === "warn" ? "Past 80% of the plan" : level === "critical" ? "Past 95% of the plan" : "Over the plan";
   return (
-    <span className={`inline-flex items-center gap-1.5 text-[13.5px] font-semibold ${cls}`}>
+    <span className={`inline-flex items-center gap-1.5 text-[14px] font-semibold ${cls}`}>
       <Icon size={16} weight="fill" aria-hidden />
       {text}
     </span>

@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
-import { Badge } from "@/components/ui/Badge";
+import { SectionCard } from "@/components/ui/Card";
+import { Chip } from "@/components/ui/Chip";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Note, PageHeader, SectionCard } from "@/components/settings/primitives";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { Note } from "@/components/ui/Note";
+import { SectionBar } from "@/components/ui/Page";
 import { theadRowClass, thClass } from "@/components/admin/StatCard";
 import { AgentCollaborationControl } from "@/components/tenant/AgentCollaborationControl";
 import { ApiError } from "@/lib/api/client";
@@ -30,7 +33,7 @@ const ROLE_RANK: Record<string, number> = { owner: 0, admin: 1, member: 2 };
 
 const date = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
 
-type Load = { ok: true; items: AgentAuthzScope[] } | { ok: false; message: string };
+type Load = { ok: true; items: AgentAuthzScope[] } | { ok: false; forbidden: boolean; message: string };
 
 async function load(): Promise<Load> {
   try {
@@ -38,9 +41,9 @@ async function load(): Promise<Load> {
     return { ok: true, items: Array.isArray(items) ? items : [] };
   } catch (error) {
     if (error instanceof ApiError && error.status === 403) {
-      return { ok: false, message: "Only workspace owners and admins can see and change agent collaboration." };
+      return { ok: false, forbidden: true, message: "Only workspace owners and admins can see and change agent collaboration." };
     }
-    return { ok: false, message: "Agent collaboration settings could not be loaded just now. Try again in a moment." };
+    return { ok: false, forbidden: false, message: "Agent collaboration settings could not be loaded" };
   }
 }
 
@@ -56,10 +59,10 @@ export default async function AgentCollaborationPage() {
     : [];
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
+    <div className="flex flex-col gap-5">
+      <SectionBar
         title="Agent collaboration"
-        description="During a meeting, an agent can ask a teammate's agent for context its person is missing. Choose how far that reaches. Every request, allowed or refused, shows in the meeting's collaboration log."
+        context="During a meeting, an agent can ask a teammate's agent for context its person is missing. Choose how far that reaches. Every request, allowed or refused, shows in the meeting's collaboration log."
       />
 
       {res.ok ? (
@@ -81,13 +84,14 @@ export default async function AgentCollaborationPage() {
           >
             {rows.length === 0 ? (
               <EmptyState
-                className="!rounded-none !border-0 !bg-transparent !py-10"
+                inCard
+                art="agent"
                 title="No grants"
                 description="Agents do not ask each other in this workspace. Pick a level above to let them."
               />
             ) : (
               <div>
-                <table className="hidden w-full border-collapse text-left text-[14.5px] md:table">
+                <table className="mx-table w-full border-collapse text-left text-[14px]">
                   <caption className="sr-only">Agent collaboration grants</caption>
                   <thead>
                     <tr className={theadRowClass}>
@@ -101,39 +105,31 @@ export default async function AgentCollaborationPage() {
                   <tbody className="divide-y divide-line">
                     {rows.map((r) => (
                       <tr key={r.id} className="transition-colors duration-150 hover:bg-surface-2">
-                        <td className="py-3 pl-[22px] pr-5 font-semibold text-ink">{ROLE_LABEL[r.grantee_role] ?? r.grantee_role}</td>
-                        <td className="px-5 py-3 text-ink-2">{CLASS_LABEL[r.query_class] ?? r.query_class}</td>
-                        <td className="px-5 py-3 text-ink-2">{SCOPE_LABEL[r.target_scope] ?? r.target_scope}</td>
-                        <td className="px-5 py-3">
-                          <Badge tone={r.effect === "deny" ? "danger" : "success"}>{r.effect === "deny" ? "Deny" : "Allow"}</Badge>
+                        <th scope="row" className="py-3 pl-[22px] pr-5 text-left font-semibold text-ink">
+                          {ROLE_LABEL[r.grantee_role] ?? r.grantee_role}
+                        </th>
+                        <td data-label="For" className="px-5 py-3 text-ink-2">
+                          {CLASS_LABEL[r.query_class] ?? r.query_class}
                         </td>
-                        <td className="whitespace-nowrap py-3 pl-5 pr-[22px] tabular-nums text-ink-3">{date.format(new Date(r.created_at))}</td>
+                        <td data-label="Reaching" className="px-5 py-3 text-ink-2">
+                          {SCOPE_LABEL[r.target_scope] ?? r.target_scope}
+                        </td>
+                        <td data-label="Rule" className="px-5 py-3">
+                          <Chip tone={r.effect === "deny" ? "high" : "ok"}>{r.effect === "deny" ? "Deny" : "Allow"}</Chip>
+                        </td>
+                        <td data-label="Since" className="whitespace-nowrap py-3 pl-5 pr-[22px] tabular-nums text-ink-3">
+                          {date.format(new Date(r.created_at))}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                <ul className="divide-y divide-line md:hidden">
-                  {rows.map((r) => (
-                    <li key={r.id} className="flex items-start justify-between gap-3 px-4 py-3.5">
-                      <span className="min-w-0">
-                        <span className="block text-[15px] font-semibold text-ink">{ROLE_LABEL[r.grantee_role] ?? r.grantee_role}</span>
-                        <span className="block text-[14px] text-ink-2">
-                          {CLASS_LABEL[r.query_class] ?? r.query_class}, reaching {(SCOPE_LABEL[r.target_scope] ?? r.target_scope).toLowerCase()}
-                        </span>
-                        <span className="block text-[13px] tabular-nums text-ink-3">Since {date.format(new Date(r.created_at))}</span>
-                      </span>
-                      <Badge tone={r.effect === "deny" ? "danger" : "success"} className="shrink-0">
-                        {r.effect === "deny" ? "Deny" : "Allow"}
-                      </Badge>
-                    </li>
-                  ))}
-                </ul>
               </div>
             )}
           </SectionCard>
         </>
       ) : (
-        <Note tone="error">{res.message}</Note>
+        res.forbidden ? <Note tone="error">{res.message}</Note> : <ErrorState title={res.message} />
       )}
     </div>
   );

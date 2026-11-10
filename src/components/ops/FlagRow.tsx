@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Trash } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { Toggle } from "@/components/settings/Toggle";
-import { dangerSolid, focusPill } from "@/components/settings/primitives";
+import { notifyError, notifySuccess } from "@/lib/toast";
 import { removeFeatureFlag, toggleFeatureFlag } from "@/app/actions/ops";
 
 /* One feature flag's controls: the on/off switch (optimistic, rolled back if the server refuses)
@@ -33,7 +33,11 @@ export function FlagControls({ id, flagKey, enabled }: { id: string; flagKey: st
       if (!res.ok) {
         setOn(!next);
         setError(res.message);
-      } else router.refresh();
+        notifyError(res.message);
+      } else {
+        router.refresh();
+        notifySuccess(next ? "Flag turned on" : "Flag turned off", { description: flagKey, undo: () => toggle(!next) });
+      }
     });
   };
 
@@ -45,15 +49,20 @@ export function FlagControls({ id, flagKey, enabled }: { id: string; flagKey: st
     setError(null);
     startTransition(async () => {
       const res = await removeFeatureFlag(id);
-      if (!res.ok) setError(res.message);
-      else router.refresh();
+      if (!res.ok) {
+        setError(res.message);
+        notifyError(res.message);
+      } else {
+        router.refresh();
+        notifySuccess("Flag deleted", { description: flagKey });
+      }
     });
   };
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-3">
       {error ? (
-        <span role="alert" className="text-[13.5px] font-medium text-priority-high">
+        <span role="alert" className="text-[14px] font-medium text-priority-high">
           {error}
         </span>
       ) : null}
@@ -65,7 +74,8 @@ export function FlagControls({ id, flagKey, enabled }: { id: string; flagKey: st
         disabled={pending}
         aria-label={armed ? undefined : `Delete ${flagKey}`}
         title={armed ? undefined : `Delete ${flagKey}`}
-        className={armed ? dangerSolid : `w-10 !px-0 hover:!text-priority-high ${focusPill}`}
+        icon={!armed}
+        className={armed ? "" : "hover:!text-priority-high"}
       >
         {armed ? "Confirm delete" : <Trash size={17} aria-hidden />}
       </Button>

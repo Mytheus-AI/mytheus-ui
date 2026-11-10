@@ -3,7 +3,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
-import { dangerGhost, dangerSolid, focusPill } from "@/components/settings/primitives";
 
 /* The submit button for server-action forms: shows the pending label while the action runs, and,
    with `confirmLabel`, asks for a second press before an irreversible submit (disconnect, remove,
@@ -39,16 +38,14 @@ export function FormSubmit({
     return () => clearTimeout(t);
   }, [armed]);
 
-  const red = armed || variant === "danger";
   return (
     <Button
       type="submit"
-      variant={armed ? "danger" : destructive ? "outline" : variant}
+      variant={armed ? "danger" : destructive ? "danger-outline" : variant}
       size={size}
       disabled={disabled || pending}
       aria-label={armed ? undefined : ariaLabel}
       aria-busy={pending || undefined}
-      className={red ? dangerSolid : destructive ? dangerGhost : focusPill}
       onClick={(e) => {
         if (confirmLabel && !armed) {
           e.preventDefault();

@@ -5,7 +5,12 @@ import { PencilSimple } from "@phosphor-icons/react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Note, fieldClass } from "@/components/settings/primitives";
+import { CardFoot, cardClass } from "@/components/ui/Card";
+import { FieldMsg, fieldClass } from "@/components/ui/Form";
+import { MemberPicker } from "@/components/ui/MemberPicker";
+import { Note } from "@/components/ui/Note";
+import { RemoveButton } from "@/components/ui/RemoveButton";
+import { notifyError, notifySuccess } from "@/lib/toast";
 import { createOwner, deleteOwner, updateOwner } from "@/app/actions/org-brain";
 import {
   BRAIN_LIMITS,
@@ -15,7 +20,7 @@ import {
   type TopicOwner,
 } from "@/lib/api/org-brain-types";
 import { memberMap, type MemberOption } from "./types";
-import { FieldMsg, FlashLine, MemberPicker, PersonLine, RemoveButton, useFlash } from "./ui";
+import { PersonLine } from "./parts";
 
 /* Who owns what (ADR-0039 A3): a topic and the one person who owns it. Agents use it to suggest
    who should take an action and who to ask. The list on the left (change an owner straight from
@@ -43,7 +48,6 @@ export function OwnersEditor({
   const [renaming, setRenaming] = useState<string | null>(null);
   const [renameText, setRenameText] = useState("");
   const [renameError, setRenameError] = useState<string | null>(null);
-  const [flash, setFlash] = useFlash();
   const topicRef = useRef<HTMLInputElement>(null);
   const renameDone = useRef<string | null>(null);
 
@@ -84,13 +88,13 @@ export function OwnersEditor({
     mark(tempId, false);
     if (res.ok) {
       setOwners((o) => sortOwners(o.map((x) => (x.id === tempId ? res.data : x))));
-      setFlash({ tone: "ok", text: `${res.data.topic} now has an owner.` });
+      notifySuccess("Owner added", { description: `${res.data.topic} now has an owner.` });
     } else {
       setOwners((o) => o.filter((x) => x.id !== tempId));
       setTopic(before.topic);
       setOwner(before.owner);
       setErrors(res.fieldErrors ?? {});
-      setFlash({ tone: "error", text: res.message });
+      notifyError(res.message);
     }
   };
 
@@ -103,13 +107,15 @@ export function OwnersEditor({
     if (res.ok) {
       setOwners((o) => sortOwners(o.map((x) => (x.id === row.id ? res.data : x))));
       const who = people.get(res.data.owner_user_id)?.name ?? "the new owner";
-      setFlash({ tone: "ok", text: patch.topic ? `Renamed to ${res.data.topic}.` : `${res.data.topic} is now owned by ${who}.` });
+      notifySuccess(patch.topic ? "Topic renamed" : "Owner changed", {
+        description: patch.topic ? `Now called ${res.data.topic}.` : `${res.data.topic} is now owned by ${who}.`,
+      });
     } else if (res.gone) {
       setOwners((o) => o.filter((x) => x.id !== row.id));
-      setFlash({ tone: "error", text: res.message });
+      notifyError(res.message);
     } else {
       setOwners((o) => sortOwners(o.map((x) => (x.id === row.id ? row : x))));
-      setFlash({ tone: "error", text: res.message });
+      notifyError(res.message);
     }
   };
 
@@ -127,19 +133,28 @@ export function OwnersEditor({
     if (checked.value.topic !== row.topic) void change(row, { topic: checked.value.topic });
   };
 
+  // Undo after a remove adds the same topic and owner back (the server has no restore).
+  const restore = async (row: TopicOwner) => {
+    const res = await createOwner({ topic: row.topic, owner_user_id: row.owner_user_id });
+    if (res.ok) {
+      setOwners((o) => sortOwners([...o, res.data]));
+      notifySuccess("Owner restored", { description: row.topic });
+    } else notifyError(res.message);
+  };
+
   const remove = async (row: TopicOwner) => {
     setOwners((o) => o.filter((x) => x.id !== row.id));
     const res = await deleteOwner(row.id);
-    if (res.ok) setFlash({ tone: "ok", text: `${row.topic} removed.` });
+    if (res.ok) notifySuccess("Owner removed", { description: row.topic, undo: () => void restore(row) });
     else {
       setOwners((o) => sortOwners([...o, row]));
-      setFlash({ tone: "error", text: res.message });
+      notifyError(res.message);
     }
   };
 
   return (
     <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(260px,320px)]">
-      <div className="overflow-hidden rounded-card border border-line bg-surface shadow-warm-1">
+      <div className={cardClass({ flush: true, clip: false })}>
         {canEdit && members === null ? (
           <div className="px-4 pt-4 sm:px-[22px]">
             <Note tone="warning">The member list could not be loaded, so owners cannot be changed right now. Reload to try again.</Note>
@@ -149,7 +164,7 @@ export function OwnersEditor({
         {editable ? (
           <form onSubmit={add} noValidate className="grid gap-3 border-b border-line px-4 py-4 sm:px-[22px] md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-start">
             <div className="min-w-0">
-              <label htmlFor="owner-topic" className="mb-1 block text-[13px] font-semibold text-ink-3">
+              <label htmlFor="owner-topic" className="mb-1 block text-[12.5px] font-semibold text-ink-3">
                 Topic
               </label>
               <input
@@ -170,7 +185,7 @@ export function OwnersEditor({
               <FieldMsg id="owner-topic-msg" error={errors.topic} />
             </div>
             <div className="min-w-0">
-              <span id="owner-person-label" className="mb-1 block text-[13px] font-semibold text-ink-3">
+              <span id="owner-person-label" className="mb-1 block text-[12.5px] font-semibold text-ink-3">
                 Owner
               </span>
               <MemberPicker
@@ -189,7 +204,7 @@ export function OwnersEditor({
               <FieldMsg id="owner-person-msg" error={errors.owner_user_id} />
             </div>
             <div className="md:pt-[22px]">
-              <Button type="submit" disabled={full} className="w-full focus-visible:!rounded-ctl md:w-auto">
+              <Button type="submit" disabled={full} className="w-full md:w-auto">
                 Add owner
               </Button>
             </div>
@@ -198,7 +213,8 @@ export function OwnersEditor({
 
         {owners.length === 0 ? (
           <EmptyState
-            className="!rounded-none !border-0 !bg-transparent"
+            inCard
+            art="people"
             title="No owners named yet"
             description={
               canEdit
@@ -253,7 +269,7 @@ export function OwnersEditor({
                     </form>
                   ) : (
                     <p className="flex min-w-0 items-center gap-1">
-                      <span className="break-words text-[15.5px] font-semibold text-ink">{o.topic}</span>
+                      <span className="break-words text-[15px] font-semibold text-ink">{o.topic}</span>
                       {editable ? (
                         <button
                           type="button"
@@ -265,7 +281,7 @@ export function OwnersEditor({
                           }}
                           aria-label={`Rename ${o.topic}`}
                           title="Rename"
-                          className="grid h-9 w-9 shrink-0 place-items-center rounded-ctl text-ink-4 transition-colors hover:bg-bg-2 hover:text-ink focus-visible:!rounded-ctl"
+                          className="grid h-9 w-9 shrink-0 place-items-center rounded-ctl text-ink-3 transition-colors hover:bg-bg-2 hover:text-ink"
                         >
                           <PencilSimple size={15} aria-hidden />
                         </button>
@@ -300,17 +316,16 @@ export function OwnersEditor({
         )}
 
         {canEdit ? (
-          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-line bg-surface-2 px-4 py-3 sm:px-[22px]">
-            <FlashLine flash={flash} />
-            <span className="text-[13px] tabular-nums text-ink-3">
+          <CardFoot className="justify-end rounded-b-card">
+            <span className="text-[12.5px] tabular-nums text-ink-3">
               {owners.length} of {L.max}
               {owners.length < L.ready ? `. ${L.ready - owners.length} more for readiness.` : ""}
             </span>
-          </div>
+          </CardFoot>
         ) : null}
       </div>
 
-      <aside aria-labelledby="by-person-h" className="rounded-card border border-line bg-surface-2 p-5 xl:sticky xl:top-4">
+      <aside aria-labelledby="by-person-h" className={cardClass({ tone: "well", className: "xl:sticky xl:top-4" })}>
         <h3 id="by-person-h" className="text-[15px] font-semibold text-ink">
           By person
         </h3>
@@ -324,11 +339,11 @@ export function OwnersEditor({
                 <li key={id} className="flex items-start gap-3">
                   <Avatar name={m?.name ?? "Former member"} id={m?.email ?? id} src={m?.imageUrl} size="md" />
                   <div className="min-w-0">
-                    <p className="truncate text-[14.5px] font-semibold text-ink">
+                    <p className="truncate text-[14px] font-semibold text-ink">
                       {m?.name ?? "Not in the workspace"}
                       <span className="font-normal text-ink-3"> owns {topics.length}</span>
                     </p>
-                    <p className="mt-0.5 text-[13.5px] leading-snug text-ink-3">{topics.join(", ")}</p>
+                    <p className="mt-0.5 text-[14px] leading-snug text-ink-3">{topics.join(", ")}</p>
                   </div>
                 </li>
               );

@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle, Circle } from "@phosphor-icons/react/dist/ssr";
 import { fixFor, type Readiness } from "@/lib/api/org-brain-types";
+import { LinkButton } from "@/components/ui/Button";
+import { cardClass } from "@/components/ui/Card";
+import { ErrorState } from "@/components/ui/ErrorState";
 
 /* The readiness meter (ADR-0039 A7): how much of the company brain is filled in, and the check
    that fixes each gap. The one coral line runs through a bead per check, done checks first, so
@@ -59,11 +62,11 @@ export function ReadinessMeter({
   const H = headingLevel === 2 ? "h2" : "h3";
   if (!readiness)
     return (
-      <section aria-labelledby={`${id}-h`} className="rounded-card border border-line bg-surface p-5 shadow-warm-1 sm:p-6">
-        <H id={`${id}-h`} className="display text-[22px] text-ink">
+      <section aria-labelledby={`${id}-h`} className={cardClass({ flush: true })}>
+        <H id={`${id}-h`} className="display px-4 pt-[18px] text-[22px] text-ink sm:px-[22px]">
           {title}
         </H>
-        <p className="mt-2 text-[15px] text-ink-3">The readiness checks could not be loaded just now. Reload the page to try again.</p>
+        <ErrorState variant="inline" className="mt-3" title="The readiness checks could not be loaded" text="Nothing you saved is lost. Try again in a moment." />
       </section>
     );
 
@@ -71,7 +74,7 @@ export function ReadinessMeter({
   const done = ordered.filter((c) => c.done).length;
 
   return (
-    <section aria-labelledby={`${id}-h`} className="overflow-hidden rounded-card border border-line bg-surface shadow-warm-1">
+    <section aria-labelledby={`${id}-h`} className={cardClass({ flush: true })}>
       <div className="grid gap-x-10 gap-y-5 px-5 pb-6 pt-5 sm:px-6 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] md:items-end">
         <div className="min-w-0">
           <H id={`${id}-h`} className="text-[15px] font-semibold text-ink-3">
@@ -79,7 +82,7 @@ export function ReadinessMeter({
           </H>
           <p className="mt-1 flex items-baseline gap-2">
             <span className="display text-[56px] leading-none tabular-nums text-ink">{readiness.score}</span>
-            <span className="text-[16px] font-medium text-ink-3">of 100</span>
+            <span className="text-[15px] font-medium text-ink-3">of 100</span>
           </p>
         </div>
         <div className="min-w-0">
@@ -99,7 +102,7 @@ export function ReadinessMeter({
               {c.done ? (
                 <CheckCircle size={22} weight="fill" className="mt-px shrink-0 text-ok" aria-hidden />
               ) : (
-                <Circle size={22} className="mt-px shrink-0 text-ink-4" aria-hidden />
+                <Circle size={22} className="mt-px shrink-0 text-ink-3" aria-hidden />
               )}
               <div className="min-w-0 flex-1">
                 <p className="text-[15px] font-semibold text-ink">
@@ -156,12 +159,9 @@ export function ReadinessStrip({
           )}
         </p>
       </div>
-      <Link
-        href={next ? fixFor(next.key).href : href}
-        className="inline-flex h-10 items-center justify-center gap-2 rounded-ctl border border-line-2 bg-surface px-4 text-[14px] font-semibold text-ink transition-colors duration-150 hover:bg-surface-2 focus-visible:!rounded-ctl"
-      >
+      <LinkButton href={next ? fixFor(next.key).href : href} variant="outline" size="sm">
         {next ? fixFor(next.key).action : linkLabel}
-      </Link>
+      </LinkButton>
     </div>
   );
 }

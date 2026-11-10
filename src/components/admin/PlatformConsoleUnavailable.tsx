@@ -1,6 +1,6 @@
 import { LinkButton } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { PageHeader, focusPill } from "@/components/settings/primitives";
+import { Page, PageHead } from "@/components/ui/Page";
 
 /* Shown in place of a platform-staff console when it cannot be loaded (the ops service is down or
    unreachable, so staff access cannot be confirmed). It shows no workspace data at all, real or
@@ -8,18 +8,18 @@ import { PageHeader, focusPill } from "@/components/settings/primitives";
    is not staff never sees this: they get a 404. */
 export function PlatformConsoleUnavailable({ title, what, reason }: { title: string; what: string; reason: string }) {
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6">
-      <PageHeader title={title} description={what} />
+    <Page width="read">
+      <PageHead title={title} context={what} />
       <EmptyState
-        className="!bg-surface"
+        art="line"
         title="Not available right now"
         description={reason}
         action={
-          <LinkButton href="/workspace" variant="outline" className={focusPill}>
-            Open your workspace admin
+          <LinkButton href="/workspace" variant="outline">
+            Open your workspace
           </LinkButton>
         }
       />
-    </div>
+    </Page>
   );
 }

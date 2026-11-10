@@ -8,7 +8,11 @@ import { Wordmark } from "@/components/site/Wordmark";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { ChipInput } from "@/components/settings/ChipInput";
-import { fieldClass, textareaClass } from "@/components/settings/primitives";
+import { CharCount as Count, FieldMsg, fieldClass, textareaClass } from "@/components/ui/Form";
+import { MemberPicker } from "@/components/ui/MemberPicker";
+import { cardClass } from "@/components/ui/Card";
+import { Toaster } from "@/components/ui/Toaster";
+import { notifyError, notifySuccess } from "@/lib/toast";
 import { OnboardingAside } from "@/components/onboarding/fields";
 import { createGoal, createOwner, importTerms, loadReadiness, saveOrgProfile } from "@/app/actions/org-brain";
 import {
@@ -32,7 +36,6 @@ import {
 } from "@/lib/api/org-brain-types";
 import { ReadinessMeter } from "./ReadinessMeter";
 import type { MemberOption } from "./types";
-import { Count, FieldMsg, FlashLine, MemberPicker, useFlash } from "./ui";
 
 /* The first-run setup of the company brain (ADR-0039 Part E), for the admin who just created a
    workspace: About, a few words, who owns what, one goal, then the readiness meter. Every step
@@ -77,7 +80,7 @@ function Rail({ step, outcomes, onGo }: { step: number; outcomes: Partial<Record
                 onClick={() => onGo(i)}
                 disabled={!reachable || s.key === "done"}
                 aria-current={current ? "step" : undefined}
-                className="group flex w-full items-start gap-3.5 rounded-ctl py-3 pr-2 text-left focus-visible:!rounded-ctl disabled:cursor-default"
+                className="group flex w-full items-start gap-3.5 rounded-ctl py-3 pr-2 text-left disabled:cursor-default"
               >
                 <span
                   aria-hidden
@@ -93,7 +96,7 @@ function Rail({ step, outcomes, onGo }: { step: number; outcomes: Partial<Record
                 </span>
                 <span className="min-w-0">
                   <span className={`block text-[15px] font-semibold ${current ? "text-ink" : "text-ink-2"}`}>{s.label}</span>
-                  <span className="block text-[13px] text-ink-3">
+                  <span className="block text-[12.5px] text-ink-3">
                     {o === "skipped" ? "Skipped for now" : o === "saved" ? "Saved" : s.hint}
                   </span>
                 </span>
@@ -125,7 +128,7 @@ function Known({
   const active = goals.filter((g) => g.status === "active");
   const empty = !profile.description.trim() && !terms.length && !owners.length && !active.length;
   return (
-    <aside aria-labelledby="known-h" className="rounded-card border border-line bg-surface p-5 shadow-warm-1">
+    <aside aria-labelledby="known-h" className={cardClass()}>
       <h2 id="known-h" className="text-[14px] font-semibold text-ink-3">
         What your agents know so far
       </h2>
@@ -138,13 +141,13 @@ function Known({
           {profile.description.trim() ? <p className="line-clamp-5 text-ink">{profile.description.trim()}</p> : null}
           {terms.length ? (
             <div>
-              <p className="text-[13px] font-semibold text-ink-3">{terms.length} words</p>
+              <p className="text-[12.5px] font-semibold text-ink-3">{terms.length} words</p>
               <p className="mt-1">{terms.slice(0, 8).map((t) => t.term).join(", ")}{terms.length > 8 ? ", and more" : ""}</p>
             </div>
           ) : null}
           {owners.length ? (
             <div>
-              <p className="text-[13px] font-semibold text-ink-3">Who owns what</p>
+              <p className="text-[12.5px] font-semibold text-ink-3">Who owns what</p>
               <ul className="mt-1 space-y-0.5">
                 {owners.slice(0, 5).map((o) => (
                   <li key={o.id}>
@@ -156,7 +159,7 @@ function Known({
           ) : null}
           {active.length ? (
             <div>
-              <p className="text-[13px] font-semibold text-ink-3">Goals</p>
+              <p className="text-[12.5px] font-semibold text-ink-3">Goals</p>
               <ul className="mt-1 space-y-0.5">
                 {active.slice(0, 3).map((g) => (
                   <li key={g.id}>{g.title}</li>
@@ -181,7 +184,6 @@ function StepFrame({
   primary,
   onSkip,
   onBack,
-  flash,
 }: {
   index: number;
   title: string;
@@ -191,7 +193,6 @@ function StepFrame({
   primary: string;
   onSkip: () => void;
   onBack?: () => void;
-  flash: ReturnType<typeof useFlash>[0];
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
@@ -199,16 +200,16 @@ function StepFrame({
   }, []);
   return (
     <div className="flex flex-col">
-      <p className="text-[13.5px] font-semibold text-signal-ink">
+      <p className="text-[14px] font-semibold text-signal-ink">
         Step {index + 1} of {STEPS.length - 1}
       </p>
-      <h1 ref={heading} tabIndex={-1} className="display mt-1.5 text-[clamp(1.9rem,3.4vw,2.6rem)] text-ink focus-visible:outline-none">
+      <h1 ref={heading} tabIndex={-1} className="display mt-1.5 text-[clamp(28px,3vw,34px)] text-ink">
         {title}
       </h1>
-      <p className="mt-2 max-w-[60ch] text-pretty text-[16px] leading-relaxed text-ink-3">{lead}</p>
+      <p className="mt-2 max-w-[60ch] text-pretty text-[15px] leading-relaxed text-ink-3">{lead}</p>
       <div className="mt-6">{children}</div>
       <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-line pt-5">
-        <Button type="submit" size="lg" disabled={busy} aria-busy={busy || undefined} className="focus-visible:!rounded-ctl">
+        <Button type="submit" size="lg" disabled={busy} aria-busy={busy || undefined}>
           {busy ? "Saving" : primary}
         </Button>
         <button
@@ -229,7 +230,6 @@ function StepFrame({
             Back
           </button>
         ) : null}
-        <FlashLine flash={flash} className="w-full" />
       </div>
     </div>
   );
@@ -266,7 +266,6 @@ export function SetupFlow({
   const [step, setStep] = useState(0);
   const [outcomes, setOutcomes] = useState<Partial<Record<StepKey, Outcome>>>({});
   const [busy, setBusy] = useState(false);
-  const [flash, setFlash] = useFlash();
 
   // what is saved
   const [profile, setProfile] = useState(initialProfile);
@@ -297,7 +296,6 @@ export function SetupFlow({
 
   const advance = (outcome: Outcome) => {
     setOutcomes((o) => ({ ...o, [key]: o[key] === "saved" && outcome === "skipped" ? "saved" : outcome }));
-    setFlash(null);
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -356,12 +354,11 @@ export function SetupFlow({
     const empty = !checked.value.description && !checked.value.industry && !checked.value.products.length && !checked.value.customers.length;
     if (unchanged || empty) return advance(empty && unchanged ? "skipped" : "saved");
     setBusy(true);
-    setFlash({ tone: "busy", text: "Saving" });
     const res = await saveOrgProfile(checked.value);
     setBusy(false);
     if (!res.ok) {
       setAboutErrors(res.fieldErrors ?? {});
-      setFlash({ tone: "error", text: res.message });
+      notifyError(res.message);
       return;
     }
     setProfile({ ...res.data, description: res.data.description || checked.value.description });
@@ -382,11 +379,10 @@ export function SetupFlow({
     }
     setTermError(null);
     setBusy(true);
-    setFlash({ tone: "busy", text: `Saving ${values.length} ${values.length === 1 ? "word" : "words"}` });
     const res = await importTerms(values);
     setBusy(false);
     if (!res.ok) {
-      setFlash({ tone: "error", text: res.message });
+      notifyError(res.message);
       return;
     }
     setTerms(res.data);
@@ -406,7 +402,6 @@ export function SetupFlow({
     }
     setOwnerError(null);
     setBusy(true);
-    setFlash({ tone: "busy", text: "Saving" });
     const results = await Promise.all(filled.map((r) => createOwner({ topic: r.topic, owner_user_id: r.owner ?? "" })));
     setBusy(false);
     const saved = results.flatMap((r) => (r.ok ? [r.data] : []));
@@ -415,7 +410,7 @@ export function SetupFlow({
     if (failedRows.length) {
       const first = results.find((r) => !r.ok);
       setOwnerRows(failedRows);
-      setFlash({ tone: "error", text: first && !first.ok ? first.message : "Some owners were not saved." });
+      notifyError(first && !first.ok ? first.message : "Some owners were not saved.");
       return;
     }
     setOwnerRows([ownerRow(), ownerRow(), ownerRow()]);
@@ -432,12 +427,11 @@ export function SetupFlow({
     }
     setGoalError(null);
     setBusy(true);
-    setFlash({ tone: "busy", text: "Saving" });
     const res = await createGoal({ ...c.value, position: goals.length });
     setBusy(false);
     if (!res.ok) {
       setGoalError(res.fieldErrors?.title ?? null);
-      setFlash({ tone: "error", text: res.message });
+      notifyError(res.message);
       return;
     }
     setGoals((g) => [...g, res.data]);
@@ -466,7 +460,7 @@ export function SetupFlow({
       const kept = rows.filter((r, i) => i < at || (i > at && r.term.trim()));
       return [...kept.slice(0, at), ...pasted, ...kept.slice(at)];
     });
-    setFlash({ tone: "ok", text: `${parsed.rows.length} lines pasted as words.` });
+    notifySuccess(`${parsed.rows.length} lines pasted as words`);
   };
 
   const back = step > 0 && key !== "done" ? () => setStep((s) => s - 1) : undefined;
@@ -476,7 +470,9 @@ export function SetupFlow({
 
   return (
     <div className="min-h-[100dvh] bg-bg font-sans">
-      <header className="mx-auto flex w-full max-w-[1400px] items-center justify-between gap-4 px-4 py-4 sm:px-8">
+      {/* Onboarding sits outside the app shell, so the setup mounts the toast surface itself. */}
+      <Toaster />
+      <header className="mx-auto flex w-full max-w-[1320px] items-center justify-between gap-4 px-4 py-4 sm:px-8">
         <Link href="/dashboard" aria-label="Mytheus, go to your dashboard" className="rounded-ctl">
           <Wordmark size={22} textClassName="text-[22px]" />
         </Link>
@@ -485,7 +481,7 @@ export function SetupFlow({
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-[1400px] px-4 pb-16 sm:px-8">
+      <div className="mx-auto w-full max-w-[1320px] px-4 pb-16 sm:px-8">
         <p className="mb-5 text-[14px] text-ink-3 lg:mb-8">
           Setting up <span className="font-semibold text-ink">{orgName}</span>. About five minutes, and every step can wait.
         </p>
@@ -511,20 +507,20 @@ export function SetupFlow({
           <main className="min-w-0 rounded-hero border border-line bg-surface px-5 py-7 shadow-warm-1 sm:px-8 sm:py-9 lg:px-10">
             {key === "done" ? (
               <div>
-                <p className="text-[13.5px] font-semibold text-signal-ink">All set for now</p>
-                <h1 className="display mt-1.5 text-[clamp(1.9rem,3.4vw,2.6rem)] text-ink">Your agents know {orgName}</h1>
-                <p className="mt-2 max-w-[62ch] text-[16px] leading-relaxed text-ink-3">
+                <p className="text-[14px] font-semibold text-signal-ink">All set for now</p>
+                <h1 className="display mt-1.5 text-[clamp(28px,3vw,34px)] text-ink">Your agents know {orgName}</h1>
+                <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-ink-3">
                   From the next meeting on, every agent reads what you saved. The meter shows what is left; each open check links to
-                  the page that finishes it, in the company brain under Workspace admin.
+                  the page that finishes it, in the company brain in the Workspace console.
                 </p>
                 <div className="mt-6">
                   <ReadinessMeter readiness={readiness ?? derived} id="setup-readiness" />
                 </div>
                 <div className="mt-7 flex flex-wrap gap-3">
-                  <Button size="lg" onClick={() => router.push("/dashboard")} className="focus-visible:!rounded-ctl">
+                  <Button size="lg" onClick={() => router.push("/dashboard")}>
                     Open your dashboard
                   </Button>
-                  <LinkButton href="/workspace/brain" variant="outline" size="lg" className="focus-visible:!rounded-ctl">
+                  <LinkButton href="/workspace/brain" variant="outline" size="lg">
                     Open the company brain
                   </LinkButton>
                 </div>
@@ -539,7 +535,6 @@ export function SetupFlow({
                     busy={busy}
                     primary="Save and continue"
                     onSkip={skip}
-                    flash={flash}
                   >
                     <div className="grid gap-5">
                       <div>
@@ -637,11 +632,10 @@ export function SetupFlow({
                     primary={termRows.some((r) => r.term.trim()) ? "Save and continue" : "Continue"}
                     onSkip={skip}
                     onBack={back}
-                    flash={flash}
                   >
                     {termSuggestions.length ? (
                       <div className="mb-5">
-                        <p className="text-[13.5px] font-semibold text-ink-3">From your answers</p>
+                        <p className="text-[14px] font-semibold text-ink-3">From your answers</p>
                         <ul className="mt-2 flex flex-wrap gap-1.5">
                           {termSuggestions.slice(0, 10).map((s) => (
                             <li key={s.term}>
@@ -655,7 +649,7 @@ export function SetupFlow({
                                   })
                                 }
                                 aria-label={`Add ${s.term} as a ${KIND_LABEL[s.kind].toLowerCase()}`}
-                                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-dashed border-line-2 px-3 text-[14px] font-medium text-ink-2 transition-colors hover:border-solid hover:bg-surface-2 hover:text-ink focus-visible:!rounded-full"
+                                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-dashed border-line-2 px-3 text-[14px] font-medium text-ink-2 transition-colors hover:border-solid hover:bg-surface-2 hover:text-ink"
                               >
                                 <Plus size={13} weight="bold" aria-hidden />
                                 {s.term}
@@ -670,7 +664,7 @@ export function SetupFlow({
                         {terms.length} {terms.length === 1 ? "word is" : "words are"} already saved.
                       </p>
                     ) : null}
-                    <div className="hidden grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_132px_40px] gap-2 pb-1.5 text-[13px] font-semibold text-ink-3 md:grid" aria-hidden>
+                    <div className="hidden grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_132px_40px] gap-2 pb-1.5 text-[12.5px] font-semibold text-ink-3 md:grid" aria-hidden>
                       <span>Word</span>
                       <span>What it means</span>
                       <span>Kind</span>
@@ -697,7 +691,7 @@ export function SetupFlow({
                             type="button"
                             onClick={() => setTermRows((rows) => (rows.length > 1 ? rows.filter((x) => x.key !== r.key) : [termRow()]))}
                             aria-label={`Remove word ${i + 1}`}
-                            className="grid h-10 w-10 place-items-center rounded-ctl text-ink-3 hover:bg-bg-2 hover:text-ink focus-visible:!rounded-ctl md:order-last"
+                            className="grid h-10 w-10 place-items-center rounded-ctl text-ink-3 hover:bg-bg-2 hover:text-ink md:order-last"
                           >
                             <X size={16} aria-hidden />
                           </button>
@@ -729,7 +723,7 @@ export function SetupFlow({
                       type="button"
                       onClick={() => setTermRows((rows) => [...rows, termRow()])}
                       disabled={termRows.length >= 50}
-                      className="mt-3 inline-flex h-10 items-center gap-2 rounded-ctl px-2 text-[14px] font-semibold text-ink-2 hover:bg-bg-2 hover:text-ink focus-visible:!rounded-ctl disabled:opacity-40"
+                      className="mt-3 inline-flex h-10 items-center gap-2 rounded-ctl px-2 text-[14px] font-semibold text-ink-2 hover:bg-bg-2 hover:text-ink disabled:opacity-40"
                     >
                       <Plus size={15} weight="bold" aria-hidden />
                       Add another word
@@ -747,7 +741,6 @@ export function SetupFlow({
                     primary={ownerRows.some((r) => r.topic.trim()) ? "Save and continue" : "Continue"}
                     onSkip={skip}
                     onBack={back}
-                    flash={flash}
                   >
                     {members.length <= 1 ? (
                       <p className="mb-4 rounded-ctl bg-bg-2 px-4 py-3 text-[14px] leading-relaxed text-ink-2">
@@ -756,7 +749,7 @@ export function SetupFlow({
                     ) : null}
                     {ownerSuggestions.length ? (
                       <div className="mb-5">
-                        <p className="text-[13.5px] font-semibold text-ink-3">Common topics</p>
+                        <p className="text-[14px] font-semibold text-ink-3">Common topics</p>
                         <ul className="mt-2 flex flex-wrap gap-1.5">
                           {ownerSuggestions.map((t) => (
                             <li key={t}>
@@ -769,7 +762,7 @@ export function SetupFlow({
                                   })
                                 }
                                 aria-label={`Add the topic ${t}`}
-                                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-dashed border-line-2 px-3 text-[14px] font-medium text-ink-2 transition-colors hover:border-solid hover:bg-surface-2 hover:text-ink focus-visible:!rounded-full"
+                                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-dashed border-line-2 px-3 text-[14px] font-medium text-ink-2 transition-colors hover:border-solid hover:bg-surface-2 hover:text-ink"
                               >
                                 <Plus size={13} weight="bold" aria-hidden />
                                 {t}
@@ -799,7 +792,7 @@ export function SetupFlow({
                             type="button"
                             onClick={() => setOwnerRows((rows) => (rows.length > 1 ? rows.filter((x) => x.key !== r.key) : [ownerRow()]))}
                             aria-label={`Remove topic ${i + 1}`}
-                            className="grid h-10 w-10 place-items-center rounded-ctl text-ink-3 hover:bg-bg-2 hover:text-ink focus-visible:!rounded-ctl md:order-last"
+                            className="grid h-10 w-10 place-items-center rounded-ctl text-ink-3 hover:bg-bg-2 hover:text-ink md:order-last"
                           >
                             <X size={16} aria-hidden />
                           </button>
@@ -818,7 +811,7 @@ export function SetupFlow({
                     <button
                       type="button"
                       onClick={() => setOwnerRows((rows) => [...rows, ownerRow()])}
-                      className="mt-3 inline-flex h-10 items-center gap-2 rounded-ctl px-2 text-[14px] font-semibold text-ink-2 hover:bg-bg-2 hover:text-ink focus-visible:!rounded-ctl"
+                      className="mt-3 inline-flex h-10 items-center gap-2 rounded-ctl px-2 text-[14px] font-semibold text-ink-2 hover:bg-bg-2 hover:text-ink"
                     >
                       <Plus size={15} weight="bold" aria-hidden />
                       Add another topic
@@ -836,7 +829,6 @@ export function SetupFlow({
                     primary={goalTitle.trim() ? "Save and finish" : "Finish"}
                     onSkip={skip}
                     onBack={back}
-                    flash={flash}
                   >
                     <div className="grid gap-5">
                       <div>

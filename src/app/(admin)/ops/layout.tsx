@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { OpsTabs } from "@/components/ops/OpsTabs";
 import { PlatformConsoleUnavailable } from "@/components/admin/PlatformConsoleUnavailable";
 import { checkOpsGate } from "@/lib/api/admin-ops";
+import { Page, PageHead } from "@/components/ui/Page";
 
 export const dynamic = "force-dynamic";
 
@@ -23,9 +24,10 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
     );
   }
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+    <Page>
+      <PageHead title="Ops console" context="Every workspace on the platform: tenants, feature flags, cost and lag, and the audit log." />
       <OpsTabs />
       {children}
-    </div>
+    </Page>
   );
 }

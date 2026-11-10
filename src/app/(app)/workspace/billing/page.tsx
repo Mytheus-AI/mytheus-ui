@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
-import { LinkButton } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
-import { Note, PageHeader, SectionCard, focusPill } from "@/components/settings/primitives";
+import { CalendarBlank, Coins, Timer, UsersThree } from "@phosphor-icons/react/ssr";
+import { Card, CardHead, SectionCard } from "@/components/ui/Card";
+import { Chip, type ChipTone } from "@/components/ui/Chip";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { Note } from "@/components/ui/Note";
+import { SectionBar } from "@/components/ui/Page";
+import { listMembers } from "@/lib/api/members";
 import {
   LevelLabel,
   MeterBar,
@@ -13,9 +18,12 @@ import {
 } from "@/components/tenant/UsageMeter";
 import { fetchUsage, type UsageOut } from "@/lib/api/usage";
 
-export const metadata: Metadata = { title: "Usage and budget | Mytheus" };
+export const metadata: Metadata = { title: "Usage and billing | Mytheus" };
 
-/* Usage and agent budget (Plan 7-9 sections 3.1 step 8 and 3.4): consumption against the
+/* Usage and billing, one tab of the Workspace console (admins only). The plan as
+   `billing-metering-service` records it (`GET /usage`: the `subscriptions` row joined to `plans`)
+   and who is in the workspace (`GET /users`); then usage and the agent budget (Plan 7-9 sections
+   3.1 step 8 and 3.4): consumption against the
    plan's included quota per dimension, the agent-token split by model tier, and the 80% / 95%
    alert state. Reads `GET /usage` (`usage_aggregates` + the live `agent_budgets` row, RBAC
    admin). A non-admin is told so; no gateway, a missing route or a billing outage says usage
@@ -23,8 +31,14 @@ export const metadata: Metadata = { title: "Usage and budget | Mytheus" };
 
    Chart choices: each dimension is one meter (a single magnitude against a limit), so one
    hue, the value printed beside it, and the 80/95% thresholds as ticks. The tier split is a
-   single-series bar in the same hue; identity comes from the row label, never colour. Status (warning / blocked) is the frozen priority language, always with an
-   icon and words. */
+   single-series bar in the same hue; identity comes from the row label, never colour. Status
+   (warning / blocked) is the frozen priority language, always with an icon and words.
+
+   Payments are not connected: the Stripe band (checkout, invoices, dunning) is not built, so the
+   invoices card says so plainly instead of listing invoices or a next charge. */
+
+const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+const number = new Intl.NumberFormat("en-US");
 
 const pct = formatPercent;
 const compact = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
@@ -77,24 +91,46 @@ function liveView(u: UsageOut): View {
   };
 }
 
-const STATE_LABEL: Record<string, { text: string; tone: "success" | "medium" | "high" | "default" }> = {
-  ok: { text: "Running", tone: "success" },
+const STATE_LABEL: Record<string, { text: string; tone: ChipTone }> = {
+  ok: { text: "Running", tone: "ok" },
   throttled: { text: "Throttled", tone: "medium" },
   blocked: { text: "Paused", tone: "high" },
 };
 
-export default async function UsagePage() {
-  const result = await fetchUsage();
+function Invoices() {
+  return (
+    <SectionCard
+      title="Invoices"
+      headingId="invoices-heading"
+      description="Payments are not connected yet. This workspace has not been charged, and nothing here bills you."
+    >
+      <EmptyState
+        inCard
+        art="billing"
+        title="No invoices yet"
+        description="Checkout, invoices and seat billing arrive with the payments release. Each invoice will be listed here with its date, status and amount."
+      />
+      <div className="flex items-center gap-2 px-4 py-3.5 text-[14px] text-ink-3 sm:px-[22px]">
+        <CalendarBlank size={16} aria-hidden="true" />
+        No next charge is scheduled.
+      </div>
+    </SectionCard>
+  );
+}
+
+export default async function UsageAndBillingPage() {
+  const [result, members] = await Promise.all([fetchUsage(), listMembers()]);
 
   if (result.kind !== "live") {
     return (
-      <div className="flex flex-col gap-6">
-        <PageHeader title="Usage and budget" description="Workspace usage against the plan, and the agent token budget." />
-        <Note tone={result.kind === "forbidden" ? "info" : "warning"}>
-          {result.kind === "forbidden"
-            ? "Only workspace admins can see usage and the agent budget. Ask an admin for access."
-            : "Usage is not available from the server right now. Try again in a few minutes."}
-        </Note>
+      <div className="flex flex-col gap-5">
+        <SectionBar title="Usage and billing" context="The plan, what the workspace has used this period, the agent budget and invoices." />
+        {result.kind === "forbidden" ? (
+          <Note>Only workspace admins can see the plan, usage and the agent budget.</Note>
+        ) : (
+          <ErrorState title="The plan and usage could not be loaded" text="Billing did not answer just now. Nothing is charged while it is unavailable." />
+        )}
+        <Invoices />
       </div>
     );
   }
@@ -105,19 +141,54 @@ export default async function UsagePage() {
   const tierMax = Math.max(1, ...v.tiers.map((t) => t.tokens));
   const tokens = v.dimensions[0];
   const others = v.dimensions.slice(1);
-  const state = STATE_LABEL[v.state] ?? { text: v.state, tone: "default" as const };
+  const state = STATE_LABEL[v.state] ?? { text: v.state, tone: "neutral" as const };
+  const plan = result.usage.plan;
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Usage and budget"
-        description={`This billing period, ${v.periodLabel}. Live captions and transcription keep running even if the agent budget runs out.`}
-        actions={
-          <LinkButton href="/workspace/billing" variant="outline" className={focusPill}>
-            Plan and billing
-          </LinkButton>
-        }
+    <div className="flex flex-col gap-5">
+      <SectionBar
+        title="Usage and billing"
+        context={`This billing period, ${v.periodLabel}. Live captions and transcription keep running even if the agent budget runs out.`}
       />
+
+      <Card as="section" aria-labelledby="plan-heading">
+        <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+          <div className="min-w-0">
+            <Chip tone="solid">Current plan</Chip>
+            <h2 id="plan-heading" className="display mt-3 text-[30px] text-ink-display">
+              {plan.name}
+            </h2>
+            <p className="mt-1 text-[15px] text-ink-2">
+              {plan.seat_price_cents > 0 ? (
+                <>
+                  <span className="display text-[22px] text-ink">{currency.format(plan.seat_price_cents / 100)}</span> per seat per month on the
+                  price list
+                </>
+              ) : (
+                "No charge on this plan"
+              )}
+            </p>
+          </div>
+          <ul className="flex flex-wrap gap-x-6 gap-y-2 text-[14px] text-ink-2 md:flex-col md:items-start">
+            {members ? (
+              <li className="inline-flex items-center gap-1.5">
+                <UsersThree size={17} className="text-ink-3" aria-hidden="true" />
+                {members.length} {members.length === 1 ? "member" : "members"} in this workspace
+              </li>
+            ) : null}
+            <li className="inline-flex items-center gap-1.5">
+              <Timer size={17} className="text-ink-3" aria-hidden="true" />
+              {plan.included_meeting_minutes > 0
+                ? `${number.format(plan.included_meeting_minutes)} meeting minutes included`
+                : "No meeting minute allowance"}
+            </li>
+            <li className="inline-flex items-center gap-1.5">
+              <Coins size={17} className="text-ink-3" aria-hidden="true" />
+              {number.format(plan.included_agent_tokens)} agent tokens included per month
+            </li>
+          </ul>
+        </div>
+      </Card>
 
       {v.state === "blocked" ? (
         <Note tone="error">
@@ -135,24 +206,18 @@ export default async function UsagePage() {
         </Note>
       ) : null}
 
-      <section
-        aria-labelledby="budget-heading"
-        className="overflow-hidden rounded-card border border-line bg-surface shadow-warm-1"
-      >
-        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 px-4 pt-[18px] sm:px-[22px]">
-          <div className="min-w-0">
-            <h2 id="budget-heading" className="text-[17px] font-semibold text-ink">
-              Agent token budget
-            </h2>
-            <p className="mt-1 text-[14px] text-ink-3">Checked before every model call, and moves with each one.</p>
-          </div>
-          <Badge tone={state.tone}>{state.text}</Badge>
-        </div>
-        <div className="px-4 pb-5 pt-4 sm:px-[22px]">
+      <Card as="section" flush aria-labelledby="budget-heading">
+        <CardHead
+          id="budget-heading"
+          title="Agent token budget"
+          description="Checked before every model call, and moves with each one."
+          right={<Chip tone={state.tone}>{state.text}</Chip>}
+        />
+        <div className="px-4 pb-5 pt-1 sm:px-[22px]">
           {tokens.included ? (
             <>
               <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <span className="display text-[44px] leading-none tabular-nums text-ink-display sm:text-[52px]">
+                <span className="display text-[44px] leading-none tabular-nums text-ink-display">
                   {formatNumber(tokens.used)}
                 </span>
                 <span className="text-[15px] text-ink-2">
@@ -176,9 +241,9 @@ export default async function UsagePage() {
             </p>
           )}
         </div>
-      </section>
+      </Card>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
         <SectionCard
           title="Everything else this period"
           headingLevel={2}
@@ -219,11 +284,13 @@ export default async function UsagePage() {
                   style={{ width: `${(t.tokens / tierMax) * 100}%` }}
                 />
               </div>
-              <p className="mt-1.5 text-[13.5px] text-ink-3">{t.purpose}</p>
+              <p className="mt-1.5 text-[14px] text-ink-3">{t.purpose}</p>
             </div>
           ))}
         </SectionCard>
       </div>
+
+      <Invoices />
     </div>
   );
 }

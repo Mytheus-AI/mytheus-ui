@@ -3,7 +3,9 @@
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { ChipInput } from "@/components/settings/ChipInput";
-import { fieldClass, textareaClass } from "@/components/settings/primitives";
+import { CardFoot, cardClass } from "@/components/ui/Card";
+import { CharCount as Count, FieldMsg, fieldClass, textareaClass } from "@/components/ui/Form";
+import { notifyError, notifySuccess } from "@/lib/toast";
 import { saveOrgProfile } from "@/app/actions/org-brain";
 import {
   BRAIN_LIMITS,
@@ -12,7 +14,6 @@ import {
   type OrgProfile,
   type ProfileField,
 } from "@/lib/api/org-brain-types";
-import { Count, FieldMsg, FlashLine, useFlash } from "./ui";
 
 /* About the company (ADR-0039 A1): what it does, its industry, its products and its customers.
    The form on the left; on the right, exactly what every agent will read, updating as you type.
@@ -30,14 +31,14 @@ const ORDER: ProfileField[] = ["description", "industry", "products", "customers
 export function AgentReads({ profile }: { profile: Pick<OrgProfile, "description" | "industry" | "products" | "customers"> }) {
   const empty = !profile.description.trim() && !profile.industry.trim() && !profile.products.length && !profile.customers.length;
   return (
-    <figure className="rounded-card border border-line bg-surface-2 p-5">
-      <figcaption className="text-[13px] font-semibold text-ink-3">What every agent reads</figcaption>
+    <figure className={cardClass({ tone: "well" })}>
+      <figcaption className="text-[12.5px] font-semibold text-ink-3">What every agent reads</figcaption>
       {empty ? (
         <p className="mt-3 font-display text-[17px] italic leading-snug text-ink-3">
           Nothing yet. Until this is filled in, agents know your people and your meetings, but not your company.
         </p>
       ) : (
-        <div className="mt-3 space-y-3 text-[14.5px] leading-relaxed text-ink-2">
+        <div className="mt-3 space-y-3 text-[14px] leading-relaxed text-ink-2">
           {profile.description.trim() ? <p className="whitespace-pre-line text-ink">{profile.description.trim()}</p> : null}
           {profile.industry.trim() ? (
             <p>
@@ -71,7 +72,6 @@ export function AboutEditor({ initial, canEdit }: { initial: OrgProfile; canEdit
   const [customers, setCustomers] = useState<string[]>(initial.customers);
   const [errors, setErrors] = useState<FieldErrors<ProfileField>>({});
   const [saving, setSaving] = useState(false);
-  const [flash, setFlash] = useFlash();
 
   const dirty =
     description !== saved.description ||
@@ -95,14 +95,13 @@ export function AboutEditor({ initial, canEdit }: { initial: OrgProfile; canEdit
     const checked = validateOrgProfile({ description, industry, products, customers });
     const fail = (errs: FieldErrors<ProfileField>, message?: string) => {
       setErrors(errs);
-      setFlash({ tone: "error", text: message ?? "A few details need a look." });
+      notifyError(message ?? "A few details need a look.");
       const first = ORDER.find((f) => errs[f]);
       if (first) document.getElementById(IDS[first])?.focus();
     };
     if (!checked.ok) return fail(checked.errors);
     setSaving(true);
     setErrors({});
-    setFlash({ tone: "busy", text: "Saving" });
     const res = await saveOrgProfile({ ...checked.value });
     setSaving(false);
     if (!res.ok) return fail(res.fieldErrors ?? {}, res.message);
@@ -112,12 +111,12 @@ export function AboutEditor({ initial, canEdit }: { initial: OrgProfile; canEdit
     setIndustry(next.industry);
     setProducts(next.products);
     setCustomers(next.customers);
-    setFlash({ tone: "ok", text: "Company profile saved. Agents use it from the next meeting." });
+    notifySuccess("Company profile saved", { description: "Agents use it from the next meeting." });
   };
 
   return (
     <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
-      <form onSubmit={submit} noValidate aria-busy={saving || undefined} className="overflow-hidden rounded-card border border-line bg-surface shadow-warm-1">
+      <form onSubmit={submit} noValidate aria-busy={saving || undefined} className={cardClass({ flush: true })}>
         <div className="grid gap-6 px-4 py-5 sm:px-[22px] sm:py-6">
           <div>
             <div className="flex items-baseline justify-between gap-3">
@@ -227,12 +226,12 @@ export function AboutEditor({ initial, canEdit }: { initial: OrgProfile; canEdit
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line bg-surface-2 px-4 py-3.5 sm:px-[22px]">
-          <Button type="submit" disabled={saving || !dirty} aria-busy={saving || undefined} className="focus-visible:!rounded-ctl">
+        <CardFoot>
+          <Button type="submit" disabled={saving || !dirty} aria-busy={saving || undefined}>
             {saving ? "Saving" : "Save company profile"}
           </Button>
-          <FlashLine flash={flash ?? (dirty ? { tone: "busy", text: "Unsaved changes" } : null)} />
-        </div>
+          {dirty ? <p className="text-[14px] text-ink-3">Unsaved changes</p> : null}
+        </CardFoot>
       </form>
 
       <div className="xl:sticky xl:top-4">

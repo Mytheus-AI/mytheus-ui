@@ -6,7 +6,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LinkButton } from "@/components/ui/Button";
-import { Note } from "@/components/settings/primitives";
+import { Note } from "@/components/ui/Note";
 import { StatCard, thClass } from "@/components/admin/StatCard";
 import { resolveCallMeeting } from "@/components/call/resolve-meeting";
 import { ApiError } from "@/lib/api/client";

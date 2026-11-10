@@ -1,8 +1,11 @@
 import type { Icon } from "@phosphor-icons/react";
 import { CalendarDots, Kanban, SlackLogo, SquaresFour } from "@phosphor-icons/react/ssr";
-import { Badge } from "@/components/ui/Badge";
 import { FormSubmit } from "@/components/admin/FormSubmit";
-import { Note, SectionCard } from "@/components/settings/primitives";
+import { SectionCard, cardClass } from "@/components/ui/Card";
+import { Chip } from "@/components/ui/Chip";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { Note } from "@/components/ui/Note";
+import { ReturnToast } from "./ReturnToast";
 import { connectProvider, disconnectProvider } from "@/app/actions/integrations";
 import {
   cardState,
@@ -46,9 +49,9 @@ const CARDS: CardMeta[] = [
 ];
 
 function StatusBadge({ state }: { state: CardState }) {
-  if (state.kind === "not_configured") return <Badge>Not configured</Badge>;
-  if (state.kind === "available") return <Badge>Not connected</Badge>;
-  return state.status === "active" ? <Badge tone="success">Connected</Badge> : <Badge tone="warning">Needs attention</Badge>;
+  if (state.kind === "not_configured") return <Chip tone="outline">Not configured</Chip>;
+  if (state.kind === "available") return <Chip>Not connected</Chip>;
+  return state.status === "active" ? <Chip tone="ok">Connected</Chip> : <Chip tone="medium">Needs attention</Chip>;
 }
 
 function Details({ item, people }: { item: IntegrationItem; people: Map<string, string> }) {
@@ -60,7 +63,7 @@ function Details({ item, people }: { item: IntegrationItem; people: Map<string, 
   rows.push(["Last sync", fmt(item.last_synced_at) ?? "Not synced yet"]);
   return (
     <div className="flex flex-col gap-3">
-      <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-4 gap-y-1.5 rounded-ctl border border-line bg-surface-2 px-3.5 py-3 text-[13.5px]">
+      <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-4 gap-y-1.5 rounded-ctl border border-line bg-surface-2 px-3.5 py-3 text-[14px]">
         {rows.map(([k, v]) => (
           <div key={k} className="contents">
             <dt className="text-ink-3">{k}</dt>
@@ -76,7 +79,7 @@ function Details({ item, people }: { item: IntegrationItem; people: Map<string, 
           <ul className="mt-1.5 flex flex-wrap gap-1.5">
             {item.scopes.map((s) => (
               <li key={s} title={s}>
-                <Badge>{scopeLabel(s)}</Badge>
+                <Chip>{scopeLabel(s)}</Chip>
               </li>
             ))}
           </ul>
@@ -112,7 +115,7 @@ function ProviderCard({ meta, item, people }: { meta: CardMeta; item: Integratio
   const state = cardState(item);
   const Glyph = meta.icon;
   return (
-    <li className="flex flex-col gap-4 rounded-card border border-line bg-surface p-5 shadow-warm-1 sm:px-[22px]">
+    <li className={cardClass({ className: "flex flex-col gap-4" })}>
       <div className="flex items-start gap-3.5">
         <span className="grid h-[46px] w-[46px] shrink-0 place-items-center rounded-ctl bg-bg-2 text-ink" aria-hidden="true">
           <Glyph size={24} />
@@ -126,7 +129,7 @@ function ProviderCard({ meta, item, people }: { meta: CardMeta; item: Integratio
         <StatusBadge state={state} />
       </div>
       {state.kind === "not_configured" ? (
-        <p className="text-[13.5px] text-ink-3">The server has no app credentials for {meta.name} yet, so it cannot be connected.</p>
+        <p className="text-[14px] text-ink-3">The server has no app credentials for {meta.name} yet, so it cannot be connected.</p>
       ) : null}
       {state.kind === "connected" && state.status === "degraded" ? (
         <Note tone="warning">The connection is failing at {meta.name}. Disconnect and connect again to repair it.</Note>
@@ -185,14 +188,14 @@ function TrackerSection({ items, people }: { items: Map<ProviderKey, Integration
                 <OptionIcon size={20} className="mt-0.5 shrink-0 text-ink-2" aria-hidden="true" />
                 <span className="min-w-0 flex-[1_1_12rem]">
                   <span className={`block text-[15px] font-semibold ${o.selectable ? "text-ink" : "text-ink-3"}`}>{o.name}</span>
-                  <span className="mt-0.5 block text-[13.5px] leading-snug text-ink-3">
+                  <span className="mt-0.5 block text-[14px] leading-snug text-ink-3">
                     {o.key === "jira"
                       ? "Confirmed action items become Jira issues, with a link back to the meeting."
                       : "Linear is not supported yet."}
                   </span>
                 </span>
                 <span className="flex shrink-0 flex-wrap gap-1.5">
-                  {o.reason && o.reason !== "connected" ? <Badge>{REASON_COPY[o.reason]}</Badge> : null}
+                  {o.reason && o.reason !== "connected" ? <Chip tone="outline">{REASON_COPY[o.reason]}</Chip> : null}
                   {o.key === "jira" ? <StatusBadge state={jiraState} /> : null}
                 </span>
               </label>
@@ -233,16 +236,13 @@ export function IntegrationsPanel({
 }) {
   return (
     <>
-      {banner ? (
-        <div aria-live="polite">
-          <Note tone={banner.tone === "error" ? "error" : banner.tone === "success" ? "success" : "info"}>{banner.message}</Note>
-        </div>
-      ) : null}
+      {banner && banner.tone !== "error" ? <ReturnToast message={banner.message} /> : null}
+      {banner?.tone === "error" ? <Note tone="error">{banner.message}</Note> : null}
 
       {load.kind === "forbidden" ? (
         <Note>Only workspace owners and admins can see and manage integrations.</Note>
       ) : load.kind === "unavailable" ? (
-        <Note tone="warning">Integrations could not be loaded from the server just now, so nothing can be connected. Try again in a moment.</Note>
+        <ErrorState title="Integrations could not be loaded" text="Nothing can be connected until they load. Nothing was changed." />
       ) : (
         <>
           <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))] gap-5">

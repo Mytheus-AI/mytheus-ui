@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFormState } from "react-dom";
 import { saveTenantSettings } from "@/app/actions/tenant-admin";
 import { FormSubmit } from "@/components/admin/FormSubmit";
 import { Toggle } from "@/components/settings/Toggle";
-import { InlineRow, SaveStatus, SectionCard, SettingsRow, TextInput, fieldClass } from "@/components/settings/primitives";
+import { SectionCard, cardClass } from "@/components/ui/Card";
+import { FieldRow as SettingsRow, InlineRow, TextInput, fieldClass } from "@/components/ui/Form";
+import { notifyError, notifySuccess } from "@/lib/toast";
 import { theadRowClass, thClass } from "@/components/admin/StatCard";
 import {
   CONFIDENCE_AGENTS,
@@ -22,6 +24,11 @@ import {
 export function TenantSettingsForm({ initial }: { initial: SettingsFormInput }) {
   const [state, formAction] = useFormState(saveTenantSettings, null);
   const [pii, setPii] = useState(initial.pii_redaction_enabled);
+  useEffect(() => {
+    if (!state) return;
+    if (state.ok) notifySuccess("Settings saved", { description: "New meetings follow these settings." });
+    else notifyError(state.message);
+  }, [state]);
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
@@ -63,8 +70,8 @@ export function TenantSettingsForm({ initial }: { initial: SettingsFormInput }) 
         headingId="confidence-heading"
         description={`Above the show threshold an agent's suggestion appears in the meeting; between the two it is only logged; below the log threshold it is dropped. Defaults are ${DEFAULT_SURFACE} and ${DEFAULT_SILENT}.`}
       >
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[420px] border-collapse text-left text-[14.5px]">
+        <div>
+          <table className="mx-table w-full border-collapse text-left text-[14px]">
             <caption className="sr-only">Confidence thresholds per agent. Blank uses the default.</caption>
             <thead>
               <tr className={theadRowClass}>
@@ -76,10 +83,10 @@ export function TenantSettingsForm({ initial }: { initial: SettingsFormInput }) 
             <tbody className="divide-y divide-line">
               {CONFIDENCE_AGENTS.map(({ key, label }) => (
                 <tr key={key}>
-                  <th scope="row" className="py-3 pl-[22px] pr-5 font-semibold text-ink">
+                  <th scope="row" className="py-3 pl-[22px] pr-5 text-left font-semibold text-ink">
                     {label}
                   </th>
-                  <td className="px-5 py-3">
+                  <td data-label="Show above" className="px-5 py-3">
                     <input
                       name={`surface_${key}`}
                       aria-label={`${label}: show above`}
@@ -89,7 +96,7 @@ export function TenantSettingsForm({ initial }: { initial: SettingsFormInput }) 
                       className={`${fieldClass} max-w-[120px]`}
                     />
                   </td>
-                  <td className="py-3 pl-5 pr-[22px]">
+                  <td data-label="Log from" className="py-3 pl-5 pr-[22px]">
                     <input
                       name={`silent_${key}`}
                       aria-label={`${label}: log from`}
@@ -106,7 +113,7 @@ export function TenantSettingsForm({ initial }: { initial: SettingsFormInput }) 
         </div>
       </SectionCard>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-card border border-line bg-surface px-4 py-3.5 shadow-warm-1 sm:px-[22px]">
+      <div className={cardClass({ className: "flex flex-wrap items-center gap-x-4 gap-y-2 !py-3.5" })}>
         <FormSubmit variant="primary" size="md" pendingLabel="Saving settings">
           Save settings
         </FormSubmit>
@@ -114,9 +121,7 @@ export function TenantSettingsForm({ initial }: { initial: SettingsFormInput }) 
           <span role="alert" className="text-[14px] font-medium text-priority-high">
             {state.message}
           </span>
-        ) : (
-          <SaveStatus tone={state?.ok ? "ok" : undefined}>{state?.ok ? state.message : ""}</SaveStatus>
-        )}
+        ) : null}
       </div>
     </form>
   );

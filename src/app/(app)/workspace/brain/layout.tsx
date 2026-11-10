@@ -1,13 +1,15 @@
-import Link from "next/link";
 import { BrainNav } from "@/components/org-brain/BrainNav";
-import { PageHeader } from "@/components/settings/primitives";
+import { LinkButton } from "@/components/ui/Button";
+import { SectionBar } from "@/components/ui/Page";
 import { resolveOrgContext } from "@/lib/api/org-context";
 import { fetchReadiness } from "@/lib/api/org-brain";
 
-/* The company brain (ADR-0039 Part E), inside Workspace admin: a title row, the section list
-   beside the page (above it below lg) with a bead per readiness check, and the section itself.
-   Readiness is read here once per request (`fetchReadiness` is per-request cached, so the
-   overview page shares it); every write revalidates this layout so the beads follow. */
+/* The company brain (ADR-0039 Part E), one tab of the Workspace console: a line of context with
+   the readiness score, then the brain's own sections as a secondary list beside the section
+   (above it below lg) with a dot per readiness check. Not tabs within tabs: the console's tabs run
+   across the top, the brain's sections down the side. Readiness is read here once per request
+   (`fetchReadiness` is per-request cached, so the overview page shares it); every write
+   revalidates this layout so the dots follow. */
 
 export default async function BrainLayout({ children }: { children: React.ReactNode }) {
   const ctx = await resolveOrgContext();
@@ -17,20 +19,15 @@ export default async function BrainLayout({ children }: { children: React.ReactN
   const orgName = ctx?.org.name || "your workspace";
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Company brain"
-        description={`What every agent in ${orgName} knows about the company: what it does, its words, who owns what, what matters now and what is off limits.`}
-        actions={
+    <div>
+      <SectionBar
+        context={`What every agent in ${orgName} knows about the company: what it does, its words, who owns what, what matters now and what is off limits.`}
+        action={
           readiness?.ok ? (
-            <Link
-              href="/workspace/brain"
-              className="inline-flex h-10 items-center gap-2 rounded-full border border-line bg-surface px-4 text-[14px] font-semibold text-ink shadow-warm-1 transition-colors hover:bg-surface-2 focus-visible:!rounded-full"
-            >
+            <LinkButton href="/workspace/brain" variant="outline" size="sm" aria-label={`Readiness ${readiness.data.score} of 100`}>
               <span className="text-ink-3">Readiness</span>
               <span className="tabular-nums">{readiness.data.score}</span>
-              <span className="sr-only">of 100</span>
-            </Link>
+            </LinkButton>
           ) : undefined
         }
       />

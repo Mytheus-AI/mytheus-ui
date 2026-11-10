@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { Avatar } from "@/components/ui/Avatar";
-import { Badge } from "@/components/ui/Badge";
+import { Card } from "@/components/ui/Card";
+import { Chip, type ChipTone } from "@/components/ui/Chip";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Note, PageHeader } from "@/components/settings/primitives";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { Note } from "@/components/ui/Note";
+import { SectionBar } from "@/components/ui/Page";
 import { theadRowClass, thClass } from "@/components/admin/StatCard";
 import { ActionForm } from "@/components/admin/ActionForm";
 import { FormSelect } from "@/components/admin/FormSelect";
@@ -29,11 +32,7 @@ const TIER_OPTIONS: { value: Tier; label: string }[] = [
   { value: "admin", label: "Admin" },
   { value: "member", label: "Member" },
 ];
-const TIER_CHIP: Record<Tier, string> = {
-  owner: "!bg-signal-soft !text-signal-ink",
-  admin: "!text-ink",
-  member: "!bg-transparent !text-ink-3 ring-1 ring-inset ring-line-2",
-};
+const TIER_CHIP: Record<Tier, ChipTone> = { owner: "accent", admin: "neutral", member: "outline" };
 const date = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
 
 export default async function TenantMembersPage() {
@@ -41,28 +40,24 @@ export default async function TenantMembersPage() {
   const byId = new Map((directory ?? []).map((m) => [m.id, m]));
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
+    <div className="flex flex-col gap-5">
+      <SectionBar
         title="Members"
-        description="Owners manage everything, admins manage people and settings, members use the workspace. Every change is written to the audit log."
-        actions={<WorkspaceInvite />}
+        context="Owners manage everything, admins manage people and settings, members use the workspace. Every change is written to the audit log."
+        action={<WorkspaceInvite />}
       />
 
       {res.kind === "forbidden" ? (
         <Note tone="error">Only workspace owners and admins can manage members.</Note>
       ) : res.kind === "unavailable" ? (
-        <Note tone="warning">Members could not be loaded from the server just now. Try again in a moment.</Note>
+        <ErrorState title="Members could not be loaded" />
       ) : res.data.length === 0 ? (
-        <EmptyState
-          className="!bg-surface"
-          title="No members with access"
-          description="Invite someone to give them access to this workspace."
-        />
+        <EmptyState art="members" title="No members with access" description="Invite someone to give them access to this workspace." action={<WorkspaceInvite />} />
       ) : (
-        <section aria-label="Members" className="overflow-hidden rounded-card border border-line bg-surface shadow-warm-1">
-          <table className="w-full border-collapse text-left text-[14.5px]">
+        <Card as="section" flush aria-label="Members">
+          <table className="mx-table w-full border-collapse text-left text-[14px]">
             <caption className="sr-only">Members, their access and since when</caption>
-            <thead className="hidden md:table-header-group">
+            <thead>
               <tr className={theadRowClass}>
                 <th scope="col" className={`${thClass} !pl-[22px]`}>Person</th>
                 <th scope="col" className={thClass}>Access</th>
@@ -80,25 +75,22 @@ export default async function TenantMembersPage() {
                 const controls = memberControls({ isYou });
                 const since = m.created_at && !Number.isNaN(Date.parse(m.created_at)) ? date.format(new Date(m.created_at)) : null;
                 return (
-                  <tr
-                    key={m.user_id}
-                    className="flex flex-col gap-3 px-4 py-4 transition-colors duration-150 hover:bg-surface-2 md:table-row md:px-0 md:py-0"
-                  >
-                    <td className="md:max-w-[360px] md:py-3 md:pl-[22px] md:pr-5">
+                  <tr key={m.user_id} className="transition-colors duration-150 hover:bg-surface-2">
+                    <th scope="row" className="max-w-[360px] py-3 pl-[22px] pr-5 text-left font-normal">
                       <span className="flex min-w-0 items-center gap-3">
                         <Avatar name={name} id={m.email} src={person?.imageUrl ?? undefined} size="md" />
                         <span className="min-w-0">
                           <span className="flex min-w-0 items-center gap-2">
                             <span className="truncate font-semibold text-ink">{name}</span>
-                            {isYou ? <Badge className="shrink-0">You</Badge> : null}
+                            {isYou ? <Chip className="shrink-0">You</Chip> : null}
                           </span>
-                          <span className="block truncate text-[13.5px] text-ink-3">{m.email}</span>
+                          <span className="block truncate text-[14px] text-ink-3">{m.email}</span>
                         </span>
                       </span>
-                    </td>
-                    <td className="md:px-5 md:py-3">
+                    </th>
+                    <td data-label="Access" className="px-5 py-3">
                       {controls.canChangeTier ? (
-                        <ActionForm action={changeMemberTier} className="flex flex-wrap items-center gap-2">
+                        <ActionForm action={changeMemberTier} success="Access saved" className="flex flex-wrap items-center gap-2">
                           <input type="hidden" name="user_id" value={m.user_id} />
                           <FormSelect name="tier" defaultValue={m.tier} options={TIER_OPTIONS} label={`Access for ${name}`} className="w-[130px]" />
                           <FormSubmit pendingLabel="Saving access" ariaLabel={`Save access for ${name}`}>
@@ -106,22 +98,17 @@ export default async function TenantMembersPage() {
                           </FormSubmit>
                         </ActionForm>
                       ) : (
-                        <Badge className={`capitalize ${TIER_CHIP[m.tier]}`}>{m.tier}</Badge>
+                        <Chip tone={TIER_CHIP[m.tier]} className="capitalize">
+                          {m.tier}
+                        </Chip>
                       )}
                     </td>
-                    <td className="whitespace-nowrap text-[14px] tabular-nums text-ink-3 md:px-5 md:py-3">
-                      {since ? (
-                        <>
-                          <span className="md:hidden">Since </span>
-                          {since}
-                        </>
-                      ) : (
-                        ""
-                      )}
+                    <td data-label="Since" className="whitespace-nowrap px-5 py-3 text-[14px] tabular-nums text-ink-3">
+                      {since ?? "Not known"}
                     </td>
-                    <td className="md:py-3 md:pl-5 md:pr-[22px] md:text-right">
+                    <td className="py-3 pl-5 pr-[22px] text-right">
                       {controls.canRemove ? (
-                        <ActionForm action={removeMemberAccess} className="flex flex-wrap items-center gap-2 md:justify-end">
+                        <ActionForm action={removeMemberAccess} success="Access removed" className="flex flex-wrap items-center gap-2 sm:justify-end">
                           <input type="hidden" name="user_id" value={m.user_id} />
                           <FormSubmit destructive confirmLabel="Confirm remove" pendingLabel="Removing access" ariaLabel={`Remove access for ${name}`}>
                             Remove access
@@ -134,7 +121,7 @@ export default async function TenantMembersPage() {
               })}
             </tbody>
           </table>
-        </section>
+        </Card>
       )}
       <Note>
         You cannot change or remove your own access here. Ask another owner, so the workspace always keeps someone who can

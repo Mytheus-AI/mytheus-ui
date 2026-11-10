@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { StatCard } from "@/components/admin/StatCard";
-import { Note, PageHeader } from "@/components/settings/primitives";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { Note } from "@/components/ui/Note";
+import { SectionBar } from "@/components/ui/Page";
 import { TenantDirectory } from "@/components/ops/TenantDirectory";
 import { loadOpsTenants } from "@/lib/api/admin-ops";
 
@@ -16,8 +18,8 @@ export default async function OpsTenantsPage() {
   const suspended = tenants.filter((t) => t.status === "suspended").length;
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader title="Tenants" description="Every workspace on the platform. Opening this list is recorded in the ops audit log." />
+    <div className="flex flex-col gap-5">
+      <SectionBar title="Tenants" context="Every workspace on the platform. Opening this list is recorded in the ops audit log." />
       {res.kind === "live" ? (
         <>
           <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 lg:grid-cols-3">
@@ -33,7 +35,7 @@ export default async function OpsTenantsPage() {
       ) : res.kind === "forbidden" ? (
         <Note tone="error">This account is not on the Mytheus staff list.</Note>
       ) : (
-        <Note tone="warning">The tenant directory could not be loaded just now. Try again in a moment.</Note>
+        <ErrorState title="The tenant directory could not be loaded" />
       )}
     </div>
   );

@@ -4,9 +4,12 @@ import { ArrowLeft } from "@phosphor-icons/react/ssr";
 import { OrgProvider } from "@/lib/org-context";
 import { resolveOrgContext } from "@/lib/api/org-context";
 import { Wordmark } from "@/components/site/Wordmark";
+import { buttonClass } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
 import { ThemeToggle } from "@/components/app/ThemeToggle";
 import { appFontClass } from "@/lib/fonts";
 import { THEME_INIT } from "@/components/app/theme-init";
+import { Toaster } from "@/components/ui/Toaster";
 import "@/styles/app-theme.css";
 
 export const metadata: Metadata = {
@@ -36,20 +39,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <header className="flex h-16 items-center gap-2 border-b border-line bg-bg px-4 sm:px-6 lg:px-8">
           <Link
             href="/ops"
-            className="group inline-flex min-h-10 shrink-0 items-center focus-visible:!rounded-ctl"
+            className="group inline-flex min-h-10 shrink-0 items-center rounded-ctl"
             aria-label="Mytheus admin console"
           >
-            <Wordmark size={22} textClassName="text-[19px] sm:text-[21px]" />
+            <Wordmark size={22} textClassName="text-[17px] sm:text-[17px]" />
           </Link>
-          <span className="inline-flex shrink-0 items-center rounded-full bg-signal-soft px-2.5 py-[3px] text-[12.5px] font-semibold text-signal-ink">
+          <Chip tone="accent" className="shrink-0">
             Admin console
-          </span>
+          </Chip>
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             <ThemeToggle />
-            <Link
-              href="/dashboard"
-              className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-ctl border border-line-2 bg-surface px-3 text-[14px] font-semibold text-ink transition-colors duration-150 hover:bg-surface-2 focus-visible:!rounded-ctl sm:px-3.5"
-            >
+            <Link href="/dashboard" className={buttonClass({ variant: "outline", size: "sm" })}>
               <ArrowLeft size={16} aria-hidden />
               <span className="hidden min-[420px]:inline">Back to app</span>
               <span className="sr-only min-[420px]:hidden">Back to app</span>
@@ -59,6 +59,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <main id="admin-main" className="px-4 py-7 sm:px-6 lg:px-8 lg:py-10">
           {children}
         </main>
+        <Toaster />
       </div>
     </OrgProvider>
   );

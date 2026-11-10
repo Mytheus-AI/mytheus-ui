@@ -27,7 +27,7 @@ export function Toggle({
       aria-label={labelledBy ? undefined : label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-[42px] shrink-0 items-center rounded-full border-2 transition-colors duration-200 ease-[var(--ease-out)] before:absolute before:-inset-2 before:content-[''] focus-visible:!rounded-full disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none ${
+      className={`relative inline-flex h-6 w-[42px] shrink-0 items-center rounded-full border-2 transition-colors duration-200 ease-[var(--ease-out)] before:absolute before:-inset-2 before:content-[''] disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none ${
         checked ? "border-signal bg-signal hover:border-signal-deep hover:bg-signal-deep" : "border-ink-3 bg-surface hover:bg-bg-2"
       }`}
     >

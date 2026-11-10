@@ -6,7 +6,9 @@ import { UserPlus } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
-import { Note, focusPill } from "@/components/settings/primitives";
+import { Note } from "@/components/ui/Note";
+import { textareaClass } from "@/components/ui/Form";
+import { notifySuccess } from "@/lib/toast";
 import { inviteToWorkspace } from "@/app/actions/workspace-invites";
 
 /* "Invite people" on the workspace page. Clerk owns workspace membership, so the invitation is
@@ -55,14 +57,18 @@ export function WorkspaceInvite() {
     if (result.failed.length > 0) {
       setError(result.failed.map((f) => `${f.email}: ${f.message}`).join(" "));
     }
-    if (result.sent.length > 0) router.refresh();
+    if (result.sent.length > 0) {
+      notifySuccess(result.sent.length === 1 ? "Invitation sent" : "Invitations sent", { description: result.sent.join(", ") });
+      router.refresh();
+      if (result.failed.length === 0) setOpen(false);
+    }
   };
 
   return (
     <>
       <Button
         variant="primary"
-        className={focusPill}
+       
         onClick={() => {
           reset();
           setOpen(true);
@@ -76,7 +82,7 @@ export function WorkspaceInvite() {
         <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
           <label className="block" htmlFor="invite-emails">
             <span className="mb-1.5 block text-[14px] font-semibold text-ink">Email addresses</span>
-            <span id="invite-emails-help" className="mb-2 block text-[13.5px] text-ink-3">
+            <span id="invite-emails-help" className="mb-2 block text-[14px] text-ink-3">
               Separate addresses with commas or new lines.
             </span>
             <textarea
@@ -87,7 +93,7 @@ export function WorkspaceInvite() {
               aria-describedby="invite-emails-help"
               aria-invalid={error && sent.length === 0 ? true : undefined}
               placeholder="samar@example.com, yash@example.com"
-              className="block w-full resize-none rounded-ctl border border-line-2 bg-surface px-3.5 py-2.5 text-[15px] text-ink transition-[border-color,box-shadow] duration-150 placeholder:text-ink-4 hover:border-ink-4 focus-visible:!rounded-ctl focus-visible:border-signal focus-visible:shadow-[0_0_0_4px_var(--signal-soft)] focus-visible:outline-none"
+              className={textareaClass}
               autoFocus
             />
           </label>
@@ -105,24 +111,21 @@ export function WorkspaceInvite() {
                 { value: "org:admin", label: "Admin" },
               ]}
             />
-            <p className="mt-1.5 text-[13.5px] text-ink-3">
+            <p className="mt-1.5 text-[14px] text-ink-3">
               {role === "org:admin"
                 ? "Admins can also invite people and manage the workspace."
                 : "Members join meetings and use the workspace."}
             </p>
           </div>
-          <p className="text-[13.5px] text-ink-3">
+          <p className="text-[14px] text-ink-3">
             Each person gets an email from Clerk. Once they accept, they can be invited to meetings here.
           </p>
-          <div aria-live="polite">
-            {sent.length > 0 ? <Note tone="success">Invitations sent to {sent.join(", ")}.</Note> : null}
-          </div>
           {error ? <Note tone="error">{error}</Note> : null}
           <div className="mt-1 flex flex-wrap justify-end gap-2 border-t border-line pt-4">
-            <Button variant="outline" type="button" className={focusPill} onClick={() => setOpen(false)} disabled={busy}>
+            <Button variant="outline" type="button" onClick={() => setOpen(false)} disabled={busy}>
               {sent.length > 0 ? "Done" : "Cancel"}
             </Button>
-            <Button variant="primary" type="submit" className={focusPill} disabled={busy}>
+            <Button variant="primary" type="submit" disabled={busy}>
               {busy ? "Sending invitations" : "Send invitations"}
             </Button>
           </div>

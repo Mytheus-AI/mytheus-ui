@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { ArrowRight, LockSimple } from "@phosphor-icons/react/dist/ssr";
 import { Avatar } from "@/components/ui/Avatar";
 import { LinkButton } from "@/components/ui/Button";
+import { Card, cardClass } from "@/components/ui/Card";
+import { Chip } from "@/components/ui/Chip";
 import { ReadinessMeter } from "@/components/org-brain/ReadinessMeter";
 import { ReadOnlyNote } from "@/components/org-brain/parts";
 import { memberMap } from "@/components/org-brain/types";
@@ -29,13 +31,13 @@ function Tile({ href, title, meta, children }: { href: string; title: string; me
   return (
     <Link
       href={href}
-      className="group flex min-h-[188px] flex-col rounded-card border border-line bg-surface p-5 shadow-warm-1 transition-colors duration-150 hover:border-line-2 hover:bg-surface-2 focus-visible:!rounded-card"
+      className={cardClass({ className: "group flex min-h-[188px] flex-col transition-colors duration-150 hover:border-line-2 hover:bg-surface-2" })}
     >
       <span className="flex items-baseline justify-between gap-3">
-        <span className="display text-[21px] text-ink">{title}</span>
-        {meta ? <span className="shrink-0 text-[13px] font-semibold tabular-nums text-ink-3">{meta}</span> : null}
+        <span className="text-[17px] font-semibold text-ink">{title}</span>
+        {meta ? <span className="shrink-0 text-[12.5px] font-semibold tabular-nums text-ink-3">{meta}</span> : null}
       </span>
-      <span className="mt-3 block min-w-0 flex-1 text-[14.5px] leading-relaxed text-ink-2">{children}</span>
+      <span className="mt-3 block min-w-0 flex-1 text-[14px] leading-relaxed text-ink-2">{children}</span>
       <span className="mt-4 inline-flex items-center gap-1.5 text-[14px] font-semibold text-ink">
         Open
         <ArrowRight size={14} aria-hidden className="transition-transform duration-150 group-hover:translate-x-0.5 motion-reduce:transition-none" />
@@ -44,7 +46,7 @@ function Tile({ href, title, meta, children }: { href: string; title: string; me
   );
 }
 
-const quiet = (text: string) => <span className="text-ink-4">{text}</span>;
+const quiet = (text: string) => <span className="text-ink-3">{text}</span>;
 const failed = quiet("Could not be loaded just now.");
 
 export default async function BrainOverviewPage() {
@@ -70,25 +72,19 @@ export default async function BrainOverviewPage() {
       {!canEdit ? <ReadOnlyNote /> : null}
 
       {canEdit && fresh ? (
-        <section
-          aria-labelledby="setup-h"
-          className="relative overflow-hidden rounded-hero px-6 py-7 sm:px-8"
-          style={{ backgroundImage: "var(--wash-glow), var(--wash)" }}
-        >
+        <Card as="section" aria-labelledby="setup-h">
           <div className="grid items-center gap-5 md:grid-cols-[minmax(0,1fr)_auto]">
             <div>
-              <h3 id="setup-h" className="display text-[clamp(1.6rem,3vw,2.1rem)] text-ink">
+              <h3 id="setup-h" className="display text-[22px] text-ink">
                 Teach the agents your company in five minutes
               </h3>
-              <p className="mt-2 max-w-[60ch] text-[15.5px] leading-relaxed text-ink-2">
+              <p className="mt-2 max-w-[60ch] text-[15px] leading-relaxed text-ink-2">
                 A guided pass through the basics: what you do, a few words, who owns what and one goal. You can skip any step.
               </p>
             </div>
-            <LinkButton href="/onboarding/workspace" size="lg" className="focus-visible:!rounded-ctl">
-              Start the guided setup
-            </LinkButton>
+            <LinkButton href="/onboarding/workspace">Start the guided setup</LinkButton>
           </div>
-        </section>
+        </Card>
       ) : null}
 
       {canEdit ? <ReadinessMeter readiness={readiness.ok ? readiness.data : null} headingLevel={3} /> : null}
@@ -114,11 +110,11 @@ export default async function BrainOverviewPage() {
             ) : glossary.data.length ? (
               <span className="flex flex-wrap gap-1.5">
                 {glossary.data.slice(0, 10).map((t) => (
-                  <span key={t.id} title={KIND_LABEL[t.kind]} className="rounded-full bg-bg-2 px-2.5 py-[3px] text-[13px] font-medium text-ink-2">
+                  <Chip key={t.id} title={KIND_LABEL[t.kind]}>
                     {t.term}
-                  </span>
+                  </Chip>
                 ))}
-                {glossary.data.length > 10 ? <span className="px-1 py-[3px] text-[13px] text-ink-3">and {glossary.data.length - 10} more</span> : null}
+                {glossary.data.length > 10 ? <span className="px-1 py-[3px] text-[12.5px] text-ink-3">and {glossary.data.length - 10} more</span> : null}
               </span>
             ) : (
               quiet("No terms yet. Product names, codenames, acronyms, customers.")
@@ -173,7 +169,7 @@ export default async function BrainOverviewPage() {
                 {templates.data.slice(0, 4).map((t) => (
                   <span key={t.id} className="flex min-w-0 items-center gap-2">
                     <span className="truncate font-medium text-ink">{t.name}</span>
-                    <span className="shrink-0 text-[13px] text-ink-3">{t.default_duration_minutes} min</span>
+                    <span className="shrink-0 text-[12.5px] text-ink-3">{t.default_duration_minutes} min</span>
                     {t.confidential ? <LockSimple size={13} className="shrink-0 text-ink-3" aria-label="Confidential" /> : null}
                   </span>
                 ))}
@@ -193,9 +189,9 @@ export default async function BrainOverviewPage() {
             ) : rules.data.never_record_topics.length ? (
               <span className="flex flex-wrap gap-1.5">
                 {rules.data.never_record_topics.slice(0, 8).map((t) => (
-                  <span key={t} className="rounded-full border border-dashed border-line-2 px-2.5 py-[2px] text-[13px] font-medium text-ink-2">
+                  <Chip key={t} tone="outline">
                     {t}
-                  </span>
+                  </Chip>
                 ))}
               </span>
             ) : (

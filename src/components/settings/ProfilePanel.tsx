@@ -11,18 +11,21 @@ import { refreshMyProfile, saveWorkingProfile } from "@/app/actions/profile";
 import { LIMITS, type FieldErrors, type ProfileField, type UserProfile } from "@/lib/api/profile-types";
 import { useOrgContext } from "@/lib/org-context";
 import { Avatar } from "@/components/ui/Avatar";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { CardFoot as FormFooter, SectionCard } from "@/components/ui/Card";
+import { Chip } from "@/components/ui/Chip";
+import { CharCount, FieldMsg, FieldRow as SettingsRow, inputClass, textareaClass } from "@/components/ui/Form";
 import { Input } from "@/components/ui/Input";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { notifyError, notifySuccess } from "@/lib/toast";
 import { ChipInput } from "./ChipInput";
-import { FormFooter, Note, SaveStatus, SectionCard, SettingsRow, focusPill, inputClass, textareaClass } from "./primitives";
 
 /* Profile: who you are, and the working profile that tunes what your PersonalListener captures.
    The name is your Clerk account's (saved there, then the cached profile is dropped); the role,
    what you work on, focus areas, listen for and ignore are `users` columns (ADR-0038 D1), read
    from `GET /users/me` and saved by `saveWorkingProfile`. The email comes from the sign-in, so it
    is shown read-only. When the profile cannot be loaded the card says so instead of showing
-   blank fields to save. */
+   blank fields to save. Every save answers with a toast in the button's verb, with Undo. */
 export function ProfilePanel({ profile }: { profile: UserProfile | null }) {
   const { user } = useOrgContext();
   const { user: clerkUser } = useUser();
@@ -30,24 +33,28 @@ export function ProfilePanel({ profile }: { profile: UserProfile | null }) {
 
   const [savedName, setSavedName] = useState(user.name);
   const [name, setName] = useState(user.name);
-  const [nameState, setNameState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saving, setSaving] = useState(false);
 
   const nameDirty = name.trim() !== savedName && name.trim() !== "";
 
-  const saveName = async () => {
+  const saveName = async (value: string, isUndo = false) => {
     if (!clerkUser) return;
-    const trimmed = name.trim();
+    const trimmed = value.trim();
+    const before = savedName;
     const [firstName, ...rest] = trimmed.split(/\s+/);
-    setNameState("saving");
+    setSaving(true);
     try {
       await clerkUser.update({ firstName, lastName: rest.join(" ") });
       await refreshMyProfile();
       setSavedName(trimmed);
       setName(trimmed);
-      setNameState("saved");
       router.refresh();
+      if (isUndo) notifySuccess("Name restored", { description: trimmed });
+      else notifySuccess("Name saved", { description: trimmed, undo: () => void saveName(before, true) });
     } catch {
-      setNameState("error");
+      notifyError("Name not saved. Try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -60,9 +67,7 @@ export function ProfilePanel({ profile }: { profile: UserProfile | null }) {
             <p className="truncate text-[17px] font-semibold text-ink">{name || user.name}</p>
             <p className="truncate text-[14px] text-ink-3">{user.email}</p>
           </div>
-          <Badge className="shrink-0 capitalize">
-            {user.role}
-          </Badge>
+          <Chip className="shrink-0 capitalize">{user.role}</Chip>
         </div>
         <SettingsRow label="Full name" htmlFor="name" help="Used in transcripts and when your agent speaks for you.">
           <Input
@@ -71,10 +76,7 @@ export function ProfilePanel({ profile }: { profile: UserProfile | null }) {
             autoComplete="name"
             value={name}
             className={inputClass}
-            onChange={(e) => {
-              setName(e.target.value);
-              setNameState("idle");
-            }}
+            onChange={(e) => setName(e.target.value)}
           />
         </SettingsRow>
         <SettingsRow label="Email" htmlFor="email" help="Comes from your sign-in, so it cannot be edited here.">
@@ -96,16 +98,9 @@ export function ProfilePanel({ profile }: { profile: UserProfile | null }) {
           </div>
         </SettingsRow>
         <FormFooter>
-          <Button
-            disabled={!nameDirty || nameState === "saving" || !clerkUser}
-            className={focusPill}
-            onClick={() => void saveName()}
-          >
-            {nameState === "saving" ? "Saving name" : "Save name"}
+          <Button disabled={!nameDirty || saving || !clerkUser} onClick={() => void saveName(name)}>
+            {saving ? "Saving name" : "Save name"}
           </Button>
-          <SaveStatus tone={nameState === "saved" ? "ok" : nameState === "error" ? "error" : undefined}>
-            {nameState === "saved" ? "Name saved." : nameState === "error" ? "Name not saved. Try again." : ""}
-          </SaveStatus>
         </FormFooter>
       </SectionCard>
 
@@ -124,18 +119,23 @@ function DoodleCard() {
   const router = useRouter();
   const current = isDoodleSeed(user.avatarSeed) ? user.avatarSeed : defaultDoodleSeed(user.email || user.id);
   const [seed, setSeed] = useState(current);
-  const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saving, setSaving] = useState(false);
 
-  const save = async () => {
+  const save = async (next: string, isUndo = false) => {
     if (!clerkUser) return;
-    setState("saving");
+    const before = current;
+    setSaving(true);
     try {
-      await saveDoodle(clerkUser, seed);
+      await saveDoodle(clerkUser, next);
       await refreshMyProfile();
       router.refresh();
-      setState("saved");
+      setSeed(next);
+      if (isUndo) notifySuccess("Doodle restored");
+      else notifySuccess("Doodle saved", { description: "Your teammates see it too.", undo: () => void save(before, true) });
     } catch {
-      setState("error");
+      notifyError("Doodle not saved. Try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -147,27 +147,13 @@ function DoodleCard() {
       <div className="px-4 py-5 sm:px-[22px]">
         <DoodlePicker
           value={seed}
-          onChange={(s) => {
-            setSeed(s);
-            setState("idle");
-          }}
+          onChange={setSeed}
         />
       </div>
       <FormFooter>
-        <Button
-          disabled={seed === current || state === "saving" || !isDoodleSeed(seed)}
-          className={focusPill}
-          onClick={() => void save()}
-        >
-          {state === "saving" ? "Saving doodle" : "Use this doodle"}
+        <Button disabled={seed === current || saving || !isDoodleSeed(seed)} onClick={() => void save(seed)}>
+          {saving ? "Saving doodle" : "Save doodle"}
         </Button>
-        <SaveStatus tone={state === "saved" ? "ok" : state === "error" ? "error" : undefined}>
-          {state === "saved"
-            ? "Now using this doodle. Your teammates see it too."
-            : state === "error"
-              ? "Doodle not used. Try again."
-              : ""}
-        </SaveStatus>
       </FormFooter>
     </SectionCard>
   );
@@ -190,8 +176,7 @@ const sameList = (a: string[], b: string[]) => a.length === b.length && a.every(
 function WorkingProfileCard({ profile }: { profile: UserProfile | null }) {
   const [saved, setSaved] = useState<Working | null>(profile ? fromProfile(profile) : null);
   const [form, setForm] = useState<Working | null>(saved);
-  const [state, setState] = useState<"idle" | "saving" | "saved">("idle");
-  const [message, setMessage] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<FieldErrors<ProfileField>>({});
 
   const card = {
@@ -203,9 +188,7 @@ function WorkingProfileCard({ profile }: { profile: UserProfile | null }) {
   if (!saved || !form) {
     return (
       <SectionCard {...card}>
-        <div className="px-4 py-4 sm:px-[22px]">
-          <Note tone="warning">What your agent knows about you could not be loaded just now. Reload the page to try again.</Note>
-        </div>
+        <ErrorState variant="inline" className="pt-4" title="What your agent knows about you could not be loaded" text="Nothing was lost. Try again in a moment." />
       </SectionCard>
     );
   }
@@ -219,37 +202,35 @@ function WorkingProfileCard({ profile }: { profile: UserProfile | null }) {
 
   const set = <K extends keyof Working>(key: K, value: Working[K]) => {
     setForm({ ...form, [key]: value });
-    setState("idle");
-    setMessage(null);
     if (errors[key] || (key === "listen_for" && errors.ignore_topics))
       setErrors((e) => ({ ...e, [key]: undefined, ...(key === "listen_for" ? { ignore_topics: undefined } : {}) }));
   };
 
-  const save = async () => {
-    setState("saving");
-    setMessage(null);
+  const save = async (values: Working, isUndo = false) => {
+    const before = saved;
+    setSaving(true);
     setErrors({});
-    const result = await saveWorkingProfile(form);
+    const result = await saveWorkingProfile(values);
+    setSaving(false);
     if (result.ok) {
       const next = fromProfile(result.profile);
       setSaved(next);
       setForm(next);
-      setState("saved");
+      if (isUndo) notifySuccess("Changes undone");
+      else
+        notifySuccess("Changes saved", {
+          description: "Your agent uses them from its next meeting.",
+          undo: () => void save(before, true),
+        });
       return;
     }
-    setState("idle");
     setErrors(result.fieldErrors ?? {});
-    setMessage(result.message);
+    notifyError(result.message);
     const first = (["role", "bio", "skills", "listen_for", "ignore_topics"] as const).find((f) => result.fieldErrors?.[f]);
     if (first) document.getElementById(`pf-${first}`)?.focus();
   };
 
-  const err = (f: ProfileField) =>
-    errors[f] ? (
-      <p id={`pf-${f}-err`} className="mt-1.5 text-[13.5px] leading-snug text-priority-high">
-        {errors[f]}
-      </p>
-    ) : null;
+  const err = (f: ProfileField) => (errors[f] ? <FieldMsg id={`pf-${f}-err`} error={errors[f]} /> : null);
   const described = (f: ProfileField) => (errors[f] ? `pf-${f}-err` : undefined);
 
   return (
@@ -285,11 +266,11 @@ function WorkingProfileCard({ profile }: { profile: UserProfile | null }) {
           className={`${textareaClass} resize-y ${errors.bio ? "!border-priority-high" : ""}`}
           onChange={(e) => set("bio", e.target.value)}
         />
-        <p
-          id="pf-bio-count"
-          className={`mt-1 text-right text-[13px] tabular-nums ${form.bio.trim().length > LIMITS.bio ? "text-priority-high" : "text-ink-3"}`}
-        >
-          {form.bio.trim().length} of {LIMITS.bio} characters
+        <p id="pf-bio-count" className="mt-1 text-right">
+          <span className="sr-only">
+            {form.bio.trim().length} of {LIMITS.bio} characters
+          </span>
+          <CharCount n={form.bio.trim().length} max={LIMITS.bio} />
         </p>
         {err("bio")}
       </SettingsRow>
@@ -331,25 +312,20 @@ function WorkingProfileCard({ profile }: { profile: UserProfile | null }) {
         {err("ignore_topics")}
       </SettingsRow>
       <FormFooter>
-        <Button disabled={!dirty || state === "saving"} className={focusPill} onClick={() => void save()}>
-          {state === "saving" ? "Saving changes" : "Save changes"}
+        <Button disabled={!dirty || saving} onClick={() => void save(form)}>
+          {saving ? "Saving changes" : "Save changes"}
         </Button>
-        {dirty && state !== "saving" ? (
+        {dirty && !saving ? (
           <Button
             variant="ghost"
-            className={focusPill}
             onClick={() => {
               setForm(saved);
               setErrors({});
-              setMessage(null);
             }}
           >
             Discard changes
           </Button>
         ) : null}
-        <SaveStatus tone={message ? "error" : state === "saved" ? "ok" : undefined}>
-          {message ?? (state === "saved" ? "Changes saved. Your agent uses them from its next meeting." : "")}
-        </SaveStatus>
       </FormFooter>
     </SectionCard>
   );

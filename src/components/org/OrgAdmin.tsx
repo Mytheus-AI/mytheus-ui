@@ -8,9 +8,11 @@ import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 import { createDepartment, createTeam, updateTeamMembers } from "@/app/actions/org";
-import { Note, focusPill, inputClass } from "@/components/settings/primitives";
+import { inputClass } from "@/components/ui/Form";
+import { Note } from "@/components/ui/Note";
+import { notifySuccess } from "@/lib/toast";
 
-/* Admin controls on the Org chart: new department, new team, edit a team's people. Rendered only
+/* Admin controls on People (the org chart): new department, new team, edit a team's people. Rendered only
    for workspace owners and admins; core-api enforces the same rule on every write. People come
    from the server already resolved (`listMembers()`: internal ids, Clerk names). */
 
@@ -53,13 +55,14 @@ export function NewDepartmentButton({ departments }: { departments: PickDepartme
     if (!res.ok) return setError(res.message);
     setOpen(false);
     router.refresh();
+    notifySuccess("Department created", { description: name.trim() });
   };
 
   return (
     <>
       <Button
         variant="outline"
-        className={focusPill}
+       
         onClick={() => {
           setName("");
           setParent(NONE);
@@ -96,10 +99,10 @@ export function NewDepartmentButton({ departments }: { departments: PickDepartme
           )}
           <ErrorLine message={error} />
           <ModalActions>
-            <Button variant="outline" type="button" className={focusPill} onClick={() => setOpen(false)} disabled={busy}>
+            <Button variant="outline" type="button" onClick={() => setOpen(false)} disabled={busy}>
               Cancel
             </Button>
-            <Button variant="primary" type="submit" className={focusPill} disabled={busy || !name.trim()}>
+            <Button variant="primary" type="submit" disabled={busy || !name.trim()}>
               {busy ? "Creating department" : "Create department"}
             </Button>
           </ModalActions>
@@ -151,7 +154,7 @@ function PeoplePicker({
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search people"
             aria-label="Search people"
-            className="min-w-0 flex-1 bg-transparent text-[15px] text-ink placeholder:text-ink-4 focus:outline-none focus-visible:outline-none"
+            className="min-w-0 flex-1 bg-transparent text-[15px] text-ink placeholder:text-ink-3"
           />
         </label>
       )}
@@ -166,7 +169,7 @@ function PeoplePicker({
                 role="checkbox"
                 aria-checked={on}
                 onClick={() => toggle(p.id)}
-                className="flex min-h-[52px] min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left transition-colors duration-150 hover:bg-surface-2 focus-visible:!rounded-none focus-visible:outline-offset-[-2px]"
+                className="flex min-h-[52px] min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-offset-[-2px]"
               >
                 <span
                   aria-hidden
@@ -175,8 +178,8 @@ function PeoplePicker({
                   {on && <Check size={11} weight="bold" />}
                 </span>
                 <span className="min-w-0">
-                  <span className="block truncate text-[14.5px] font-semibold text-ink">{p.name}</span>
-                  <span className="block truncate text-[13px] text-ink-3">{p.email}</span>
+                  <span className="block truncate text-[14px] font-semibold text-ink">{p.name}</span>
+                  <span className="block truncate text-[12.5px] text-ink-3">{p.email}</span>
                 </span>
               </button>
               {on && (
@@ -185,7 +188,7 @@ function PeoplePicker({
                   aria-pressed={isLead}
                   aria-label={isLead ? `${p.name} leads this team` : `Make ${p.name} the lead`}
                   onClick={() => onLead(isLead ? null : p.id)}
-                  className={`h-8 shrink-0 rounded-full px-3 text-[13px] font-semibold transition-colors duration-150 focus-visible:!rounded-full ${isLead ? "bg-signal-soft text-signal-ink" : "text-ink-3 ring-1 ring-inset ring-line-2 hover:bg-bg-2 hover:text-ink"}`}
+                  className={`h-8 shrink-0 rounded-full px-3 text-[12.5px] font-semibold transition-colors duration-150 ${isLead ? "bg-signal-soft text-signal-ink" : "text-ink-3 ring-1 ring-inset ring-line-2 hover:bg-bg-2 hover:text-ink"}`}
                 >
                   Lead
                 </button>
@@ -199,7 +202,7 @@ function PeoplePicker({
           </li>
         )}
       </ul>
-      <p className="text-[13.5px] text-ink-3" aria-live="polite">
+      <p className="text-[14px] text-ink-3" aria-live="polite">
         {selected.length === 0 ? "No one picked yet. You can add people later." : `${selected.length} picked${lead ? ", lead set" : ""}.`}
       </p>
     </div>
@@ -235,6 +238,7 @@ export function NewTeamButton({
     setBusy(false);
     if (!res.ok) return setError(res.message);
     router.refresh();
+    notifySuccess("Team created", { description: name.trim() });
     if (res.warning) return setError(res.warning);
     setOpen(false);
   };
@@ -243,7 +247,7 @@ export function NewTeamButton({
     <>
       <Button
         variant={variant}
-        className={focusPill}
+       
         onClick={() => {
           setName("");
           setDept(defaultDepartmentId ?? NONE);
@@ -290,10 +294,10 @@ export function NewTeamButton({
           </div>
           <ErrorLine message={error} />
           <ModalActions>
-            <Button variant="outline" type="button" className={focusPill} onClick={() => setOpen(false)} disabled={busy}>
+            <Button variant="outline" type="button" onClick={() => setOpen(false)} disabled={busy}>
               {error && !busy ? "Close" : "Cancel"}
             </Button>
-            <Button variant="primary" type="submit" className={focusPill} disabled={busy || !name.trim()}>
+            <Button variant="primary" type="submit" disabled={busy || !name.trim()}>
               {busy ? "Creating team" : "Create team"}
             </Button>
           </ModalActions>
@@ -326,6 +330,7 @@ export function EditTeamButton({
     router.refresh();
     if (!res.ok) return setError(res.message);
     setOpen(false);
+    notifySuccess("People saved", { description: team.name });
   };
 
   return (
@@ -340,7 +345,7 @@ export function EditTeamButton({
         }}
         aria-label={`Edit people on ${team.name}`}
         title={`Edit people on ${team.name}`}
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-ctl text-ink-3 transition-colors duration-150 hover:bg-bg-2 hover:text-ink focus-visible:!rounded-ctl"
+        className="grid h-10 w-10 shrink-0 place-items-center rounded-ctl text-ink-3 transition-colors duration-150 hover:bg-bg-2 hover:text-ink"
       >
         <PencilSimple size={16} aria-hidden />
       </button>
@@ -349,10 +354,10 @@ export function EditTeamButton({
           <PeoplePicker people={people} selected={selected} onSelected={setSelected} lead={lead} onLead={setLead} />
           <ErrorLine message={error} />
           <ModalActions>
-            <Button variant="outline" type="button" className={focusPill} onClick={() => setOpen(false)} disabled={busy}>
+            <Button variant="outline" type="button" onClick={() => setOpen(false)} disabled={busy}>
               Cancel
             </Button>
-            <Button variant="primary" type="submit" className={focusPill} disabled={busy}>
+            <Button variant="primary" type="submit" disabled={busy}>
               {busy ? "Saving people" : "Save people"}
             </Button>
           </ModalActions>

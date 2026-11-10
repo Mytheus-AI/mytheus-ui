@@ -17,7 +17,10 @@ import {
 } from "@/lib/api/profile-types";
 import { AgentPreviewCard } from "./AgentPreviewCard";
 import { PersonalityPicker } from "./PersonalityPicker";
-import { FormFooter, Note, SaveStatus, SectionCard, SettingsRow, cardPadX, focusPill, inputClass, textareaClass } from "./primitives";
+import { CardFoot as FormFooter, SectionCard, cardClass, cardPadX } from "@/components/ui/Card";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { FieldRow as SettingsRow, inputClass, textareaClass } from "@/components/ui/Form";
+import { notifyError, notifySuccess } from "@/lib/toast";
 
 /* Your agent (ADR-0038 D2): name, doodle face, personality and instructions, with the agent drawn
    live beside the form (above it below xl). Saved with `saveAgentPersona`; the agent fields are
@@ -50,16 +53,13 @@ export function AgentPanel({
 
   const [saved, setSaved] = useState(initial);
   const [form, setForm] = useState(initial);
-  const [state, setState] = useState<"idle" | "saving" | "saved">("idle");
-  const [message, setMessage] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<FieldErrors<PersonaField>>({});
 
   if (!profile || !saved || !form) {
     return (
       <SectionCard title="Your agent">
-        <div className={`${cardPadX} py-4`}>
-          <Note tone="warning">Your agent could not be loaded just now. Reload the page to try again.</Note>
-        </div>
+        <ErrorState variant="inline" className="pt-4" title="Your agent could not be loaded" text="Nothing was lost. Try again in a moment." />
       </SectionCard>
     );
   }
@@ -74,22 +74,21 @@ export function AgentPanel({
     const nextForm = { ...form, [key]: value };
     setForm(nextForm);
     onChange?.(nextForm);
-    setState("idle");
-    setMessage(null);
     const field = ({ name: "agent_name", seed: "agent_avatar_seed", personality: "agent_personality", instructions: "agent_instructions" } as const)[key];
     if (errors[field]) setErrors((e) => ({ ...e, [field]: undefined }));
   };
 
-  const save = async () => {
-    setState("saving");
-    setMessage(null);
+  const save = async (values: Persona, isUndo = false) => {
+    const before = saved;
+    setSaving(true);
     setErrors({});
     const result = await saveAgentPersona({
-      agent_name: form.name,
-      agent_avatar_seed: form.seed === defaultSeed ? "" : form.seed,
-      agent_personality: form.personality,
-      agent_instructions: form.instructions,
+      agent_name: values.name,
+      agent_avatar_seed: values.seed === defaultSeed ? "" : values.seed,
+      agent_personality: values.personality,
+      agent_instructions: values.instructions,
     });
+    setSaving(false);
     if (result.ok) {
       const p = result.profile;
       const next: Persona = {
@@ -101,12 +100,12 @@ export function AgentPanel({
       setSaved(next);
       setForm(next);
       onChange?.(next);
-      setState("saved");
+      if (isUndo) notifySuccess("Agent restored");
+      else notifySuccess("Agent saved", { description: "Your next notes use its new voice.", undo: () => void save(before, true) });
       return;
     }
-    setState("idle");
     setErrors(result.fieldErrors ?? {});
-    setMessage(result.message);
+    notifyError(result.message);
     if (result.fieldErrors?.agent_name) document.getElementById("ag-name")?.focus();
     else if (result.fieldErrors?.agent_instructions) document.getElementById("ag-instructions")?.focus();
   };
@@ -147,7 +146,7 @@ export function AgentPanel({
             onChange={(e) => set("name", e.target.value)}
           />
           {errors.agent_name ? (
-            <p id="ag-name-err" className="mt-1.5 text-[13.5px] text-priority-high">
+            <p id="ag-name-err" className="mt-1.5 text-[14px] text-priority-high">
               {errors.agent_name}
             </p>
           ) : null}
@@ -155,7 +154,7 @@ export function AgentPanel({
         <div className={`${cardPadX} py-4 md:py-[18px]`}>
           <DoodlePicker value={form.seed} onChange={(s) => set("seed", s)} label="Its face" />
           {errors.agent_avatar_seed ? (
-            <p className="mt-2 text-[13.5px] text-priority-high">{errors.agent_avatar_seed}</p>
+            <p className="mt-2 text-[14px] text-priority-high">{errors.agent_avatar_seed}</p>
           ) : null}
           {form.seed !== defaultSeed ? (
             <button
@@ -203,42 +202,37 @@ export function AgentPanel({
           />
           <p
             id="ag-instructions-count"
-            className={`mt-1 text-right text-[13px] tabular-nums ${
+            className={`mt-1 text-right text-[12.5px] tabular-nums ${
               instructionsLength > LIMITS.agentInstructions ? "text-priority-high" : "text-ink-3"
             }`}
           >
             {instructionsLength} of {LIMITS.agentInstructions} characters
           </p>
           {errors.agent_instructions ? (
-            <p id="ag-instructions-err" className="mt-1 text-[13.5px] text-priority-high">
+            <p id="ag-instructions-err" className="mt-1 text-[14px] text-priority-high">
               {errors.agent_instructions}
             </p>
           ) : null}
         </SettingsRow>
       </SectionCard>
 
-      <div className="overflow-hidden rounded-card border border-line shadow-warm-1 xl:col-start-1 xl:row-start-3">
-        <FormFooter>
-          <Button disabled={!dirty || state === "saving"} className={focusPill} onClick={() => void save()}>
-            {state === "saving" ? "Saving agent" : "Save agent"}
+      <div className={cardClass({ flush: true, className: "xl:col-start-1 xl:row-start-3" })}>
+        <FormFooter className="!border-t-0">
+          <Button disabled={!dirty || saving} onClick={() => void save(form)}>
+            {saving ? "Saving agent" : "Save agent"}
           </Button>
-          {dirty && state !== "saving" ? (
+          {dirty && !saving ? (
             <Button
               variant="ghost"
-              className={focusPill}
               onClick={() => {
                 setForm(saved);
                 onChange?.(saved);
                 setErrors({});
-                setMessage(null);
               }}
             >
               Discard changes
             </Button>
           ) : null}
-          <SaveStatus tone={message ? "error" : state === "saved" ? "ok" : undefined}>
-            {message ?? (state === "saved" ? "Agent saved. Your next notes use its new voice." : "")}
-          </SaveStatus>
         </FormFooter>
       </div>
     </div>
