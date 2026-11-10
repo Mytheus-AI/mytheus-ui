@@ -108,6 +108,15 @@ export interface BriefAction {
   latest_status: LatestStatus | null;
 }
 
+/** What the previous meeting's minutes left open, for the caller (minutes for everyone). */
+export interface BriefMinutes {
+  /** The shared minutes' open items, the caller's own (`mine`) first. */
+  open_items: { text: string; owner_user_id: string | null; owner_name: string | null; due: string | null; mine: boolean }[];
+  unanswered_questions: string[];
+  /** The caller's own promises from their personal minutes. Only they see these. */
+  my_promises: { text: string; to_name: string | null; due: string | null }[];
+}
+
 /** `GET /bff/meetings/{id}/brief` (B8). */
 export interface MeetingBrief {
   meeting: { id: string; title: string; scheduled_start: string | null };
@@ -116,6 +125,8 @@ export interface MeetingBrief {
   saved_questions: { id: string; question: string }[];
   proxies: { user_id: string; proxy_update: string | null }[];
   previous_meeting: { id: string; title: string } | null;
+  /** Null without minutes for the previous meeting (or an older backend). */
+  previous_minutes: BriefMinutes | null;
 }
 
 /** One step of the health trend along the follow-up chain (B8). */
