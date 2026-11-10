@@ -1,0 +1,162 @@
+/* Mytheus Capture: the popup and the microphone page. The same warm palette as the app
+   (docs/DESIGN-ONELINE.md), restated as tokens because the extension cannot load the app's CSS. */
+
+:root {
+  --bg: #f0eee6;
+  --surface: #ffffff;
+  --surface-2: #f7f5ef;
+  --ink: #1f1d1a;
+  --ink-2: #3d3a35;
+  --ink-3: #6b665d;
+  --line: #e4e0d4;
+  --line-2: #d4cfc1;
+  --signal: #d9583b;
+  --signal-soft: #fbe6df;
+  --pill: #1f1d1a;
+  --pill-2: #34312c;
+  --pill-on: #f7f5ef;
+  --high: #b42318;
+  --high-soft: #fdecea;
+  --ok: #2f6b3f;
+  --ok-soft: #e5f1e7;
+  --medium: #8a5a00;
+  --medium-soft: #fbf0d9;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161513;
+    --surface: #1f1d1a;
+    --surface-2: #272521;
+    --ink: #f3f0e8;
+    --ink-2: #ddd8cc;
+    --ink-3: #aaa496;
+    --line: #34312c;
+    --line-2: #46423b;
+    --signal: #f08a6c;
+    --signal-soft: #3b2219;
+    --pill: #f3f0e8;
+    --pill-2: #ffffff;
+    --pill-on: #1f1d1a;
+    --high: #ff8b80;
+    --high-soft: #3a1714;
+    --ok: #8fd19e;
+    --ok-soft: #17301d;
+    --medium: #f0c26a;
+    --medium-soft: #33270f;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.45 "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+body.page { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+
+.card { background: var(--surface); }
+.popup { width: 360px; min-height: 120px; }
+.page .card {
+  width: min(520px, 100%);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(31, 29, 26, 0.08);
+}
+
+.head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--surface-2);
+}
+.brand { font-weight: 700; font-size: 14px; }
+
+.body { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+
+h1 {
+  margin: 0;
+  font: 500 21px/1.2 Newsreader, Georgia, "Times New Roman", serif;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+p { margin: 0; }
+.lead { color: var(--ink-2); }
+.fine { color: var(--ink-3); font-size: 13.5px; }
+.label { font-size: 13px; font-weight: 600; color: var(--ink-3); }
+
+input[type="text"] {
+  height: 44px; width: 100%; padding: 0 12px;
+  border: 1px solid var(--line-2); border-radius: 12px;
+  background: var(--surface); color: var(--ink); font: inherit;
+}
+input[type="text"]:focus-visible { outline: 2px solid var(--signal); outline-offset: 1px; border-color: transparent; }
+
+.consent {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px; border-radius: 12px; background: var(--signal-soft); color: var(--ink);
+}
+.consent input { width: 18px; height: 18px; margin: 2px 0 0; flex: none; accent-color: var(--signal); }
+.consent label { font-weight: 600; font-size: 14px; }
+
+.row { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 12px; font-size: 14px; }
+.row.ok { flex-direction: row; justify-content: space-between; background: var(--ok-soft); color: var(--ok); font-weight: 600; }
+.row.ok .label { color: inherit; }
+.row.warn { background: var(--medium-soft); color: var(--ink); }
+
+/* :where() keeps the base at zero specificity so each variant below can set its own border. */
+:where(button, a.primary, a.secondary) {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 0 18px; border-radius: 12px;
+  font-family: inherit; font-size: 15px; font-weight: 600; line-height: 1;
+  text-decoration: none; cursor: pointer;
+  border: 1px solid transparent;
+  transition: background-color 150ms ease-out, box-shadow 150ms ease-out;
+}
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+
+.primary { background: var(--pill); color: var(--pill-on); border-color: var(--pill); }
+.primary:hover:not(:disabled) { background: var(--pill-2); }
+.secondary { background: var(--surface); color: var(--ink); border-color: var(--line-2); }
+.secondary:hover { background: var(--surface-2); }
+.danger { background: var(--high); color: #ffffff; border-color: var(--high); }
+@media (prefers-color-scheme: dark) { .danger { color: #1f1d1a; } }
+.row .secondary { min-height: 40px; align-self: flex-start; }
+
+button.link {
+  min-height: 0; padding: 0; border: 0; background: none;
+  color: var(--ink); text-decoration: underline; text-underline-offset: 3px; font-weight: 600; font-size: inherit;
+}
+
+.error { color: var(--high); background: var(--high-soft); padding: 10px 12px; border-radius: 12px; font-size: 14px; }
+
+.live { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--high); font-size: 14px; }
+.live .time { margin-left: auto; color: var(--ink-3); font-weight: 600; font-variant-numeric: tabular-nums; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--high); }
+@media (prefers-reduced-motion: no-preference) {
+  .dot { animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.35; } }
+}
+
+.channels { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.channel { display: flex; justify-content: space-between; padding: 10px 12px; font-size: 14px; border-top: 1px solid var(--line); }
+.channel:first-child { border-top: 0; }
+.channel .status { font-weight: 600; color: var(--ink-3); }
+.channel.is-live .status { color: var(--ok); }
+.channel.is-retrying .status, .channel.is-connecting .status { color: var(--medium); }
+.channel.is-failed .status { color: var(--high); }
+
+.foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 16px; border-top: 1px solid var(--line); background: var(--surface-2);
+  font-size: 13px; color: var(--ink-3);
+}
+.who { display: flex; flex-direction: column; min-width: 0; overflow-wrap: anywhere; }
+.org { font-weight: 600; color: var(--ink-2); }
