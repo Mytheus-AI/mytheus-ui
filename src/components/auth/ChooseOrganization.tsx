@@ -136,8 +136,23 @@ export function ChooseOrganization() {
         title: "Every team needs one shared memory.",
         lead: "A workspace is where a decision made in one meeting becomes context in the next, for everyone in it.",
       }}
-      art="workspace"
-      artLabel={path === "create" ? name : undefined}
+      scene={{
+        you: youSeed,
+        label: path === "create" ? name.trim() || "your team" : undefined,
+        lines:
+          path === "create"
+            ? [
+                { text: "New table, who's in?" },
+                { text: "Invite the team later." },
+                { text: "Start the workspace.", decision: true },
+              ]
+            : [
+                { text: "Got an invite?" },
+                { text: "Your admin can send one." },
+                { text: "Pull up a chair with us.", decision: true },
+              ],
+        note: path === "create" ? "Workspace created" : "New teammate joined",
+      }}
       aside={
         user ? (
           <span className="inline-flex items-center justify-end gap-x-3">

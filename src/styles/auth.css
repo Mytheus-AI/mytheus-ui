@@ -1,9 +1,9 @@
 /* ================================================================== */
 /*  Auth pages (sign-in, sign-up, workspace onboarding, SSO callback). */
 /*  Scoped to `.mx-auth`. Type is the app pair (Hanken Grotesk for the */
-/*  interface, Newsreader for titles). The only drawing is the coral   */
-/*  line on the brand panel: a memory line with beads that draws once  */
-/*  on arrival. Everything else is quiet and still.                    */
+/*  interface, Newsreader for titles). The brand panel holds a doodle  */
+/*  meeting whose table top is the coral line, drawn once on arrival;  */
+/*  the people take turns talking. Everything else is quiet and still. */
 /* ================================================================== */
 
 .mx-auth {
@@ -15,52 +15,30 @@
   background-image: var(--wash-glow), var(--wash);
 }
 
-/* ---------------- the memory line ---------------- */
+/* ---------------- the doodle meeting (AuthRoom) ---------------- */
 
-.auth-art .art-line {
-  fill: none;
-  stroke: var(--signal-line);
-  stroke-width: 2.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+/* whoever is talking leans in a little, and their ring turns coral */
+.auth-room .room-face {
+  transition:
+    transform 250ms var(--ease-out),
+    box-shadow 250ms var(--ease-out);
 }
-/* a meeting that happened: hollow bead on the line */
-.auth-art .art-bead {
-  fill: var(--surface-2);
-  stroke: var(--signal-line);
-  stroke-width: 2.4;
+.auth-room .room-face.is-talking {
+  transform: translateY(-4%) scale(1.05);
 }
-/* where you are now: a solid bead with a soft halo */
-.auth-art .art-bead-now {
-  fill: var(--signal);
-  stroke: var(--signal-soft);
-  stroke-width: 8;
-  paint-order: stroke;
+/* a speech bubble rises out of the speaker */
+.auth-room .room-bubble {
+  animation: roomBubble 250ms var(--ease-out) var(--dl, 0s) both;
 }
-/* a meeting that has not happened yet */
-.auth-art .art-bead-ghost {
-  fill: var(--surface);
-  stroke: var(--line-2);
-  stroke-width: 2;
-}
-.auth-art .art-title {
-  font-family: var(--font-display);
-  font-size: 21px;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  fill: var(--ink);
-}
-.auth-art .art-note {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-size: 17px;
-  fill: var(--ink-3);
-}
-.auth-art .art-strong {
-  font-family: var(--font-sans);
-  font-size: 16px;
-  font-weight: 600;
-  fill: var(--ink);
+@keyframes roomBubble {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
 }
 
 /* Draws once on arrival. `--du` / `--dl` set duration and delay per stroke or bead. */
@@ -86,20 +64,18 @@
 
 /* ---------------- the SSO callback loader ---------------- */
 
-/* The mark draws, holds, and draws again while Clerk finishes the handshake. */
-.auth-logo-loop .logo-path {
-  animation: authLogoLoop 2.6s var(--ease-draw) infinite;
+/* The magnifying glass sweeps back and forth over the doodle being checked. */
+.auth-glass {
+  transform-origin: 30% 30%;
+  animation: authGlass 2.6s ease-in-out infinite;
 }
-@keyframes authLogoLoop {
-  0% {
-    stroke-dashoffset: 1;
-  }
-  55%,
-  80% {
-    stroke-dashoffset: 0;
-  }
+@keyframes authGlass {
+  0%,
   100% {
-    stroke-dashoffset: -1;
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(-46px, 34px) rotate(-12deg);
   }
 }
 
@@ -118,9 +94,12 @@
     animation: none;
     opacity: 1;
   }
-  .auth-logo-loop .logo-path {
-    animation: none !important;
-    stroke-dashoffset: 0;
+  .auth-glass,
+  .auth-room .room-bubble {
+    animation: none;
+  }
+  .auth-room .room-face {
+    transition: none;
   }
   .mx-auth .auth-caret {
     animation: none;

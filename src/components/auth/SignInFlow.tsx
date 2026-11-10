@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth, useClerk, useSignIn } from "@clerk/nextjs";
 import { LinkButton } from "@/components/ui/Button";
 import { AuthShell, type StageCopy } from "./AuthShell";
+import type { SceneProps } from "./AuthRoom";
 import {
   BackLink,
   CodeInput,
@@ -34,7 +35,7 @@ import { SsoCallback } from "./SsoCallback";
 
 type Step = "start" | "factor-one" | "factor-two" | "forgot-password" | "sso-callback" | "task";
 
-/* The brand panel's headline on each step. The drawing (the memory line) stays the same. */
+/* The brand panel's headline on each step. */
 const STAGE: Record<Exclude<Step, "sso-callback" | "task">, StageCopy> = {
   start: {
     title: "Pick up where the room left off.",
@@ -51,6 +52,35 @@ const STAGE: Record<Exclude<Step, "sso-callback" | "task">, StageCopy> = {
   "forgot-password": {
     title: "A new password. The same memory.",
     lead: "Resetting your password changes how you get in. Nothing your agent remembers is touched.",
+  },
+};
+
+/* What the doodle meeting on the brand panel talks about on each step. */
+const SCENES: Record<Exclude<Step, "sso-callback" | "task">, SceneProps> = {
+  start: {},
+  "factor-one": {
+    lines: [
+      { text: "Forgot the password again?" },
+      { text: "A code's on its way." },
+      { text: "One code, one use. Done.", decision: true },
+    ],
+    note: "Code sent, expires soon",
+  },
+  "factor-two": {
+    lines: [
+      { text: "Second key, please." },
+      { text: "Authenticator open?" },
+      { text: "Both keys check out.", decision: true },
+    ],
+    note: "Two-step verified",
+  },
+  "forgot-password": {
+    lines: [
+      { text: "New password, same memories?" },
+      { text: "Nothing gets lost." },
+      { text: "Reset it by email.", decision: true },
+    ],
+    note: "Password reset, history kept",
   },
 };
 
@@ -104,11 +134,12 @@ export function SignInFlow({ segments }: { segments: string[] }) {
   const qs = params.toString() ? `?${params.toString()}` : "";
   const go = (path: string) => router.push(`${path}${qs}`);
   const stage = STAGE[step === "task" ? "start" : step];
+  const scene = SCENES[step === "task" ? "start" : step];
 
   return (
     <AuthShell
       stage={stage}
-      art="sign-in"
+      scene={scene}
       aside={
         <span className="inline-flex items-center gap-3">
           <span className="hidden whitespace-nowrap md:inline">New to Mytheus?</span>

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "r
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth, useClerk, useSignUp } from "@clerk/nextjs";
 import { AuthShell, type StageCopy } from "./AuthShell";
+import type { SceneProps } from "./AuthRoom";
 import { LinkButton } from "@/components/ui/Button";
 import { DoodlePicker } from "@/components/ui/DoodlePicker";
 import { isDoodleSeed, randomDoodleSeed } from "@/lib/doodle";
@@ -52,6 +53,36 @@ const STAGE: Record<Exclude<Step, "sso-callback">, StageCopy> = {
   },
 };
 
+/* What the doodle meeting on the brand panel talks about; the visitor's own doodle takes the
+   open seat at the table as soon as it is dealt. */
+const SCENE: Record<Exclude<Step, "sso-callback">, Pick<SceneProps, "lines" | "note">> = {
+  start: {
+    lines: [
+      { text: "Who's joining us today?" },
+      { text: "Saved them a seat." },
+      { text: "Let's welcome the new teammate.", decision: true },
+      { text: "Their agent's already listening." },
+    ],
+    note: "New teammate welcomed",
+  },
+  verify: {
+    lines: [
+      { text: "Did the code arrive?" },
+      { text: "Check the inbox, then spam." },
+      { text: "Email checked. Come on in.", decision: true },
+    ],
+    note: "Email checked",
+  },
+  continue: {
+    lines: [
+      { text: "Almost there." },
+      { text: "Just a couple of details." },
+      { text: "Then you're in.", decision: true },
+    ],
+    note: "Details added, seat taken",
+  },
+};
+
 export function SignUpFlow({ segments }: { segments: string[] }) {
   const first = segments[0];
   const step: Step =
@@ -92,7 +123,7 @@ export function SignUpFlow({ segments }: { segments: string[] }) {
   return (
     <AuthShell
       stage={STAGE[step]}
-      art="sign-up"
+      scene={{ ...SCENE[step], you: isDoodleSeed(doodle) ? doodle : "empty" }}
       aside={
         <span className="inline-flex items-center gap-3">
           <span className="hidden whitespace-nowrap md:inline">Have an account?</span>

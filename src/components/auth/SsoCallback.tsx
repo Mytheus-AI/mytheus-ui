@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AuthenticateWithRedirectCallback } from "@clerk/nextjs";
-import { LogoMark } from "@/components/Logo";
+import { Doodle } from "@/components/ui/Doodle";
 import { Wordmark } from "@/components/site/Wordmark";
 import { authFontClass } from "@/lib/fonts";
 import { AFTER_AUTH_URL } from "./clerk-helpers";
@@ -12,9 +12,9 @@ import "@/styles/auth.css";
 /* ================================================================== */
 /*  The page Google sends you back to. Clerk finishes the OAuth        */
 /*  handshake here and, when bot protection decides to, runs its       */
-/*  human check in `#clerk-captcha`. A calm centred loader: the mark   */
-/*  drawing itself, one line of status, and the challenge on a card    */
-/*  under it when Clerk shows one.                                     */
+/*  human check in `#clerk-captcha`. A calm centred loader: a doodle   */
+/*  being looked over with a magnifying glass, one line of status,     */
+/*  and the challenge on a card under it when Clerk shows one.         */
 /* ================================================================== */
 
 const STEPS = ["Confirming with Google", "Checking it's you", "Opening your workspace"];
@@ -43,8 +43,16 @@ export function SsoCallback() {
       </header>
 
       <main className="flex flex-1 flex-col items-center justify-center px-4 pb-20 text-center">
-        <div className="auth-logo-loop mb-8" aria-hidden>
-          <LogoMark size={52} />
+        {/* a doodle under inspection: its strokes draw in while the glass sweeps over it */}
+        <div className="relative mb-10 h-36 w-36" aria-hidden>
+          <span className="block h-full w-full overflow-hidden rounded-full bg-surface shadow-warm-3 ring-[3px] ring-surface">
+            <Doodle seed="human-check" draw className="block h-full w-full" />
+          </span>
+          <svg viewBox="0 0 120 120" className="auth-glass absolute -right-12 -top-8 h-28 w-28 overflow-visible">
+            <circle cx="48" cy="48" r="30" fill="var(--surface)" fillOpacity={0.3} stroke="var(--pill)" strokeWidth={5} />
+            <path d="M33 39 Q 39 29, 51 30" fill="none" stroke="var(--surface)" strokeWidth={4} strokeLinecap="round" />
+            <path d="M70 70 L 100 100" stroke="var(--signal)" strokeWidth={10} strokeLinecap="round" />
+          </svg>
         </div>
 
         <h1 className="display text-[clamp(1.875rem,4vw,2.5rem)]">Signing you in</h1>
