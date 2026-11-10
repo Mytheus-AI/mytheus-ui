@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { DownloadSimple, Trash } from "@phosphor-icons/react/ssr";
-import { Button, buttonClass } from "@/components/ui/Button";
+import { DownloadSimple } from "@phosphor-icons/react/ssr";
+import { buttonClass } from "@/components/ui/Button";
 import { SectionCard } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -15,7 +15,11 @@ import { theadRowClass, thClass } from "@/components/admin/StatCard";
 import { ActionForm } from "@/components/admin/ActionForm";
 import { FormSubmit } from "@/components/admin/FormSubmit";
 import { startDataExport } from "@/app/actions/tenant-admin";
-import { loadExportRequests } from "@/lib/api/admin-tenant";
+import { loadErasures, loadExportRequests } from "@/lib/api/admin-tenant";
+import { listMembers } from "@/lib/api/members";
+import { listMeetings } from "@/lib/api/meetings";
+import { ErasureFlow, type ErasableMeeting } from "@/components/tenant/ErasureFlow";
+import { erasureSummary } from "@/lib/erasure";
 import { safeHttpsUrl } from "@/lib/integrations";
 
 export const metadata: Metadata = { title: "Data and privacy | Mytheus" };
@@ -30,13 +34,32 @@ export const dynamic = "force-dynamic";
    `admin-events` and audited; it stays "Pending" until the export workflow writes the archive to
    `mytheus-exports`, and then the download link appears here. The link is only shown when it is an
    https URL.
-   - Erasing one person's data, which has no console route yet, so its button stays off. */
+   - Erasing one person's or one meeting's data over `/admin/tenant/erasures`: a dialog picks the
+     target, says what goes and what stays, and only turns Erase on once the admin types the
+     person's email or the meeting's title (the server checks it again). Completed erasures are
+     listed from the audit log. */
 
 const dateTime = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+const shortDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
 const fmt = (iso: string) => (Number.isNaN(Date.parse(iso)) ? "" : dateTime.format(new Date(iso)));
 
 export default async function DataExportPage() {
-  const [res, settings] = await Promise.all([loadExportRequests(), loadTenantSettings()]);
+  const [res, settings, erasures, members, meetings] = await Promise.all([
+    loadExportRequests(),
+    loadTenantSettings(),
+    loadErasures(),
+    listMembers(),
+    listMeetings().catch(() => null),
+  ]);
+  const memberOptions = members?.map((m) => ({ id: m.id, name: m.name, email: m.email, imageUrl: m.imageUrl, isYou: m.isYou })) ?? null;
+  const meetingOptions: ErasableMeeting[] | null =
+    meetings?.map((m) => ({
+      id: m.id,
+      title: m.title ?? null,
+      when: m.scheduled_start ? shortDate.format(new Date(m.scheduled_start)) : m.created_at ? shortDate.format(new Date(m.created_at)) : null,
+      live: m.status === "live",
+    })) ?? null;
+  const erasureRows = erasures.kind === "live" ? erasures.data : [];
   const rows = res.kind === "live" ? [...res.data].sort((a, b) => Date.parse(b.requested_at) - Date.parse(a.requested_at)) : [];
   const pending = rows.some((r) => r.status === "pending");
 
@@ -140,21 +163,59 @@ export default async function DataExportPage() {
       <SectionCard
         tone="danger"
         headingId="erasure-heading"
-        title="Erase a person's data"
-        description="Requests that act on everything the workspace holds about one person. Each one is logged to the audit trail."
+        title="Erase data"
+        description="Erase everything the workspace holds about one person, or everything said in one meeting. Each request is written to the audit log."
       >
         <InlineRow
-          label="Erase a person's data"
-          help="Removes one person's transcripts, notes and agent memory from every store, then confirms when it is done. This cannot be undone."
+          label="Erase a person's or a meeting's data"
+          help="Confirmed decisions and tasks stay as the workspace's record, with the person's name removed. This cannot be undone."
         >
-          <Button variant="danger-outline" size="sm" disabled>
-            <Trash size={16} aria-hidden />
-            Start erasure
-          </Button>
+          {erasures.kind === "forbidden" ? (
+            <Chip tone="outline">Owners and admins only</Chip>
+          ) : (
+            <ErasureFlow members={memberOptions} meetings={meetingOptions} />
+          )}
         </InlineRow>
-        <div className="px-4 py-4 sm:px-[22px]">
-          <Note>Erasing one person&apos;s data is not available from this console yet, so that button stays off rather than pretend to work.</Note>
-        </div>
+        {erasures.kind === "unavailable" ? (
+          <div className="px-4 py-4 sm:px-[22px]">
+            <ErrorState variant="inline" title="Past erasures could not be loaded" text="Starting a new one still works. The list returns when it can be read." />
+          </div>
+        ) : erasures.kind === "live" ? (
+          erasureRows.length === 0 ? (
+            <EmptyState inCard compact art="done" title="No erasures yet" description="Completed erasures are listed here, newest first, with what was removed." />
+          ) : (
+            <div>
+              <table className="mx-table w-full border-collapse text-left text-[14px]">
+                <caption className="sr-only">Completed erasures</caption>
+                <thead>
+                  <tr className={theadRowClass}>
+                    <th scope="col" className={`${thClass} !pl-[22px]`}>Erased</th>
+                    <th scope="col" className={thClass}>What</th>
+                    <th scope="col" className={`${thClass} !pr-[22px]`}>Removed</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {erasureRows.map((r) => (
+                    <tr key={r.id}>
+                      <td data-label="Erased" className="whitespace-nowrap py-3 pl-[22px] pr-5 tabular-nums text-ink-2">
+                        {fmt(r.requested_at)}
+                      </td>
+                      <td data-label="What" className="px-5 py-3">
+                        <span className="flex flex-wrap items-center gap-2">
+                          <Chip tone="outline">{r.kind === "person" ? "Person" : "Meeting"}</Chip>
+                          <span className="min-w-0 break-words text-ink">{r.label ?? (r.kind === "person" ? "A former member" : "A meeting")}</span>
+                        </span>
+                      </td>
+                      <td data-label="Removed" className="py-3 pl-5 pr-[22px] text-ink-3">
+                        {erasureSummary(r)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        ) : null}
       </SectionCard>
     </div>
   );
