@@ -132,10 +132,15 @@ function relatedOf(raw: unknown): AlertRelated[] {
   return out;
 }
 
-/** Only a same-origin relative path survives; anything else could leave the app. */
-function safeLink(raw: unknown): string | null {
-  if (typeof raw !== "string" || !raw.startsWith("/") || raw.startsWith("//") || /[\\\s<>"]/.test(raw)) return null;
-  return raw;
+const U = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+/** The only shapes an alert's own link may take: a meeting (optionally one of its decisions), a
+ *  decision, or My Tasks. */
+const LINK_ALLOWLIST = new RegExp(`^(?:/meetings/${U}(?:/decisions/${U})?|/decisions/${U}|/tasks)$`, "i");
+
+/** An allowlisted app path, or null: anything else (another path, a host, a scheme) renders no
+ *  link at all. */
+export function safeLink(raw: unknown): string | null {
+  return typeof raw === "string" && LINK_ALLOWLIST.test(raw) ? raw : null;
 }
 
 type Incoming = Omit<Alert, "seq">;
@@ -198,8 +203,15 @@ function upsert(state: AlertsState, incoming: Incoming[]): AlertsState {
   return byId === state.byId ? state : { ...state, byId, nextSeq };
 }
 
-export function applyLiveAlert(state: AlertsState, p: AlertEventPayload): AlertsState {
+/**
+ * Folds one live "agent-alert" in. With `roomMeetingId`, an alert about any other meeting is
+ * ignored: the room's re-hydrate is meeting-scoped, so showing it here would lose it on reload
+ * (the gateway already delivers an alert only into its own meeting's room; this holds the line
+ * on the client too). It stays in notification-service for the notifications list.
+ */
+export function applyLiveAlert(state: AlertsState, p: AlertEventPayload, roomMeetingId?: string): AlertsState {
   if (!p || typeof p !== "object") return state;
+  if (roomMeetingId !== undefined && p.meetingId !== roomMeetingId) return state;
   const alert = normalise({
     id: p.id,
     meetingId: p.meetingId,
@@ -328,12 +340,13 @@ export function relatedLink(r: AlertRelated, alert: Pick<Alert, "meetingId" | "s
 }
 
 /**
- * The alert's own "Open" link. The contract's `/decisions/{id}` has no page in this app (lineage
- * lives under the meeting), so it is mapped to the lineage page when the id is the subject
- * decision, and to the Decisions list otherwise. Other relative paths pass through.
+ * The alert's own "Open" link, only ever an allowlisted path (`safeLink`). The contract's
+ * `/decisions/{id}` has no page in this app (lineage lives under the meeting), so it is mapped to
+ * the lineage page when the id is the subject decision, and to the Decisions list otherwise.
+ * `/meetings/{id}`, `/meetings/{id}/decisions/{id}` and `/tasks` pass through.
  */
 export function alertHref(alert: Pick<Alert, "link" | "meetingId" | "subject">): string | null {
-  const link = alert.link;
+  const link = safeLink(alert.link);
   if (!link) return null;
   const m = /^\/decisions\/([0-9a-f-]{36})\/?$/i.exec(link);
   if (!m) return link;

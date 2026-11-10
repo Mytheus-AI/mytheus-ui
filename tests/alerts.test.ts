@@ -14,6 +14,7 @@ import {
   markAlertRead,
   orderedAlerts,
   relatedLink,
+  safeLink,
 } from "../src/lib/realtime/alerts.ts";
 
 const A1 = "11111111-1111-5111-8111-111111111111";
@@ -144,7 +145,20 @@ test("malformed alerts and plain notifications are ignored", () => {
 });
 
 test("unsafe links never reach an href", () => {
-  for (const link of ["https://evil.example", "//evil.example", "javascript:alert(1)", "/x\" onmouseover=\"y"]) {
+  for (const link of [
+    "https://evil.example",
+    "//evil.example",
+    "javascript:alert(1)",
+    "/x\" onmouseover=\"y",
+    // relative, but not on the allowlist
+    "/settings/billing",
+    "/admin/ops",
+    `/meetings/${M1}/transcript`,
+    `/meetings/not-a-uuid`,
+    `/decisions/${D1}?next=//evil.example`,
+    `/tasks/../admin`,
+    `/meetings/${M1}/decisions/${D1}/edit`,
+  ]) {
     const s = applyLiveAlert(emptyAlertsState, live(A1, 2, "2026-11-10T10:00:00Z", { link }));
     assert.equal(orderedAlerts(s)[0].link, null);
   }
@@ -179,4 +193,27 @@ test("the alert's own link maps /decisions/{id} onto the lineage page", () => {
   assert.equal(alertHref({ link: `/decisions/${D0}`, meetingId: M1, subject }), "/decisions");
   assert.equal(alertHref({ link: `/meetings/${M0}`, meetingId: M1, subject }), `/meetings/${M0}`);
   assert.equal(alertHref({ link: null, meetingId: M1, subject }), null);
+});
+
+test("the link allowlist: a meeting, one of its decisions, a decision, or My Tasks, nothing else", () => {
+  assert.equal(safeLink(`/meetings/${M1}`), `/meetings/${M1}`);
+  assert.equal(safeLink(`/meetings/${M1}/decisions/${D1}`), `/meetings/${M1}/decisions/${D1}`);
+  assert.equal(safeLink(`/decisions/${D1}`), `/decisions/${D1}`);
+  assert.equal(safeLink("/tasks"), "/tasks");
+  for (const bad of ["/", "/tasks/", "/decisions", "/people/" + U1, "/meetings", null, 7, undefined]) {
+    assert.equal(safeLink(bad), null, String(bad));
+  }
+  const s = applyLiveAlert(emptyAlertsState, live(A1, 2, "2026-11-10T10:00:00Z", { link: "/settings/billing" }));
+  assert.equal(alertHref(orderedAlerts(s)[0]), null);
+  // a re-hydrated row is held to the same allowlist
+  const h = hydrateAlerts(emptyAlertsState, { items: [row(A2, 2, "unread", { link: "/admin/ops" })] });
+  assert.equal(orderedAlerts(h)[0].link, null);
+});
+
+test("in a room, an alert about another meeting is not shown (re-hydrate there is meeting-scoped)", () => {
+  let s = applyLiveAlert(emptyAlertsState, live(A1, 1, "2026-11-10T10:00:00Z", { meetingId: M0 }), M1);
+  s = applyLiveAlert(s, live(A2, 2, "2026-11-10T10:00:01Z", { meetingId: null }), M1);
+  assert.equal(orderedAlerts(s).length, 0);
+  s = applyLiveAlert(s, live(A3, 2, "2026-11-10T10:00:02Z"), M1);
+  assert.deepEqual(orderedAlerts(s).map((a) => a.id), [A3]);
 });

@@ -323,11 +323,12 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
     });
 
     // Private to the recipient, drained from their priority queue most urgent first (P11
-    // contract section 4). The outer meetingId is the room it was delivered in; an alert queued
-    // while the user was elsewhere can be about another meeting, which its links say.
+    // contract section 4). Only an alert about THIS meeting is shown: the re-hydrate above is
+    // meeting-scoped, so an alert about another meeting would vanish on reload. The gateway only
+    // delivers an alert into its own meeting's room; the reducer checks it again.
     socket.on("agent-alert", (event: { meetingId: string; payload: AlertEventPayload }) => {
       if (cancelled || event?.meetingId !== meetingId || !event.payload) return;
-      setAlerts((prev) => applyLiveAlert(prev, event.payload));
+      setAlerts((prev) => applyLiveAlert(prev, event.payload, meetingId));
     });
 
     socket.on("presence", (members: string[]) => {

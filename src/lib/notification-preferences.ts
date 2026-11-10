@@ -24,10 +24,11 @@ export interface PreferencesView {
   emailMode: EmailMode;
 }
 
-/** The server's defaults (contract section 3): in-app 3, email and Slack 1. */
+/** The server's defaults (contract section 3): in-app on at 3; email opt-in (off) and Slack off,
+ *  both at 1 (urgent only) once turned on. */
 export const DEFAULT_PREFERENCES: ChannelPreference[] = [
   { channel: "in_app", enabled: true, max_priority: 3 },
-  { channel: "email", enabled: true, max_priority: 1 },
+  { channel: "email", enabled: false, max_priority: 1 },
   { channel: "slack", enabled: false, max_priority: 1 },
 ];
 

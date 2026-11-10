@@ -6,7 +6,8 @@ import { DEFAULT_PREFERENCES, fromView, mergePreferences, toView } from "../src/
 
 test("missing rows fall back to the server defaults", () => {
   assert.deepEqual(mergePreferences(undefined), DEFAULT_PREFERENCES);
-  assert.deepEqual(toView(mergePreferences([])), { emailEnabled: true, emailMode: "urgent" });
+  // email is opt-in: off until the user turns it on, urgent only when they do
+  assert.deepEqual(toView(mergePreferences([])), { emailEnabled: false, emailMode: "urgent" });
 });
 
 test("in-app is always on, whatever the server or a stale row says", () => {
