@@ -757,6 +757,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/meetings/{meeting_id}/off-record": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Off Record
+         * @description Whether the meeting is off the record now, and every off-the-record stretch so far
+         *     (participants only). The transcript, the minutes and the room read it.
+         */
+        get: operations["get_off_record"];
+        put?: never;
+        /**
+         * Start Off Record
+         * @description Take the meeting off the record (the host or the creator). Pauses every agent and all
+         *     transcript persistence, captions included, until it is ended. Idempotent: while a segment
+         *     runs, this answers it unchanged.
+         */
+        post: operations["start_off_record"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meetings/{meeting_id}/off-record/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End Off Record
+         * @description Back on the record (the host or the creator): transcription and the agents resume.
+         *     Idempotent: with nothing running, this answers the state unchanged.
+         */
+        post: operations["end_off_record"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/meetings/{meeting_id}/participants": {
         parameters: {
             query?: never;
@@ -3280,6 +3328,90 @@ export interface components {
         MyTaskList: {
             /** Items */
             items: components["schemas"]["MyTask"][];
+        };
+        /**
+         * OffRecordSegment
+         * @description One stretch of the meeting that was (or is) off the record.
+         */
+        OffRecordSegment: {
+            /**
+             * Duration Ms
+             * @description Length of a finished segment; null while it runs.
+             */
+            duration_ms?: number | null;
+            /** End Ms */
+            end_ms?: number | null;
+            /**
+             * Ended At
+             * @description Null while it runs.
+             */
+            ended_at?: string | null;
+            /**
+             * Ended By
+             * @description Null while it runs, or when the meeting ending closed it.
+             */
+            ended_by?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Requested By
+             * @description Who asked for it, when the host granted a request.
+             */
+            requested_by?: string | null;
+            /**
+             * Start Ms
+             * @description Where it began on the meeting's clock (the transcript's time origin), or null when the room clock is unknown.
+             */
+            start_ms?: number | null;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Started By */
+            started_by: string | null;
+        };
+        /** OffRecordStart */
+        OffRecordStart: {
+            /**
+             * Requested By
+             * @description The participant whose request the host is granting, if any. Must be a participant of the meeting.
+             */
+            requested_by?: string | null;
+        };
+        /**
+         * OffRecordState
+         * @description Whether the meeting is off the record now, and every off-the-record stretch so far.
+         */
+        OffRecordState: {
+            /** Active */
+            active: boolean;
+            /**
+             * Can Toggle
+             * @description Whether the caller (the host or the creator) may start and end it.
+             */
+            can_toggle: boolean;
+            /** @description The running segment, when active. */
+            current?: components["schemas"]["OffRecordSegment"] | null;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /**
+             * Segments
+             * @description Every segment in time order, the running one last.
+             */
+            segments?: components["schemas"]["OffRecordSegment"][];
+            /**
+             * Total Ms
+             * @description Total length of the finished segments.
+             * @default 0
+             */
+            total_ms: number;
         };
         /**
          * Participant
@@ -6473,6 +6605,163 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FollowUpDispatch"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_off_record: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OffRecordState"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    start_off_record: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["OffRecordStart"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OffRecordState"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    end_off_record: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OffRecordState"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */

@@ -113,6 +113,44 @@ const states: State[] = [
     },
   },
   { name: "more-menu", act: async (page) => page.getByRole("button", { name: "More options" }).click() },
+  // Wave 3: off the record, a pending ask, the language picker, a translated line. On a phone the
+  // off-the-record control and the language picker live in More.
+  {
+    name: "off-record",
+    act: async (page) => {
+      const ctl = page.getByRole("button", { name: "Off the record", exact: true });
+      if (await ctl.isVisible()) return ctl.click();
+      await page.getByRole("button", { name: "More options" }).click();
+      await page.getByRole("button", { name: /Go off the record/ }).click();
+    },
+  },
+  {
+    name: "off-record-ask",
+    act: async (page) => push(page, "off-record-request", { userId: "u-raj", at: new Date().toISOString() }),
+  },
+  {
+    name: "caption-languages",
+    act: async (page) => {
+      const picker = page.getByRole("button", { name: /Caption language/ });
+      if (await picker.isVisible()) return picker.click();
+      await page.getByRole("button", { name: "More options" }).click();
+    },
+  },
+  {
+    name: "translated",
+    act: async (page) => {
+      const picker = page.getByRole("button", { name: /Caption language/ });
+      if (await picker.isVisible()) {
+        await picker.click();
+        await page.getByRole("radio", { name: /Spanish/ }).click();
+      } else {
+        await page.getByRole("button", { name: "More options" }).click();
+        await page.getByLabel("Caption language").selectOption("es");
+        await page.keyboard.press("Escape");
+      }
+      await push(page, "caption-translation", { chunkId: "c3", language: "es", status: "translated", text: "Y enviaré la presentación de precios el viernes." });
+    },
+  },
   {
     name: "wrapup",
     act: async (page) => {

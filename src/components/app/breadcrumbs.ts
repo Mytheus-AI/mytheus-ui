@@ -16,8 +16,8 @@ export function breadcrumbFor(pathname: string | null, current: string | null = 
 
   if ((m = p.match(new RegExp(`^/meetings/(${ID})/decisions/${ID}$`))))
     return [meetings, { label: parent || "Meeting", href: `/meetings/${m[1]}` }, { label: current || "Decision" }];
-  if ((m = p.match(new RegExp(`^/meetings/(${ID})/(transcript|catch-up|collaborations)$`)))) {
-    const leaf = { transcript: "Transcript", "catch-up": "Catch-up", collaborations: "Agent collaboration" }[m[2] as "transcript"];
+  if ((m = p.match(new RegExp(`^/meetings/(${ID})/(transcript|catch-up|collaborations|record)$`)))) {
+    const leaf = { transcript: "Transcript", "catch-up": "Catch-up", collaborations: "Agent collaboration", record: "What is recorded" }[m[2] as "transcript"];
     return [meetings, { label: parent || "Meeting", href: `/meetings/${m[1]}` }, { label: current || leaf }];
   }
   if (new RegExp(`^/meetings/(?!new$)${ID}$`).test(p)) return [meetings, { label: current || parent || "Meeting" }];

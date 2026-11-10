@@ -164,3 +164,20 @@
   .mx-meet .tx-assign { margin: 12px 12px 0; }
   .mx-meet .tx-legend { padding: 10px 12px; }
 }
+
+/* ---------------------------------------------------------------- off the record (wave 3)
+   Where a stretch was off the record, nothing was transcribed; the list says so in place. */
+.mx-meet .tx-gaps { display: grid; gap: 6px; margin: 0; padding: 0 16px 8px; list-style: none; }
+.mx-meet .tx-gap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  border: 1px dashed var(--line-2);
+  color: var(--ink-2);
+  font-size: 14px;
+}
+.mx-meet .tx-gap svg { flex-shrink: 0; color: var(--ink-3); }

@@ -1,4 +1,4 @@
-import { ChatCircleText, Ear, LockSimple, Scales, Signature, VideoCamera } from "@phosphor-icons/react";
+import { ChatCircleText, Ear, EyeSlash, LockSimple, Scales, Signature, VideoCamera } from "@phosphor-icons/react";
 
 /* The recording and transcription notice, one text for the pre-join and the room (polish program,
    Phase 0: "Consent that is real"). It says exactly what the product stores, and nothing it does
@@ -13,12 +13,17 @@ import { ChatCircleText, Ear, LockSimple, Scales, Signature, VideoCamera } from 
    - decisions and action items are saved only when someone confirms one; chat is kept with the
      meeting;
    - the agreement itself is stored with its time and this notice's version
-     (`meeting_participants.consented_at` / `consent_version`), once per person per meeting.
+     (`meeting_participants.consented_at` / `consent_version`), once per person per meeting;
+   - anyone can ask to go off the record (polish wave 3): until it ends nothing is transcribed or
+     kept and every agent pauses, and the transcript shows only that a gap happened.
+
+   meeting-service keeps every version's words (`services/meeting_service/consent_notices.py`) so a
+   person's receipt shows what they agreed to; a new version must be added there in the same change.
 
    Change the words and you must change CONSENT_VERSION, so the stored version keeps naming the
    text the person actually read. */
 
-export const CONSENT_VERSION = "room-notice-2026-11-11";
+export const CONSENT_VERSION = "room-notice-2026-11-11.2";
 
 export function ConsentTerms({ recording }: { recording: boolean | null }) {
   return (
@@ -63,6 +68,16 @@ export function ConsentTerms({ recording }: { recording: boolean | null }) {
         <div>
           <strong>Chat is kept</strong>
           <span>Messages in the meeting chat are stored with the meeting, so people who join later can read them.</span>
+        </div>
+      </li>
+      <li>
+        <EyeSlash size={18} aria-hidden />
+        <div>
+          <strong>You can go off the record</strong>
+          <span>
+            Anyone can ask the host to go off the record. Until it ends, nothing said is transcribed or kept and every
+            agent pauses; the transcript shows only that a gap happened.
+          </span>
         </div>
       </li>
       <li>

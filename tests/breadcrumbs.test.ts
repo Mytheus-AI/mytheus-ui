@@ -25,6 +25,7 @@ test("a meeting's sub-pages read Meetings, the meeting, the page", () => {
     ["transcript", "Transcript"],
     ["catch-up", "Catch-up"],
     ["collaborations", "Agent collaboration"],
+    ["record", "What is recorded"],
   ]) {
     assert.deepEqual(breadcrumbFor(`/meetings/${ID}/${leaf}`, null, "Weekly sync"), [
       { label: "Meetings", href: "/meetings" },

@@ -10,7 +10,8 @@ import {
   type ReactNode,
 } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { CaretDown, CaretUp, MagnifyingGlass } from "@phosphor-icons/react";
+import { CaretDown, CaretUp, EyeSlash, MagnifyingGlass } from "@phosphor-icons/react";
+import { gapLength } from "@/lib/realtime/privacy";
 import { TranscriptHead } from "@/components/transcript/TranscriptHead";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -70,6 +71,20 @@ function highlight(text: string, query: string, startOrdinal: number, current: n
   return parts.map((p, i) => <Fragment key={i}>{p}</Fragment>);
 }
 
+/** One stretch that was off the record, placed on the meeting clock when the room clock was known. */
+export interface TranscriptGap {
+  id: string;
+  startMs: number | null;
+  durationMs: number | null;
+  /** Still running (the meeting is off the record right now). */
+  running: boolean;
+}
+
+function gapLine(g: TranscriptGap): string {
+  const at = g.startMs === null ? "" : ` at ${formatOffset(g.startMs)}`;
+  return g.running ? `Off the record since${at || " a moment ago"}, nothing transcribed` : `Off the record, ${gapLength(g.durationMs)}${at}. Nothing was transcribed.`;
+}
+
 export function TranscriptView({
   chunks,
   speakers = [],
@@ -80,6 +95,7 @@ export function TranscriptView({
   meta,
   backHref,
   rail,
+  gaps = [],
 }: {
   chunks: TranscriptChunk[];
   speakers?: MeetingSpeaker[];
@@ -94,6 +110,9 @@ export function TranscriptView({
   backHref: string;
   /** The left rail panels (overview, speakers, talk time), rendered by the page. */
   rail?: ReactNode;
+  /** Stretches that were off the record (wave 3): nothing was transcribed, so the list shows a
+   *  marker where each one sat on the meeting clock. */
+  gaps?: TranscriptGap[];
 }) {
   const [query, setQuery] = useState("");
   const [current, setCurrent] = useState(0);
@@ -128,6 +147,18 @@ export function TranscriptView({
   const total = search.lineOfMatch.length;
   const currentMatch = Math.min(current, Math.max(total - 1, 0));
 
+  // Each gap sits before the first line that started after it; one with no place on the clock, or
+  // after the last line, is listed under the legend.
+  const { gapsBefore, gapsLeft } = useMemo(() => {
+    const before = new Map<number, TranscriptGap[]>();
+    const left: TranscriptGap[] = [];
+    for (const g of gaps) {
+      const idx = g.startMs === null ? -1 : chunks.findIndex((c) => c.start_ms >= (g.startMs as number));
+      if (idx < 0) left.push(g);
+      else before.set(idx, [...(before.get(idx) ?? []), g]);
+    }
+    return { gapsBefore: before, gapsLeft: left };
+  }, [gaps, chunks]);
   const words = useMemo(() => chunks.reduce((n, c) => n + wordCount(c.text), 0), [chunks]);
   const interims = useMemo(() => chunks.filter((c) => !c.is_final).length, [chunks]);
 
@@ -274,7 +305,23 @@ export function TranscriptView({
                 </span>
               </>
             ) : null}
+            {gaps.length > 0 ? (
+              <span className="tx-legend-key">
+                <EyeSlash size={14} aria-hidden />
+                {gaps.length === 1 ? "Off the record once" : `Off the record ${gaps.length} times`}, {gapLength(gaps.reduce((n, g) => n + (g.durationMs ?? 0), 0))} in all
+              </span>
+            ) : null}
           </div>
+          {gapsLeft.length > 0 ? (
+            <ul className="tx-gaps">
+              {gapsLeft.map((g) => (
+                <li key={g.id} className="tx-gap">
+                  <EyeSlash size={14} aria-hidden />
+                  {gapLine(g)}
+                </li>
+              ))}
+            </ul>
+          ) : null}
 
           {q && total === 0 ? (
             <div role="status">
@@ -307,6 +354,12 @@ export function TranscriptView({
                       className="tx-item"
                       style={{ transform: `translateY(${row.start}px)` }}
                     >
+                      {gapsBefore.get(row.index)?.map((g) => (
+                        <p key={g.id} className="tx-gap">
+                          <EyeSlash size={14} aria-hidden />
+                          {gapLine(g)}
+                        </p>
+                      ))}
                       <div className={`tr-row${dim ? " is-dim" : ""}${isActive ? " is-active" : ""}`}>
                         <span className="tr-when">
                           <button
