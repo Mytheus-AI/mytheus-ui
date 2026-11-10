@@ -71,7 +71,7 @@ export function citationHref(c: RagCitation): string | null {
   if (c.kind === "decision" && c.meeting_id && c.decision_id) {
     return `/meetings/${c.meeting_id}/decisions/${c.decision_id}`;
   }
-  if (c.kind === "action") return "/tasks";
+  if (c.kind === "action") return "/work/tasks";
   return null;
 }
 

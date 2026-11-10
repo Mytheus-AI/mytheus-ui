@@ -17,13 +17,13 @@ import {
    Meeting types has no readiness check, so it carries no bead. */
 
 export const BRAIN_SECTIONS = [
-  { href: "/tenant/brain", label: "Overview", icon: Brain, check: null },
-  { href: "/tenant/brain/about", label: "About", icon: Buildings, check: "profile" },
-  { href: "/tenant/brain/vocabulary", label: "Vocabulary", icon: BookOpenText, check: "vocabulary" },
-  { href: "/tenant/brain/owners", label: "Who owns what", icon: UserFocus, check: "owners" },
-  { href: "/tenant/brain/goals", label: "Goals", icon: Target, check: "goals" },
-  { href: "/tenant/brain/meeting-types", label: "Meeting types", icon: CalendarDots, check: null },
-  { href: "/tenant/brain/ground-rules", label: "Ground rules", icon: Prohibit, check: "ground_rules" },
+  { href: "/workspace/brain", label: "Overview", icon: Brain, check: null },
+  { href: "/workspace/brain/about", label: "About", icon: Buildings, check: "profile" },
+  { href: "/workspace/brain/vocabulary", label: "Vocabulary", icon: BookOpenText, check: "vocabulary" },
+  { href: "/workspace/brain/owners", label: "Who owns what", icon: UserFocus, check: "owners" },
+  { href: "/workspace/brain/goals", label: "Goals", icon: Target, check: "goals" },
+  { href: "/workspace/brain/meeting-types", label: "Meeting types", icon: CalendarDots, check: null },
+  { href: "/workspace/brain/ground-rules", label: "Ground rules", icon: Prohibit, check: "ground_rules" },
 ] as const;
 
 export function BrainNav({ done }: { done: Record<string, boolean> | null }) {

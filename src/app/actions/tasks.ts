@@ -28,6 +28,6 @@ export async function markTaskDone(id: string): Promise<MarkDoneResult> {
     }
     return { ok: false, message: "Could not complete the task. Try again." };
   }
-  revalidatePath("/tasks");
+  revalidatePath("/work/tasks");
   return { ok: true };
 }

@@ -67,7 +67,7 @@ export function WorkspacePanel() {
           />
         </SettingsRow>
         <SettingsRow label="Plan" help="What the plan includes, usage this period and invoices.">
-          <Link href="/billing" className={textLink}>
+          <Link href="/workspace/billing" className={textLink}>
             See plan and billing
             <ArrowRight size={14} weight="bold" aria-hidden="true" />
           </Link>

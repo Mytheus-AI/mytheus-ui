@@ -51,7 +51,7 @@ export async function createDepartment(input: { name: string; parentId: string |
   } catch (err) {
     return failure(err, "The department couldn't be created just now. Try again in a moment.");
   }
-  revalidatePath("/org");
+  revalidatePath("/people");
   return { ok: true };
 }
 
@@ -82,7 +82,7 @@ export async function createTeam(input: {
   } catch {
     failed = 1;
   }
-  revalidatePath("/org");
+  revalidatePath("/people");
   return failed > 0
     ? { ok: true, warning: "The team was created, but some people couldn't be added. Use Edit team to try again." }
     : { ok: true };
@@ -100,6 +100,6 @@ export async function updateTeamMembers(input: {
   } catch (err) {
     return failure(err, "The team couldn't be updated just now. Try again in a moment.");
   }
-  revalidatePath("/org");
+  revalidatePath("/people");
   return failed > 0 ? { ok: false, message: "Some changes didn't go through. Check the team and try again." } : { ok: true };
 }

@@ -36,7 +36,7 @@ export async function PromisesCard({ className = "" }: { className?: string }) {
       )}
       {items !== null ? (
         <div className="flex flex-wrap items-center justify-between gap-x-3 border-t border-line px-[18px] py-1.5 sm:px-[22px]">
-          <PanelLink href="/promises">All promises</PanelLink>
+          <PanelLink href="/work/promises">All promises</PanelLink>
           {total > shown.length ? <span className="text-[12.5px] text-ink-3">{total - shown.length} more open</span> : null}
         </div>
       ) : null}

@@ -15,7 +15,7 @@ export function PlatformConsoleUnavailable({ title, what, reason }: { title: str
         title="Not available right now"
         description={reason}
         action={
-          <LinkButton href="/tenant" variant="outline" className={focusPill}>
+          <LinkButton href="/workspace" variant="outline" className={focusPill}>
             Open your workspace admin
           </LinkButton>
         }

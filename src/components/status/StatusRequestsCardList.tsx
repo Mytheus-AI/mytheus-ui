@@ -53,7 +53,7 @@ export function StatusRequestsCardList({
         </ul>
       )}
       <div className="flex flex-wrap items-center justify-between gap-x-3 border-t border-line px-[18px] py-1.5 sm:px-[22px]">
-        <PanelLink href="/status-requests">All status requests</PanelLink>
+        <PanelLink href="/work/updates">All status requests</PanelLink>
         {more > 0 ? <span className="text-[12.5px] text-ink-3">{more} more waiting</span> : null}
       </div>
     </section>

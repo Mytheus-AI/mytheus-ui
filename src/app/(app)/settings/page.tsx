@@ -1,13 +1,7 @@
-import type { Metadata } from "next";
-import { SettingsShell } from "@/components/settings/SettingsShell";
-import { WorkspacePanel } from "@/components/settings/WorkspacePanel";
+import { redirect } from "next/navigation";
+import { legacyHref, type SearchParams } from "@/lib/legacy-routes";
 
-export const metadata: Metadata = { title: "Settings | Mytheus" };
-
-export default function SettingsPage() {
-  return (
-    <SettingsShell title="Workspace" description="Your organization, how you are notified, and how your data is handled.">
-      <WorkspacePanel />
-    </SettingsShell>
-  );
+/** Settings opens on Profile; the old Workspace tab moved to the Workspace console. */
+export default function SettingsIndex({ searchParams }: { searchParams: SearchParams }) {
+  redirect(legacyHref("/settings", searchParams) ?? "/settings/profile");
 }

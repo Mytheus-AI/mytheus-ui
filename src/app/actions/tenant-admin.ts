@@ -53,7 +53,7 @@ export async function changeMemberTier(_prev: FormResult, formData: FormData): P
   } catch (err) {
     return failure(err, "The access level could not be changed just now. Try again in a moment.");
   }
-  revalidatePath("/tenant/members");
+  revalidatePath("/workspace/members");
   return { ok: true, message: "Access updated." };
 }
 
@@ -65,7 +65,7 @@ export async function removeMemberAccess(_prev: FormResult, formData: FormData):
   } catch (err) {
     return failure(err, "Access could not be removed just now. Try again in a moment.");
   }
-  revalidatePath("/tenant/members");
+  revalidatePath("/workspace/members");
   return { ok: true, message: "Access removed." };
 }
 
@@ -89,7 +89,7 @@ export async function saveTenantSettings(_prev: FormResult, formData: FormData):
   } catch (err) {
     return failure(err, "The settings could not be saved just now. Try again in a moment.");
   }
-  revalidatePath("/tenant/settings");
+  revalidatePath("/workspace/data");
   return { ok: true, message: "Saved. New meetings follow these settings." };
 }
 
@@ -109,7 +109,7 @@ export async function grantSupportAccess(_prev: FormResult, formData: FormData):
   } catch (err) {
     return failure(err, "Access could not be granted just now. Check the staff ID and try again.");
   }
-  revalidatePath("/tenant/support");
+  revalidatePath("/workspace/support");
   return { ok: true, message: "Access granted. It ends on its own when the time is up." };
 }
 
@@ -123,14 +123,14 @@ export async function revokeSupportAccess(_prev: FormResult, formData: FormData)
       return failure(err, "Access could not be revoked just now. Try again in a moment.");
     }
   }
-  revalidatePath("/tenant/support");
+  revalidatePath("/workspace/support");
   return { ok: true, message: "Access revoked." };
 }
 
 export async function startDataExport(): Promise<FormResult> {
   try {
     const res = await requestDataExport();
-    revalidatePath("/tenant/data");
+    revalidatePath("/workspace/data");
     return {
       ok: true,
       message: res.status === "completed" ? "The export is ready below." : "Export requested. It shows below and updates when it is ready.",

@@ -7,7 +7,7 @@ import { daysFromNow, dueLabel } from "./format";
 const SHOWN = 5;
 
 /** Your open action items, from `/bff/dashboard` `action_items`: the same confirmed rows as
- *  `/tasks`, soonest due first. Read-only here: completing a task lives on /tasks, so each row
+ *  `/work/tasks`, soonest due first. Read-only here: completing a task lives on /tasks, so each row
  *  links there instead of offering a checkbox that would only change local state. */
 export function TaskList({
   tasks,
@@ -48,7 +48,7 @@ export function TaskList({
             return (
               <li key={task.id}>
                 <Link
-                  href="/tasks"
+                  href="/work/tasks"
                   className="group flex min-h-[52px] items-center gap-3 px-[18px] py-[11px] transition-colors duration-150 hover:bg-surface-2 active:bg-bg-2 sm:px-[22px]"
                 >
                   <span className="min-w-0 flex-1">
@@ -83,7 +83,7 @@ export function TaskList({
 
       {!failed ? (
         <div className="flex flex-wrap items-center justify-between gap-x-3 border-t border-line px-[18px] py-1.5 sm:px-[22px]">
-          <TextLink href="/tasks">All tasks</TextLink>
+          <TextLink href="/work/tasks">All tasks</TextLink>
           {more > 0 ? <span className="text-[12.5px] text-ink-3">{more} more open</span> : null}
         </div>
       ) : null}

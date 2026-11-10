@@ -232,7 +232,7 @@ export default async function WelcomePage() {
           ) : (
             <p className="text-[15px] leading-relaxed text-ink-3">
               You are not on a team yet. An admin adds you on the{" "}
-              <Link href="/org" className="font-semibold text-ink underline decoration-signal-line decoration-2 underline-offset-[5px] hover:decoration-signal">
+              <Link href="/people" className="font-semibold text-ink underline decoration-signal-line decoration-2 underline-offset-[5px] hover:decoration-signal">
                 org chart
               </Link>
               .

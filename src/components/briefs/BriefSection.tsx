@@ -136,7 +136,7 @@ function BriefBody({ b, nameOf, goals }: { b: MeetingBrief; nameOf: (id: string)
                 ))}
               </ul>
               {b.my_open_actions.some((a) => !a.latest_status) ? (
-                <Link href="/status-requests" className="br-more">
+                <Link href="/work/updates" className="br-more">
                   Give a quick status
                 </Link>
               ) : null}

@@ -524,7 +524,7 @@ export function SetupFlow({
                   <Button size="lg" onClick={() => router.push("/dashboard")} className="focus-visible:!rounded-ctl">
                     Open your dashboard
                   </Button>
-                  <LinkButton href="/tenant/brain" variant="outline" size="lg" className="focus-visible:!rounded-ctl">
+                  <LinkButton href="/workspace/brain" variant="outline" size="lg" className="focus-visible:!rounded-ctl">
                     Open the company brain
                   </LinkButton>
                 </div>

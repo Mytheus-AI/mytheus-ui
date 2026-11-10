@@ -7,6 +7,10 @@ import { Sidebar, type LiveCall, type SidebarAgent } from "@/components/app/Side
 import { Topbar } from "@/components/app/Topbar";
 import { CommandPalette } from "@/components/app/CommandPalette";
 import { DoodleImageSync } from "@/components/app/DoodleImageSync";
+import { CrumbProvider } from "@/components/app/Crumb";
+import { Toaster } from "@/components/ui/Toaster";
+import { inboxCount as readInboxCount } from "@/app/actions/inbox";
+import { INBOX_COUNT_EVENT } from "@/lib/inbox";
 import { appFontClass } from "@/lib/fonts";
 import { THEME_INIT } from "@/components/app/theme-init";
 
@@ -14,7 +18,10 @@ import { THEME_INIT } from "@/components/app/theme-init";
    choice, remembered); below lg it becomes an overlay drawer opened from the Topbar. Route
    changes, Escape, the scrim, the drawer's close button and nav clicks close the drawer; focus
    moves into it on open, stays inside while it is open, and returns to the menu button on close.
-   Cmd/Ctrl+K opens the palette. The `.mx-app` root scopes the redesigned theme (see
+   Cmd/Ctrl+K opens the palette. The shell also holds the Inbox's open count for the sidebar
+   (read after load, again when the route changes or the window regains focus, at most every 30
+   seconds, and set directly by the Inbox as you triage it through the `mx-inbox-count` event),
+   the topbar breadcrumb's state, and the one toast surface. The `.mx-app` root scopes the redesigned theme (see
    styles/app-theme.css); the inline script sets light/dark before first paint so there is no
    flash.
 
@@ -23,6 +30,7 @@ import { THEME_INIT } from "@/components/app/theme-init";
 
 const EASE_OUT: [number, number, number, number] = [0.215, 0.61, 0.355, 1];
 const SB_KEY = "mx-sb";
+const COUNT_EVERY_MS = 30_000;
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export function AppShell({
@@ -47,6 +55,45 @@ export function AppShell({
   const drawerTransition = { duration: reduceMotion ? 0 : 0.2, ease: EASE_OUT };
   const drawerRef = useRef<HTMLDivElement>(null);
   const drawerOpener = useRef<HTMLElement | null>(null);
+  const [inboxCount, setInboxCount] = useState<number | null>(null);
+  const countReadAt = useRef(0);
+
+  useEffect(() => {
+    const refresh = (force = false) => {
+      const now = Date.now();
+      if (!force && now - countReadAt.current < COUNT_EVERY_MS) return;
+      countReadAt.current = now;
+      readInboxCount()
+        .then((n) => setInboxCount(n))
+        .catch(() => {
+          // A failed count shows no number; the Inbox itself still opens.
+        });
+    };
+    refresh();
+    const onFocus = () => refresh();
+    const onSet = (e: Event) => {
+      const n = (e as CustomEvent<number>).detail;
+      if (typeof n === "number") {
+        countReadAt.current = Date.now();
+        setInboxCount(n);
+      }
+    };
+    window.addEventListener("focus", onFocus);
+    window.addEventListener(INBOX_COUNT_EVENT, onSet);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener(INBOX_COUNT_EVENT, onSet);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (countReadAt.current === 0) return;
+    if (Date.now() - countReadAt.current < COUNT_EVERY_MS) return;
+    countReadAt.current = Date.now();
+    readInboxCount()
+      .then((n) => setInboxCount(n))
+      .catch(() => {});
+  }, [pathname]);
 
   useEffect(() => {
     try {
@@ -122,6 +169,7 @@ export function AppShell({
   };
 
   return (
+    <CrumbProvider>
     <div suppressHydrationWarning className={`mx-app ${appFontClass} flex h-dvh bg-bg ${sbSynced ? "" : "sb-instant"}`}>
       <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
       <a
@@ -136,7 +184,7 @@ export function AppShell({
         // Below the drawer (z-50) and palette (z-80).
         className={`sb-slot relative z-40 hidden shrink-0 lg:block ${rail ? "w-[76px]" : "w-[252px]"}`}
       >
-        <Sidebar rail={rail} onToggleRail={toggleRail} liveCall={liveCall} agent={agent} />
+        <Sidebar rail={rail} onToggleRail={toggleRail} liveCall={liveCall} agent={agent} inboxCount={inboxCount} />
       </div>
 
       <AnimatePresence>
@@ -167,7 +215,7 @@ export function AppShell({
               exit={{ x: reduceMotion ? 0 : -260, opacity: reduceMotion ? 0 : 1 }}
               transition={drawerTransition}
             >
-              <Sidebar drawer liveCall={liveCall} agent={agent} onNavigate={() => setNavOpen(false)} onClose={() => setNavOpen(false)} />
+              <Sidebar drawer liveCall={liveCall} agent={agent} inboxCount={inboxCount} onNavigate={() => setNavOpen(false)} onClose={() => setNavOpen(false)} />
             </motion.div>
           </div>
         )}
@@ -180,8 +228,10 @@ export function AppShell({
         </main>
       </div>
 
-      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} agentName={agent?.name ?? null} />
       <DoodleImageSync />
+      <Toaster />
     </div>
+    </CrumbProvider>
   );
 }

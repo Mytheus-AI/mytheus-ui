@@ -110,7 +110,7 @@ export default async function PersonPage({ params }: { params: { personId: strin
   return (
     <div className="mx-auto flex max-w-[1240px] flex-col">
       <Link
-        href="/org"
+        href="/people"
         className="inline-flex min-h-[40px] items-center gap-1.5 self-start rounded-ctl pr-2 text-[13.5px] font-semibold text-ink-3 transition-colors hover:text-ink"
       >
         <ArrowLeft size={15} weight="bold" aria-hidden />

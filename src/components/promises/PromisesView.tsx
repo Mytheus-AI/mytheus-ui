@@ -184,7 +184,7 @@ export function PromisesView({ initial, nowIso }: { initial: PromiseView[]; nowI
                 <LockSimple size={16} aria-hidden className="mt-1 shrink-0 text-ink-3" />
                 <span>
                   Nobody else sees this list and nothing here is assigned to anyone. Shared action items stay in{" "}
-                  <Link href="/tasks" className="rounded-ctl font-semibold text-ink underline decoration-signal-line decoration-2 underline-offset-4 hover:decoration-signal">
+                  <Link href="/work/tasks" className="rounded-ctl font-semibold text-ink underline decoration-signal-line decoration-2 underline-offset-4 hover:decoration-signal">
                     Tasks
                   </Link>
                   .

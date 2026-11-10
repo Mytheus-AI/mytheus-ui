@@ -128,7 +128,7 @@ export function ReadinessMeter({
 /** One row: the score, the bead line and a link. For the workspace admin home and the dashboard. */
 export function ReadinessStrip({
   readiness,
-  href = "/tenant/brain",
+  href = "/workspace/brain",
   linkLabel = "Open the company brain",
 }: {
   readiness: Readiness;

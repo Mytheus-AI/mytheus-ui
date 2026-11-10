@@ -1,0 +1,19 @@
+import { Page, PageHead } from "@/components/ui/Page";
+import { TabNav } from "@/components/ui/TabNav";
+import { SETTINGS_TABS } from "@/components/app/nav";
+
+/* Settings: personal only (Profile, Notifications, Integrations, Appearance). Workspace-wide
+   settings, the plan and billing live in the Workspace console. The section list sits beside the
+   panel from lg up (above it below lg); panels are held to the reading width. Headings run h1
+   (Settings), h2 (the panel), h3 (each card). */
+export default function SettingsLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Page>
+      <PageHead title="Settings" context="How you appear, what reaches you, the tools your agent connects to, and how Mytheus looks. Only you see these." />
+      <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,880px)] lg:items-start lg:gap-10">
+        <TabNav items={SETTINGS_TABS.map(({ href, label, icon }) => ({ href, label, icon }))} label="Settings sections" orientation="vertical" />
+        <div className="min-w-0">{children}</div>
+      </div>
+    </Page>
+  );
+}
