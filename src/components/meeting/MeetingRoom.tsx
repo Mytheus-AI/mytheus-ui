@@ -103,6 +103,8 @@ function joinProblem(code: string | null): string {
       return "You are not on this meeting's participant list, so the call cannot let you in. Ask the host to add you.";
     case "VERSION_CONFLICT":
       return "This meeting has ended.";
+    case "EXTERNAL_MEETING":
+      return "This meeting happens in Google Meet, Teams or Zoom, so it has no Mytheus call to join. Open it from your calendar.";
     case "NOT_FOUND":
       return "This meeting could not be found. It may have been removed.";
     default:

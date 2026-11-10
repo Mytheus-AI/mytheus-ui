@@ -71,6 +71,8 @@ function joinRefusal(code: string | undefined): string {
       return "You are not on this meeting's participant list. Ask the host to add you, then try again.";
     case "VERSION_CONFLICT":
       return "This meeting has ended, so it cannot be joined.";
+    case "EXTERNAL_MEETING":
+      return "This meeting happens in Google Meet, Teams or Zoom. Join it there; Mytheus captures it from your browser.";
     case "NOT_FOUND":
       return "This meeting could not be found. It may have been removed.";
     default:

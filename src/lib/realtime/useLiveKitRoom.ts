@@ -72,7 +72,7 @@ async function mintToken(meetingId: string, consentVersion: string | null): Prom
 
 /** Failures that another attempt cannot fix: stop and say why. */
 function isFinal(code: string): boolean {
-  return ["NOT_A_PARTICIPANT", "NOT_FOUND", "VERSION_CONFLICT", "CONSENT_REQUIRED", "VALIDATION_FAILED"].includes(code);
+  return ["NOT_A_PARTICIPANT", "NOT_FOUND", "VERSION_CONFLICT", "CONSENT_REQUIRED", "VALIDATION_FAILED", "EXTERNAL_MEETING"].includes(code);
 }
 
 /** A disconnect the user (or the meeting) chose: never reconnect after these. */

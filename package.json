@@ -11,7 +11,8 @@
     "clean": "node scripts/dev-clean.mjs",
     "generate:api": "node scripts/generate-api-types.mjs",
     "generate:api:check": "node scripts/generate-api-types.mjs --check",
-    "test": "node --experimental-strip-types --no-warnings --test \"tests/**/*.test.ts\""
+    "test": "node --experimental-strip-types --no-warnings --test \"tests/**/*.test.ts\"",
+    "test:a11y": "playwright test -c tests/e2e/playwright-ct.config.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.39.6",
@@ -27,6 +28,9 @@
     "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@playwright/experimental-ct-react": "^1.62.1",
+    "@playwright/test": "^1.62.1",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
