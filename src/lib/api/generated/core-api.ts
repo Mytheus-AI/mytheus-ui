@@ -101,7 +101,8 @@ export interface paths {
         put?: never;
         /**
          * Dismiss Action
-         * @description proposed -> dismissed. Emits nothing. Idempotent on re-dismiss.
+         * @description proposed -> dismissed. No decisions/actions event; one `agent-feedback` record (polish
+         *     wave 2). Idempotent on re-dismiss (which records nothing).
          */
         post: operations["dismiss_action"];
         delete?: never;
@@ -269,7 +270,8 @@ export interface paths {
         put?: never;
         /**
          * Dismiss Decision
-         * @description proposed -> dismissed. Emits nothing. Idempotent on re-dismiss.
+         * @description proposed -> dismissed. No decisions/actions event; one `agent-feedback` record (polish
+         *     wave 2). Idempotent on re-dismiss (which records nothing).
          */
         post: operations["dismiss_decision"];
         delete?: never;
@@ -354,6 +356,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/memory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get My Memory
+         * @description What your agents remember about you across meetings. Only ever your own.
+         */
+        get: operations["get_my_memory"];
+        put?: never;
+        post?: never;
+        /**
+         * Forget My Memory
+         * @description Forget everything learned about you, and scrub the text of your feedback.
+         */
+        delete: operations["forget_my_memory"];
+        options?: never;
+        head?: never;
+        /**
+         * Update My Memory
+         * @description Pin, forget or unmute topics, forget questions, switch learning off or on.
+         */
+        patch: operations["update_my_memory"];
+        trace?: never;
+    };
     "/api/v1/meeting-templates": {
         parameters: {
             query?: never;
@@ -435,7 +465,9 @@ export interface paths {
          *
          *     In order, at most 20: the template's items (`template`); the previous meeting's agenda items
          *     not `covered`, by position (`unfinished`); its open confirmed action items, oldest first, as
-         *     `Status: {content}` owned by the assignee (`open_action`). Both ids must name rows of this
+         *     `Status: {content}` owned by the assignee (`open_action`). Beside the items,
+         *     `open_questions`: the questions its shared minutes left unanswered. Both ids must name
+         *     rows of this
          *     tenant (422 naming the field). A confidential previous meeting contributes nothing for a
          *     caller who was not in it (B2).
          */
@@ -578,7 +610,8 @@ export interface paths {
          * @description Proposed, surfaced decision and action candidates for one meeting, oldest first.
          *
          *     Re-hydrates the agent sidebar on every socket (re)connect. The 0.4-0.7 silent band is
-         *     stored but never served; the surface threshold is the tenant's, per agent.
+         *     stored but never served; the surface threshold is the workspace's, per agent: the tenant's
+         *     override or default, moved by the confirm/dismiss calibration (`learning.band_for`).
          *
          *     `include_resolved=true` (polish program, shared candidate ledger) also returns the
          *     meeting's CONFIRMED decisions and actions, whatever their confidence (a person confirmed
@@ -636,6 +669,9 @@ export interface paths {
          *     ADR-0039: each open action carries `latest_status` (its assignee's most recent answer to a
          *     status request, or null). A confidential previous meeting is never a source for a caller
          *     who was not in it (B2): they get the same empty answer as for no link.
+         *
+         *     Minutes for everyone: the open items and unanswered questions of the previous meeting's
+         *     shared minutes (never anyone's personal minutes).
          */
         get: operations["carry_forward"];
         put?: never;
@@ -767,10 +803,32 @@ export interface paths {
         put?: never;
         /**
          * Send Follow Up
-         * @description Send the follow-up now. The host only, once the meeting has ended; pressing it again
-         *     reaches only guests added since. Honours `Idempotency-Key`.
+         * @description Send the follow-up now, with the composer's subject, body and guests (each optional:
+         *     the draft and the saved guests otherwise). The host only, once the meeting has ended;
+         *     pressing it again reaches only guests added since. Honours `Idempotency-Key`.
          */
         post: operations["send_follow_up"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meetings/{meeting_id}/minutes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a meeting's minutes
+         * @description Your minutes (decisions with their status, open items with owners, unanswered
+         *     questions and your promises) and the shared minutes everyone in the meeting sees.
+         */
+        get: operations["get_minutes"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -901,7 +959,11 @@ export interface paths {
         /** List a meeting's share links */
         get: operations["list_meeting_links"];
         put?: never;
-        /** Share a meeting recap */
+        /**
+         * Share a meeting recap
+         * @description The public recap: confirmed decisions and actions and the meeting's shared minutes
+         *     (never anyone's personal minutes or promises).
+         */
         post: operations["create_recap_link"];
         delete?: never;
         options?: never;
@@ -1203,7 +1265,8 @@ export interface paths {
          * List Suggestions
          * @description The caller's open, surfaced suggestions for `meeting_id`, plus their saved ones from any
          *     meeting. Re-hydrates the sidebar on every socket (re)connect. The 0.4-0.7 silent band is
-         *     stored but never served; the surface threshold is the tenant's.
+         *     stored but never served; the surface threshold is the caller's calibrated one, else the
+         *     workspace's (`learning.band_for`).
          */
         get: operations["list_suggestions"];
         put?: never;
@@ -1352,6 +1415,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/worklogs/{worklog_id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rate Note
+         * @description Rate one of your own notes useful or not: your PersonalListenerAgent learns from it.
+         */
+        post: operations["rate_note"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -1412,6 +1495,23 @@ export interface paths {
         };
         /** Action Status */
         get: operations["action_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/agent-guidance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Agent Guidance */
+        get: operations["agent_guidance"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1499,7 +1599,8 @@ export interface paths {
         put?: never;
         /**
          * Dispatch Follow Up
-         * @description workflow-service, after the meeting ended: send the follow-up (or `disabled`).
+         * @description workflow-service, after the meeting ended: send the follow-up (or `disabled`, or
+         *     `waiting_for_minutes` while the meeting's minutes are on their way).
          */
         post: operations["dispatch_follow_up"];
         delete?: never;
@@ -1517,6 +1618,23 @@ export interface paths {
         };
         /** Index Policy */
         get: operations["index_policy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/meetings/{meeting_id}/minutes-source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Minutes Source */
+        get: operations["minutes_source"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1644,6 +1762,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/internal/person-memory/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Person Memory */
+        get: operations["person_memory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/internal/retrieval/records": {
         parameters: {
             query?: never;
@@ -1757,11 +1892,23 @@ export interface components {
              * Format: uuid
              */
             meeting_id: string;
+            /** Moment Id */
+            moment_id?: string | null;
+            /** Quote */
+            quote?: string | null;
+            /** Quote End Ms */
+            quote_end_ms?: number | null;
+            /** Quote Speaker Id */
+            quote_speaker_id?: string | null;
+            /** Quote Start Ms */
+            quote_start_ms?: number | null;
             /**
              * Status
              * @enum {string}
              */
             status: "proposed" | "confirmed" | "done" | "dismissed";
+            /** Why */
+            why?: string | null;
         };
         /**
          * ActionItemUpdate
@@ -1822,6 +1969,11 @@ export interface components {
         AgendaDraft: {
             /** Items */
             items: components["schemas"]["AgendaDraftItem"][];
+            /**
+             * Open Questions
+             * @description Questions the previous meeting's shared minutes left unanswered, for the host to add as items (minutes for everyone).
+             */
+            open_questions?: string[];
         };
         /** AgendaDraftItem */
         AgendaDraftItem: {
@@ -1942,11 +2094,31 @@ export interface components {
             /** Items */
             items: components["schemas"]["AgendaItemPut"][];
         };
+        /** AgentGuidance */
+        AgentGuidance: {
+            /** Examples */
+            examples: components["schemas"]["GuidanceExample"][];
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "workspace" | "person";
+        };
         /** AgentPolicy */
         AgentPolicy: {
             /** Agent Confidence Overrides */
             agent_confidence_overrides?: {
                 [key: string]: components["schemas"]["ConfidenceBand"];
+            };
+            /** Calibration */
+            calibration?: {
+                [key: string]: components["schemas"]["CalibrationDetail"];
+            };
+            /** User Overrides */
+            user_overrides?: {
+                [key: string]: {
+                    [key: string]: components["schemas"]["ConfidenceBand"];
+                };
             };
         };
         /**
@@ -1964,6 +2136,24 @@ export interface components {
             proxy_questions?: string[];
             /** Proxy Update */
             proxy_update?: string | null;
+        };
+        /** CalibrationDetail */
+        CalibrationDetail: {
+            /**
+             * Dismiss Rate
+             * @description Decayed share of dismisses
+             */
+            dismiss_rate: number;
+            /**
+             * Samples
+             * @description Items with feedback in the window
+             */
+            samples: number;
+            /**
+             * Surface
+             * @description The calibrated surface threshold; null below the minimum
+             */
+            surface?: number | null;
         };
         /**
          * CandidateList
@@ -2006,24 +2196,42 @@ export interface components {
              * Format: uuid
              */
             meeting_id: string;
+            /** Moment Id */
+            moment_id?: string | null;
+            /** Quote */
+            quote?: string | null;
+            /** Quote End Ms */
+            quote_end_ms?: number | null;
+            /** Quote Speaker Id */
+            quote_speaker_id?: string | null;
+            /** Quote Start Ms */
+            quote_start_ms?: number | null;
             /** Rationale */
             rationale?: string | null;
             /** Status */
             status: string;
+            /** Why */
+            why?: string | null;
         };
         /**
          * CarryForward
          * @description `GET /meetings/{id}/carry-forward`: what the previous meeting left open. Empty lists and
-         *     `previous_meeting: null` when the meeting follows up nothing.
+         *     `previous_meeting: null` when the meeting follows up nothing. `open_items` and
+         *     `unanswered_questions` come from the previous meeting's shared minutes (empty until they
+         *     exist).
          */
         CarryForward: {
             /** Decisions */
             decisions: components["schemas"]["CarryForwardDecision"][];
             /** Open Actions */
             open_actions: components["schemas"]["CarryForwardAction"][];
+            /** Open Items */
+            open_items?: components["schemas"]["CarryForwardOpenItem"][];
             previous_meeting: components["schemas"]["MeetingRef"] | null;
             /** Saved Questions */
             saved_questions: components["schemas"]["CarryForwardQuestion"][];
+            /** Unanswered Questions */
+            unanswered_questions?: components["schemas"]["CarryForwardOpenQuestion"][];
         };
         /** CarryForwardAction */
         CarryForwardAction: {
@@ -2049,6 +2257,30 @@ export interface components {
              * Format: uuid
              */
             id: string;
+        };
+        /**
+         * CarryForwardOpenItem
+         * @description An open item from the previous meeting's shared minutes (minutes for everyone).
+         */
+        CarryForwardOpenItem: {
+            /** Due */
+            due?: string | null;
+            /** Owner Name */
+            owner_name?: string | null;
+            /** Owner User Id */
+            owner_user_id?: string | null;
+            /** Text */
+            text: string;
+        };
+        /**
+         * CarryForwardOpenQuestion
+         * @description A question the previous meeting left unanswered, from its shared minutes.
+         */
+        CarryForwardOpenQuestion: {
+            /** Asked By Name */
+            asked_by_name?: string | null;
+            /** Text */
+            text: string;
         };
         /** CarryForwardQuestion */
         CarryForwardQuestion: {
@@ -2222,6 +2454,8 @@ export interface components {
          * @description One of the caller's own promises. Never served to anyone else.
          */
         Commitment: {
+            /** Action Item Id */
+            action_item_id?: string | null;
             /** Content */
             content: string;
             /**
@@ -2247,6 +2481,8 @@ export interface components {
             meeting_scheduled_start?: string | null;
             /** Meeting Title */
             meeting_title?: string | null;
+            /** Moment Id */
+            moment_id?: string | null;
             /**
              * Status
              * @enum {string}
@@ -2270,6 +2506,19 @@ export interface components {
              * @enum {string}
              */
             status: "open" | "done" | "dismissed";
+        };
+        /** CompactMemory */
+        CompactMemory: {
+            /** Learning Enabled */
+            learning_enabled: boolean;
+            /** Open Actions */
+            open_actions: components["schemas"]["MemoryOpen"][];
+            /** Open Promises */
+            open_promises: components["schemas"]["MemoryOpen"][];
+            /** Recurring Questions */
+            recurring_questions: string[];
+            /** Topics */
+            topics: string[];
         };
         /** ConfidenceBand */
         ConfidenceBand: {
@@ -2434,6 +2683,16 @@ export interface components {
              * Format: uuid
              */
             meeting_id: string;
+            /** Moment Id */
+            moment_id?: string | null;
+            /** Quote */
+            quote?: string | null;
+            /** Quote End Ms */
+            quote_end_ms?: number | null;
+            /** Quote Speaker Id */
+            quote_speaker_id?: string | null;
+            /** Quote Start Ms */
+            quote_start_ms?: number | null;
             /** Rationale */
             rationale?: string | null;
             /**
@@ -2443,6 +2702,8 @@ export interface components {
             status: "proposed" | "confirmed" | "superseded" | "dismissed";
             /** Supersedes */
             supersedes?: string | null;
+            /** Why */
+            why?: string | null;
         };
         /**
          * DecisionConfirm
@@ -2706,10 +2967,28 @@ export interface components {
          */
         FollowUp: {
             /**
+             * Awaiting Minutes
+             * @description The automatic follow-up is waiting for the minutes (sent when they land).
+             * @default false
+             */
+            awaiting_minutes: boolean;
+            /**
              * Can Send
              * @description Host, meeting ended, follow-up on.
              */
             can_send: boolean;
+            /**
+             * Confidential
+             * @default false
+             */
+            confidential: boolean;
+            /** @description For the host, once the meeting ended; null otherwise. */
+            draft?: components["schemas"]["FollowUpDraft"] | null;
+            /**
+             * Email Configured
+             * @description Whether this server can email external guests: false shows the composer's not-connected state; null when it could not be determined.
+             */
+            email_configured?: boolean | null;
             /** Enabled */
             enabled: boolean;
             /** Guest Emails */
@@ -2729,6 +3008,12 @@ export interface components {
             meeting_id: string;
             /** Meeting Status */
             meeting_status: string;
+            /**
+             * Minutes Ready
+             * @description Whether the meeting's shared minutes exist.
+             * @default false
+             */
+            minutes_ready: boolean;
             share_link?: components["schemas"]["FollowUpShareLink"] | null;
         };
         /**
@@ -2757,10 +3042,49 @@ export interface components {
             share_url?: string | null;
             /**
              * Status
-             * @description `sent`; `disabled` (the host turned the follow-up off); `unavailable` (the meeting has no host who can share its recap).
+             * @description `sent`; `disabled` (the host turned the follow-up off); `unavailable` (the meeting has no host who can share its recap, or, with `waiting_for_minutes`, the automatic send is waiting for the meeting's minutes).
              * @enum {string}
              */
             status: "sent" | "disabled" | "unavailable";
+            /**
+             * Waiting For Minutes
+             * @description Automatic send only: deferred until the meeting's minutes land; core-api sends it then. `status` is `unavailable` meanwhile (nothing was sent).
+             * @default false
+             */
+            waiting_for_minutes: boolean;
+        };
+        /**
+         * FollowUpDraft
+         * @description The composer's starting point, written from the shared minutes and confirmed records.
+         */
+        FollowUpDraft: {
+            /** Body */
+            body: string;
+            /**
+             * Participant Count
+             * @description Participants who get it (in app, email if on).
+             */
+            participant_count: number;
+            /** Subject */
+            subject: string;
+        };
+        /**
+         * FollowUpSend
+         * @description What the host's composer sends. Every field optional: missing ones use the draft.
+         */
+        FollowUpSend: {
+            /**
+             * Body
+             * @description Plain text. Lines starting with '- ' become a list in the HTML email.
+             */
+            body?: string | null;
+            /**
+             * Guest Emails
+             * @description Replaces the saved external guests before sending.
+             */
+            guest_emails?: string[] | null;
+            /** Subject */
+            subject?: string | null;
         };
         /** FollowUpShareLink */
         FollowUpShareLink: {
@@ -2806,6 +3130,31 @@ export interface components {
              * @enum {string}
              */
             status: "pending" | "sent" | "failed" | "skipped";
+        };
+        /** Guidance */
+        Guidance: {
+            /** Agents */
+            agents?: {
+                [key: string]: components["schemas"]["AgentGuidance"];
+            };
+        };
+        /** GuidanceExample */
+        GuidanceExample: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "confirm" | "dismiss" | "edit";
+            /**
+             * Before
+             * @description action=edit: the agent's wording
+             */
+            before?: string | null;
+            /**
+             * Text
+             * @description The item as the person left it (redacted, short)
+             */
+            text: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -2868,6 +3217,10 @@ export interface components {
             decisions?: string[];
             /** Open Actions */
             open_actions?: string[];
+            /** Open Items */
+            open_items?: string[];
+            /** Questions */
+            questions?: string[];
         };
         /**
          * InternalProxy
@@ -3074,6 +3427,67 @@ export interface components {
             wrap_up_started_at?: string | null;
         };
         /**
+         * MeetingMinutes
+         * @description One set of minutes. `promises` is always empty on the shared minutes.
+         */
+        MeetingMinutes: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decisions */
+            decisions: components["schemas"]["MinutesDecision"][];
+            /** Open Items */
+            open_items: components["schemas"]["MinutesOpenItem"][];
+            /** Promises */
+            promises: components["schemas"]["MinutesPromise"][];
+            /** Prompt Version */
+            prompt_version: string;
+            /** Reason */
+            reason?: ("no_transcript" | "budget" | "model_error") | null;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "personal" | "shared";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ready" | "empty" | "unavailable";
+            /** Summary */
+            summary: string;
+            /** Unanswered Questions */
+            unanswered_questions: components["schemas"]["MinutesQuestion"][];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * MeetingMinutesView
+         * @description `GET /api/v1/meetings/{id}/minutes`: the caller's own minutes and the shared minutes.
+         *
+         *     `state`: `not_ended` before the meeting is over; `pending` once it ended and before the
+         *     shared minutes landed; `ready` when they did; `unavailable` when none could be made.
+         */
+        MeetingMinutesView: {
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            mine?: components["schemas"]["MeetingMinutes"] | null;
+            shared?: components["schemas"]["MeetingMinutes"] | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "ready" | "pending" | "unavailable" | "not_ended";
+        };
+        /**
          * MeetingPage
          * @description Cursor pagination, never OFFSET.
          *
@@ -3128,6 +3542,7 @@ export interface components {
              * Format: uuid
              */
             meeting_id: string;
+            minutes?: components["schemas"]["RecapMinutes"] | null;
             /** Participant Names */
             participant_names: string[];
             /** Scheduled End */
@@ -3309,6 +3724,184 @@ export interface components {
             /** Title */
             title?: string | null;
         };
+        /** MemoryCalibration */
+        MemoryCalibration: {
+            /** Agent */
+            agent: string;
+            /**
+             * Personal
+             * @description True when tuned from your own feedback
+             */
+            personal: boolean;
+            /**
+             * Samples
+             * @description Your items with feedback in the window
+             */
+            samples: number;
+            /**
+             * Surface
+             * @description Confidence above which this agent shows you something
+             */
+            surface: number;
+        };
+        /** MemoryOpen */
+        MemoryOpen: {
+            /** Content */
+            content: string;
+            /**
+             * Due
+             * @description An ISO due date or a spoken due hint
+             */
+            due?: string | null;
+        };
+        /** MemoryOpenAction */
+        MemoryOpenAction: {
+            /** Content */
+            content: string;
+            /** Due Date */
+            due_date: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Meeting Id */
+            meeting_id: string | null;
+        };
+        /** MemoryPromise */
+        MemoryPromise: {
+            /** Content */
+            content: string;
+            /** Due Hint */
+            due_hint: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+        };
+        /** MemoryQuestion */
+        MemoryQuestion: {
+            /**
+             * Count
+             * @description How often the person asked or saved it
+             */
+            count: number;
+            /** Last At */
+            last_at?: string | null;
+            /** Text */
+            text: string;
+        };
+        /** MemoryTopic */
+        MemoryTopic: {
+            /** Label */
+            label: string;
+            /** Last Seen At */
+            last_seen_at?: string | null;
+            /**
+             * Mentions
+             * @description Feedback items that named it
+             */
+            mentions: number;
+            /**
+             * Pinned
+             * @description Added by the person; never fades
+             */
+            pinned: boolean;
+            /**
+             * Weight
+             * @description Decayed weight; pinned topics are fixed
+             */
+            weight: number;
+        };
+        /** MinutesDecision */
+        MinutesDecision: {
+            /**
+             * Decision Id
+             * @description The decision record this matches, when there is one.
+             */
+            decision_id?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "agreed" | "tentative" | "deferred" | "reversed";
+            /** Text */
+            text: string;
+        };
+        /** MinutesOpenItem */
+        MinutesOpenItem: {
+            /**
+             * Due
+             * @description As said in the meeting, e.g. 'Friday'.
+             */
+            due?: string | null;
+            /** Owner Name */
+            owner_name?: string | null;
+            /** Owner User Id */
+            owner_user_id?: string | null;
+            /** Text */
+            text: string;
+        };
+        /** MinutesPromise */
+        MinutesPromise: {
+            /** Due */
+            due?: string | null;
+            /** Text */
+            text: string;
+            /** To Name */
+            to_name?: string | null;
+        };
+        /** MinutesQuestion */
+        MinutesQuestion: {
+            /** Asked By Name */
+            asked_by_name?: string | null;
+            /** Asked By User Id */
+            asked_by_user_id?: string | null;
+            /** Text */
+            text: string;
+        };
+        /** MinutesSource */
+        MinutesSource: {
+            /** Actions */
+            actions: components["schemas"]["SourceAction"][];
+            /** Agenda */
+            agenda: components["schemas"]["SourceAgendaItem"][];
+            /** Confidential */
+            confidential: boolean;
+            /** Decisions */
+            decisions: components["schemas"]["SourceDecision"][];
+            /** Host User Id */
+            host_user_id: string | null;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Participants */
+            participants: components["schemas"]["SourceParticipant"][];
+            /** Scheduled End */
+            scheduled_end: string | null;
+            /** Scheduled Start */
+            scheduled_start: string | null;
+            /** Speakers */
+            speakers: {
+                [key: string]: string;
+            };
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
+            /** Turns */
+            turns: components["schemas"]["SourceTurn"][];
+            /** Turns Truncated */
+            turns_truncated: boolean;
+        };
         /**
          * MyTask
          * @description One action item as the My Tasks screen needs it: the row plus its meeting's title, so
@@ -3353,6 +3946,26 @@ export interface components {
         MyTaskList: {
             /** Items */
             items: components["schemas"]["MyTask"][];
+        };
+        /** NoteFeedback */
+        NoteFeedback: {
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+            /** Useful */
+            useful: boolean;
+            /**
+             * Worklog Id
+             * Format: uuid
+             */
+            worklog_id: string;
+        };
+        /** NoteRating */
+        NoteRating: {
+            /** Useful */
+            useful: boolean;
         };
         /**
          * Participant
@@ -3418,6 +4031,41 @@ export interface components {
         ParticipantsAdd: {
             /** User Ids */
             user_ids: string[];
+        };
+        /** PersonMemory */
+        PersonMemory: {
+            /** Calibration */
+            calibration: components["schemas"]["MemoryCalibration"][];
+            /** Learning Enabled */
+            learning_enabled: boolean;
+            /** Muted Topics */
+            muted_topics: string[];
+            /** Open Actions */
+            open_actions: components["schemas"]["MemoryOpenAction"][];
+            /** Open Promises */
+            open_promises: components["schemas"]["MemoryPromise"][];
+            /** Recurring Questions */
+            recurring_questions: components["schemas"]["MemoryQuestion"][];
+            /** Topics */
+            topics: components["schemas"]["MemoryTopic"][];
+            /** Updated At */
+            updated_at: string | null;
+        };
+        /**
+         * PersonMemoryUpdate
+         * @description At least one field. Lists are applied in this order: forget, unmute, pin.
+         */
+        PersonMemoryUpdate: {
+            /** Forget Questions */
+            forget_questions?: string[];
+            /** Forget Topics */
+            forget_topics?: string[];
+            /** Learning Enabled */
+            learning_enabled?: boolean | null;
+            /** Pin Topics */
+            pin_topics?: string[];
+            /** Unmute Topics */
+            unmute_topics?: string[];
         };
         /** PostMeetingDigest */
         PostMeetingDigest: {
@@ -3490,6 +4138,48 @@ export interface components {
             shared_by_name?: string | null;
             /** View Count */
             view_count: number;
+        };
+        /**
+         * RecapMinutes
+         * @description The meeting's shared minutes as a stranger may read them: no ids, no promises.
+         */
+        RecapMinutes: {
+            /** Decisions */
+            decisions: components["schemas"]["RecapMinutesDecision"][];
+            /** Open Items */
+            open_items: components["schemas"]["RecapMinutesItem"][];
+            /** Summary */
+            summary: string;
+            /** Unanswered Questions */
+            unanswered_questions: components["schemas"]["RecapMinutesQuestion"][];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** RecapMinutesDecision */
+        RecapMinutesDecision: {
+            /** Status */
+            status: string;
+            /** Text */
+            text: string;
+        };
+        /** RecapMinutesItem */
+        RecapMinutesItem: {
+            /** Due */
+            due?: string | null;
+            /** Owner Name */
+            owner_name?: string | null;
+            /** Text */
+            text: string;
+        };
+        /** RecapMinutesQuestion */
+        RecapMinutesQuestion: {
+            /** Asked By Name */
+            asked_by_name?: string | null;
+            /** Text */
+            text: string;
         };
         /** RecordAction */
         RecordAction: {
@@ -3783,6 +4473,12 @@ export interface components {
         /** ShareLinkCreate */
         ShareLinkCreate: {
             /**
+             * Confirm Confidential
+             * @description The host confirms publishing the recap of a confidential meeting. Required (409 `confidential_confirmation_required`) for a confidential meeting's recap.
+             * @default false
+             */
+            confirm_confidential: boolean;
+            /**
              * Expires In Days
              * @description How long the link works, 1 to 365 days. Default 30.
              * @default 30
@@ -3813,6 +4509,66 @@ export interface components {
             status: string;
             /** Title */
             title: string | null;
+        };
+        /** SourceAction */
+        SourceAction: {
+            /** Assignee Id */
+            assignee_id: string | null;
+            /** Content */
+            content: string;
+            /** Due Date */
+            due_date: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Status */
+            status: string;
+        };
+        /** SourceAgendaItem */
+        SourceAgendaItem: {
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
+        };
+        /** SourceDecision */
+        SourceDecision: {
+            /** Content */
+            content: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Status */
+            status: string;
+        };
+        /** SourceParticipant */
+        SourceParticipant: {
+            /** Attendance */
+            attendance: string;
+            /** Name */
+            name: string | null;
+            /** Role In Meeting */
+            role_in_meeting: string | null;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** SourceTurn */
+        SourceTurn: {
+            /** End Ms */
+            end_ms: number;
+            /** Speaker Id */
+            speaker_id: string;
+            /** Start Ms */
+            start_ms: number;
+            /** Text */
+            text: string;
         };
         /** SpeakerAssign */
         SpeakerAssign: {
@@ -3958,10 +4714,20 @@ export interface components {
              * Format: uuid
              */
             meeting_id: string;
+            /** Moment Id */
+            moment_id?: string | null;
             /** Priority */
             priority: number;
             /** Question */
             question: string;
+            /** Quote */
+            quote?: string | null;
+            /** Quote End Ms */
+            quote_end_ms?: number | null;
+            /** Quote Speaker Id */
+            quote_speaker_id?: string | null;
+            /** Quote Start Ms */
+            quote_start_ms?: number | null;
             /** Rationale */
             rationale?: string | null;
             /**
@@ -3969,6 +4735,8 @@ export interface components {
              * @enum {string}
              */
             status: "open" | "asked" | "dismissed" | "saved";
+            /** Why */
+            why?: string | null;
         };
         /**
          * SuggestionCitation
@@ -4195,6 +4963,16 @@ export interface components {
              * Format: uuid
              */
             meeting_id: string;
+            /** Moment Id */
+            moment_id?: string | null;
+            /** Quote */
+            quote?: string | null;
+            /** Quote End Ms */
+            quote_end_ms?: number | null;
+            /** Quote Speaker Id */
+            quote_speaker_id?: string | null;
+            /** Quote Start Ms */
+            quote_start_ms?: number | null;
             /** Relevance Score */
             relevance_score?: number | null;
             /** Source Chunk Ids */
@@ -4204,6 +4982,8 @@ export interface components {
              * Format: uuid
              */
             user_id: string;
+            /** Why */
+            why?: string | null;
             /** Window Id */
             window_id: string;
         };
@@ -5457,6 +6237,134 @@ export interface operations {
             };
         };
     };
+    get_my_memory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonMemory"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    forget_my_memory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    update_my_memory: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonMemoryUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonMemory"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     list_templates: {
         parameters: {
             query?: never;
@@ -6609,7 +7517,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["FollowUpSend"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -6622,6 +7534,64 @@ export interface operations {
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_minutes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingMinutesView"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not a participant of this meeting. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6891,6 +7861,15 @@ export interface operations {
             };
             /** @description Not a participant, or a confidential meeting you do not host. */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description A confidential meeting's recap needs `confirm_confidential`. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8116,6 +9095,62 @@ export interface operations {
             };
         };
     };
+    rate_note: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                worklog_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteRating"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteFeedback"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     healthz: {
         parameters: {
             query?: never;
@@ -8270,6 +9305,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ActionStatus"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    agent_guidance: {
+        parameters: {
+            query?: {
+                user_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Guidance"];
                 };
             };
             /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
@@ -8559,6 +9643,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IndexPolicy"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    minutes_source: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MinutesSource"];
                 };
             };
             /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
@@ -8914,6 +10047,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreatedStatusRequests"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    person_memory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompactMemory"];
                 };
             };
             /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */

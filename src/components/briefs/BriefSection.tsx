@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookmarkSimple, CheckSquare, ListChecks, Robot, Target } from "@phosphor-icons/react/ssr";
+import { BookmarkSimple, CheckSquare, Handshake, ListChecks, Question, Robot, Target } from "@phosphor-icons/react/ssr";
 import type { BrainRead } from "@/lib/api/meeting-brain";
 import type { MeetingBrief, OrgGoal } from "@/lib/api/meeting-brain-types";
 import { STATUS_LABEL } from "@/components/meetings/agenda-status";
@@ -29,6 +29,8 @@ export function briefLead(b: MeetingBrief): string | null {
   if (b.my_agenda_items.length) parts.push(`own ${plural(b.my_agenda_items.length, "agenda item", "agenda items")}`);
   if (b.my_open_actions.length) parts.push(`have ${plural(b.my_open_actions.length, "open action", "open actions")} from last time`);
   if (b.saved_questions.length) parts.push(`saved ${plural(b.saved_questions.length, "question", "questions")}`);
+  const promises = b.previous_minutes?.my_promises.length ?? 0;
+  if (promises) parts.push(`made ${plural(promises, "promise", "promises")} last time`);
   if (parts.length === 0) return null;
   const last = parts.pop();
   return `You ${parts.length ? `${parts.join(", ")} and ${last}` : last}.`;
@@ -67,7 +69,12 @@ export function BriefSection({
 function BriefBody({ b, nameOf, goals }: { b: MeetingBrief; nameOf: (id: string) => string; goals: OrgGoal[] }) {
   const lead = briefLead(b);
   const goalOf = new Map(goals.map((g) => [g.id, g.title]));
-  const mine = b.my_agenda_items.length + b.my_open_actions.length + b.saved_questions.length;
+  const pm = b.previous_minutes;
+  const mine =
+    b.my_agenda_items.length +
+    b.my_open_actions.length +
+    b.saved_questions.length +
+    (pm ? pm.open_items.length + pm.unanswered_questions.length + pm.my_promises.length : 0);
   return (
     <>
       <p className="br-lead">
@@ -152,6 +159,62 @@ function BriefBody({ b, nameOf, goals }: { b: MeetingBrief; nameOf: (id: string)
               <ul className="cf-list">
                 {b.saved_questions.map((q) => (
                   <li key={q.id}>{q.question}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {pm && pm.my_promises.length > 0 ? (
+            <div className="br-group">
+              <h3 className="cf-sub">
+                <Handshake size={15} aria-hidden="true" />
+                Your promises from last time
+              </h3>
+              <ul className="cf-list">
+                {pm.my_promises.map((p) => (
+                  <li key={p.text} className="cf-action">
+                    <span className="cf-action-head">
+                      {p.text}
+                      {p.due ? <small>by {p.due}</small> : null}
+                    </span>
+                    {p.to_name ? <span className="br-none">To {p.to_name}</span> : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {pm && pm.open_items.length > 0 ? (
+            <div className="br-group">
+              <h3 className="cf-sub">
+                <CheckSquare size={15} aria-hidden="true" />
+                Still open from the minutes
+              </h3>
+              <ul className="cf-list">
+                {pm.open_items.map((o) => (
+                  <li key={o.text} className="cf-action">
+                    <span className="cf-action-head">
+                      {o.text}
+                      {o.due ? <small>by {o.due}</small> : null}
+                    </span>
+                    <span className="br-none">
+                      {o.mine ? "Yours" : o.owner_user_id ? nameOf(o.owner_user_id) : o.owner_name ?? "No owner yet"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {pm && pm.unanswered_questions.length > 0 ? (
+            <div className="br-group">
+              <h3 className="cf-sub">
+                <Question size={15} aria-hidden="true" />
+                Left unanswered last time
+              </h3>
+              <ul className="cf-list">
+                {pm.unanswered_questions.map((q) => (
+                  <li key={q}>{q}</li>
                 ))}
               </ul>
             </div>

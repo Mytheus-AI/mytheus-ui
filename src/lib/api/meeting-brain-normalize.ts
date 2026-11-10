@@ -10,6 +10,7 @@
 import type { AgendaItem, AgendaStatus } from "./meeting-agenda-types.ts";
 import type {
   BriefAction,
+  BriefMinutes,
   CatchUpAgendaItem,
   DraftSource,
   DraftedAgendaItem,
@@ -101,7 +102,28 @@ export function toBrief(raw: unknown): MeetingBrief | null {
       return user_id ? [{ user_id, proxy_update: text(po?.proxy_update) }] : [];
     }),
     previous_meeting: prev && text(prev.id) ? { id: String(prev.id), title: text(prev.title) ?? "The earlier meeting" } : null,
+    previous_minutes: briefMinutes(o.previous_minutes),
   };
+}
+
+/** `previous_minutes` of the brief, or null when absent or empty. */
+export function briefMinutes(v: unknown): BriefMinutes | null {
+  const o = obj(v);
+  if (!o) return null;
+  const open_items = list(o.open_items).flatMap((i) => {
+    const io = obj(i);
+    const t = text(io?.text);
+    if (!io || !t) return [];
+    return [{ text: t, owner_user_id: uuid(io.owner_user_id), owner_name: text(io.owner_name), due: text(io.due), mine: io.mine === true }];
+  });
+  const unanswered_questions = list(o.unanswered_questions).flatMap((q) => (text(q) ? [text(q) as string] : []));
+  const my_promises = list(o.my_promises).flatMap((p) => {
+    const po = obj(p);
+    const t = text(po?.text);
+    return po && t ? [{ text: t, to_name: text(po.to_name), due: text(po.due) }] : [];
+  });
+  if (!open_items.length && !unanswered_questions.length && !my_promises.length) return null;
+  return { open_items, unanswered_questions, my_promises };
 }
 
 /** A share as a fraction 0..1, whether the server sent 0.42 or 42. */
