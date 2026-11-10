@@ -1,9 +1,11 @@
 import { MeetingsHub, type HubPerson } from "@/components/meetings/MeetingsHub";
 import { NewMeeting, type FollowUpOption } from "@/components/meetings/NewMeeting";
 import { listMeetings, toCallMeeting } from "@/lib/api/meetings";
+import { fetchActiveGoals, fetchMeetingTemplates } from "@/lib/api/meeting-brain";
 import { listMembers } from "@/lib/api/members";
 import "@/styles/meeting-hub.css";
 import "@/styles/meeting-agenda.css";
+import "@/styles/meeting-brain.css";
 
 /* The meetings hub. A Server Component that reads the caller's meetings and the workspace's
    members from core-api and hands plain data to one client island for the tabs, search, the
@@ -14,7 +16,14 @@ import "@/styles/meeting-agenda.css";
 export const dynamic = "force-dynamic";
 
 export default async function MeetingsPage() {
-  const [real, members] = await Promise.all([listMeetings(), listMembers()]);
+  // Meeting types and goals feed the New meeting dialog (ADR-0039); either failing costs only
+  // that part of the dialog, never the hub.
+  const [real, members, templates, goals] = await Promise.all([
+    listMeetings(),
+    listMembers(),
+    fetchMeetingTemplates(),
+    fetchActiveGoals(),
+  ]);
   const invitable = members?.filter((m) => !m.isYou).map(({ id, name, email }) => ({ id, name, email })) ?? null;
   const people: Record<string, HubPerson> = Object.fromEntries(
     (members ?? []).map((m) => [m.id, { name: m.name, imageUrl: m.imageUrl ?? null, isYou: m.isYou }]),
@@ -38,9 +47,17 @@ export default async function MeetingsPage() {
           <h1 className="mx-title">Meetings</h1>
           <p className="mx-sub">Every call on your calendar, what your agent captured, and where to pick it up.</p>
         </div>
-        <NewMeeting members={invitable} openFromLink recent={recent} me={me} />
+        <NewMeeting members={invitable} openFromLink recent={recent} me={me} templates={templates} goals={goals} />
       </header>
-      <MeetingsHub meetings={meetings} people={people} invitable={invitable} me={me} unavailable={real === null} />
+      <MeetingsHub
+        meetings={meetings}
+        people={people}
+        invitable={invitable}
+        me={me}
+        unavailable={real === null}
+        templates={templates}
+        goals={goals}
+      />
     </div>
   );
 }

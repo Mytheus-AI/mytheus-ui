@@ -5,6 +5,7 @@ import { AboutYouStep } from "@/components/onboarding/AboutYouStep";
 import { resolveOrgContext } from "@/lib/api/org-context";
 import { fetchMyProfile } from "@/lib/api/profile";
 import { defaultDoodleSeed } from "@/lib/doodle";
+import { orgProfileNeedsSetup } from "@/lib/api/org-brain";
 
 export const metadata: Metadata = { title: "About you | Mytheus" };
 
@@ -22,7 +23,8 @@ export default async function Page({ searchParams }: { searchParams: { from?: st
   if (!orgId) redirect("/onboarding/organization");
 
   const [ctx, profile] = await Promise.all([resolveOrgContext(), fetchMyProfile()]);
-  if (searchParams.from === "workspace" && profile?.role) redirect("/dashboard");
+  if (searchParams.from === "workspace" && profile?.role)
+    redirect(ctx?.user.role === "admin" && (await orgProfileNeedsSetup()) ? "/onboarding/workspace" : "/dashboard");
 
   return (
     <AboutYouStep

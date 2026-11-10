@@ -13,6 +13,8 @@ import { listMembers, type MemberTier } from "@/lib/api/members";
 import { WorkspaceInvite } from "@/components/admin/WorkspaceInvite";
 import { fetchUsage } from "@/lib/api/usage";
 import { loadIntegrations } from "@/lib/api/integrations";
+import { fetchReadiness } from "@/lib/api/org-brain";
+import { ReadinessStrip } from "@/components/org-brain/ReadinessMeter";
 
 export const metadata: Metadata = { title: "Workspace admin | Mytheus" };
 
@@ -80,12 +82,13 @@ async function pendingInvites(): Promise<Row[]> {
 }
 
 export default async function TenantAdminPage() {
-  const [ctx, real, invited, usage, integrations] = await Promise.all([
+  const [ctx, real, invited, usage, integrations, readiness] = await Promise.all([
     resolveOrgContext(),
     listMembers(),
     pendingInvites(),
     fetchUsage(),
     loadIntegrations(),
+    fetchReadiness(),
   ]);
   const connected =
     integrations.kind === "live"
@@ -121,6 +124,33 @@ export default async function TenantAdminPage() {
           hint={connected === null ? "Did not answer" : connected === 0 ? "Nothing connected" : "Connected"}
         />
       </div>
+
+      <section
+        aria-labelledby="brain-heading"
+        className="overflow-hidden rounded-card border border-line bg-surface px-4 pb-5 pt-[18px] shadow-warm-1 sm:px-[22px]"
+      >
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+          <div className="min-w-0">
+            <h2 id="brain-heading" className="text-[17px] font-semibold leading-snug text-ink">
+              Company brain
+            </h2>
+            <p className="mt-1 max-w-[64ch] text-[14px] leading-relaxed text-ink-3">
+              What every agent knows about the company: what it does, its words, who owns what, its goals and what is off limits.
+            </p>
+          </div>
+          <Link
+            href="/tenant/brain"
+            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-ctl text-[14px] font-semibold text-ink underline decoration-signal-line decoration-2 underline-offset-[5px] hover:decoration-signal"
+          >
+            Open the company brain
+          </Link>
+        </div>
+        {readiness.ok ? (
+          <ReadinessStrip readiness={readiness.data} />
+        ) : (
+          <Note tone="warning">The readiness checks could not be loaded just now. The company brain still opens.</Note>
+        )}
+      </section>
 
       <SectionCard
         title="Members"

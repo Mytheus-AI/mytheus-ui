@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
+import { useId, type CSSProperties, type ReactNode } from "react";
 import { MicrophoneSlash, Microphone, PushPin, UsersThree } from "@phosphor-icons/react";
 import { initials, toneOf } from "@/components/room/tone";
 import { Doodle } from "@/components/ui/Doodle";
@@ -16,7 +16,12 @@ import { Doodle } from "@/components/ui/Doodle";
      that opens the grid when there are more.
    - grid: everyone as equal tiles inside the same frame.
 
-   `overlay` is drawn inside the frame on top of the video: the clock, captions and controls. */
+   `overlay` is drawn inside the frame on top of the video: the clock, captions and controls.
+
+   ADR-0039 B5: someone who sent their agent instead of coming appears as an agent tile: the
+   agent's face where the camera would be, "Attending for {name}", and their update revealed on
+   hover or keyboard focus (the tile is focusable, and the update is its description for screen
+   readers). An agent tile never takes the spotlight from a person. */
 
 export type RoomLayout = "grid" | "spotlight";
 
@@ -28,14 +33,17 @@ export type RoomTile = {
   micOn: boolean;
   camOn: boolean;
   speaking?: boolean;
-  /** "screen" tiles are shared screens: contained, no avatar, no mute badge. */
-  kind?: "camera" | "screen";
+  /** "screen" tiles are shared screens: contained, no avatar, no mute badge. "proxy" tiles are
+      the agent of someone who sent it instead of coming (ADR-0039 B5). */
+  kind?: "camera" | "screen" | "proxy";
   /** Live media (a <VideoTrack>), absolutely positioned by the caller. */
   media?: ReactNode;
   /** Profile photo for the camera-off avatar; initials when absent. */
   imageUrl?: string;
   /** This person's agent (ADR-0038 D11): a small badge of its face, named for screen readers. */
   agent?: { name: string; seed: string };
+  /** A proxy tile's person and the update they gave their agent for the room. */
+  proxy?: { forName: string; update: string | null };
 };
 
 /* A participant's agent, as a small doodle badge in their name tag. Its accessible name says
@@ -60,8 +68,9 @@ export function pickMain(tiles: RoomTile[], pinnedId: string | null | undefined)
   return (
     tiles.find((t) => t.id === pinnedId) ??
     tiles.find((t) => t.kind === "screen") ??
-    tiles.find((t) => t.speaking && !t.isLocal) ??
-    tiles.find((t) => !t.isLocal) ??
+    tiles.find((t) => t.speaking && !t.isLocal && t.kind !== "proxy") ??
+    tiles.find((t) => !t.isLocal && t.kind !== "proxy") ??
+    tiles.find((t) => t.kind !== "proxy") ??
     tiles[0]
   );
 }
@@ -107,6 +116,8 @@ export function RoomGrid({
       >
         {n === 0 ? (
           <div className="cx-waiting">Waiting for people to join.</div>
+        ) : main?.kind === "proxy" ? (
+          <ProxyBody tile={main} large />
         ) : main ? (
           <>
             <TileSurface tile={main} />
@@ -127,9 +138,13 @@ export function RoomGrid({
             role="group"
             aria-label="Participants"
           >
-            {tiles.map((t) => (
-              <Thumb key={t.id} tile={t} pinLabel="Spotlight" onPin={onPin ? () => onPin(t.id) : undefined} />
-            ))}
+            {tiles.map((t) =>
+              t.kind === "proxy" ? (
+                <ProxyThumb key={t.id} tile={t} />
+              ) : (
+                <Thumb key={t.id} tile={t} pinLabel="Spotlight" onPin={onPin ? () => onPin(t.id) : undefined} />
+              ),
+            )}
           </div>
         )}
 
@@ -138,9 +153,13 @@ export function RoomGrid({
 
       {spot && (thumbs.length > 0 || (pinnedId && main?.id === pinnedId)) ? (
         <div className="thumbs" aria-label="Participant videos">
-          {thumbs.map((t) => (
-            <Thumb key={t.id} tile={t} pinLabel="Pin" onPin={onPin ? () => onPin(t.id) : undefined} />
-          ))}
+          {thumbs.map((t) =>
+            t.kind === "proxy" ? (
+              <ProxyThumb key={t.id} tile={t} />
+            ) : (
+              <Thumb key={t.id} tile={t} pinLabel="Pin" onPin={onPin ? () => onPin(t.id) : undefined} />
+            ),
+          )}
           {hidden > 0 ? (
             <button
               type="button"
@@ -217,6 +236,44 @@ function Thumb({ tile, pinLabel, onPin }: { tile: RoomTile; pinLabel: string; on
           {tile.micOn ? <Microphone size={13} /> : <MicrophoneSlash size={13} weight="fill" />}
         </span>
       )}
+    </div>
+  );
+}
+
+/* An agent attending for someone: its face where the camera would be, whose agent it is, and the
+   update they sent with it, revealed on hover or focus. */
+function ProxyBody({ tile, large = false }: { tile: RoomTile; large?: boolean }) {
+  const uid = useId();
+  const forName = tile.proxy?.forName ?? "someone";
+  const update = tile.proxy?.update ?? null;
+  return (
+    <div
+      className={`cx-proxy${large ? " is-large" : ""}`}
+      tabIndex={0}
+      role="group"
+      aria-label={`${tile.agent?.name ?? "An agent"}, attending for ${forName}`}
+      aria-describedby={`${uid}-u`}
+    >
+      <span className="cx-tile-bg is-proxy" aria-hidden />
+      <span className="cx-proxy-face" aria-hidden>
+        {tile.agent ? <Doodle seed={tile.agent.seed} className="block h-full w-full" /> : null}
+      </span>
+      <span className="cx-proxy-for" aria-hidden>
+        Attending for {forName}
+      </span>
+      <div id={`${uid}-u`} className="cx-proxy-update">
+        <strong>{forName}&rsquo;s update</strong>
+        <p>{update ?? `${forName} sent their agent without an update. It listens and takes notes for them.`}</p>
+      </div>
+      <span className="thumb-name">{tile.agent?.name ?? `${forName}'s agent`}</span>
+    </div>
+  );
+}
+
+function ProxyThumb({ tile }: { tile: RoomTile }) {
+  return (
+    <div className={`thumb is-proxy ${toneOf(personKey(tile))}`}>
+      <ProxyBody tile={tile} />
     </div>
   );
 }

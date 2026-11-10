@@ -1,14 +1,17 @@
 "use client";
 
 import { useId, useState } from "react";
-import { ArrowDown, ArrowUp, Plus, Trash } from "@phosphor-icons/react";
+import { ArrowDown, ArrowUp, Plus, Sparkle, Target, Trash } from "@phosphor-icons/react";
 import { AGENDA_LIMITS } from "@/lib/api/meeting-agenda-types";
+import type { OrgGoal } from "@/lib/api/meeting-brain-types";
 import {
+  DRAFT_SOURCE_LABEL,
   addRow,
   canAddRow,
   moveRow,
   plannedMinutes,
   removeRow,
+  retitleRow,
   updateRow,
   type AgendaDraftRow,
   type AgendaRowErrors,
@@ -18,7 +21,10 @@ import {
    per item with its title, an owner from the meeting's people and its minutes; add, remove, and
    move up or down with buttons (no drag, so it works from the keyboard and a screen reader the
    same). At most 20 items. Validation lives in `agenda-editor-model.ts`; this only shows its
-   messages next to the field they belong to. */
+   messages next to the field they belong to.
+
+   ADR-0039 adds a second, quieter line per row: the company goal the item serves (only when the
+   workspace has active goals) and, for a drafted row, where it came from. */
 
 export type AgendaPerson = { id: string; name: string };
 
@@ -29,6 +35,7 @@ export function AgendaEditor({
   errors = {},
   meetingMinutes,
   disabled = false,
+  goals = [],
 }: {
   rows: AgendaDraftRow[];
   onChange: (rows: AgendaDraftRow[]) => void;
@@ -38,8 +45,11 @@ export function AgendaEditor({
   /** The meeting's length, to say when the time boxes run past it. */
   meetingMinutes?: number;
   disabled?: boolean;
+  /** Active company goals (ADR-0039 B3). The goal picker is hidden when there are none. */
+  goals?: OrgGoal[];
 }) {
   const uid = useId();
+  const goalIds = new Set(goals.map((g) => g.id));
   const [announce, setAnnounce] = useState("");
   const planned = plannedMinutes(rows);
   const over = meetingMinutes !== undefined && planned > meetingMinutes;
@@ -105,7 +115,7 @@ export function AgendaEditor({
                       disabled={disabled}
                       aria-invalid={e.title ? true : undefined}
                       aria-describedby={describedBy("title")}
-                      onChange={(ev) => onChange(updateRow(rows, row.key, { title: ev.target.value }))}
+                      onChange={(ev) => onChange(retitleRow(rows, row.key, ev.target.value))}
                     />
                   </label>
                   <label className="ag-ed-owner" htmlFor={`${base}-owner`}>
@@ -174,6 +184,38 @@ export function AgendaEditor({
                     </button>
                   </span>
                 </div>
+                {goals.length > 0 || row.source ? (
+                  <div className="ag-ed-sub">
+                    {goals.length > 0 ? (
+                      <label className="ag-ed-goal" htmlFor={`${base}-goal`}>
+                        <Target size={15} aria-hidden="true" />
+                        <span className="sr-only">Item {n} goal</span>
+                        <select
+                          id={`${base}-goal`}
+                          value={row.goalId ?? ""}
+                          disabled={disabled}
+                          onChange={(ev) => onChange(updateRow(rows, row.key, { goalId: ev.target.value }))}
+                        >
+                          <option value="">No goal</option>
+                          {goals.map((g) => (
+                            <option key={g.id} value={g.id}>
+                              {g.period ? `${g.title}, ${g.period}` : g.title}
+                            </option>
+                          ))}
+                          {row.goalId && !goalIds.has(row.goalId) ? (
+                            <option value={row.goalId}>A goal that is no longer active</option>
+                          ) : null}
+                        </select>
+                      </label>
+                    ) : null}
+                    {row.source ? (
+                      <span className="ag-ed-src">
+                        <Sparkle size={12} aria-hidden="true" />
+                        {DRAFT_SOURCE_LABEL[row.source]}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
                 {e.title || e.owner || e.minutes ? (
                   <div className="ag-ed-errs">
                     {(["title", "owner", "minutes"] as const).map((f) =>

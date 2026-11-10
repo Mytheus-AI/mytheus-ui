@@ -9,6 +9,7 @@
  */
 
 import { AGENDA_LIMITS, type AgendaItem, type AgendaItemPut } from "../../lib/api/meeting-agenda-types.ts";
+import type { DraftSource, DraftedAgendaItem, MeetingTemplate } from "../../lib/api/meeting-brain-types.ts";
 
 export interface AgendaDraftRow {
   /** Stable React key for the row, also the error key. */
@@ -20,6 +21,11 @@ export interface AgendaDraftRow {
   ownerId: string;
   /** As typed: "" for no time box. */
   minutes: string;
+  /** An org goal id (ADR-0039 B3), or "" for none. */
+  goalId?: string;
+  /** Where a drafted row came from (ADR-0039 B4), shown quietly. Unset for rows you wrote, and
+   *  cleared when you retitle a drafted one. */
+  source?: DraftSource;
 }
 
 export type AgendaRowErrors = Partial<Record<"title" | "minutes" | "owner", string>>;
@@ -58,6 +64,7 @@ export function rowsFromItems(items: AgendaItem[]): AgendaDraftRow[] {
       title: it.title,
       ownerId: it.owner_user_id ?? "",
       minutes: it.duration_minutes == null ? "" : String(it.duration_minutes),
+      goalId: it.goal_id ?? "",
     }));
 }
 
@@ -136,10 +143,81 @@ export function validateAgenda(rows: AgendaDraftRow[], participantIds: readonly 
       continue;
     }
     const item: AgendaItemPut = { title, owner_user_id: r.ownerId || null, duration_minutes: minutes };
+    if (r.goalId) item.goal_id = r.goalId;
     if (r.id) item.id = r.id;
     items.push(item);
   }
 
   if (Object.keys(errors).length > 0) return { ok: false, message: AGENDA_MESSAGES.summary, rows: errors };
   return { ok: true, items };
+}
+
+/* ---------------------------------------------------------------- drafted agendas (ADR-0039 B1, B4) */
+
+export const DRAFT_SOURCE_LABEL: Record<DraftSource, string> = {
+  template: "From the meeting type",
+  unfinished: "Not finished last time",
+  open_action: "Open action from last time",
+};
+
+function sameTitle(a: string, b: string): boolean {
+  return a.trim().toLowerCase().replace(/\s+/g, " ") === b.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+/** Rows for drafted items, in the server's order. */
+export function rowsFromDraft(items: readonly DraftedAgendaItem[]): AgendaDraftRow[] {
+  return items.map((it) => ({
+    key: newRowKey(),
+    title: it.title.slice(0, AGENDA_LIMITS.titleMax),
+    ownerId: it.owner_user_id ?? "",
+    minutes: it.duration_minutes == null ? "" : String(it.duration_minutes),
+    goalId: it.goal_id ?? "",
+    source: it.source,
+  }));
+}
+
+/** A meeting type's agenda as drafted rows. */
+export function templateDraft(template: Pick<MeetingTemplate, "agenda">): DraftedAgendaItem[] {
+  return template.agenda.map((a) => ({
+    title: a.title,
+    owner_user_id: null,
+    duration_minutes: a.duration_minutes ?? null,
+    goal_id: null,
+    source: "template" as const,
+  }));
+}
+
+export interface DraftMerge {
+  rows: AgendaDraftRow[];
+  /** Drafted rows that made it in. */
+  added: number;
+  /** Drafted rows left out because the agenda would pass 20 items. */
+  dropped: number;
+}
+
+/**
+ * Fold drafted items into the rows being edited. Earlier drafted rows whose source is in
+ * `replace` give way to the new draft; rows you wrote yourself (and drafted rows of other
+ * sources) are always kept. Drafted rows go first, in the server's order, then the kept rows. A
+ * drafted item with the same title as a kept row is skipped. Your rows are never pushed out by
+ * the 20-item cap: drafted rows are trimmed from the end instead.
+ */
+export function mergeDraftedAgenda(
+  rows: readonly AgendaDraftRow[],
+  drafted: readonly DraftedAgendaItem[],
+  replace: readonly DraftSource[] = ["template", "unfinished", "open_action"],
+): DraftMerge {
+  const kept = rows.filter((r) => !(r.source && replace.includes(r.source)) && !isBlank(r));
+  const fresh = rowsFromDraft(drafted).filter((d) => !kept.some((k) => sameTitle(k.title, d.title)));
+  // Drop duplicates inside the draft itself too (the same title twice).
+  const unique: AgendaDraftRow[] = [];
+  for (const d of fresh) if (!unique.some((u) => sameTitle(u.title, d.title))) unique.push(d);
+  const room = Math.max(0, AGENDA_LIMITS.maxItems - kept.length);
+  const added = unique.slice(0, room);
+  return { rows: [...added, ...kept], added: added.length, dropped: unique.length - added.length };
+}
+
+/** Retitling a drafted row makes it yours: its source caption goes. */
+export function retitleRow(rows: AgendaDraftRow[], key: string, title: string): AgendaDraftRow[] {
+  return rows.map((r) => (r.key === key ? { ...r, title, source: undefined } : r));
 }

@@ -16,7 +16,7 @@ export default async function TenantLayout({ children }: { children: React.React
   if (!ctx || ctx.user.role !== "admin") notFound();
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+    <div className="mx-auto flex max-w-[1480px] flex-col gap-6">
       <TenantTabs />
       {children}
     </div>

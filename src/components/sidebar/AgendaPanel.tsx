@@ -8,6 +8,7 @@ import {
   CircleHalf,
   Compass,
   MinusCircle,
+  Robot,
   Sparkle,
   Timer,
   UsersThree,
@@ -17,7 +18,18 @@ import { setAgendaItemStatus } from "@/app/actions/agenda";
 import { useCallToast } from "@/components/call/CallToast";
 import { STATUS_LABEL, itemMeta, statusSourceText } from "@/components/meetings/agenda-status";
 import type { AgendaItem, AgendaStatus, NudgeType } from "@/lib/api/meeting-agenda-types";
-import { NUDGE_LABEL, agendaProgress, nudgeTone, type AgendaState, type NudgeState } from "@/lib/realtime/agenda";
+import { Doodle } from "@/components/ui/Doodle";
+import {
+  NUDGE_LABEL,
+  agendaProgress,
+  nudgeTone,
+  proxyNudgeText,
+  type AgendaState,
+  type NudgeState,
+  type Proxy,
+} from "@/lib/realtime/agenda";
+import { agentFace } from "@/lib/realtime/agent-persona";
+import { useRoomNames } from "@/lib/realtime/room-names";
 import type { MeetingSocketState } from "@/lib/realtime/useMeetingSocket";
 
 /* The shared live agenda in the room's Agent tab (ADR-0038 D9, D11). Everyone sees the same list:
@@ -28,7 +40,10 @@ import type { MeetingSocketState } from "@/lib/realtime/useMeetingSocket";
 
    Nudges ("agent-nudge") reach the host only. One shows at a time above the list, as a calm card
    in the frozen language: running over is amber (attention), off the agenda and still-open items
-   are blue (informs). Dismiss shows the next one, if any. Nothing about a nudge is saved. */
+   are blue (informs). Dismiss shows the next one, if any. Nothing about a nudge is saved.
+
+   ADR-0039 C5: when an item owned by someone who sent their agent comes up, the host gets a blue
+   `proxy_update` nudge carrying that person's update in full, under their agent's face. */
 
 const STATUS_ICON: Record<AgendaStatus, Icon> = {
   pending: Circle,
@@ -41,6 +56,7 @@ const NUDGE_ICON: Record<NudgeType, Icon> = {
   over_time: Timer,
   off_agenda: Compass,
   unaddressed: ArrowBendUpLeft,
+  proxy_update: Robot,
 };
 
 const DONE_TOAST: Record<AgendaStatus, string> = {
@@ -60,6 +76,7 @@ export function AgendaPanel({
   onDismissNudge,
   steers,
   nameOf,
+  proxies = [],
 }: {
   meetingId: string;
   agenda: AgendaState;
@@ -69,13 +86,26 @@ export function AgendaPanel({
   /** You host or created the meeting: you may mark items. */
   steers: boolean;
   nameOf: (id: string) => string;
+  /** Who sent their agent, with their update (ADR-0039 B5), for the `proxy_update` nudge. */
+  proxies?: Proxy[];
 }) {
+  const roomNames = useRoomNames();
   const toast = useCallToast();
   const uid = useId();
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const { done, total } = agendaProgress(agenda.items);
   const nudge = nudges.current;
   const nudgeItem = nudge?.itemId ? agenda.items.find((it) => it.id === nudge.itemId) ?? null : null;
+  const proxyNudge = nudge ? proxyNudgeText(nudge, agenda.items, proxies) : null;
+  const proxyFace =
+    nudge?.type === "proxy_update" && proxyNudge?.ownerId
+      ? agentFace(
+          proxyNudge.ownerId,
+          roomNames[proxyNudge.ownerId]?.name ?? null,
+          roomNames[proxyNudge.ownerId]?.agentName,
+          roomNames[proxyNudge.ownerId]?.agentSeed,
+        )
+      : null;
 
   const mark = async (item: AgendaItem, status: AgendaStatus) => {
     const op = ++opSeq;
@@ -122,14 +152,29 @@ export function AgendaPanel({
           key={nudge.id}
         >
           <div className="nfy-kind">
-            {(() => {
-              const NIcon = NUDGE_ICON[nudge.type];
-              return <NIcon size={16} weight="bold" aria-hidden />;
-            })()}
-            {NUDGE_LABEL[nudge.type]}
+            {proxyFace ? (
+              <span className="cx-agent-badge nudge-face" aria-hidden="true">
+                <Doodle seed={proxyFace.seed} className="block h-full w-full" />
+              </span>
+            ) : (
+              (() => {
+                const NIcon = NUDGE_ICON[nudge.type];
+                return <NIcon size={16} weight="bold" aria-hidden />;
+              })()
+            )}
+            {proxyFace && proxyNudge?.ownerId
+              ? `${nameOf(proxyNudge.ownerId)} sent their agent`
+              : NUDGE_LABEL[nudge.type]}
             <span className="nfy-meta">Only you</span>
           </div>
-          <p className="nfy-text">{nudge.content}</p>
+          {nudge.type === "proxy_update" ? (
+            <p className="nfy-text nudge-proxy">
+              <span className="sr-only">Their update: </span>
+              {proxyNudge?.text ?? nudge.content}
+            </p>
+          ) : (
+            <p className="nfy-text">{nudge.content}</p>
+          )}
           {nudgeItem ? <p className="nfy-sub">On {nudgeItem.title}</p> : null}
           <div className="nfy-acts">
             {nudgeItem && steers && nudgeItem.status !== "covered" && nudgeItem.status !== "skipped" ? (

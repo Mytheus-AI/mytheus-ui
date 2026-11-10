@@ -50,6 +50,8 @@ function cleanItems(items: AgendaItemPut[]): AgendaItemPut[] | null {
     const owner = it.owner_user_id && UUID.test(it.owner_user_id) ? it.owner_user_id : null;
     const row: AgendaItemPut = { title, owner_user_id: owner, duration_minutes: minutes };
     if (it.id && UUID.test(it.id)) row.id = it.id;
+    // ADR-0039 B3: the company goal the item serves. Sent as null to clear it.
+    row.goal_id = it.goal_id && UUID.test(it.goal_id) ? it.goal_id : null;
     out.push(row);
   }
   return out;

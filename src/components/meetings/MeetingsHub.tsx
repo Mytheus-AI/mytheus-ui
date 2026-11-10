@@ -19,6 +19,7 @@ import { Button, LinkButton } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { initials, toneOf } from "@/components/room/tone";
 import { Chip } from "./Chip";
+import type { MeetingTemplate, OrgGoal } from "@/lib/api/meeting-brain-types";
 import { NewMeeting, type NewMeetingMe } from "./NewMeeting";
 import type { PickableMember } from "./MemberPicker";
 import { MONTHS, addDays, dayKey, dayLabel, formatTime, mondayOf, sameDay, shortDate, startOfDay } from "./date-utils";
@@ -89,6 +90,8 @@ export function MeetingsHub({
   invitable = null,
   me = null,
   unavailable = false,
+  templates = [],
+  goals = [],
 }: {
   meetings: HubMeeting[];
   /** Internal user id to name and photo, for hosts, avatars and search by person. */
@@ -99,6 +102,9 @@ export function MeetingsHub({
   me?: NewMeetingMe | null;
   /** The list could not be loaded, which is not the same as having no meetings. */
   unavailable?: boolean;
+  /** Meeting types and active goals for the empty state's New meeting (ADR-0039). */
+  templates?: MeetingTemplate[] | null;
+  goals?: OrgGoal[];
 }) {
   const router = useRouter();
   const [now, setNow] = useState<Date | null>(null);
@@ -237,7 +243,7 @@ export function MeetingsHub({
       <EmptyState
         title="No meetings yet"
         description="Start or schedule a meeting. Your agent joins it with you, takes notes and holds decisions for you to confirm."
-        action={<NewMeeting members={invitable} me={me} />}
+        action={<NewMeeting members={invitable} me={me} templates={templates} goals={goals} />}
       />
     );
   } else if (groups.length === 0) {

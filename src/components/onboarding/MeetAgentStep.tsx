@@ -37,6 +37,7 @@ export function MeetAgentStep({
   defaultSeed,
   personName,
   email,
+  nextHref = "/dashboard",
 }: {
   initial: {
     agent_name: string | null;
@@ -48,6 +49,8 @@ export function MeetAgentStep({
   defaultSeed: string;
   personName: string;
   email: string;
+  /** where Save and Skip lead: the dashboard, or the company brain setup for a new workspace's admin */
+  nextHref?: string;
 }) {
   const router = useRouter();
   const [name, setName] = useState(initial?.agent_name ?? "");
@@ -64,7 +67,7 @@ export function MeetAgentStep({
 
   const go = (why: "save" | "skip") => {
     setLeaving(why);
-    router.push("/dashboard");
+    router.push(nextHref);
   };
 
   const submit = async (e: FormEvent) => {
@@ -197,7 +200,7 @@ export function MeetAgentStep({
 
         <div className="space-y-4">
           <PrimaryButton loading={saving || leaving === "save"} disabled={leaving === "skip"}>
-            {saving ? "Saving" : "Save and open your dashboard"}
+            {saving ? "Saving" : nextHref === "/dashboard" ? "Save and open your dashboard" : "Save and continue"}
           </PrimaryButton>
           <p className="text-center text-[14px] text-ink-3">
             <TextButton onClick={() => go("skip")} disabled={saving || !!leaving}>
