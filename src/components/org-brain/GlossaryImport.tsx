@@ -39,7 +39,13 @@ export function GlossaryImport({
   const [busy, setBusy] = useState(false);
   const [flash, setFlash] = useFlash();
 
-  const parsed = useMemo(() => parseGlossaryImport(text, { defaultKind, detectAcronyms: acronyms }), [text, defaultKind, acronyms]);
+  const parsed = useMemo(() => {
+    const p = parseGlossaryImport(text, { defaultKind, detectAcronyms: acronyms });
+    // A term already in the vocabulary keeps its kind: the import updates its definition and
+    // spellings, and changing a kind is done in the table, deliberately.
+    const kindOf = new Map(existing.map((t) => [t.term.toLowerCase(), t.kind] as const));
+    return { ...p, rows: p.rows.map((r) => ({ ...r, kind: kindOf.get(r.term.toLowerCase()) ?? r.kind })) };
+  }, [text, defaultKind, acronyms, existing]);
   const { added, updated } = useMemo(() => splitNewAndExisting(parsed.rows, existing), [parsed.rows, existing]);
   const roomLeft = L.maxTerms - existing.length;
   const overCap = added.length > roomLeft;
