@@ -125,7 +125,7 @@ test("callback: provider error wins and is never echoed", () => {
     location: "/settings/integrations?error=access_denied",
   });
   const odd = readCallback("slack", { error: "<b>pwned</b>" });
-  assert.equal(odd.kind === "done" && odd.location, "/settings/integrations?error=exchange_failed");
+  assert.equal(odd.kind === "done" && odd.location, "/settings/integrations?error=access_denied");
 });
 
 test("callback outcome mapping", () => {
@@ -141,6 +141,13 @@ test("callback outcome mapping", () => {
   assert.equal(go(422, "VALIDATION_FAILED"), "/settings/integrations?error=invalid_state");
   assert.equal(go(502, "DEPENDENCY_UNAVAILABLE"), "/settings/integrations?error=exchange_failed");
   assert.equal(go(0, ""), "/settings/integrations?error=exchange_failed");
+  // the server's `reason` wins when it is a known key, and is ignored otherwise
+  const why = (status: number, code: string, reason: string) => callbackOutcome("slack", { ok: false, status, code, reason });
+  assert.equal(why(400, "VALIDATION_FAILED", "state_expired"), "/settings/integrations?error=state_expired");
+  assert.equal(why(400, "VALIDATION_FAILED", "exchange_failed"), "/settings/integrations?error=exchange_failed");
+  assert.equal(why(502, "DEPENDENCY_UNAVAILABLE", "post_install_failed"), "/settings/integrations?error=post_install_failed");
+  assert.equal(why(409, "ACCOUNT_CONNECTED_ELSEWHERE", "account_connected_elsewhere"), "/settings/integrations?error=account_connected_elsewhere");
+  assert.equal(why(400, "VALIDATION_FAILED", "drop_tables"), "/settings/integrations?error=invalid_state");
   // every mapped key has its own plain message on the integrations page
   for (const url of [go(409, "ACCOUNT_CONNECTED_ELSEWHERE"), go(403, "X"), go(400, "STATE_EXPIRED"), go(400, "INVALID_STATE")]) {
     const key = new URL(url, "https://x").searchParams.get("error")!;

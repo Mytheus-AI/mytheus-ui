@@ -40,12 +40,17 @@ export type Problem = CoreApiSchemas["schemas"]["Problem"];
 export class ApiError extends Error {
   readonly status: number;
   readonly code: ErrorCode;
+  /** An optional machine-readable sub-reason some services add to the problem body (for example
+   *  integration-service's OAuth completion: `state_expired`, `post_install_failed`). Only kept
+   *  when it is a short snake_case token, so prose never travels in it. */
+  readonly reason: string | null;
 
-  constructor(status: number, code: ErrorCode, message: string) {
+  constructor(status: number, code: ErrorCode, message: string, reason: string | null = null) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.code = code;
+    this.reason = reason;
   }
 
   get isAuthFailure(): boolean {
@@ -94,10 +99,12 @@ async function toApiError(response: Response): Promise<ApiError> {
   try {
     const parsed = (await response.json()) as Partial<Problem>;
     if (parsed && typeof parsed.code === "string") {
+      const reason = (parsed as { reason?: unknown }).reason;
       return new ApiError(
         response.status,
         parsed.code as ErrorCode,
         parsed.detail ?? parsed.title ?? `HTTP ${response.status}`,
+        typeof reason === "string" && /^[a-z][a-z0-9_]{0,63}$/.test(reason) ? reason : null,
       );
     }
   } catch {

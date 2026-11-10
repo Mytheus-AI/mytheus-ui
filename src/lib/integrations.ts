@@ -226,9 +226,9 @@ export function readCallback(provider: unknown, params: Record<string, string | 
   if (!isConnectable(provider)) return { kind: "done", location: `${BACK}?error=invalid_provider` };
   const providerError = first(params.error);
   if (typeof providerError === "string" && providerError) {
-    // Only the provider's own denial is distinguished; anything else is a failed exchange.
-    const key = providerError.trim().toLowerCase() === "access_denied" ? "access_denied" : "exchange_failed";
-    return { kind: "done", location: `${BACK}?error=${key}` };
+    // Any error from the provider means nothing was granted: no API call, and the user sees the
+    // cancelled message. The provider's own wording is never echoed.
+    return { kind: "done", location: `${BACK}?error=access_denied` };
   }
   const code = first(params.code);
   const state = first(params.state);
@@ -238,11 +238,23 @@ export function readCallback(provider: unknown, params: Record<string, string | 
 }
 
 /** Where to go after `POST /oauth/{provider}`: success, or one fixed error key per outcome. */
+const CALLBACK_REASONS = new Set([
+  "invalid_state",
+  "state_expired",
+  "exchange_failed",
+  "not_configured",
+  "pm_already_connected",
+  "account_connected_elsewhere",
+  "post_install_failed",
+]);
+
 export function callbackOutcome(
   provider: ProviderKey,
-  result: { ok: true } | { ok: false; status: number; code: string },
+  result: { ok: true } | { ok: false; status: number; code: string; reason?: string | null },
 ): string {
   if (result.ok) return `${BACK}?connected=${provider}`;
+  // integration-service names the outcome in `reason`; a known one is used as is.
+  if (result.reason && CALLBACK_REASONS.has(result.reason)) return `${BACK}?error=${result.reason}`;
   const code = result.code.toUpperCase();
   let key = "exchange_failed";
   if (code === "ACCOUNT_CONNECTED_ELSEWHERE") key = "account_connected_elsewhere";
@@ -253,5 +265,7 @@ export function callbackOutcome(
   else if (code.includes("STATE") && (code.includes("EXPIRED") || code.includes("EXPIRY"))) key = "state_expired";
   else if (code.includes("STATE") || code.includes("PKCE")) key = "invalid_state";
   else if (result.status === 400 || result.status === 404 || result.status === 422) key = "invalid_state";
+  // A bare 502 without `reason` may be the gateway failing to reach the service, so it does not
+  // claim the connection was saved: it stays a generic failure.
   return `${BACK}?error=${key}`;
 }

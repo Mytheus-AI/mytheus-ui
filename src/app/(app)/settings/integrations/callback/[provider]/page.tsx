@@ -27,7 +27,9 @@ export default async function IntegrationCallbackPage({
   } catch (err) {
     location = callbackOutcome(
       input.provider,
-      err instanceof ApiError ? { ok: false, status: err.status, code: String(err.code) } : { ok: false, status: 0, code: "" },
+      err instanceof ApiError
+        ? { ok: false, status: err.status, code: String(err.code), reason: err.reason }
+        : { ok: false, status: 0, code: "" },
     );
   }
   // `redirect` throws, so it sits outside the try above.
