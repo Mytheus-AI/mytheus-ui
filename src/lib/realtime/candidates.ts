@@ -19,9 +19,18 @@
  * Decisions and Actions. A card someone hid for themselves ("Hide for me") is in `hidden`: it
  * stays open for everyone else.
  *
+ * Each candidate carries its moment (polish program, Phase 1; see moments.ts): the quote, the
+ * speaker, the time and a `moment_id` shared with the other results of that moment. An agent may
+ * UPDATE a candidate instead of proposing a second one: the live event re-sends the existing id
+ * with `updates_candidate_id` set to it, and the card is replaced in place (`updatedAt` marks it).
+ * Should a producer ever name a different id it updates, the old card is replaced by the new one
+ * at the old card's place and the old id never comes back (`superseded`).
+ *
  * Nothing here commits anything. Confirm is a server action against `core-api`; this only decides
- * what the sidebar shows. Pure: no React, no imports beyond types.
+ * what the sidebar shows. Pure: no React.
  */
+
+import { emptyMoment, mergeMoment, readMoment, type Moment } from "./moments.ts";
 
 export type CandidateKind = "decision" | "action";
 export type CandidateOutcome = "confirmed" | "edited" | "dismissed";
@@ -43,6 +52,10 @@ export interface Candidate {
   seq: number;
   /** The last person who edited the draft, and when (from the room ledger). */
   editedBy?: { userId: string; at: string } | null;
+  /** Where it was said: quote, speaker, time, the shared moment id and the "why" line. */
+  moment?: Moment;
+  /** This client's clock (ms) when the agent last updated the card in place. */
+  updatedAt?: number;
 }
 
 /** A confirmed decision or action of this meeting: the live Decisions and Actions. */
@@ -89,6 +102,8 @@ export interface CandidatesState {
   decided: Record<string, Decided>;
   /** Recently settled cards, shown in place for a moment. */
   settled: Record<string, Settlement>;
+  /** Ids an update replaced with another id: never shown again. */
+  superseded?: Record<string, true>;
 }
 
 export const emptyCandidatesState: CandidatesState = {
@@ -113,6 +128,15 @@ export interface CandidateEventPayload {
     rationale?: string | null;
     assignee_id?: string | null;
     due_date?: string | null;
+    /** The moment (see moments.ts); `updates_candidate_id` replaces that card in place. */
+    moment_id?: string;
+    why?: string;
+    updates_candidate_id?: string;
+    quote?: string;
+    speaker_id?: string;
+    speaker_label?: string;
+    start_ms?: number;
+    end_ms?: number;
   }>;
 }
 
@@ -127,6 +151,9 @@ export interface CandidateRow {
   due_date?: string | null;
   confirmed_by?: string | null;
   created_at?: string | null;
+  /** The moment it came from and why it surfaced (polish program, Phase 1), when core-api has them. */
+  moment_id?: string | null;
+  why?: string | null;
 }
 
 /** The room ledger's "candidate-resolution" payload. */
@@ -168,19 +195,77 @@ function add(state: CandidatesState, incoming: Omit<Candidate, "seq">[]): Candid
   let nextSeq = state.nextSeq;
   for (const c of incoming) {
     if (!UUID.test(c.id) || !c.content?.trim()) continue;
-    if (state.resolved[c.id] || byId[c.id]) continue;
+    if (state.resolved[c.id] || state.superseded?.[c.id]) continue;
+    const existing = byId[c.id];
+    if (existing) {
+      // Already here (a re-hydrate after the live event): only fill in what the moment lacked.
+      const moment = mergeMoment(existing.moment, c.moment);
+      if (!c.moment || sameMoment(existing.moment, moment)) continue;
+      if (byId === state.byId) byId = { ...state.byId };
+      byId[c.id] = { ...existing, moment };
+      continue;
+    }
     if (byId === state.byId) byId = { ...state.byId };
     byId[c.id] = { ...c, seq: nextSeq++ };
   }
   return byId === state.byId ? state : { ...state, byId, nextSeq };
 }
 
-export function applyLiveCandidates(state: CandidatesState, p: CandidateEventPayload): CandidatesState {
+function sameMoment(a: Moment | undefined, b: Moment | undefined): boolean {
+  const x = a ?? emptyMoment;
+  const y = b ?? emptyMoment;
+  return (
+    x.momentId === y.momentId &&
+    x.why === y.why &&
+    x.quote === y.quote &&
+    x.speakerId === y.speakerId &&
+    x.speakerLabel === y.speakerLabel &&
+    x.startMs === y.startMs &&
+    x.endMs === y.endMs
+  );
+}
+
+/**
+ * The agent updated a card instead of proposing a new one. Same id: replace its text and moment
+ * in place. Another id: the new candidate takes the old one's place and the old id is retired.
+ * A card someone already settled stays settled; an update for a card this client never saw is
+ * simply a new card.
+ */
+function applyUpdate(state: CandidatesState, c: Omit<Candidate, "seq">, targetId: string, nowMs: number): CandidatesState {
+  if (!UUID.test(c.id) || !c.content?.trim()) return state;
+  if (state.resolved[c.id] || state.resolved[targetId]) return state;
+  const target = state.byId[targetId];
+  if (!target) return add(state, [{ ...c, updatedAt: nowMs }]);
+  const byId = { ...state.byId };
+  const next: Candidate = {
+    ...target,
+    ...c,
+    // An edit a person saved is never silently overwritten by the agent's older wording.
+    content: target.editedBy ? target.content : c.content,
+    rationale: target.editedBy ? target.rationale : c.rationale,
+    dueDate: target.editedBy ? target.dueDate : c.dueDate,
+    moment: mergeMoment(c.moment, target.moment),
+    seq: target.seq,
+    updatedAt: nowMs,
+    editedBy: target.editedBy,
+  };
+  if (c.id !== targetId) {
+    delete byId[targetId];
+    byId[c.id] = next;
+    return { ...state, byId, superseded: { ...(state.superseded ?? {}), [targetId]: true } };
+  }
+  byId[c.id] = next;
+  return { ...state, byId };
+}
+
+export function applyLiveCandidates(state: CandidatesState, p: CandidateEventPayload, nowMs = Date.now()): CandidatesState {
   const kind = kindOf(p?.kind);
   if (!kind || !Array.isArray(p.candidates)) return state;
-  return add(
-    state,
-    p.candidates.map((c) => ({
+  let next = state;
+  const fresh: Omit<Candidate, "seq">[] = [];
+  for (const c of p.candidates) {
+    if (!c || typeof c !== "object") continue;
+    const candidate: Omit<Candidate, "seq"> = {
       id: c.id,
       kind,
       content: c.content,
@@ -189,8 +274,18 @@ export function applyLiveCandidates(state: CandidatesState, p: CandidateEventPay
       assigneeId: kind === "action" ? (c.assignee_id ?? null) : undefined,
       dueDate: kind === "action" ? (c.due_date ?? null) : undefined,
       windowId: p.windowId,
-    })),
-  );
+      moment: readMoment(c, p.windowId),
+    };
+    const target = typeof c.updates_candidate_id === "string" && UUID.test(c.updates_candidate_id) ? c.updates_candidate_id : null;
+    if (target) {
+      // Keep arrival order: anything new before this update lands first.
+      next = add(next, fresh.splice(0));
+      next = applyUpdate(next, candidate, target, nowMs);
+    } else {
+      fresh.push(candidate);
+    }
+  }
+  return add(next, fresh);
 }
 
 function decide(
@@ -252,6 +347,7 @@ export function hydrateCandidates(
         rationale: kind === "decision" ? (r.rationale ?? null) : undefined,
         assigneeId: kind === "action" ? (r.assignee_id ?? null) : undefined,
         dueDate: kind === "action" ? (r.due_date ?? null) : undefined,
+        moment: r.moment_id || r.why ? readMoment({ moment_id: r.moment_id, why: r.why }) : undefined,
       }));
   return add(next, [...rows(body.decisions, "decision"), ...rows(body.actions, "action")]);
 }

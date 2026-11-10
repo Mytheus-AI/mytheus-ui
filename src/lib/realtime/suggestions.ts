@@ -11,7 +11,11 @@
  *
  * The id is the same in both (ADR-0034 D3). A suggestion asked or dismissed here is remembered in
  * `resolved` and never comes back, even if a stale source repeats it.
+ *
+ * A live suggestion may carry its moment and a "why" line (polish program, Phase 1; moments.ts).
  */
+
+import { readMoment, type Moment } from "./moments.ts";
 
 export type SuggestionPriority = 1 | 2 | 3;
 export type SuggestionStatus = "open" | "saved";
@@ -41,6 +45,8 @@ export interface Suggestion {
   meetingId?: string | null;
   /** Arrival order, so the list is stable. */
   seq: number;
+  /** Where it was said and why it surfaced, when the agent said so. */
+  moment?: Moment;
 }
 
 export interface SuggestionsState {
@@ -63,6 +69,13 @@ export interface SuggestionEventPayload {
     confidence: number;
     rationale?: string | null;
     citations?: unknown;
+    moment_id?: string;
+    why?: string;
+    quote?: string;
+    speaker_id?: string;
+    speaker_label?: string;
+    start_ms?: number;
+    end_ms?: number;
   }>;
 }
 
@@ -76,6 +89,8 @@ export interface SuggestionRow {
   confidence?: number | null;
   rationale?: string | null;
   citations?: unknown;
+  moment_id?: string | null;
+  why?: string | null;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -158,6 +173,7 @@ export function applyLiveSuggestions(state: SuggestionsState, p: SuggestionEvent
         rationale: str(s.rationale),
         citations: cleanCitations(s.citations),
         status: "open",
+        moment: readMoment(s, p.windowId),
       }),
     )
     .filter((s): s is Incoming => s !== null);
@@ -178,6 +194,7 @@ export function hydrateSuggestions(
           citations: cleanCitations(r.citations),
           status,
           meetingId: str(r.meeting_id),
+          moment: r.moment_id || r.why ? readMoment({ moment_id: r.moment_id, why: r.why }) : undefined,
         }),
       )
       .filter((s): s is Incoming => s !== null);

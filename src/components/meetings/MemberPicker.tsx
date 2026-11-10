@@ -3,9 +3,13 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Check, MagnifyingGlass } from "@phosphor-icons/react";
+import { useOrgContext } from "@/lib/org-context";
 
 /* Pick workspace members to invite. Shared by the New meeting dialog and the meeting page's
-   Invite dialog. Members come from the server already resolved (internal ids, Clerk names). */
+   Invite dialog. Members come from the server already resolved (internal ids, Clerk names).
+   Inviting people to the workspace is an admin task (Workspace > Members), so only an admin is
+   offered that link; a member is told who can do it instead of being sent to a page they
+   cannot open. */
 
 export type PickableMember = { id: string; name: string; email: string };
 
@@ -21,6 +25,7 @@ export function MemberPicker({
   onChange: (ids: string[]) => void;
   emptyHint?: string;
 }) {
+  const isAdmin = useOrgContext().user.role === "admin";
   const [q, setQ] = useState("");
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -37,9 +42,13 @@ export function MemberPicker({
     return (
       <p className="mh-pick-note">
         {emptyHint ?? "No one else is in this workspace yet."}{" "}
-        <Link href="/tenant" className="mh-pick-link">
-          Invite people to the workspace
-        </Link>
+        {isAdmin ? (
+          <Link href="/workspace/members" className="mh-pick-link">
+            Invite people to the workspace
+          </Link>
+        ) : (
+          "A workspace admin can invite people."
+        )}
       </p>
     );
   }

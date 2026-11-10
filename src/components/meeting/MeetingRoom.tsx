@@ -22,11 +22,14 @@ import { NotesView } from "@/components/room/NotesView";
 import { PeoplePanel } from "@/components/room/PeoplePanel";
 import { ReactionLayer } from "@/components/room/ReactionLayer";
 import { RoomClock } from "@/components/room/RoomClock";
-import { RoomDialog } from "@/components/room/RoomDialog";
+import { CatchUpLine } from "@/components/room/CatchUpLine";
+import { StageBar } from "@/components/room/StageBar";
+import { StandInDialog, StandInQuestions } from "@/components/room/StandIn";
+import { WrapUpSheet, WrappingBanner } from "@/components/room/WrapUp";
+import { cancelWrapUp, startWrapUp } from "@/components/room/stage-actions";
 import { SteadyRoomGrid, type RoomLayout, type RoomTile } from "@/components/room/RoomGrid";
 import { RoomPanel, SECTION_IDS, type PanelTab } from "@/components/room/RoomPanel";
 import { useCompactBar, useNarrow } from "@/components/room/useNarrow";
-import { endMeetingForEveryone } from "@/components/room/actions";
 import { useOrgContext } from "@/lib/org-context";
 import { useLiveKitRoom } from "@/lib/realtime/useLiveKitRoom";
 import { RoomNamesProvider, type RoomNames } from "@/lib/realtime/room-names";
@@ -43,6 +46,8 @@ import { keyTargetOf, loadShortcutsEnabled, saveShortcutsEnabled, shortcutFor } 
 import { unreadCount } from "@/lib/realtime/chat";
 import { agentFace, agentSeedFor, type AgentFace } from "@/lib/realtime/agent-persona";
 import type { Proxy } from "@/lib/realtime/agenda";
+import { dueQuestions, initialWrapUp, isLateJoin } from "@/lib/realtime/stage";
+import type { WrapUpClosedWire, WrapUpWire } from "@/lib/api/room-stage-types";
 import type { AgentPersonality } from "@/lib/api/meeting-agenda-types";
 import type { CallMeeting } from "@/components/call/resolve-meeting";
 
@@ -171,9 +176,14 @@ function Room({
   const [shareUrl, setShareUrl] = useState(`/meetings/${meeting.id}/join`);
   const [screenOn, setScreenOn] = useState(false);
   const [shortcutsOn, setShortcutsOn] = useState(true);
-  const [confirmEnd, setConfirmEnd] = useState(false);
   const [ending, setEnding] = useState(false);
   const [endedByMe, setEndedByMe] = useState(false);
+  // The close-out ritual and the room's edges (polish program, Phase 1).
+  const [wrapUpStart, setWrapUpStart] = useState<WrapUpWire | null>(null);
+  const [closedInfo, setClosedInfo] = useState<WrapUpClosedWire | null>(null);
+  const [lateJoin, setLateJoin] = useState(false);
+  const [standInFor, setStandInFor] = useState<string | null>(null);
+  const [questionsDone, setQuestionsDone] = useState<Record<string, true>>({});
   const [mode, setMode] = useState<RoomMode>("call");
   useEffect(() => {
     setShortcutsOn(loadShortcutsEnabled());
@@ -214,7 +224,12 @@ function Room({
   const { getToken } = useAuth();
   const getSocketToken = useCallback(() => getToken(), [getToken]);
   const meId = me?.id ?? null;
-  const socket = useMeetingSocket(meeting.id, { getToken: getSocketToken, meId, initialAgenda: meeting.agenda });
+  const socket = useMeetingSocket(meeting.id, {
+    getToken: getSocketToken,
+    meId,
+    initialAgenda: meeting.agenda,
+    initialWrapUpStartedAt: meeting.wrapUpStartedAt ?? null,
+  });
   const myNotes = useMemo(() => orderedNotes(socket.notes), [socket.notes]);
   const candidates = useMemo(() => orderedCandidates(socket.candidates), [socket.candidates]);
   const settlements = useMemo(() => recentSettlements(socket.candidates), [socket.candidates]);
@@ -225,6 +240,10 @@ function Room({
   const alerts = useMemo(() => orderedAlerts(socket.alerts), [socket.alerts]);
   const startedAt = live.startedAt ?? session?.startedAt ?? null;
   const joined = socket.status === "joined";
+  // Joining well after the call opened earns the catch-up line (decided once, on arrival).
+  useEffect(() => {
+    if (isLateJoin(session?.startedAt ?? null, Date.now())) setLateJoin(true);
+  }, [session?.startedAt]);
 
   const liveRoom = live.status === "connected" || live.status === "reconnecting" ? live.room : null;
   const ended = useMemo(
@@ -465,6 +484,7 @@ function Room({
       meeting.participants.filter((p) => p.attendance === "agent").map((p) => ({ userId: p.id, update: p.proxyUpdate })),
     [meeting.participants],
   );
+  const standInIds = useMemo(() => new Set(proxies.map((p) => p.userId)), [proxies]);
   const here = useMemo(() => new Set(live.participants.map((p) => p.identity)), [live.participants]);
   const proxyTiles = useMemo<RoomTile[]>(
     () =>
@@ -480,7 +500,7 @@ function Room({
             micOn: false,
             camOn: false,
             agent: agentFace(p.userId, name, person?.agentName, person?.agentSeed),
-            proxy: { forName: name, update: p.update },
+            proxy: { forName: name, update: p.update, onOpen: () => setStandInFor(p.userId) },
           };
         }),
     [proxies, here, myUserId, me?.id, names],
@@ -493,21 +513,59 @@ function Room({
 
   const speakerLabel = useCallback((id: string) => (id === myUserId ? "You" : names[id]?.name ?? "Someone"), [myUserId, names]);
 
-  const endForEveryone = async () => {
+  /* "End for everyone" opens the 60-second wrap-up (polish program, Phase 1): core-api stores its
+     start (so the deadline is one fact for the whole room), the host's screen shows the sheet at
+     once, and the gateway tells everyone else "The host is wrapping up". */
+  const beginWrapUp = async () => {
+    if (ending) return;
     setEnding(true);
-    const res = await endMeetingForEveryone(meeting.id);
+    const res = await startWrapUp(meeting.id);
+    setEnding(false);
     if (!res.ok) {
-      setEnding(false);
       toast(res.message, "error");
       return;
     }
+    setWrapUpStart(res.wrapUp);
+    socket.setWrapUp(initialWrapUp(res.wrapUp.wrap_up_started_at ?? new Date().toISOString()));
+    const ack = await socket.announceWrapUp();
+    if (!ack.ok) toast("Others will see the wrap-up when their room next checks in.", "info");
+  };
+  const keepGoing = async () => {
+    const res = await cancelWrapUp(meeting.id);
+    if (!res.ok) {
+      toast(res.message, "error");
+      return;
+    }
+    socket.setWrapUp(null);
+    setWrapUpStart(null);
+    void socket.announceWrapUp();
+    toast("The meeting continues", "success");
+  };
+  const onClosed = async (closed: WrapUpClosedWire) => {
+    setClosedInfo(closed);
     // core-api has it ended; now everyone in the room is told (the gateway checks it first).
     const ack = await socket.announceEnd();
-    setEnding(false);
-    setConfirmEnd(false);
     setEndedByMe(true);
     if (!ack.ok) toast("The meeting is ended. Others leave the call when their room next checks in.", "info");
   };
+
+  // A stand-in's questions come up for the host when the item they own starts (ADR-0039 B5: the
+  // questions are visible to the host and the person only, which the server already enforces).
+  const due = useMemo(
+    () =>
+      dueQuestions(
+        socket.agenda.items,
+        meeting.participants
+          .filter((p) => p.attendance === "agent" && p.id !== meId && !here.has(p.id))
+          .map((p) => ({ userId: p.id, questions: p.proxyQuestions })),
+      ).filter((d) => !questionsDone[d.key]),
+    [socket.agenda.items, meeting.participants, meId, here, questionsDone],
+  );
+  const standIn = standInFor ? meeting.participants.find((p) => p.id === standInFor) ?? null : null;
+  const nameOfPerson = useCallback(
+    (id: string) => (id === me?.id ? "You" : names[id]?.name ?? "Former member"),
+    [me?.id, names],
+  );
 
   /* Drawn inside the video frame, over the picture. */
   const overlay = (
@@ -547,7 +605,7 @@ function Room({
         }}
         shortcutsOn={shortcutsOn}
         onShortcuts={changeShortcuts}
-        onEndForEveryone={me?.steers ? () => setConfirmEnd(true) : undefined}
+        onEndForEveryone={me?.steers ? () => void beginWrapUp() : undefined}
         compact={compact}
       />
     </>
@@ -621,6 +679,11 @@ function Room({
       alerts={alerts}
       onAlertRead={socket.markAlertRead}
       onAlertDismissed={socket.dismissAlert}
+      agendaItems={socket.agenda.items}
+      startedAt={startedAt}
+      captions={socket.captions.lines}
+      speakerLabel={speakerLabel}
+      localSpeaking={Boolean(live.participants.find((p) => p.isLocal)?.isSpeaking)}
     />
   );
 
@@ -675,8 +738,10 @@ function Room({
               <h1 id="room-ended-h">{byMe ? "You ended the meeting for everyone" : "The host ended the meeting"}</h1>
               <p>
                 {byMe
-                  ? "Everyone has left the call. Confirmed decisions and tasks are saved; cards nobody confirmed stay open for review on the meeting page."
-                  : `${names[ended.byUserId]?.name ?? "The host"} ended this meeting for everyone. Confirmed decisions and tasks are saved.`}
+                  ? closedInfo && closedInfo.moved_decisions + closedInfo.moved_actions > 0
+                    ? `Everyone has left the call. Confirmed decisions and tasks are saved; the ${closedInfo.moved_decisions + closedInfo.moved_actions} cards nobody confirmed are in ${closedInfo.review_owner_id && closedInfo.review_owner_id !== meId ? `${names[closedInfo.review_owner_id]?.name ?? "their"}'s` : "your"} review queue.`
+                    : "Everyone has left the call. Confirmed decisions and tasks are saved."
+                  : `${names[ended.byUserId]?.name ?? "The host"} ended this meeting for everyone. Confirmed decisions and tasks are saved, and anything left open went to the host's review queue.`}
               </p>
               <Link href={`/meetings/${meeting.id}`} className="room-ended-link tap" autoFocus>
                 <ArrowLeft size={16} weight="bold" aria-hidden />
@@ -711,6 +776,34 @@ function Room({
             shortcutsOn,
           }}
         />
+        {live.status !== "consent" ? (
+          <StageBar
+            meetingId={meeting.id}
+            agenda={socket.agenda}
+            host={socket.agendaHost}
+            steers={Boolean(me?.steers)}
+            nameOf={nameOfPerson}
+            standInIds={standInIds}
+          >
+            {lateJoin ? <CatchUpLine meetingId={meeting.id} nameOf={nameOfPerson} onClose={() => setLateJoin(false)} /> : null}
+            {me?.steers ? (
+              <StandInQuestions
+                due={due}
+                nameOf={nameOfPerson}
+                itemTitleOf={(id) => socket.agenda.items.find((it) => it.id === id)?.title ?? null}
+                onRaise={socket.sendChat}
+                onDone={(key) => setQuestionsDone((d) => ({ ...d, [key]: true }))}
+              />
+            ) : null}
+          </StageBar>
+        ) : null}
+        {socket.wrapUp && !me?.steers ? (
+          <WrappingBanner
+            wrapUp={socket.wrapUp}
+            hostName={names[socket.wrapUp.byUserId ?? meeting.hostUserId ?? ""]?.name ?? "The host"}
+            leaveHref={`/meetings/${meeting.id}`}
+          />
+        ) : null}
         <main className={`cx-body${sideOpen ? "" : " side-collapsed"}${mode === "notes" ? " is-notes" : ""}`} id="page-meeting">
           {live.status === "consent" ? (
             <section className="room-consent" aria-labelledby="room-consent-h">
@@ -770,20 +863,32 @@ function Room({
         </main>
       </div>
 
-      <RoomDialog open={confirmEnd} onClose={() => !ending && setConfirmEnd(false)} title="End the meeting for everyone?" tone="danger">
-        <p>
-          Everyone leaves the call and the meeting is marked ended. Confirmed decisions and tasks are saved; cards nobody
-          confirmed stay open for review on the meeting page.
-        </p>
-        <div className="room-dialog-acts">
-          <button type="button" className="nfy-act is-quiet tap" onClick={() => setConfirmEnd(false)} disabled={ending} autoFocus>
-            Keep the meeting going
-          </button>
-          <button type="button" className="nfy-act is-danger tap" onClick={() => void endForEveryone()} disabled={ending}>
-            {ending ? "Ending..." : "End for everyone"}
-          </button>
-        </div>
-      </RoomDialog>
+      {me?.steers && socket.wrapUp ? (
+        <WrapUpSheet
+          meetingId={meeting.id}
+          wrapUp={socket.wrapUp}
+          initial={wrapUpStart}
+          participantIds={meeting.participantIds}
+          meId={meId}
+          nameOf={nameOfPerson}
+          ledger={{ settle: socket.settleCandidate, announce: socket.announceCandidate }}
+          agendaHost={socket.agendaHost}
+          onKeepGoing={keepGoing}
+          onClosed={onClosed}
+        />
+      ) : null}
+      {standIn ? (
+        <StandInDialog
+          open
+          onClose={() => setStandInFor(null)}
+          meetingId={meeting.id}
+          userId={standIn.id}
+          name={names[standIn.id]?.name ?? "A teammate"}
+          face={agentFace(standIn.id, names[standIn.id]?.name ?? null, names[standIn.id]?.agentName, names[standIn.id]?.agentSeed)}
+          update={standIn.proxyUpdate}
+          questions={standIn.proxyQuestions}
+        />
+      ) : null}
     </div>
   );
 }

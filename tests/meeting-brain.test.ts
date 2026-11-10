@@ -381,3 +381,38 @@ test("a proxy-update nudge keeps the whole update and who sent it, and needs an 
     { ownerId: ME, text: "On track" },
   );
 });
+
+test("the brief reads the previous meeting's minutes, mine first, and nothing when empty", () => {
+  const me = "11111111-1111-4111-8111-111111111111";
+  const b = toBrief({
+    meeting: { id: "m1", title: "Weekly", scheduled_start: null },
+    my_agenda_items: [],
+    my_open_actions: [],
+    saved_questions: [],
+    proxies: [],
+    previous_meeting: { id: "m0", title: "Kickoff" },
+    previous_minutes: {
+      open_items: [
+        { text: "Confirm the vendor split", owner_user_id: me, owner_name: "Sam", due: "Friday", mine: true },
+        { text: "  ", owner_user_id: null },
+        { text: "Book the venue", owner_user_id: null, owner_name: null, due: null, mine: false },
+      ],
+      unanswered_questions: ["Does legal review this?", 3],
+      my_promises: [{ text: "Send the comparison", to_name: "Ana", due: null }],
+    },
+  });
+  assert.ok(b);
+  assert.deepEqual(b.previous_minutes, {
+    open_items: [
+      { text: "Confirm the vendor split", owner_user_id: me, owner_name: "Sam", due: "Friday", mine: true },
+      { text: "Book the venue", owner_user_id: null, owner_name: null, due: null, mine: false },
+    ],
+    unanswered_questions: ["Does legal review this?"],
+    my_promises: [{ text: "Send the comparison", to_name: "Ana", due: null }],
+  });
+  const none = toBrief({
+    meeting: { id: "m1" },
+    previous_minutes: { open_items: [], unanswered_questions: [], my_promises: [] },
+  });
+  assert.equal(none?.previous_minutes, null);
+});

@@ -13,6 +13,8 @@
  *   DELETE /admin/tenant/support-grants/{id}     revoke
  *   GET    /admin/tenant/data-export             {items: ExportRequest[]}
  *   POST   /admin/tenant/data-export             202 ExportRequest
+ *   GET    /admin/tenant/erasures                {items: Erasure[]}   completed erasures
+ *   POST   /admin/tenant/erasures                {kind, target_id, confirm} -> Erasure
  *
  * HAND-WRITTEN TYPES (see `lib/tenant-admin.ts`): re-run `npm run generate:api` once the backend
  * PR merges.
@@ -21,6 +23,7 @@
  */
 
 import { ApiError, api } from "@/lib/api/client";
+import type { components as AdminSchemas } from "@/lib/api/generated/admin-ops-service";
 import type { ExportRequest, GrantScope, SupportGrant, TenantMember, TenantSettings, Tier } from "@/lib/tenant-admin";
 
 /** A read, or why it failed. `forbidden` and `unavailable` get different copy on the page. */
@@ -79,4 +82,17 @@ export async function loadExportRequests(): Promise<Load<ExportRequest[]>> {
 
 export async function requestDataExport(): Promise<ExportRequest> {
   return api<ExportRequest>("/admin/tenant/data-export", { method: "POST", body: {} });
+}
+
+
+export type Erasure = AdminSchemas["schemas"]["Erasure"];
+export type ErasureCreate = AdminSchemas["schemas"]["ErasureCreate"];
+
+export async function loadErasures(): Promise<Load<Erasure[]>> {
+  const res = await load<{ items: Erasure[] }>("/admin/tenant/erasures");
+  return res.kind === "live" ? { kind: "live", data: res.data.items ?? [] } : res;
+}
+
+export async function postErasure(body: ErasureCreate): Promise<Erasure> {
+  return api<Erasure>("/admin/tenant/erasures", { method: "POST", body });
 }

@@ -42,10 +42,13 @@ import { agentFace } from "@/lib/realtime/agent-persona";
 import type { CarryForward } from "@/lib/api/meeting-agenda-types";
 import type { CallMeeting } from "@/lib/api/meetings";
 import { listMembers, type WorkspaceMemberView } from "@/lib/api/members";
+import { fetchFollowUp, fetchMinutes, fetchShareLinks } from "@/lib/api/minutes";
+import { MinutesSection } from "@/components/minutes/MinutesSection";
 import { fetchTranscriptSurface, type TranscriptChunk } from "@/lib/api/transcript";
 import "@/styles/meeting-hub.css";
 import "@/styles/meeting-agenda.css";
 import "@/styles/meeting-brain.css";
+import "@/styles/meeting-minutes.css";
 
 export const metadata: Metadata = { title: "Meeting | Mytheus" };
 
@@ -69,7 +72,11 @@ export const metadata: Metadata = { title: "Meeting | Mytheus" };
    reversible until it starts) and read your brief (#brief, where the reminder links); carried
    forward actions show their latest status; after it ends the health card sits beside the recap
    and the catch-up is a link away. On a wide screen the main area is two columns of cards beside
-   the people rail, so nothing sits in a narrow centred strip. */
+   the people rail, so nothing sits in a narrow centred strip.
+
+   Minutes for everyone: once a meeting that happened has ended, the Minutes card spans the page
+   above the columns: the shared minutes and your own side by side, with Share recap and (the
+   host) Send follow-up. */
 
 export const dynamic = "force-dynamic";
 
@@ -413,7 +420,7 @@ function EndedDetail({
       href: `/meetings/${meeting.id}/transcript`,
     },
     { icon: Scales, title: "Decisions", desc: "Decisions you have confirmed", href: "/decisions" },
-    { icon: CheckSquare, title: "Tasks", desc: "Action items, wherever they were captured", href: "/tasks" },
+    { icon: CheckSquare, title: "Tasks", desc: "Action items, wherever they were captured", href: "/work/tasks" },
     {
       icon: Sparkle,
       title: "Catch-up",
@@ -523,13 +530,17 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
   const ended = meeting.status === "past";
   // ADR-0039: the brief before and during it, the health card after (not for one that never
   // happened); goals name and pick an agenda item's goal. Each failing costs only its own card.
-  const [transcript, members, carried, brief, health, goals] = await Promise.all([
+  const happened = ended && !meeting.missed;
+  const [transcript, members, carried, brief, health, goals, minutes, followUp, shareLinks] = await Promise.all([
     fetchTranscriptSurface(meeting.id).catch(() => null),
     listMembers(),
     meeting.previousMeetingId ? fetchCarryForward(meeting.id) : Promise.resolve(null),
     ended ? Promise.resolve(null) : fetchMeetingBrief(meeting.id),
-    ended && !meeting.missed ? fetchMeetingHealth(meeting.id) : Promise.resolve(null),
+    happened ? fetchMeetingHealth(meeting.id) : Promise.resolve(null),
     fetchActiveGoals(),
+    happened ? fetchMinutes(meeting.id) : Promise.resolve(null),
+    happened ? fetchFollowUp(meeting.id) : Promise.resolve(null),
+    happened ? fetchShareLinks(meeting.id) : Promise.resolve(null),
   ]);
   // Older transcripts saved silence as empty lines.
   const chunks = (transcript?.chunks ?? []).filter((c) => c.text.trim().length > 0);
@@ -687,6 +698,18 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
           )}
         </div>
       </header>
+
+      {minutes && followUp && shareLinks && mine ? (
+        <MinutesSection
+          meetingId={meeting.id}
+          meetingTitle={meeting.title}
+          initial={minutes}
+          followUp={followUp}
+          links={shareLinks}
+          isHost={!!you && you.id === meeting.hostUserId}
+          confidential={!!meeting.confidential}
+        />
+      ) : null}
 
       {ended ? (
         <EndedDetail meeting={meeting} list={list} chunks={chunks} names={names} plan={plan} />

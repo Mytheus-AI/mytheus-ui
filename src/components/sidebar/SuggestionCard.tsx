@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Question } from "@phosphor-icons/react";
 import { askSuggestion, dismissSuggestion, saveSuggestion } from "@/app/actions/suggestions";
 import { citationLink, type Suggestion } from "@/lib/realtime/suggestions";
+import { MomentLine, WhyLine, type MomentTarget } from "@/components/sidebar/MomentLine";
 
 /* One question the agent suggests THIS participant asks (Plan 7-9 section 3.10, ADR-0034). It is
    private: nobody else in the meeting sees it. Ask copies the question for the chat and marks it
@@ -18,12 +19,18 @@ export type SuggestionOutcome = "asked" | "dismissed" | "saved" | "gone";
 
 export function SuggestionCard({
   suggestion,
+  meId = null,
+  onOpenMoment,
   currentMeetingId,
   leaving,
   onResolved,
   onError,
 }: {
   suggestion: Suggestion;
+  /** Your internal user id, so a quote of yours reads "You". */
+  meId?: string | null;
+  /** Opens the live transcript at the moment this question came from. */
+  onOpenMoment?: (target: MomentTarget, opener: HTMLElement) => void;
   /** Citations without a meeting of their own point at the meeting the suggestion came from. */
   currentMeetingId: string;
   leaving: boolean;
@@ -67,8 +74,13 @@ export function SuggestionCard({
         Suggested question
         <span className={`nfy-meta ${tone}`}>{meta}</span>
       </div>
+      {saved ? null : <MomentLine moment={suggestion.moment} meId={meId} onOpen={onOpenMoment} />}
       <p className="nfy-text">{suggestion.question}</p>
-      {suggestion.rationale ? <p className="nfy-sub">{suggestion.rationale}</p> : null}
+      {suggestion.moment?.why ? (
+        <WhyLine why={suggestion.moment.why} />
+      ) : suggestion.rationale ? (
+        <p className="nfy-sub">{suggestion.rationale}</p>
+      ) : null}
       {suggestion.citations.length > 0 ? (
         <div className="nfy-cites" aria-label="Sources">
           {suggestion.citations.map((c, i) => {

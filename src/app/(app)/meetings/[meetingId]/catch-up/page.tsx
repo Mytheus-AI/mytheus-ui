@@ -191,7 +191,7 @@ function CatchUpBody({
                 Now yours
               </h2>
               {c.assigned_to_me.length > 0 ? (
-                <Link href="/tasks" className="cu-more">
+                <Link href="/work/tasks" className="cu-more">
                   All your tasks
                 </Link>
               ) : null}

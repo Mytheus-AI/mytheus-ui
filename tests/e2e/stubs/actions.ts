@@ -45,3 +45,67 @@ export async function draftAgenda() {
 export async function inviteToMeeting() {
   return { ok: false as const, message: "Not available in this test." };
 }
+// Ask your agent (the room's private ask box) and the promise lookup.
+let askFailures = 0;
+export async function askAgent(question: string) {
+  // "offline" fails once, as an unreachable rag-service would, so the test can retry.
+  if (question.includes("offline") && askFailures++ === 0) {
+    return { ok: false as const, reason: "unavailable" as const, message: "Your agent could not answer just now. Try again in a moment." };
+  }
+  return {
+    ok: true as const,
+    data: {
+      question,
+      answer: "Launch moved to 2 December after QA signed off [1]. Pricing stays at 25 dollars [2].",
+      abstained: false,
+      degraded: false,
+      citations: [
+        { n: 1, text: "QA signed off on the beta, so we ship on the second.", kind: "decision", meeting_id: "8a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d", decision_id: "33333333-3333-4333-8333-333333333333", meeting_title: "Q4 launch review" },
+        { n: 2, text: "Pro stays at 25 dollars a seat.", kind: "transcript", meeting_id: "44444444-4444-4444-8444-444444444444", meeting_title: "Pricing review", occurred_at: "2026-11-04T10:00:00Z", speaker: "Raj Patel" },
+      ],
+    },
+  };
+}
+export async function findMeetingPromise() {
+  return { ok: true as const, id: "55555555-5555-4555-8555-555555555555", status: "open" as const };
+}
+export async function setCommitmentStatus() {
+  return { ok: true as const };
+}
+export async function askQuestion() {
+  return { ok: false as const, message: "Not available in this test." };
+}
+
+// Phase 4 reach (Settings > API access, decision sharing, Workspace > Data erasure).
+const NOW = "2026-11-11T10:00:00Z";
+export async function createToken(input: { name: string; scope: "read" | "read_write"; expiresInDays: number }) {
+  return {
+    ok: true as const,
+    token: "mytheus_pat_test_0000000000000000000000000000abcd",
+    item: {
+      id: "33333333-3333-4333-8333-333333333333",
+      user_id: "u-maya",
+      name: input.name,
+      scope: input.scope,
+      state: "active" as const,
+      token_preview: "mytheus_pat_...abcd",
+      created_at: NOW,
+      expires_at: "2027-02-09T10:00:00Z",
+    },
+  };
+}
+export async function revokeToken() {
+  return { ok: true as const };
+}
+export async function createDecisionShare() {
+  return { ok: true as const, id: "44444444-4444-4444-8444-444444444444", url: "https://app.mytheus.cloud/s/test" };
+}
+export async function revokeDecisionShare() {
+  return { ok: true as const };
+}
+export async function exportDecision() {
+  return { ok: true as const, url: "https://www.notion.so/test", replaced: false };
+}
+export async function eraseData() {
+  return { ok: true as const, summary: "3 notes and 1 promise removed", label: "Pricing review" };
+}

@@ -1,0 +1,506 @@
+/* The calm agent sidebar (polish program, Phase 1): the Now slot and its queue, cards tied to the
+   moment, one card per moment, the private ask box, notes under the agenda and the live
+   transcript a moment opens. Tokens only (both themes flip through them), the meeting radii, no
+   left accent bars: a moment's parts hang on one straight thread with beads, the one place the
+   room joins related things. Motion answers actions only and is off under reduced motion. */
+
+.mx-meet .calm[hidden],
+.mx-meet .calm-body[hidden],
+.mx-meet .now-queue[hidden],
+.mx-meet .calm-fold-body[hidden] { display: none !important; }
+
+/* ---------------------------------------------------------------- Needs you and the Now slot */
+
+.mx-meet .now { scroll-margin-top: 12px; }
+.mx-meet .now .side-sec h3:focus { outline: none; }
+.mx-meet .now .side-sec h3:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; border-radius: 6px; }
+.mx-meet .now-slot { display: flex; flex-direction: column; gap: 10px; }
+.mx-meet .now-settled { margin-bottom: 10px; }
+
+.mx-meet .now-held {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  color: var(--ink-3);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.mx-meet .now-held > svg { flex-shrink: 0; }
+
+.mx-meet .now-more {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  margin-top: 10px;
+  padding: 0 14px;
+  border-radius: var(--mx-r-ctl);
+  border: 1px dashed var(--line-2);
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.mx-meet .now-more:hover { background: var(--surface-2); color: var(--ink); }
+.mx-meet .now-more-caret { transition: transform 0.18s var(--ease-out); }
+.mx-meet .now-more[aria-expanded="true"] .now-more-caret { transform: rotate(180deg); }
+.mx-meet .now-queue { margin-top: 10px; }
+
+/* Scrolled away from Needs you while something waits: one quiet way back, pinned on top. */
+.mx-meet .now-jump {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 650;
+  box-shadow: var(--sh-2);
+}
+.mx-meet .now-jump.is-urgent { background: var(--priority-medium-soft); border-color: transparent; color: var(--mx-medium-ink); }
+.mx-meet .now-jump:hover { background: var(--surface-2); }
+
+/* ---------------------------------------------------------------- a card tied to its moment */
+
+.mx-meet .mc-said {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 9px 12px;
+  border-radius: var(--mx-r-ctl);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  text-align: left;
+}
+.mx-meet button.mc-said:hover { border-color: var(--line-2); background: var(--surface); }
+.mx-meet .nfy-card.is-p1 .mc-said,
+.mx-meet .nfy-card.is-alert .mc-said { background: var(--surface); }
+.mx-meet .mc-said.is-time-only { flex-direction: row; align-items: center; padding: 6px 12px; }
+.mx-meet .mc-quote {
+  display: block;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  quotes: "\201C" "\201D";
+}
+.mx-meet .mc-said-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  color: var(--ink-3);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.mx-meet .mc-said-meta b { color: var(--ink-2); font-weight: 650; }
+.mx-meet .mc-time { font-variant-numeric: tabular-nums; }
+.mx-meet .mc-open {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--signal-ink);
+}
+.mx-meet button.mc-said:hover .mc-open { text-decoration: underline; text-underline-offset: 2px; }
+
+.mx-meet .mc-why {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 8px 0 0;
+  color: var(--ink-3);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.mx-meet .mc-why > svg { flex-shrink: 0; margin-top: 2px; }
+.mx-meet .mc-why-label { color: var(--ink-2); font-weight: 600; }
+
+.mx-meet .mc-updated {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--priority-low-soft);
+  color: var(--priority-low);
+  font-size: 12.5px;
+  font-weight: 650;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .mx-meet .nfy-card.is-updated,
+  .mx-meet .nfy-card.is-moment:has(.mc-updated) { animation: mc-updated 0.9s var(--ease-out) 1; }
+}
+@keyframes mc-updated {
+  from { box-shadow: 0 0 0 3px var(--priority-low-soft), var(--sh-1); }
+  to { box-shadow: var(--sh-1); }
+}
+
+/* ---------------------------------------------------------------- one card per moment */
+
+.mx-meet .mc-parts {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  margin-top: 12px;
+  padding-left: 22px;
+}
+/* The one straight thread joining the parts of a moment. */
+.mx-meet .mc-parts::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 14px;
+  bottom: 14px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--line-2);
+}
+.mx-meet .mc-part { position: relative; padding: 10px 0; transition: opacity 0.22s var(--ease-out); }
+.mx-meet .mc-part + .mc-part { border-top: 1px solid var(--line); }
+.mx-meet .mc-part::before {
+  content: "";
+  position: absolute;
+  left: -20px;
+  top: 15px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--line-2);
+}
+.mx-meet .mc-part.is-decision::before { border-color: var(--ok); }
+.mx-meet .mc-part.is-action::before { border-color: var(--signal-line); }
+.mx-meet .mc-part.is-leaving { opacity: 0.35; }
+
+.mx-meet .mc-part-kind {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 650;
+}
+.mx-meet .mc-part-kind > svg { flex-shrink: 0; color: var(--ink-3); }
+.mx-meet .mc-part-body.is-decision .mc-part-kind > svg { color: var(--ok); }
+.mx-meet .mc-part-body.is-action .mc-part-kind > svg,
+.mx-meet .mc-part-body.is-promise .mc-part-kind > svg { color: var(--signal-ink); }
+.mx-meet .mc-part-body .nfy-text { margin-top: 4px; }
+.mx-meet .mc-part-body .nfy-acts { margin-top: 10px; }
+.mx-meet .mc-part-body.is-settled .nfy-text { color: var(--ink-3); }
+.mx-meet .mc-private {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: auto;
+  color: var(--ink-3);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.mx-meet .mc-part-said {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: var(--ok);
+  font-size: 13px;
+  font-weight: 600;
+}
+.mx-meet .mc-note-line { margin-top: 4px; color: var(--ink-2); font-size: 14px; line-height: 1.5; }
+.mx-meet .nfy-card.is-moment .nfy-kind > svg { color: var(--signal-ink); }
+
+/* ---------------------------------------------------------------- ask your agent */
+
+.mx-meet .ask { margin-top: 6px; }
+.mx-meet .ask-box {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 6px 6px 6px 14px;
+  border-radius: var(--mx-r-card);
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  box-shadow: var(--sh-1);
+}
+.mx-meet .ask-box:focus-within { border-color: var(--signal); box-shadow: 0 0 0 3px var(--signal-soft); }
+.mx-meet .ask-box textarea {
+  flex: 1;
+  min-width: 0;
+  min-height: 34px;
+  max-height: 120px;
+  padding: 7px 0;
+  resize: none;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14.5px;
+  line-height: 1.4;
+  field-sizing: content;
+}
+.mx-meet .ask-box textarea::placeholder { color: var(--ink-3); }
+.mx-meet .ask-box textarea:focus,
+.mx-meet .ask-box textarea:focus-visible { outline: none; }
+.mx-meet .ask-send {
+  flex-shrink: 0;
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--mx-r-ctl);
+  border: 0;
+  background: var(--pill);
+  color: var(--pill-on);
+}
+.mx-meet .ask-send:hover { background: var(--pill-2); }
+.mx-meet .ask-send:disabled { opacity: 0.45; cursor: default; }
+.mx-meet .ask-scope {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin-top: 8px;
+  color: var(--ink-3);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+.mx-meet .ask-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  color: var(--ink-2);
+  font-weight: 600;
+  cursor: pointer;
+}
+.mx-meet .ask-check input { width: 16px; height: 16px; accent-color: var(--signal); }
+.mx-meet .ask-hint { flex: 1 1 100%; }
+
+.mx-meet .ask-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.mx-meet .ask-item {
+  padding: 12px 14px;
+  border-radius: var(--mx-r-card);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--sh-1);
+}
+.mx-meet .ask-q {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-3);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.mx-meet .ask-q-scope {
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--bg-2);
+  color: var(--ink-2);
+  font-size: 12.5px;
+  line-height: 22px;
+}
+.mx-meet .ask-text { margin-top: 6px; color: var(--ink); font-size: 14.5px; line-height: 1.55; overflow-wrap: anywhere; }
+.mx-meet .ask-mark {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  margin: 0 2px;
+  padding: 0 5px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--signal-soft);
+  color: var(--signal-ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  vertical-align: 1px;
+}
+.mx-meet .ask-none,
+.mx-meet .ask-note { margin-top: 6px; color: var(--ink-2); font-size: 14px; line-height: 1.5; }
+.mx-meet .ask-note { color: var(--ink-3); font-size: 13px; }
+.mx-meet .ask-sources { flex-direction: column; flex-wrap: nowrap; gap: 8px; }
+.mx-meet .ask-source {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 8px;
+  padding: 2px;
+  border-radius: 10px;
+}
+.mx-meet .ask-source:focus { outline: 2px solid var(--signal); outline-offset: 2px; }
+.mx-meet .ask-source-n {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--bg-2);
+  color: var(--ink-2);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.mx-meet .ask-source-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mx-meet .ask-source-link,
+.mx-meet .ask-source-label { color: var(--ink); font-size: 13.5px; font-weight: 650; }
+.mx-meet .ask-source-link { text-decoration: underline; text-decoration-color: var(--line-2); text-underline-offset: 3px; }
+.mx-meet .ask-source-link:hover { text-decoration-color: var(--signal-line); }
+.mx-meet .ask-source-meta { color: var(--ink-3); font-size: 12.5px; }
+.mx-meet .ask-source-text { color: var(--ink-2); font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
+
+.mx-meet .ask-loading { display: flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 6px; color: var(--signal-ink); }
+.mx-meet .ask-skel { flex: 1; height: 10px; border-radius: 999px; background: var(--bg-2); }
+.mx-meet .ask-skel.is-short { flex: 0 0 30%; }
+@media (prefers-reduced-motion: no-preference) {
+  .mx-meet .ask-skel { animation: ask-pulse 1.4s var(--ease-out) infinite alternate; }
+}
+@keyframes ask-pulse { to { opacity: 0.45; } }
+
+.mx-meet .ask-error { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 6px; }
+.mx-meet .ask-error p { display: flex; gap: 6px; color: var(--priority-high); font-size: 14px; line-height: 1.45; }
+.mx-meet .ask-error p > svg { flex-shrink: 0; margin-top: 2px; }
+.mx-meet .ask-error.is-quiet p { color: var(--ink-2); }
+
+/* ---------------------------------------------------------------- notes under the agenda */
+
+.mx-meet .agnotes-groups { display: flex; flex-direction: column; }
+.mx-meet .agnotes-group + .agnotes-group { border-top: 1px solid var(--line); }
+.mx-meet .agnotes-h { margin: 0; font-size: inherit; font-weight: inherit; }
+.mx-meet .agnotes-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 42px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+}
+.mx-meet .agnotes-toggle:hover { background: var(--surface-2); }
+.mx-meet .agnotes-caret { flex-shrink: 0; color: var(--ink-3); transform: rotate(-90deg); transition: transform 0.18s var(--ease-out); }
+.mx-meet .agnotes-toggle[aria-expanded="true"] .agnotes-caret { transform: none; }
+.mx-meet .agnotes-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-meet .agnotes-status { color: var(--ink-3); font-size: 12.5px; font-weight: 600; }
+.mx-meet .agnotes-status.is-now { color: var(--signal-ink); }
+.mx-meet .agnotes-group .mynotes { padding: 0 0 6px 26px; }
+.mx-meet .agnotes-empty { padding: 0 0 10px 26px; color: var(--ink-3); font-size: 13.5px; line-height: 1.5; }
+.mx-meet .mynote-promise,
+.mx-meet .mynote-oncard {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  color: var(--ink-3);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.mx-meet .mynote-promise { color: var(--signal-ink); margin-right: 8px; }
+.mx-meet .mynote-body .mc-said { margin-top: 8px; }
+
+/* ---------------------------------------------------------------- folds: saved questions, activity */
+
+.mx-meet .calm-fold { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 6px; }
+.mx-meet .calm-fold-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 42px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+}
+.mx-meet .calm-fold-btn:hover { background: var(--surface-2); color: var(--ink); }
+.mx-meet .calm-fold-btn > svg:first-child { color: var(--ink-3); }
+.mx-meet .calm-fold-caret { margin-left: auto; color: var(--ink-3); transition: transform 0.18s var(--ease-out); }
+.mx-meet .calm-fold-btn[aria-expanded="true"] .calm-fold-caret { transform: rotate(180deg); }
+.mx-meet .calm-fold-body { padding: 6px 0 4px; }
+
+/* ---------------------------------------------------------------- the live transcript */
+
+.mx-meet .ltx { display: flex; flex-direction: column; padding-top: 12px; }
+.mx-meet .ltx-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.mx-meet .ltx-full {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 34px;
+  padding: 0 6px;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 8px;
+}
+.mx-meet .ltx-full:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.mx-meet .ltx-title { margin-top: 12px; color: var(--ink); font-family: var(--font-display); font-size: 19px; font-weight: 500; }
+.mx-meet .ltx-title:focus { outline: none; }
+.mx-meet .ltx-sub { margin-top: 2px; color: var(--ink-3); font-size: 13px; line-height: 1.45; }
+.mx-meet .ltx-list { display: flex; flex-direction: column; margin-top: 10px; }
+.mx-meet .ltx-line {
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 8px;
+  padding: 8px 8px 8px 10px;
+  border-radius: 12px;
+  scroll-margin: 60px;
+}
+.mx-meet .ltx-line + .ltx-line { margin-top: 2px; }
+/* The moment: the coral line runs under the words that were carried forward. */
+.mx-meet .ltx-line.is-moment { background: var(--signal-soft); }
+.mx-meet .ltx-line.is-moment .ltx-body > span {
+  text-decoration: underline;
+  text-decoration-color: var(--signal-line);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+.mx-meet .ltx-line:focus { outline: 2px solid var(--signal); outline-offset: 1px; }
+.mx-meet .ltx-time { color: var(--ink-3); font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; padding-top: 2px; }
+.mx-meet .ltx-line.is-moment .ltx-time { color: var(--signal-ink); }
+.mx-meet .ltx-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; color: var(--ink-2); font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.mx-meet .ltx-body b { color: var(--ink); font-size: 13px; font-weight: 650; }
+.mx-meet .ltx-line.is-moment .ltx-body > span { color: var(--ink); }
+
+@media (max-width: 420px) {
+  .mx-meet .mc-parts { padding-left: 18px; }
+  .mx-meet .mc-part::before { left: -17px; }
+  .mx-meet .mc-parts::before { left: 4px; }
+  .mx-meet .ltx-line { grid-template-columns: 38px minmax(0, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mx-meet .now-more-caret,
+  .mx-meet .agnotes-caret,
+  .mx-meet .calm-fold-caret,
+  .mx-meet .mc-part { transition: none; }
+}

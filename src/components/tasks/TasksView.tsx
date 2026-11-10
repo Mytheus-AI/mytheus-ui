@@ -25,6 +25,7 @@ import { markTaskDone } from "@/app/actions/tasks";
 import type { TaskItem } from "@/lib/tasks";
 import { SidePanel } from "./SidePanel";
 import { NewTaskDialog } from "./NewTaskDialog";
+import type { MemberOption } from "@/components/ui/MemberPicker";
 import { TaskDetailBody, TaskDetailHeader } from "./TaskDetail";
 import { CheckButton, DueChip, PriorityBadge } from "./task-ui";
 import { daysUntil, groupOf, sortTasks, type Task, type TaskGroup } from "./dates";
@@ -305,7 +306,7 @@ function BoardView({
 
 /* ---------------- screen ---------------- */
 
-export function TasksView({ actions }: { actions: TaskItem[] }) {
+export function TasksView({ actions, members = null }: { actions: TaskItem[]; members?: MemberOption[] | null }) {
   const { user } = useOrgContext();
   const [view, setView] = useState<View>("list");
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
@@ -552,7 +553,7 @@ export function TasksView({ actions }: { actions: TaskItem[] }) {
         {selected ? <TaskDetailBody task={selected} isMine={selected.assignee === user.name} /> : null}
       </SidePanel>
 
-      <NewTaskDialog open={creating} onClose={closeCreate} onCreated={() => router.refresh()} />
+      <NewTaskDialog open={creating} onClose={closeCreate} onCreated={() => router.refresh()} members={members} />
     </div>
   );
 }

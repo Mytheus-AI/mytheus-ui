@@ -43,9 +43,9 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
  * a confirmed action assigned to the caller (or `assignee_id`), with no meeting. `api()` sends an
  * Idempotency-Key, so a double submit creates one task.
  *
- * The endpoint is being added by the backend (Phase 2, reach builder). Until a gateway has it, the
- * server answers 404 or 405 and this returns `notConnected`, which the dialog shows as an explicit
- * "not connected yet" state rather than a generic failure; it lights up with no UI change.
+ * A gateway without the endpoint answers 404 or 405 and this returns `notConnected`, which the
+ * dialog shows as an explicit "not connected yet" state rather than a generic failure. With an
+ * assignee, a 404 is core-api refusing an id outside the workspace.
  */
 export async function createTask(input: { content: string; dueDate?: string | null; assigneeId?: string | null }): Promise<CreateTaskResult> {
   const content = input.content.trim();
@@ -63,6 +63,8 @@ export async function createTask(input: { content: string; dueDate?: string | nu
     return { ok: true, id: row?.id ?? "" };
   } catch (err) {
     if (err instanceof ApiError) {
+      // A 404 with an assignee is core-api saying that person is not in the workspace.
+      if (err.status === 404 && input.assigneeId) return { ok: false, message: "That person is no longer in the workspace. Pick someone else." };
       if (err.status === 404 || err.status === 405) {
         return { ok: false, notConnected: true, message: "Creating tasks by hand is not connected yet." };
       }
