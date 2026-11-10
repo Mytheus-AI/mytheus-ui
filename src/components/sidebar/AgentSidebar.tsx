@@ -11,6 +11,8 @@ import type { Candidate } from "@/lib/realtime/candidates";
 import { CandidateCard, type CandidateOutcome } from "@/components/sidebar/CandidateCard";
 import type { Suggestion } from "@/lib/realtime/suggestions";
 import { SuggestionCard, type SuggestionOutcome } from "@/components/sidebar/SuggestionCard";
+import type { ContextFill } from "@/lib/realtime/contextFills";
+import { ContextFillCard, type ContextFillOutcome } from "@/components/sidebar/ContextFillCard";
 
 /* The agent sidebar - the product's centerpiece - in the meeting design's shape: a conflict banner
    pinned above everything, then "My agent" with the Needs-you cards, My notes, Saved for later and
@@ -20,7 +22,10 @@ import { SuggestionCard, type SuggestionOutcome } from "@/components/sidebar/Sug
    `candidates` and Confirm calls core-api, which is the only thing that commits them. The other
    Suggested questions are live too (Plan 7-9 section 3.10, ADR-0034): private to this participant,
    they arrive through `suggestions` / `savedSuggestions`, and Ask / Save / Dismiss call core-api;
-   a saved one sits in Saved for later and comes back in the next meeting. The other
+   a saved one sits in Saved for later and comes back in the next meeting. Context fills are live
+   too (Phase P10, plan 3.5): private to this participant, context another participant's agent or
+   their own knowledge base supplied, with citations; Dismiss calls core-api. They are information,
+   not a request, so they do not count toward Needs you. The other
    card kinds come in through `items` (the 9-section shape of doc 20 §7), which nothing feeds yet,
    so they render nothing rather than sample cards. The UX contract is unchanged:
    Confirm visibly commits (and is the ONLY thing that commits), Dismiss removes, Save for later
@@ -101,6 +106,8 @@ export function AgentSidebar({
   savedSuggestions = [],
   onSuggestionResolved,
   onSuggestionSaved,
+  contextFills = [],
+  onContextFillDismissed,
 }: {
   /** The agent's cards for this meeting. Empty until the `agent-results` stream is wired, which
    *  renders the empty state rather than invented cards. */
@@ -124,6 +131,9 @@ export function AgentSidebar({
   savedSuggestions?: Suggestion[];
   onSuggestionResolved?: (id: string, outcome: "asked" | "dismissed") => void;
   onSuggestionSaved?: (id: string) => void;
+  /** This participant's surfaced context fills for this meeting, oldest first. */
+  contextFills?: ContextFill[];
+  onContextFillDismissed?: (id: string) => void;
 }) {
   const toast = useCallToast();
   const [decisionState, setDecisionState] = useState<"pending" | "confirmed" | "dismissed">(
@@ -135,6 +145,7 @@ export function AgentSidebar({
   const [log, setLog] = useState<FeedEntry[]>([]);
   const [leavingCandidates, setLeavingCandidates] = useState<Set<string>>(new Set());
   const [leavingSuggestions, setLeavingSuggestions] = useState<Set<string>>(new Set());
+  const [leavingFills, setLeavingFills] = useState<Set<string>>(new Set());
   const joinedAt = useRef<number>(0);
   useEffect(() => {
     joinedAt.current = Date.now();
@@ -238,6 +249,26 @@ export function AgentSidebar({
         ...l,
       ]);
       if (outcome === "asked") toast("Question copied. Paste it into chat.");
+    }, 230);
+  };
+
+  /** A context fill was dismissed here (or turned out to be gone): slide it out, then drop it
+   *  from the room's state and record it in Activity. */
+  const settleContextFill = (f: ContextFill, outcome: ContextFillOutcome) => {
+    const time = now();
+    setLeavingFills((l) => new Set(l).add(f.id));
+    window.setTimeout(() => {
+      setLeavingFills((l) => {
+        const next = new Set(l);
+        next.delete(f.id);
+        return next;
+      });
+      onContextFillDismissed?.(f.id);
+      if (outcome === "gone") return;
+      setLog((l) => [
+        { id: `${f.id}-${Date.now()}`, kind: "context", text: f.content, time, isNew: true, resolved: "dismissed" },
+        ...l,
+      ]);
     }, 230);
   };
 
@@ -441,7 +472,8 @@ export function AgentSidebar({
     notes.length === 0 &&
     candidates.length === 0 &&
     suggestions.length === 0 &&
-    savedSuggestions.length === 0
+    savedSuggestions.length === 0 &&
+    contextFills.length === 0
   ) {
     return (
       <div className="reveal" id={id} style={{ animationDelay: ".14s" }}>
@@ -536,6 +568,24 @@ export function AgentSidebar({
                     {card.sub ? <p className="nfy-sub">{card.sub}</p> : null}
                     <div className="nfy-acts">{card.acts}</div>
                   </div>
+                ))}
+              </div>
+            ) : null}
+
+            {contextFills.length > 0 ? (
+              <div className="nfy" role="group" aria-label="Context for you">
+                <div className="nfy-head">
+                  Context for you <b>{contextFills.length}</b>
+                </div>
+                {contextFills.map((f) => (
+                  <ContextFillCard
+                    key={f.id}
+                    fill={f}
+                    currentMeetingId={meetingId}
+                    leaving={leavingFills.has(f.id)}
+                    onResolved={(outcome) => settleContextFill(f, outcome)}
+                    onError={(message) => toast(message)}
+                  />
                 ))}
               </div>
             ) : null}
