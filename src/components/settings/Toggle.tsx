@@ -9,12 +9,14 @@ export function Toggle({
   checked,
   onChange,
   labelledBy,
+  describedBy,
   label,
   disabled = false,
 }: {
   checked: boolean;
   onChange: (next: boolean) => void;
   labelledBy?: string;
+  describedBy?: string;
   label?: string;
   disabled?: boolean;
 }) {
@@ -25,6 +27,7 @@ export function Toggle({
       aria-checked={checked}
       aria-labelledby={labelledBy}
       aria-label={labelledBy ? undefined : label}
+      aria-describedby={describedBy}
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-6 w-[42px] shrink-0 items-center rounded-full border-2 transition-colors duration-200 ease-[var(--ease-out)] before:absolute before:-inset-2 before:content-[''] disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none ${

@@ -53,6 +53,9 @@ export interface NotificationPreference {
 
 export interface NotificationPreferences {
   items: NotificationPreference[];
+  /** Whether this server has an email provider (`EMAIL_PROVIDER`); absent from older servers. */
+  email_configured?: boolean;
+  email_provider?: string | null;
 }
 
 export async function fetchMeetingAlerts(meetingId: string): Promise<NotificationPage> {

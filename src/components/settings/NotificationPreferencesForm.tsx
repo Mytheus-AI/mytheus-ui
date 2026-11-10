@@ -14,6 +14,7 @@ import {
   fromView,
   toView,
   type ChannelPreference,
+  type EmailDelivery,
   type EmailMode,
   type PreferencesView,
 } from "@/lib/notification-preferences";
@@ -28,12 +29,21 @@ const MODES: { value: EmailMode; label: string; help: string }[] = [
   { value: "all", label: "All alerts", help: "Also workload, blocked work and missing people" },
 ];
 
-export function NotificationPreferencesForm({ initial, loaded }: { initial: ChannelPreference[]; loaded: boolean }) {
+export function NotificationPreferencesForm({
+  initial,
+  loaded,
+  email = "unknown",
+}: {
+  initial: ChannelPreference[];
+  loaded: boolean;
+  /** Whether this server can deliver email at all (notification-service `email_configured`). */
+  email?: EmailDelivery;
+}) {
   const [prefs, setPrefs] = useState(initial);
   const [view, setView] = useState<PreferencesView>(() => toView(initial));
   const [saved, setSaved] = useState<PreferencesView>(() => toView(initial));
   const [busy, setBusy] = useState(false);
-  const ids = { inApp: useId(), email: useId(), mode: useId(), slack: useId() };
+  const ids = { inApp: useId(), email: useId(), emailNote: useId(), mode: useId(), slack: useId() };
   const dirty = view.emailEnabled !== saved.emailEnabled || view.emailMode !== saved.emailMode;
 
   const save = async (target: PreferencesView, isUndo = false) => {
@@ -68,13 +78,29 @@ export function NotificationPreferencesForm({ initial, loaded }: { initial: Chan
         <Chip tone="ok">Always on</Chip>
       </InlineRow>
 
-      <InlineRow label="Email" labelId={ids.email} help="Send alerts to your inbox as well.">
-        <Toggle
-          labelledBy={ids.email}
-          checked={view.emailEnabled}
-          onChange={(next) => setView((v) => ({ ...v, emailEnabled: next }))}
-        />
+      <InlineRow
+        label="Email"
+        labelId={ids.email}
+        help="Alerts in your mailbox as well, and the follow-up a host sends after a meeting: its decisions, actions and a link to the recap."
+      >
+        <div className="flex flex-wrap items-center justify-end gap-2.5">
+          {email === "not_connected" ? <Chip tone="outline">Email is not connected yet</Chip> : null}
+          <Toggle
+            labelledBy={ids.email}
+            describedBy={email === "not_connected" ? ids.emailNote : undefined}
+            checked={view.emailEnabled}
+            onChange={(next) => setView((v) => ({ ...v, emailEnabled: next }))}
+          />
+        </div>
       </InlineRow>
+      {email === "not_connected" ? (
+        <div className="px-4 py-4 sm:px-[22px]" id={ids.emailNote}>
+          <Note tone="info">
+            This Mytheus server cannot send email yet, so alerts and meeting follow-ups stay in your Inbox. Your choice here is kept and takes effect as
+            soon as email is connected.
+          </Note>
+        </div>
+      ) : null}
 
       {view.emailEnabled ? (
         <div className="px-4 py-4 sm:px-[22px] md:py-[18px]">

@@ -70,3 +70,14 @@ export function fromView(view: PreferencesView, current: ChannelPreference[]): C
     { channel: "slack", enabled: false, max_priority: slack.max_priority },
   ];
 }
+
+/** Whether email can actually be delivered: notification-service reports `email_configured`
+ *  (false when the server has no email provider, so email falls back to the Inbox). `unknown`
+ *  when the preferences could not be read or an older server leaves the field out. */
+export type EmailDelivery = "connected" | "not_connected" | "unknown";
+
+export function emailDelivery(body: unknown): EmailDelivery {
+  if (!body || typeof body !== "object") return "unknown";
+  const flag = (body as { email_configured?: unknown }).email_configured;
+  return flag === true ? "connected" : flag === false ? "not_connected" : "unknown";
+}
