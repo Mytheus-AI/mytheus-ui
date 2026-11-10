@@ -59,8 +59,6 @@ const STAGE: Record<Exclude<Step, "sso-callback" | "task">, StageCopy> = {
 const SCENES: Record<Exclude<Step, "sso-callback" | "task">, SceneProps> = {
   start: {},
   "factor-one": {
-    title: "Quick check-in",
-    when: "Today",
     lines: [
       { who: 0, text: "Forgot the password again?" },
       { who: 1, text: "No need. A code's on its way.", keep: { tag: "Action", text: "Code sent to your inbox" } },
@@ -69,8 +67,6 @@ const SCENES: Record<Exclude<Step, "sso-callback" | "task">, SceneProps> = {
     ],
   },
   "factor-two": {
-    title: "Security review",
-    when: "Today",
     lines: [
       { who: 2, text: "Second key, please." },
       { who: 1, text: "Authenticator open?", keep: { tag: "Action", text: "Enter the six-digit code" } },
@@ -79,8 +75,6 @@ const SCENES: Record<Exclude<Step, "sso-callback" | "task">, SceneProps> = {
     ],
   },
   "forgot-password": {
-    title: "Account recovery",
-    when: "Today",
     lines: [
       { who: 3, text: "New password, same memories?", keep: { tag: "Question", text: "Is anything lost?" } },
       { who: 1, text: "Nothing gets lost.", keep: { tag: "Done", text: "History kept, untouched" } },

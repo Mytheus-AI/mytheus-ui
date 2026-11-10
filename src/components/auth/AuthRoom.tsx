@@ -11,8 +11,7 @@ import { blob, defaultDoodleSeed, seededRandom, wobble } from "@/lib/doodle";
 /* ================================================================== */
 /*  The brand panel on every auth page: a meeting, live, with doodles. */
 /*                                                                     */
-/*  A product window, the way the marketing site shows the room:       */
-/*    bar    the meeting's name and when it is                        */
+/*  Unframed, straight on the peach stage:                             */
 /*    room   doodle people round a table (its top is the coral line,   */
 /*           drawn once on arrival), a whiteboard on the wall; they    */
 /*           take turns talking in white bubbles                       */
@@ -31,10 +30,6 @@ export type Keep = { tag: "Decision" | "Action" | "Question" | "Done"; text: str
 export type Line = { who: number; text: string; keep?: Keep };
 
 export type SceneProps = {
-  /** the meeting's name in the window bar */
-  title?: string;
-  /** when it is, beside the name */
-  when?: string;
   /** what the people at the table say, in turn; give three of them a `keep` */
   lines?: Line[];
   /** a doodle seed seats the visitor; "empty" shows the open seat */
@@ -43,9 +38,7 @@ export type SceneProps = {
   label?: string;
 };
 
-export const DEFAULT_SCENE: Required<Pick<SceneProps, "title" | "when" | "lines">> = {
-  title: "Pricing sync",
-  when: "Tuesday, 10:30",
+export const DEFAULT_SCENE: Required<Pick<SceneProps, "lines">> = {
   lines: [
     { who: 0, text: "Where did we land on pricing?" },
     { who: 4, text: "Annual plans, 20% off. Agreed?", keep: { tag: "Decision", text: "Annual plans at 20% off" } },
@@ -237,9 +230,6 @@ function KeptStrip({ keeps, shown }: { keeps: Keep[]; shown: number }) {
           <LogoMark size={16} />
           Your agent kept
         </span>
-        <span className="text-[13px] tabular-nums text-ink-3">
-          {shown} of {keeps.length}
-        </span>
       </div>
       <div className="relative mt-3 grid gap-3" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
         {/* the thread runs from the first bead to the latest kept one */}
@@ -253,14 +243,15 @@ function KeptStrip({ keeps, shown }: { keeps: Keep[]; shown: number }) {
           const latest = i === shown - 1;
           return (
             <div key={k.text} className="relative min-w-0">
+              {/* a bead only once something is kept; the latest one is solid */}
               <span
                 aria-hidden
-                className={`relative block h-3 w-3 rounded-full border-2 transition-colors duration-300 ${
+                className={`relative block h-3 w-3 rounded-full border-2 transition-[opacity,background-color,border-color] duration-300 ${
                   latest
                     ? "border-signal bg-signal shadow-[0_0_0_4px_var(--signal-soft)]"
                     : on
                       ? "border-signal-line bg-surface"
-                      : "border-line-2 bg-surface"
+                      : "border-transparent opacity-0"
                 }`}
               />
               <div className={`mt-2 transition-[opacity,transform] duration-300 ease-out ${on ? "opacity-100" : "translate-y-1 opacity-0"}`}>
@@ -275,11 +266,9 @@ function KeptStrip({ keeps, shown }: { keeps: Keep[]; shown: number }) {
   );
 }
 
-export function AuthRoom({ title, when, lines, you, label }: SceneProps) {
+export function AuthRoom({ lines, you, label }: SceneProps) {
   const reduce = useReducedMotion();
   const script = lines?.length ? lines : DEFAULT_SCENE.lines;
-  const name = title ?? DEFAULT_SCENE.title;
-  const at = when ?? DEFAULT_SCENE.when;
   const [turn, setTurn] = useState(0);
 
   useEffect(() => {
@@ -311,11 +300,6 @@ export function AuthRoom({ title, when, lines, you, label }: SceneProps) {
     >
       {/* no window frame: the meeting sits straight on the peach stage */}
       <div className="relative w-full [container-type:inline-size]" style={{ aspectRatio: `${RW} / ${rh}` }}>
-        {/* the meeting's name and when, in the room's empty top-left corner */}
-        <div className="auth-appear absolute left-0 top-0 z-10 max-w-[25%]" style={delay(0.1)}>
-          <p className="truncate font-display text-[clamp(16px,3.6cqw,21px)] font-semibold leading-tight tracking-[-0.01em] text-ink">{name}</p>
-          <p className="truncate text-[13px] text-ink-3">{at}</p>
-        </div>
         <Wall rh={rh} />
         {[0, 1, 2].map(seat)}
         <Table label={label} rh={rh} />

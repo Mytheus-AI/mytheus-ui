@@ -139,8 +139,6 @@ export function ChooseOrganization() {
       scene={{
         you: youSeed,
         label: path === "create" ? name.trim() || "your team" : undefined,
-        title: path === "create" ? name.trim() || "Your team" : "Team standup",
-        when: path === "create" ? "First meeting" : "Today",
         lines:
           path === "create"
             ? [

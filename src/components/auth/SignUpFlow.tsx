@@ -55,10 +55,8 @@ const STAGE: Record<Exclude<Step, "sso-callback">, StageCopy> = {
 
 /* The meeting on the brand panel: your kickoff. The visitor's own doodle takes the open seat at
    the table as soon as it is dealt. */
-const SCENE: Record<Exclude<Step, "sso-callback">, Pick<SceneProps, "title" | "when" | "lines">> = {
+const SCENE: Record<Exclude<Step, "sso-callback">, Pick<SceneProps, "lines">> = {
   start: {
-    title: "Kickoff",
-    when: "Your first meeting",
     lines: [
       { who: 0, text: "Who's joining us today?" },
       { who: 1, text: "Saved them a seat.", keep: { tag: "Action", text: "Seat saved for you" } },
@@ -67,8 +65,6 @@ const SCENE: Record<Exclude<Step, "sso-callback">, Pick<SceneProps, "title" | "w
     ],
   },
   verify: {
-    title: "Kickoff",
-    when: "Your first meeting",
     lines: [
       { who: 3, text: "Did the code arrive?", keep: { tag: "Question", text: "Did the code arrive?" } },
       { who: 1, text: "Check spam if it's not there.", keep: { tag: "Action", text: "Check inbox, then spam" } },
@@ -76,8 +72,6 @@ const SCENE: Record<Exclude<Step, "sso-callback">, Pick<SceneProps, "title" | "w
     ],
   },
   continue: {
-    title: "Kickoff",
-    when: "Your first meeting",
     lines: [
       { who: 2, text: "Almost there.", keep: { tag: "Done", text: "Email confirmed" } },
       { who: 4, text: "Just a couple of details.", keep: { tag: "Action", text: "Add your details" } },
