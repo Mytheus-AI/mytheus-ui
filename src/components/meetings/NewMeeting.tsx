@@ -13,6 +13,7 @@ import {
   type AgendaDraftRow,
   type AgendaRowErrors,
 } from "./agenda-editor-model";
+import { MeetingPrecheckHint } from "./MeetingPrecheckHint";
 import { MemberPicker, type PickableMember } from "./MemberPicker";
 import { useDialogKeys } from "./useDialogKeys";
 
@@ -465,6 +466,11 @@ export function NewMeeting({
                 </div>
 
                 <div className="nm-col nm-agenda">
+                  <MeetingPrecheckHint
+                    title={title}
+                    agenda={agenda.map((r) => r.title)}
+                    participantIds={[...(me ? [me.id] : []), ...invitees]}
+                  />
                   <fieldset className="mh-new-when ag-new-agenda">
                     <legend>
                       Agenda <small className="mh-new-hint">Optional, up to 20 items</small>
