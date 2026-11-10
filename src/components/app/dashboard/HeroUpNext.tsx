@@ -3,16 +3,18 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Broadcast, CalendarPlus, Clock, Sparkle, VideoCamera } from "@phosphor-icons/react/dist/ssr";
 import { NEW_MEETING_HREF } from "@/components/app/nav";
 import { CountdownDigits, LocalTime, RelativeStart } from "./LiveTime";
-import { Chip, ErrorBlock } from "./parts";
+import { Chip } from "@/components/ui/Chip";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { formatDuration, minutesBetween } from "./format";
 import type { HomeMeeting } from "./types";
 
-/* The hero sits on the peach wash, the one warm panel on Home. */
+/* The hero sits on the peach wash: one of only two washed surfaces in the app (the other is the
+   agent portrait). */
 const shell =
   "overflow-hidden rounded-hero border border-[color-mix(in_srgb,var(--signal-line)_22%,var(--line))] bg-wash text-ink-2 shadow-warm-2";
 const pad = "px-[18px] pb-[22px] pt-5 sm:px-7 sm:pb-7 sm:pt-[26px]";
-const titleClass = "display mb-3.5 mt-[18px] max-w-[22ch] text-[clamp(28px,3vw,36px)] text-ink";
-const btn = "min-h-[48px] max-[420px]:w-full motion-safe:active:scale-[0.98]";
+const titleClass = "display mb-3.5 mt-[18px] max-w-[22ch] text-[clamp(26px,3vw,30px)] text-ink";
+const btn = "max-[420px]:w-full";
 
 function People({ names }: { names: string[] }) {
   if (names.length === 0) return null;
@@ -55,11 +57,11 @@ export function HeroUpNext({
             <Clock size={14} weight="fill" aria-hidden />
             Up next
           </Chip>
-          <h2 id="hero-title" className="display mb-1 mt-[18px] text-[clamp(26px,3vw,32px)] text-ink">
+          <h2 id="hero-title" className="display mb-1 mt-[18px] text-[clamp(26px,3vw,30px)] text-ink">
             We could not load your calendar
           </h2>
         </div>
-        <ErrorBlock
+        <ErrorState variant="inline"
           title="Your next meeting is not available right now"
           text="Your meetings are safe. This is a connection problem on our side, and the rest of this page is unaffected."
         />
@@ -90,7 +92,7 @@ export function HeroUpNext({
           {steps.map(([text, time], i) => (
             <li
               key={text}
-              className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3 border-t border-[color-mix(in_srgb,var(--ink)_13%,transparent)] py-[11px] text-[14.5px] font-medium text-ink max-[420px]:grid-cols-[28px_minmax(0,1fr)]"
+              className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3 border-t border-[color-mix(in_srgb,var(--ink)_13%,transparent)] py-[11px] text-[14px] font-medium text-ink max-[420px]:grid-cols-[28px_minmax(0,1fr)]"
             >
               <span
                 aria-hidden

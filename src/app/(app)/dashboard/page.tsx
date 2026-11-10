@@ -3,7 +3,6 @@ import { apiSafe } from "@/lib/api/client";
 import { toMeetingView } from "@/lib/api/present";
 import type { DashboardResponse } from "@/lib/api/types";
 import { resolveOrgContext } from "@/lib/api/org-context";
-import { AgentProfilePrompt } from "@/components/app/dashboard/AgentProfilePrompt";
 import { DashboardHeader } from "@/components/app/dashboard/DashboardHeader";
 import { HeroUpNext } from "@/components/app/dashboard/HeroUpNext";
 import { NeedsYou } from "@/components/app/dashboard/NeedsYou";
@@ -14,11 +13,14 @@ import { TaskList } from "@/components/app/dashboard/TaskList";
 import { TodayTimeline } from "@/components/app/dashboard/TodayTimeline";
 import type { HomeMeeting } from "@/components/app/dashboard/types";
 import { Suspense } from "react";
-import { ReadinessCard } from "@/components/org-brain/ReadinessCard";
-import { WelcomeCard } from "@/components/org-brain/WelcomeCard";
 import { MeetingBriefCard } from "@/components/briefs/MeetingBriefCard";
-import { StatusRequestsCard } from "@/components/status/StatusRequestsCard";
-import { PromisesCard } from "@/components/promises/PromisesCard";
+import { FirstRunChecklist } from "@/components/app/dashboard/FirstRunChecklist";
+import { CardSkeleton, Page } from "@/components/ui/Page";
+import { fetchMyProfile } from "@/lib/api/profile";
+import { loadIntegrations } from "@/lib/api/integrations";
+import { fetchReadiness } from "@/lib/api/org-brain";
+import { welcomeDaysLeft } from "@/lib/api/org-brain-types";
+import { checklistSteps } from "@/lib/checklist";
 
 export const metadata: Metadata = {
   title: "Dashboard | Mytheus",
@@ -39,15 +41,25 @@ export const metadata: Metadata = {
  * Catch up (recent meetings) carries the memory line, the view's one drawn moment; nothing
  * else animates in.
  *
+ * The first-run checklist (tell your agent what you do, meet your agent, connect your calendar,
+ * hold your first meeting, and for admins set up the company brain) replaces the three stacked
+ * onboarding banners. Its signals are read here, in parallel with the dashboard, so it is in the
+ * first paint rather than popping in. "What do I owe" lives in the Inbox and My work; Home keeps
+ * the Needs you queue and the task list from the dashboard read, and links out for the rest.
+ *
  * Server Component throughout. The only client code is small leaf islands: the live countdown
  * and relative time, local-timezone times, the greeting word, the retry button, and the
  * Needs you queue's Confirm and Dismiss.
  */
 export default async function DashboardPage() {
-  const [orgContext, dashboard] = await Promise.all([
+  const [orgContext, dashboard, profile, integrations] = await Promise.all([
     resolveOrgContext(),
     apiSafe<DashboardResponse>("/bff/dashboard"),
+    fetchMyProfile(),
+    loadIntegrations(),
   ]);
+  const isAdmin = orgContext?.user.role === "admin";
+  const readiness = isAdmin ? await fetchReadiness() : null;
 
   const firstName = (orgContext?.user.name ?? "there").split(" ")[0];
 
@@ -82,11 +94,22 @@ export default async function DashboardPage() {
   const next = active.find((m) => m.status === "live") ?? active.find((m) => m.startTime !== "") ?? null;
   const after = next ? (active.find((m) => m.id !== next.id && m.startTime !== "") ?? null) : null;
 
+  const calendar = integrations.kind === "live" ? integrations.items.get("google_calendar") : undefined;
+  const steps = checklistSteps({
+    role: profile ? !!profile.role : null,
+    agent: profile ? !!(profile.agent_name || profile.agent_avatar_seed) : null,
+    calendar: integrations.kind === "live" ? calendar?.status === "active" || calendar?.status === "degraded" : null,
+    meeting: recent.failed ? null : recent.items.length > 0 || meetings.some((m) => m.status === "past" || m.status === "live"),
+    brain: readiness ? (readiness.ok ? readiness.data.score >= 100 || readiness.data.checks.every((c) => c.done) : null) : null,
+    isAdmin,
+  });
+  const newJoiner = welcomeDaysLeft(profile?.created_at, now) !== null;
+
   const today = meetings.filter(isToday);
   const later = meetings.filter((m) => !isToday(m) && m.status !== "past");
 
   return (
-    <div className="mx-auto max-w-[1480px]">
+    <Page>
       <DashboardHeader
         firstName={firstName}
         nowIso={now.toISOString()}
@@ -98,29 +121,20 @@ export default async function DashboardPage() {
         needsYou={review.failed ? null : review.items.length}
       />
 
-      <AgentProfilePrompt />
-      {/* Each of these streams in on its own and renders nothing when it has nothing to say:
-          the new joiner brief (first 14 days), the company brain's readiness (admins). */}
-      <Suspense fallback={null}>
-        <WelcomeCard />
-      </Suspense>
-      <Suspense fallback={null}>
-        <ReadinessCard />
-      </Suspense>
+      <FirstRunChecklist steps={steps} welcomeHref={newJoiner ? "/welcome" : null} />
 
       {/* Wide main column plus a fixed, narrower rail. Under 1100px the rail drops below and
           becomes two columns; under 720px everything is one column. */}
-      <div className="grid grid-cols-1 items-start gap-6 min-[1101px]:grid-cols-[minmax(0,1fr)_minmax(300px,368px)]">
+      <div className="grid grid-cols-1 items-start gap-6 min-[1101px]:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]">
         <div className="flex min-w-0 flex-col gap-7">
           <HeroUpNext next={next} after={after} calendarFailed={calendarFailed} nowMs={nowMs} />
-          <Suspense fallback={null}>
-            <MeetingBriefCard />
-          </Suspense>
-          <Suspense fallback={null}>
-            <StatusRequestsCard />
-          </Suspense>
           <NeedsYou items={review.items} failed={review.failed} />
           <RecentMeetings meetings={recent.items} failed={recent.failed} />
+          {/* The brief for your next meeting streams in last, at the foot of the column, with a
+              skeleton that holds its place, so it never pushes anything down when it arrives. */}
+          <Suspense fallback={<CardSkeleton rows={2} />}>
+            <MeetingBriefCard />
+          </Suspense>
         </div>
 
         <aside
@@ -129,9 +143,6 @@ export default async function DashboardPage() {
         >
           <TodayTimeline today={today} later={later} nextId={next?.id} calendarFailed={calendarFailed} nowMs={nowMs} />
           <TaskList tasks={tasks.items} failed={tasks.failed} nowIso={now.toISOString()} />
-          <Suspense fallback={null}>
-            <PromisesCard />
-          </Suspense>
           <MyNotes notes={notes} failed={notesFailed} />
           <RecentDecisions
             decisions={decisions.items}
@@ -140,6 +151,6 @@ export default async function DashboardPage() {
           />
         </aside>
       </div>
-    </div>
+    </Page>
   );
 }

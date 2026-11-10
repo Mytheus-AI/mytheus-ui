@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { CardEmpty, CardHead, cardClass } from "./parts";
-import { RetryButton } from "./RetryButton";
+import { CardHead, cardClass } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { formatShortDate } from "./format";
 
 /** The dashboard's slice of `/bff/dashboard` `worklogs`: the caller's own surfaced notes. */
@@ -25,7 +26,7 @@ export function MyNotes({
 }) {
   const recent = notes.slice(0, 4);
   return (
-    <section aria-labelledby="notes-title" className={`${cardClass} ${className}`}>
+    <section aria-labelledby="notes-title" className={cardClass({ flush: true, className })}>
       <CardHead id="notes-title" title="Your notes" caption="What your agent kept for you" />
       {recent.length > 0 ? (
         <ul className="divide-y divide-line border-t border-line pb-1">
@@ -44,13 +45,9 @@ export function MyNotes({
           ))}
         </ul>
       ) : failed ? (
-        <div role="alert" className="mx-[18px] mb-[18px] mt-1.5 rounded-ctl bg-bg-2 p-5 sm:mx-[22px] sm:mb-[22px]">
-          <h3 className="text-[15px] font-semibold text-ink">Notes are unavailable</h3>
-          <p className="mb-3.5 mt-1 text-[14px] text-ink-3">They could not be loaded right now. They are still saved.</p>
-          <RetryButton />
-        </div>
+        <ErrorState variant="inline" title="Notes are unavailable" text="They could not be loaded right now. They are still saved." />
       ) : (
-        <CardEmpty title="No notes yet" text="During a call, your agent writes notes that matter to you. They collect here." />
+        <EmptyState inCard art="notes" title="No notes yet" description="During a call, your agent writes notes that matter to you. They collect here." />
       )}
     </section>
   );

@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { CaretRight, Clock } from "@phosphor-icons/react/dist/ssr";
 import type { DashboardTask } from "@/lib/api/types";
-import { CardEmpty, CardHead, Chip, ErrorBlock, TextLink, cardClass } from "./parts";
+import { CardHead, cardClass } from "@/components/ui/Card";
+import { Chip } from "@/components/ui/Chip";
+import { TextLink } from "@/components/ui/TextLink";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { daysFromNow, dueLabel } from "./format";
 
 const SHOWN = 5;
@@ -25,13 +29,13 @@ export function TaskList({
   const more = tasks.length - shown.length;
 
   return (
-    <section aria-labelledby="tasks-title" className={`${cardClass} ${className}`}>
+    <section aria-labelledby="tasks-title" className={cardClass({ flush: true, className })}>
       <CardHead
         id="tasks-title"
         title="Your tasks"
         right={
           failed ? null : (
-            <span className="text-[13px] font-semibold text-ink-3">
+            <span className="text-[12.5px] font-semibold text-ink-3">
               {tasks.length > 0 ? `${tasks.length} open` : "All done"}
             </span>
           )
@@ -39,7 +43,7 @@ export function TaskList({
       />
 
       {failed ? (
-        <ErrorBlock title="We could not load your tasks" text="Your tasks are safe. Try again in a moment." />
+        <ErrorState variant="inline" title="We could not load your tasks" text="Your tasks are safe. Try again in a moment." />
       ) : shown.length > 0 ? (
         <ul className="divide-y divide-line border-t border-line">
           {shown.map((task) => {
@@ -75,9 +79,9 @@ export function TaskList({
           })}
         </ul>
       ) : (
-        <CardEmpty
+        <EmptyState inCard art="tasks"
           title="No open tasks"
-          text="Action items assigned to you and confirmed in meetings show up here until they are done."
+          description="Action items assigned to you and confirmed in meetings show up here until they are done."
         />
       )}
 
