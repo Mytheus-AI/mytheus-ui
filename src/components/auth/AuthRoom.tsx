@@ -4,7 +4,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { useReducedMotion } from "framer-motion";
 import { Plus } from "@phosphor-icons/react";
 import { LogoMark } from "@/components/Logo";
-import { Chip, Live } from "@/components/site/Section";
+import { Chip } from "@/components/site/Section";
 import { Doodle } from "@/components/ui/Doodle";
 import { blob, defaultDoodleSeed, seededRandom, wobble } from "@/lib/doodle";
 
@@ -12,7 +12,7 @@ import { blob, defaultDoodleSeed, seededRandom, wobble } from "@/lib/doodle";
 /*  The brand panel on every auth page: a meeting, live, with doodles. */
 /*                                                                     */
 /*  A product window, the way the marketing site shows the room:       */
-/*    bar    the meeting's name, when, and a live timer                */
+/*    bar    the meeting's name and when it is                        */
 /*    room   doodle people round a table (its top is the coral line,   */
 /*           drawn once on arrival), a whiteboard on the wall; they    */
 /*           take turns talking in white bubbles                       */
@@ -226,16 +226,6 @@ function Bubble({ line, first, rh }: { line: Line; first: boolean; rh: number })
 
 /* ---------------- the window ---------------- */
 
-function useClock(start: number, run: boolean) {
-  const [s, setS] = useState(start);
-  useEffect(() => {
-    if (!run) return;
-    const t = setInterval(() => setS((n) => n + 1), 1000);
-    return () => clearInterval(t);
-  }, [run]);
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-}
-
 /** What the agent kept so far: each item lands on the coral thread as it is said. */
 function KeptStrip({ keeps, shown }: { keeps: Keep[]; shown: number }) {
   const cols = Math.max(keeps.length, 1);
@@ -291,7 +281,6 @@ export function AuthRoom({ title, when, lines, you, label }: SceneProps) {
   const name = title ?? DEFAULT_SCENE.title;
   const at = when ?? DEFAULT_SCENE.when;
   const [turn, setTurn] = useState(0);
-  const clock = useClock(12 * 60 + 48, !reduce);
 
   useEffect(() => {
     if (reduce) return;
@@ -318,11 +307,6 @@ export function AuthRoom({ title, when, lines, you, label }: SceneProps) {
       <div className="auth-appear mb-1 flex items-baseline gap-3 px-1" style={delay(0.1)}>
         <span className="truncate font-display text-[19px] font-semibold tracking-[-0.01em] text-ink">{name}</span>
         <span className="hidden truncate text-[14px] text-ink-3 xl:inline">{at}</span>
-        <span className="ml-auto shrink-0">
-          <Live>
-            <span className="tabular-nums">Live {clock}</span>
-          </Live>
-        </span>
       </div>
       <div className="relative w-full [container-type:inline-size]" style={{ aspectRatio: `${RW} / ${rh}` }}>
         <Wall rh={rh} />
