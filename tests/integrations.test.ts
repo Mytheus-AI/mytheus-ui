@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
+  callbackOutcome,
+  readCallback,
   cardState,
   isConnectable,
   normalizeIntegrations,
@@ -107,4 +109,49 @@ test("only https redirect targets and only the three built providers are accepte
   assert.equal(safeHttpsUrl(undefined), null);
   assert.equal(isConnectable("jira"), true);
   assert.equal(isConnectable("linear"), false);
+});
+
+test("callback: provider validated before any call; code and state required", () => {
+  assert.deepEqual(readCallback("linear", { code: "c", state: "s" }), { kind: "done", location: "/settings/integrations?error=invalid_provider" });
+  assert.deepEqual(readCallback("../oauth", { code: "c", state: "s" }), { kind: "done", location: "/settings/integrations?error=invalid_provider" });
+  assert.deepEqual(readCallback("slack", { code: "c" }), { kind: "done", location: "/settings/integrations?error=invalid_state" });
+  assert.deepEqual(readCallback("slack", { code: "c", state: "x".repeat(5000) }), { kind: "done", location: "/settings/integrations?error=invalid_state" });
+  assert.deepEqual(readCallback("jira", { code: ["c1", "c2"], state: "s" }), { kind: "exchange", provider: "jira", code: "c1", state: "s" });
+});
+
+test("callback: provider error wins and is never echoed", () => {
+  assert.deepEqual(readCallback("google_calendar", { error: "access_denied", code: "c", state: "s" }), {
+    kind: "done",
+    location: "/settings/integrations?error=access_denied",
+  });
+  const odd = readCallback("slack", { error: "<b>pwned</b>" });
+  assert.equal(odd.kind === "done" && odd.location, "/settings/integrations?error=exchange_failed");
+});
+
+test("callback outcome mapping", () => {
+  const go = (status: number, code: string) => callbackOutcome("jira", { ok: false, status, code });
+  assert.equal(callbackOutcome("slack", { ok: true }), "/settings/integrations?connected=slack");
+  assert.equal(go(409, "ACCOUNT_CONNECTED_ELSEWHERE"), "/settings/integrations?error=account_connected_elsewhere");
+  assert.equal(go(409, "PM_ALREADY_CONNECTED"), "/settings/integrations?error=pm_already_connected");
+  assert.equal(go(409, "PROVIDER_NOT_CONFIGURED"), "/settings/integrations?error=not_configured");
+  assert.equal(go(403, "FORBIDDEN_ROLE"), "/settings/integrations?error=forbidden");
+  assert.equal(go(401, "AUTH_REQUIRED"), "/settings/integrations?error=session_expired");
+  assert.equal(go(400, "STATE_EXPIRED"), "/settings/integrations?error=state_expired");
+  assert.equal(go(400, "INVALID_STATE"), "/settings/integrations?error=invalid_state");
+  assert.equal(go(422, "VALIDATION_FAILED"), "/settings/integrations?error=invalid_state");
+  assert.equal(go(502, "DEPENDENCY_UNAVAILABLE"), "/settings/integrations?error=exchange_failed");
+  assert.equal(go(0, ""), "/settings/integrations?error=exchange_failed");
+  // every mapped key has its own plain message on the integrations page
+  for (const url of [go(409, "ACCOUNT_CONNECTED_ELSEWHERE"), go(403, "X"), go(400, "STATE_EXPIRED"), go(400, "INVALID_STATE")]) {
+    const key = new URL(url, "https://x").searchParams.get("error")!;
+    assert.doesNotMatch(parseReturnState({ error: key })!.message, /did not complete/);
+  }
+});
+
+test("callback outcomes never carry the code or state", () => {
+  const input = readCallback("slack", { code: "SECRET_CODE", state: "SECRET_STATE" });
+  assert.equal(input.kind, "exchange");
+  for (const loc of [callbackOutcome("slack", { ok: true }), callbackOutcome("slack", { ok: false, status: 400, code: "INVALID_STATE" })]) {
+    assert.equal(loc.includes("SECRET"), false);
+  }
 });

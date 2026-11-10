@@ -11,8 +11,9 @@ import { isConnectable, safeHttpsUrl } from "@/lib/integrations";
    at the edge, never from the form; the only input is the provider key, checked against the three
    that can be connected (Linear never can, R8).
 
-   Connect asks integration-service for an authorize URL and sends the browser there. The OAuth
-   callback comes back to /settings/integrations?connected=... or ?error=..., so failures here
+   Connect asks integration-service for an authorize URL and sends the browser there. The provider
+   returns to /settings/integrations/callback/{provider}, which finishes the exchange under the
+   same session and lands on /settings/integrations?connected=... or ?error=..., so failures here
    reuse the same return banner. */
 
 const BACK = "/settings/integrations";

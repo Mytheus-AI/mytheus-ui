@@ -147,6 +147,7 @@ const ERROR_COPY: Record<string, string> = {
   connect_failed: "The connection could not be started just now. Try again in a moment.",
   disconnect_failed: "The integration could not be disconnected just now. Try again in a moment.",
   invalid_provider: "That integration is not available.",
+  account_connected_elsewhere: "That account is already connected to another Mytheus workspace. Disconnect it there first, or use a different account.",
 };
 
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
@@ -205,4 +206,52 @@ export function scopeLabel(scope: string): string {
     offline_access: "Stay connected",
   };
   return known[scope] ?? scope;
+}
+
+/**
+ * The OAuth callback inside the signed-in app (`/settings/integrations/callback/{provider}`).
+ * The provider sends the browser back with `?code=&state=` or `?error=`; the page hands code and
+ * state to integration-service (`POST /oauth/{provider}`) under the caller's own session, so the
+ * flow is bound to the user who started it. These two pure steps decide what to call and where
+ * to send the browser; neither ever puts the code or the state into a URL, a message or a log.
+ */
+export type CallbackInput =
+  | { kind: "exchange"; provider: ProviderKey; code: string; state: string }
+  | { kind: "done"; location: string };
+
+const BACK = "/settings/integrations";
+const MAX_PARAM = 4096;
+
+export function readCallback(provider: unknown, params: Record<string, string | string[] | undefined>): CallbackInput {
+  if (!isConnectable(provider)) return { kind: "done", location: `${BACK}?error=invalid_provider` };
+  const providerError = first(params.error);
+  if (typeof providerError === "string" && providerError) {
+    // Only the provider's own denial is distinguished; anything else is a failed exchange.
+    const key = providerError.trim().toLowerCase() === "access_denied" ? "access_denied" : "exchange_failed";
+    return { kind: "done", location: `${BACK}?error=${key}` };
+  }
+  const code = first(params.code);
+  const state = first(params.state);
+  const valid = (v: unknown): v is string => typeof v === "string" && v.length > 0 && v.length <= MAX_PARAM;
+  if (!valid(code) || !valid(state)) return { kind: "done", location: `${BACK}?error=invalid_state` };
+  return { kind: "exchange", provider, code, state };
+}
+
+/** Where to go after `POST /oauth/{provider}`: success, or one fixed error key per outcome. */
+export function callbackOutcome(
+  provider: ProviderKey,
+  result: { ok: true } | { ok: false; status: number; code: string },
+): string {
+  if (result.ok) return `${BACK}?connected=${provider}`;
+  const code = result.code.toUpperCase();
+  let key = "exchange_failed";
+  if (code === "ACCOUNT_CONNECTED_ELSEWHERE") key = "account_connected_elsewhere";
+  else if (code === "PM_ALREADY_CONNECTED") key = "pm_already_connected";
+  else if (code === "PROVIDER_NOT_CONFIGURED") key = "not_configured";
+  else if (code === "AUTH_REQUIRED" || code === "TOKEN_EXPIRED" || result.status === 401) key = "session_expired";
+  else if (result.status === 403) key = "forbidden";
+  else if (code.includes("STATE") && (code.includes("EXPIRED") || code.includes("EXPIRY"))) key = "state_expired";
+  else if (code.includes("STATE") || code.includes("PKCE")) key = "invalid_state";
+  else if (result.status === 400 || result.status === 404 || result.status === 422) key = "invalid_state";
+  return `${BACK}?error=${key}`;
 }

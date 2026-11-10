@@ -6,6 +6,9 @@
  *   POST   /integrations/{provider}/connect   -> {authorize_url}; 409 PROVIDER_NOT_CONFIGURED,
  *                                             409 PM_ALREADY_CONNECTED
  *   DELETE /integrations/{provider}           revoke, mark disconnected, delete tokens
+ *   POST   /oauth/{provider}                  {code, state} from the provider's redirect, sent by
+ *                                             the signed-in callback page; 409
+ *                                             ACCOUNT_CONNECTED_ELSEWHERE / PM_ALREADY_CONNECTED
  *
  * HAND-WRITTEN TYPES from the contract: re-run `npm run generate:api` once the backend PR merges
  * and switch these to the generated schema.
@@ -48,4 +51,9 @@ export async function connectIntegration(provider: ProviderKey): Promise<Connect
 
 export async function disconnectIntegration(provider: ProviderKey): Promise<void> {
   await api<void>(`/integrations/${encodeURIComponent(provider)}`, { method: "DELETE" });
+}
+
+/** Finish the OAuth exchange. Code and state go in the JSON body, never a URL. */
+export async function completeOAuth(provider: ProviderKey, code: string, state: string): Promise<void> {
+  await api(`/oauth/${encodeURIComponent(provider)}`, { method: "POST", body: { code, state } });
 }
