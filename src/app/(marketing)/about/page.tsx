@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     "Meet CyberSprinters: Sushan Shetty, Samar Rihan, Shaun Marvell Rodrigues, and Yash V Maurya, the four builders of agentic software behind Mytheus.",
 };
 
-/* The team page: the story beside the crew photo, the four of us, what we build, how we sprint,
+/* The team page: the story, the four of us, what we build, how we sprint,
    and the closing panel. */
 export default function Page() {
   return (
