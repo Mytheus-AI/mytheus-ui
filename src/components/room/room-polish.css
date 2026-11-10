@@ -380,3 +380,5 @@
 .mx-meet .call-state-card h1 { margin-bottom: 8px; color: var(--ink-display); font-family: var(--font-display); font-size: 24px; font-weight: 600; }
 .mx-meet .call-state-card p { color: var(--ink-2); font-size: 15px; line-height: 1.55; }
 .mx-meet .call-state-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+
+.mx-meet .cx-call .nv-card h3 > svg { flex-shrink: 0; }

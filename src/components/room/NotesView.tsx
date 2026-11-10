@@ -262,7 +262,6 @@ export function NotesView({
             <h3 id="nv-dec-h">
               <Scales size={14} aria-hidden />
               Decisions <span className="mx-count">{decided.decisions.length}</span>
-              <small>Confirmed in this meeting</small>
             </h3>
             {decided.decisions.length === 0 ? (
               <>
@@ -287,7 +286,6 @@ export function NotesView({
             <h3 id="nv-act-h">
               <CheckSquare size={14} aria-hidden />
               Action items <span className="mx-count">{decided.actions.length}</span>
-              <small>Confirmed in this meeting</small>
             </h3>
             {decided.actions.length === 0 ? (
               <>

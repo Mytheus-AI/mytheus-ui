@@ -405,19 +405,27 @@ function Room({
     [user.name, micOn, camOn],
   );
 
-  const inCall = useMemo(
-    () =>
-      liveRoom
-        ? live.participants.map((p) => ({
-            id: p.identity,
-            name: p.isLocal ? user.name : p.name || names[p.identity]?.name || "Guest",
-            isLocal: p.isLocal,
-            micOn: p.isMicrophoneEnabled,
-            speaking: p.isSpeaking,
-          }))
-        : [{ id: meId ?? "self", name: user.name, isLocal: true, micOn, speaking: false }],
-    [liveRoom, live.participants, user.name, names, meId, micOn],
-  );
+  // Who is here: the call's participants, plus anyone the meeting link sees (gateway presence)
+  // whose audio and video are not connected (yet, or any more), so a raised hand always has a
+  // person to belong to.
+  const inCall = useMemo(() => {
+    const base = liveRoom
+      ? live.participants.map((p) => ({
+          id: p.identity,
+          name: p.isLocal ? user.name : p.name || names[p.identity]?.name || "Guest",
+          isLocal: p.isLocal,
+          micOn: p.isMicrophoneEnabled,
+          speaking: p.isSpeaking,
+        }))
+      : [{ id: meId ?? "self", name: user.name, isLocal: true, micOn, speaking: false }];
+    const seen = new Set(base.map((p) => p.id));
+    for (const id of socket.presence) {
+      if (seen.has(id) || id === meId) continue;
+      seen.add(id);
+      base.push({ id, name: names[id]?.name ?? "A teammate", isLocal: false, micOn: false, speaking: false });
+    }
+    return base;
+  }, [liveRoom, live.participants, user.name, names, meId, micOn, socket.presence]);
   const groups = useMemo(
     () =>
       peopleGroups({
