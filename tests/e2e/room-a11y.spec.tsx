@@ -108,11 +108,12 @@ test("the keyboard reaches every control in order, and tabs and popovers behave"
   await expect(more).toHaveAttribute("aria-expanded", "false");
   await expect(more).toBeFocused();
 
-  // End for everyone asks first, in a modal dialog that traps focus.
+  // End for everyone opens the 60-second wrap-up, in a modal dialog that traps focus; Escape
+  // keeps the meeting going.
   const leave = page.getByRole("button", { name: "Leave or end the meeting" });
   await leave.click();
   await page.getByRole("button", { name: /End for everyone/ }).click();
-  const dialog = page.getByRole("dialog", { name: "End the meeting for everyone?" });
+  const dialog = page.getByRole("dialog", { name: "Wrap up before everyone leaves" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("button", { name: "Keep the meeting going" })).toBeFocused();
   await page.keyboard.press("Escape");
@@ -165,4 +166,131 @@ test("chat goes through the meeting link, shows history, and every (re)connect a
   const tokens = await page.evaluate(() => window.__gateway!.tokens);
   expect(tokens.length).toBe(before + 1);
   expect(new Set(tokens).size).toBe(tokens.length);
+});
+
+/* ---------------------------------------------------------------- the room's top chrome (Phase 1) */
+
+test("the agenda stage bar shows the item, its time and the next one, and the host's controls work by keyboard", async ({ mount, page }) => {
+  await mount(<RoomHarness />);
+  await page.waitForFunction(() => Boolean(window.__gateway?.meetingId));
+  const bar = page.getByRole("region", { name: "Agenda" });
+  await expect(bar.locator(".sb-name")).toHaveText("Beta readiness");
+  await expect(bar.locator(".sb-next-name")).toHaveText("Launch date");
+  // Started long ago against a 10 minute plan: the over-time state, said in words.
+  await expect(bar.getByRole("img", { name: /over the 10 min planned/ })).toBeVisible();
+
+  // The menu: Enter opens it on its first item, arrows move, Escape closes it with focus back.
+  const more = bar.getByRole("button", { name: "More agenda controls" });
+  await more.focus();
+  await page.keyboard.press("Enter");
+  await expect(more).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByRole("menuitem", { name: /Mark covered/ })).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(page.getByRole("menuitem", { name: /Skip this item/ })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(more).toHaveAttribute("aria-expanded", "false");
+  await expect(more).toBeFocused();
+
+  // Start next writes, then tells the room which rows changed.
+  await bar.getByRole("button", { name: "Start next: Launch date" }).click();
+  await expect.poll(() => page.evaluate(() => window.__gatewayLog!.some((e) => e.event === "agenda-status"))).toBe(true);
+
+  // A live change from the host reaches everyone's bar: the next item starts.
+  await page.evaluate((meetingId) => {
+    const row = (id: string, position: number, title: string, status: string) => ({
+      id,
+      position,
+      title,
+      owner_user_id: position === 1 ? "u-sarah" : null,
+      duration_minutes: 10,
+      status,
+      status_source: "host",
+      agent_note: null,
+      updated_at: "2026-11-11T10:00:00Z",
+      started_at: new Date().toISOString(),
+    });
+    const items = [
+      row("11111111-1111-4111-8111-111111111111", 0, "Beta readiness", "covered"),
+      row("44444444-4444-4444-8444-444444444444", 1, "Launch date", "in_progress"),
+    ];
+    window.__gateway!.push("agenda-status", { meetingId, payload: { item: items[0], items, byUserId: "u-maya", at: "" } });
+  }, MEETING_ID);
+  await expect(bar.getByText("Now, 2 of 2")).toBeVisible();
+  // Sarah sent her agent and owns this item: her question comes up for the host to raise.
+  const questions = page.getByRole("region", { name: "Questions from Sarah Okafor's agent" });
+  await expect(questions).toBeVisible();
+  await questions.getByRole("button", { name: /Raise in chat/ }).click();
+  await expect(questions.getByText("Raised in chat")).toBeVisible();
+  expect(await axe(page)).toEqual([]);
+});
+
+test("a late joiner gets the catch-up line and can open it", async ({ mount, page }) => {
+  await mount(<RoomHarness />);
+  const line = page.getByRole("region", { name: "What you missed" });
+  await expect(line.getByText("Since 0:00: 2 decisions, 1 task, item 1 in progress")).toBeVisible();
+  const show = line.getByRole("button", { name: /Show|Hide/ });
+  await expect(show).toHaveText(/Show/);
+  await show.click();
+  await expect(show).toHaveAttribute("aria-expanded", "true");
+  await expect(line.getByText("Keep pricing flat for Q1")).toBeVisible();
+  expect(await axe(page)).toEqual([]);
+  await line.getByRole("button", { name: "Close the catch-up line" }).click();
+  await expect(line).toBeHidden();
+});
+
+test("the stand-in tile shows the update and asks the agent through a dialog", async ({ mount, page }) => {
+  await mount(<RoomHarness />);
+  await expect(page.getByText("QA signed off on the beta.").first()).toBeVisible();
+  await page.getByRole("button", { name: /Ask Sarah Okafor's agent/ }).click();
+  const dialog = page.getByRole("dialog", { name: /standing in for Sarah Okafor/ });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("textbox", { name: /Ask Sarah Okafor.s agent/ }).fill("What did we decide on pricing?");
+  await dialog.getByRole("button", { name: "Ask" }).click();
+  await expect(dialog.getByText("Pricing stays flat for Q1")).toBeVisible();
+  expect(await axe(page)).toEqual([]);
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+});
+
+for (const theme of ["light", "dark"] as const) {
+  test(`the wrap-up sheet has no axe violations and settles cards (${theme})`, async ({ mount, page }) => {
+    await mount(<RoomHarness theme={theme} />);
+    await page.waitForFunction(() => Boolean(window.__gateway?.meetingId));
+    await page.getByRole("button", { name: "Leave or end the meeting" }).click();
+    await page.getByRole("button", { name: /End for everyone/ }).click();
+    const sheet = page.getByRole("dialog", { name: "Wrap up before everyone leaves" });
+    await expect(sheet.getByText("Write the release notes")).toBeVisible();
+    await expect(sheet.getByRole("timer")).toBeVisible();
+    await expect.poll(() => page.evaluate(() => window.__gatewayLog!.some((e) => e.event === "wrap-up"))).toBe(true);
+    expect(await axe(page)).toEqual([]);
+    // One-click owner, then confirm.
+    await sheet.getByRole("combobox", { name: "No owner yet" }).selectOption("u-raj");
+    await expect(sheet.locator(".wu-owner").getByText("Raj Patel")).toBeVisible();
+    await sheet.getByRole("button", { name: "Confirm: Write the release notes" }).click();
+    await expect(sheet.getByText("Write the release notes")).toBeHidden();
+    // End now closes the meeting for everyone.
+    await sheet.getByRole("button", { name: "End now" }).click();
+    await expect(page.getByRole("heading", { name: "You ended the meeting for everyone" })).toBeVisible();
+    await expect(page.getByText(/1 cards nobody confirmed are in your review queue|cards nobody confirmed are in your review queue/)).toBeVisible();
+  });
+}
+
+test("everyone else sees the host wrapping up, with a way to leave", async ({ mount, page }) => {
+  await mount(<RoomHarness asHost={false} />);
+  await page.waitForFunction(() => Boolean(window.__gateway?.meetingId));
+  await expect(page.getByRole("button", { name: /Start next/ })).toHaveCount(0);
+  await page.evaluate((meetingId) => {
+    const started = new Date().toISOString();
+    window.__gateway!.push("wrap-up", {
+      meetingId,
+      payload: { state: "started", startedAt: started, endsAt: new Date(Date.now() + 60_000).toISOString(), byUserId: "u-maya", at: started },
+    });
+  }, MEETING_ID);
+  await expect(page.getByRole("status").filter({ hasText: "Maya Chen is wrapping up" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Leave now" })).toBeVisible();
+  expect(await axe(page)).toEqual([]);
+  await page.evaluate((meetingId) => {
+    window.__gateway!.push("wrap-up", { meetingId, payload: { state: "cancelled", startedAt: null, endsAt: null, byUserId: "u-maya", at: "" } });
+  }, MEETING_ID);
+  await expect(page.getByText("Maya Chen is wrapping up")).toBeHidden();
 });

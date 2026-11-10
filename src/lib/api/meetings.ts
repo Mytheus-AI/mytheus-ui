@@ -52,6 +52,8 @@ export interface CallMeeting {
   previousMeeting: MeetingLinkSummary | null;
   /** The agenda in order, on a single-meeting read only; [] otherwise (D6). */
   agenda: AgendaItem[];
+  /** The host opened the 60-second close-out wrap-up at this time, or null (polish program). */
+  wrapUpStartedAt?: string | null;
 }
 
 /** A scheduled meeting this long past its end with nobody having joined is over. Matches the
@@ -103,6 +105,7 @@ export function toCallMeeting(raw: ApiMeeting): CallMeeting {
     previousMeetingId: m.previous_meeting_id ?? m.previous_meeting?.id ?? null,
     previousMeeting: m.previous_meeting ?? null,
     agenda: Array.isArray(m.agenda) ? [...m.agenda].sort((a, b) => a.position - b.position) : [],
+    wrapUpStartedAt: typeof m.wrap_up_started_at === "string" ? m.wrap_up_started_at : null,
   };
 }
 

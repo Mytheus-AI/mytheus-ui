@@ -8,6 +8,10 @@ import { MEETING_ID } from "./fixtures";
    Sarah sent her agent; Priya was invited and has not joined. */
 
 
+// The call opened 25 minutes ago, whatever the clock says, so the room is joined late (the
+// catch-up line shows) and the first item, started then, is over its 10 minute plan.
+const OPENED = new Date(Date.now() - 25 * 60_000).toISOString();
+
 const meeting: CallMeeting = {
   id: MEETING_ID,
   title: "Q4 launch review",
@@ -19,7 +23,13 @@ const meeting: CallMeeting = {
   participants: [
     { id: "u-maya", role: "host", attendance: "live", proxyUpdate: null, proxyQuestions: [] },
     { id: "u-raj", role: null, attendance: "live", proxyUpdate: null, proxyQuestions: [] },
-    { id: "u-sarah", role: null, attendance: "agent", proxyUpdate: "QA signed off on the beta.", proxyQuestions: [] },
+    {
+      id: "u-sarah",
+      role: null,
+      attendance: "agent",
+      proxyUpdate: "QA signed off on the beta.",
+      proxyQuestions: ["Can we move the launch a week?"],
+    },
     { id: "u-priya", role: null, attendance: "live", proxyUpdate: null, proxyQuestions: [] },
   ],
   confidential: false,
@@ -39,6 +49,17 @@ const meeting: CallMeeting = {
       status: "in_progress",
       status_source: "agent",
       agent_note: null,
+      started_at: OPENED,
+    } as never,
+    {
+      id: "44444444-4444-4444-8444-444444444444",
+      position: 1,
+      title: "Launch date",
+      owner_user_id: "u-sarah",
+      duration_minutes: 15,
+      status: "pending",
+      status_source: null,
+      agent_note: null,
     } as never,
   ],
 };
@@ -50,7 +71,7 @@ const names = {
   "u-priya": { name: "Priya Nair", imageUrl: null },
 };
 
-export function RoomHarness({ theme = "light" }: { theme?: "light" | "dark" }) {
+export function RoomHarness({ theme = "light", asHost = true }: { theme?: "light" | "dark"; asHost?: boolean }) {
   return (
     <OrgProvider
       value={{
@@ -62,8 +83,8 @@ export function RoomHarness({ theme = "light" }: { theme?: "light" | "dark" }) {
         <MeetingRoom
           meeting={meeting}
           names={names}
-          me={{ id: "u-maya", name: "Maya Chen", agentName: "Juniper", agentSeed: null, personality: null, steers: true }}
-          session={{ consentRequired: false, consentedAt: "2026-11-11T09:59:00Z", recording: false, startedAt: "2026-11-11T10:00:00Z" }}
+          me={{ id: "u-maya", name: "Maya Chen", agentName: "Juniper", agentSeed: null, personality: null, steers: asHost }}
+          session={{ consentRequired: false, consentedAt: "2026-11-11T09:59:00Z", recording: false, startedAt: OPENED }}
         />
       </div>
     </OrgProvider>
