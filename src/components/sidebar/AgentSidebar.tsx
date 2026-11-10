@@ -157,6 +157,8 @@ export function AgentSidebar({
   alerts = [],
   onAlertRead,
   onAlertDismissed,
+  head,
+  agenda,
 }: {
   /** The agent's cards for this meeting. Empty until the `agent-results` stream is wired, which
    *  renders the empty state rather than invented cards. */
@@ -187,6 +189,11 @@ export function AgentSidebar({
   alerts?: Alert[];
   onAlertRead?: (id: string) => void;
   onAlertDismissed?: (id: string) => void;
+  /** Your agent's face, name and personality (ADR-0038 D11). When given it heads the panel and
+   *  carries the settings link, so the sections below drop theirs. */
+  head?: ReactNode;
+  /** The shared live agenda (and the host's nudges), under any pinned alerts and above Needs you. */
+  agenda?: ReactNode;
 }) {
   const toast = useCallToast();
   const [decisionState, setDecisionState] = useState<"pending" | "confirmed" | "dismissed">(
@@ -586,10 +593,13 @@ export function AgentSidebar({
   ) {
     return (
       <div className="agent" id={id}>
-        <div className="side-sec">
-          <h3>Your agent</h3>
-          <span className="side-sec-end">{settings}</span>
-        </div>
+        {head ?? (
+          <div className="side-sec">
+            <h3>Your agent</h3>
+            <span className="side-sec-end">{settings}</span>
+          </div>
+        )}
+        {agenda}
         <div className="agent-empty">
           <svg viewBox="0 0 120 36" aria-hidden="true">
             <path className="mx-line" d="M4 26 C24 26 30 26 44 26 C62 26 72 4 60 4 C48 4 50 26 70 26 C86 26 96 26 116 26" />
@@ -609,6 +619,7 @@ export function AgentSidebar({
 
   return (
     <>
+      {head ? <div className="agent-head-wrap">{head}</div> : null}
       {alertBanners || conflict ? (
         <div className="agent-pin" aria-label="Pinned alerts">
           {alertBanners}
@@ -629,6 +640,7 @@ export function AgentSidebar({
       ) : null}
 
       <div className="agent" id={id}>
+        {agenda}
         <div className="side-sec">
           <h3>Needs you</h3>
           {count > 0 ? <span className="mx-count is-hot">{count}</span> : null}
@@ -637,7 +649,7 @@ export function AgentSidebar({
               <Waveform size={14} aria-hidden />
               Listening
             </span>
-            {settings}
+            {head ? null : settings}
           </span>
         </div>
 

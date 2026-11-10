@@ -10,7 +10,13 @@ import { createContext, useCallback, useContext, type ReactNode } from "react";
    captions. The room page resolves the workspace's members once (server-side: internal id ->
    Clerk name) and provides them here; every component that labels a person reads from it. */
 
-export type RoomPerson = { name: string; imageUrl: string | null };
+export type RoomPerson = {
+  name: string;
+  imageUrl: string | null;
+  /** Their agent's chosen name and doodle seed (ADR-0038 D3), null for the defaults. */
+  agentName?: string | null;
+  agentSeed?: string | null;
+};
 export type RoomNames = Record<string, RoomPerson>;
 
 const Ctx = createContext<RoomNames>({});
