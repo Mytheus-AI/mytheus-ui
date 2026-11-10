@@ -12,6 +12,70 @@
  */
 
 export interface paths {
+    "/api/v1/agent-authz-scopes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Scopes
+         * @description The caller's tenant's live grants. Empty means agent-to-agent collaboration is off.
+         */
+        get: operations["list_scopes"];
+        put?: never;
+        /**
+         * Upsert Scope
+         * @description Create or change one grant. Idempotent in the value written; audits only a change.
+         */
+        post: operations["upsert_scope"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent-authz-scopes/template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Adopt Template
+         * @description Adopt the platform default grant set at `target_scope` (and every narrower scope).
+         */
+        post: operations["adopt_template"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent-authz-scopes/{scope_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke Scope
+         * @description Soft-delete one grant. 404 when it is not a live grant of the caller's tenant.
+         */
+        delete: operations["revoke_scope"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/clerk/webhook": {
         parameters: {
             query?: never;
@@ -335,6 +399,88 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AgentAuthzScope */
+        AgentAuthzScope: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Created By
+             * Format: uuid
+             */
+            created_by: string;
+            /**
+             * Effect
+             * @enum {string}
+             */
+            effect: "allow" | "deny";
+            /**
+             * Grantee Role
+             * @enum {string}
+             */
+            grantee_role: "owner" | "admin" | "member";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Query Class
+             * @enum {string}
+             */
+            query_class: "meeting_context" | "decision_lineage" | "action_status";
+            /**
+             * Target Scope
+             * @enum {string}
+             */
+            target_scope: "self" | "same_team" | "department" | "org";
+        };
+        /** AgentAuthzScopeCreate */
+        AgentAuthzScopeCreate: {
+            /**
+             * Effect
+             * @default allow
+             * @enum {string}
+             */
+            effect: "allow" | "deny";
+            /**
+             * Grantee Role
+             * @enum {string}
+             */
+            grantee_role: "owner" | "admin" | "member";
+            /**
+             * Query Class
+             * @enum {string}
+             */
+            query_class: "meeting_context" | "decision_lineage" | "action_status";
+            /**
+             * Target Scope
+             * @enum {string}
+             */
+            target_scope: "self" | "same_team" | "department" | "org";
+        };
+        /** AgentAuthzScopeList */
+        AgentAuthzScopeList: {
+            /** Items */
+            items: components["schemas"]["AgentAuthzScope"][];
+        };
+        /** AgentAuthzTemplate */
+        AgentAuthzTemplate: {
+            /**
+             * Target Scope
+             * @enum {string}
+             */
+            target_scope: "same_team" | "department" | "org";
+        };
+        /** AgentAuthzTemplateResult */
+        AgentAuthzTemplateResult: {
+            /** Created */
+            created: number;
+            /** Items */
+            items: components["schemas"]["AgentAuthzScope"][];
+        };
         /** DepartmentRef */
         DepartmentRef: {
             /**
@@ -723,6 +869,199 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_scopes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentAuthzScopeList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    upsert_scope: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentAuthzScopeCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentAuthzScope"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    adopt_template: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentAuthzTemplate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentAuthzTemplateResult"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    revoke_scope: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scope_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     clerk_webhook: {
         parameters: {
             query?: never;
