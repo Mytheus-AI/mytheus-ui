@@ -88,8 +88,9 @@ import {
 } from "./alerts";
 import {
   applyAgentAgenda,
-  applyHostAgendaStatus,
+  applyHostAgendaRows,
   applyNudge,
+  applyServerRows,
   beginHostStatus,
   commitHostStatus,
   dismissNudge as dismissNudgeIn,
@@ -122,6 +123,7 @@ import {
   type ReactionId,
 } from "./room-live";
 import { MAX_RECONNECT_ATTEMPTS, backoffMs, type LiveLink } from "./connection";
+import { applyWrapUp, initialWrapUp, type WrapUpState } from "./stage";
 import { loadCandidateLedger, loadChatHistory } from "@/components/room/actions";
 import type { AgendaItem, AgendaStatus, AgentAgendaPayload, AgentNudgePayload } from "@/lib/api/meeting-agenda-types";
 
@@ -175,6 +177,10 @@ export interface MeetingSocketState {
     rollback: (itemId: string, op: number) => void;
     /** After core-api stored the host's change: tell everyone in the room. */
     announce: (itemId: string) => Promise<RoomAck>;
+    /** Apply rows core-api returned for the host's own write (Start next, Extend). */
+    applyRows: (rows: AgendaItem[]) => void;
+    /** After core-api stored a change to several items ("Start next"): tell everyone. */
+    announceMany: (itemIds: string[]) => Promise<RoomAck>;
   };
   nudges: NudgeState;
   dismissNudge: (id: string) => void;
@@ -188,6 +194,12 @@ export interface MeetingSocketState {
   /** The host ended the meeting for everyone. */
   ended: MeetingEnded | null;
   announceEnd: () => Promise<RoomAck>;
+  /** The host's 60-second close-out wrap-up, open with its shared deadline, or null. */
+  wrapUp: WrapUpState | null;
+  /** Set it on this screen at once (the host's own start or cancel; the room echo follows). */
+  setWrapUp: (next: WrapUpState | null) => void;
+  /** After core-api stored the host's start or cancel: tell everyone in the room. */
+  announceWrapUp: () => Promise<RoomAck>;
 }
 
 interface JoinAck {
@@ -231,6 +243,8 @@ export function useMeetingSocket(
     meId: string | null;
     /** The agenda the page was rendered with, shown until the first re-hydrate answers. */
     initialAgenda?: AgendaItem[];
+    /** The wrap-up start the page was rendered with (a reload mid-wrap-up keeps counting). */
+    initialWrapUpStartedAt?: string | null;
   },
 ): MeetingSocketState {
   const url = process.env.NEXT_PUBLIC_REALTIME_WS_URL;
@@ -255,6 +269,7 @@ export function useMeetingSocket(
   const [hands, setHands] = useState<HandsState>(emptyHandsState);
   const [reactions, setReactions] = useState<FloatingReaction[]>([]);
   const [ended, setEnded] = useState<MeetingEnded | null>(null);
+  const [wrapUp, setWrapUp] = useState<WrapUpState | null>(() => initialWrapUp(options.initialWrapUpStartedAt));
   const [generation, setGeneration] = useState(0);
   const socketRef = useRef<Socket | null>(null);
   const joinedRef = useRef(false);
@@ -325,9 +340,11 @@ export function useMeetingSocket(
       void read<{ items?: AlertRow[] }>("/api/meeting-alerts").then((body) => {
         if (!cancelled && body) setAlerts((prev) => hydrateAlerts(prev, body));
       });
-      void read<{ items?: AgendaItem[] }>("/api/meeting-agenda").then((body) => {
+      void read<{ items?: AgendaItem[]; wrap_up_started_at?: string | null }>("/api/meeting-agenda").then((body) => {
         if (cancelled) return;
         setAgenda((prev) => hydrateAgenda(prev, Array.isArray(body?.items) ? body!.items! : null));
+        // The stored wrap-up is the truth after a reconnect (a missed "wrap-up" event).
+        if (body && "wrap_up_started_at" in body) setWrapUp(initialWrapUp(body.wrap_up_started_at));
       });
       void loadChatHistory(meetingId)
         .then((res) => {
@@ -435,7 +452,9 @@ export function useMeetingSocket(
     socket.on("candidate-lock", mine<LockPayload>((p) => setCandidates((prev) => applyLock(prev, p))));
     socket.on(
       "agenda-status",
-      mine<{ item?: AgendaItem }>((p) => setAgenda((prev) => applyHostAgendaStatus(prev, p.item))),
+      mine<{ item?: AgendaItem; items?: AgendaItem[] }>((p) =>
+        setAgenda((prev) => applyHostAgendaRows(prev, Array.isArray(p.items) ? p.items : [p.item])),
+      ),
     );
     socket.on(
       "room-state",
@@ -452,6 +471,13 @@ export function useMeetingSocket(
       mine<{ id?: string; userId?: string; reaction?: string }>((p) => setReactions((prev) => applyReaction(prev, p, Date.now()))),
     );
     socket.on("meeting-ended", mine<MeetingEnded>((p) => setEnded({ byUserId: p.byUserId, at: p.at })));
+    // The host's close-out wrap-up (polish program): open with its deadline, or kept going.
+    socket.on(
+      "wrap-up",
+      mine<{ state?: string; startedAt?: string; endsAt?: string; byUserId?: string }>((p) =>
+        setWrapUp((prev) => applyWrapUp(prev, p)),
+      ),
+    );
     // Chat is not wrapped: the relay is `{ meetingId, ...fields }`, not `{ meetingId, payload }`.
     socket.on("chat", (event: LiveChatPayload) => {
       if (cancelled || event?.meetingId !== meetingId) return;
@@ -551,6 +577,8 @@ export function useMeetingSocket(
         setAgenda((prev) => commitHostStatus(prev, itemId, op, row)),
       rollback: (itemId: string, op: number) => setAgenda((prev) => rollbackHostStatus(prev, itemId, op)),
       announce: (itemId: string) => emitAck("agenda-status", { itemId }, true),
+      applyRows: (rows: AgendaItem[]) => setAgenda((prev) => applyServerRows(prev, rows)),
+      announceMany: (itemIds: string[]) => emitAck("agenda-status", { itemIds }, true),
     }),
     [emitAck],
   );
@@ -587,6 +615,7 @@ export function useMeetingSocket(
   const setHand = useCallback((raised: boolean) => emitAck("hand", { raised }), [emitAck]);
   const react = useCallback((reaction: ReactionId) => emitAck("reaction", { reaction }), [emitAck]);
   const announceEnd = useCallback(() => emitAck("end-meeting", {}, true), [emitAck]);
+  const announceWrapUp = useCallback(() => emitAck("wrap-up", {}, true), [emitAck]);
 
   return useMemo(
     () => ({
@@ -623,6 +652,9 @@ export function useMeetingSocket(
       react,
       ended,
       announceEnd,
+      wrapUp,
+      setWrapUp,
+      announceWrapUp,
     }),
     [
       status,
@@ -658,6 +690,8 @@ export function useMeetingSocket(
       react,
       ended,
       announceEnd,
+      wrapUp,
+      announceWrapUp,
     ],
   );
 }

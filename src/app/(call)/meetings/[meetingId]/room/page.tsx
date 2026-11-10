@@ -8,6 +8,7 @@ import "@/styles/meeting-call.css";
 import "@/styles/meeting-agenda.css";
 import "@/styles/meeting-brain.css";
 import "@/components/room/room-polish.css";
+import "@/components/room/room-stage.css";
 
 export const metadata: Metadata = { title: "Meeting room | Mytheus" };
 

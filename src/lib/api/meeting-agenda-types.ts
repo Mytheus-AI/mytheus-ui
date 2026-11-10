@@ -34,6 +34,11 @@ export interface AgendaItem {
   updated_at: string;
   /** An `org_goals` id this item serves (ADR-0039 B3), or null. */
   goal_id?: string | null;
+  /** Polish program, the agenda as the spine: when the item first went in progress and last
+   *  finished, and the minutes the host added in the room (the plan is duration + extended). */
+  started_at?: string | null;
+  ended_at?: string | null;
+  extended_minutes?: number;
 }
 
 /** `previous_meeting` on a meeting read and on carry-forward (D6). */
