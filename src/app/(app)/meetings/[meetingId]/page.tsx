@@ -413,7 +413,7 @@ function EndedDetail({
       href: `/meetings/${meeting.id}/transcript`,
     },
     { icon: Scales, title: "Decisions", desc: "Decisions you have confirmed", href: "/decisions" },
-    { icon: CheckSquare, title: "Tasks", desc: "Action items, wherever they were captured", href: "/tasks" },
+    { icon: CheckSquare, title: "Tasks", desc: "Action items, wherever they were captured", href: "/work/tasks" },
     {
       icon: Sparkle,
       title: "Catch-up",
