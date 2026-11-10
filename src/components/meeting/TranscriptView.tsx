@@ -12,6 +12,10 @@ import {
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { CaretDown, CaretUp, MagnifyingGlass } from "@phosphor-icons/react";
 import { TranscriptHead } from "@/components/transcript/TranscriptHead";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Page, PageColumns } from "@/components/ui/Page";
 import { initials, toneOf } from "@/components/room/tone";
 import {
   formatOffset,
@@ -202,11 +206,11 @@ export function TranscriptView({
   };
 
   return (
-    <div className="mx-page tx" id="page-transcript">
+    <Page>
       <TranscriptHead title={title} meta={meta} backHref={backHref} />
 
-      <div className="tx-layout">
-        <section className="mx-card tx-main" aria-label="Transcript">
+      <PageColumns sticky={false} asideLabel="Speakers and talk time" aside={rail}>
+        <Card as="section" flush aria-label="Transcript" className="flex flex-col">
           <div className="tx-bar">
             <div className="mt-search tx-search" role="search">
               <MagnifyingGlass size={18} aria-hidden />
@@ -273,13 +277,18 @@ export function TranscriptView({
           </div>
 
           {q && total === 0 ? (
-            <div className="tx-none" role="status">
-              <MagnifyingGlass size={30} aria-hidden className="tx-none-ico" />
-              <h3>No lines match &ldquo;{q}&rdquo;</h3>
-              <p>Check the spelling or try a shorter word.</p>
-              <button type="button" className="mx-btn is-outline is-sm tap" onClick={clear}>
-                Clear search
-              </button>
+            <div role="status">
+              <EmptyState
+                inCard
+                art="search"
+                title={`No lines match “${q}”`}
+                description="Check the spelling or try a shorter word."
+                action={
+                  <Button variant="outline" size="sm" onClick={clear}>
+                    Clear search
+                  </Button>
+                }
+              />
             </div>
           ) : (
             <div ref={scrollRef} tabIndex={0} role="region" aria-label="Transcript lines" className="tx-scroll">
@@ -345,12 +354,8 @@ export function TranscriptView({
               </ol>
             </div>
           )}
-        </section>
-
-        <aside className="tx-rail" aria-label="Speakers and talk time">
-          {rail}
-        </aside>
-      </div>
-    </div>
+        </Card>
+      </PageColumns>
+    </Page>
   );
 }

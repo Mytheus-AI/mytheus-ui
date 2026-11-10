@@ -374,7 +374,7 @@ export function AgentSidebar({
 
   const settings = (
     <Link
-      href="/settings"
+      href="/agent"
       target="_blank"
       rel="noopener"
       className="cx-icon-btn sm tap tip-below tip-end"

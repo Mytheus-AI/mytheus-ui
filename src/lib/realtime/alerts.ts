@@ -173,8 +173,8 @@ function relatedOf(raw: unknown): AlertRelated[] {
 
 const U = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 /** The only shapes an alert's own link may take: a meeting (optionally one of its decisions), a
- *  decision, or My Tasks. */
-const LINK_ALLOWLIST = new RegExp(`^(?:/meetings/${U}(?:/decisions/${U})?|/decisions/${U}|/tasks)$`, "i");
+ *  decision, or My Tasks (the contract's `/tasks`, or its new home `/work/tasks`). */
+const LINK_ALLOWLIST = new RegExp(`^(?:/meetings/${U}(?:/decisions/${U})?|/decisions/${U}|/tasks|/work/tasks)$`, "i");
 
 /** An allowlisted app path, or null: anything else (another path, a host, a scheme) renders no
  *  link at all. */
@@ -447,7 +447,7 @@ export function relatedLink(r: AlertRelated, alert: Pick<Alert, "meetingId" | "s
       return { label: r.label || "Decision", href: meeting && id ? `/meetings/${meeting}/decisions/${id}` : "/decisions" };
     }
     case "action":
-      return { label: r.label || "Action", href: meeting ? `/meetings/${meeting}` : "/tasks" };
+      return { label: r.label || "Action", href: meeting ? `/meetings/${meeting}` : "/work/tasks" };
     case "user": {
       const id = seg(r.id);
       return { label: r.label || "Teammate", href: id ? `/people/${id}` : "/people" };
@@ -459,11 +459,13 @@ export function relatedLink(r: AlertRelated, alert: Pick<Alert, "meetingId" | "s
  * The alert's own "Open" link, only ever an allowlisted path (`safeLink`). The contract's
  * `/decisions/{id}` has no page in this app (lineage lives under the meeting), so it is mapped to
  * the lineage page when the id is the subject decision, and to the Decisions list otherwise.
- * `/meetings/{id}`, `/meetings/{id}/decisions/{id}` and `/tasks` pass through.
+ * The contract's `/tasks` moved to `/work/tasks` (src/lib/legacy-routes.ts), so it opens there
+ * directly; `/meetings/{id}`, `/meetings/{id}/decisions/{id}` and `/work/tasks` pass through.
  */
 export function alertHref(alert: Pick<Alert, "link" | "meetingId" | "subject">): string | null {
   const link = safeLink(alert.link);
   if (!link) return null;
+  if (link.toLowerCase() === "/tasks") return "/work/tasks";
   const m = /^\/decisions\/([0-9a-f-]{36})\/?$/i.exec(link);
   if (!m) return link;
   const meeting = seg(alert.meetingId);

@@ -26,7 +26,7 @@
 .mx-meet .cx-call .cx-top-title h1 {
   color: var(--ink-display);
   font-family: var(--font-display);
-  font-size: 21px;
+  font-size: 22px;
   font-weight: 600;
   letter-spacing: -0.015em;
   line-height: 1.15;
@@ -34,22 +34,22 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.mx-meet .cx-call .cx-top-title p { display: flex; align-items: center; gap: 6px; color: var(--ink-3); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mx-meet .cx-call .cx-top-title p { display: flex; align-items: center; gap: 6px; color: var(--ink-3); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mx-meet .cx-call .cx-top-title p svg { flex-shrink: 0; }
 .mx-meet .cx-call .cx-top-end { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
 /* Call / Notes: one segmented control. */
-.mx-meet .cx-call .cx-modes { display: inline-flex; gap: 2px; padding: 4px; border-radius: var(--mx-r-ctl); background: var(--bg-2); flex-shrink: 0; }
+.mx-meet .cx-call .cx-modes { display: inline-flex; gap: 2px; padding: 4px; border-radius: var(--radius-pill); background: var(--bg-2); flex-shrink: 0; }
 .mx-meet .cx-call .cx-modes button {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   height: 34px;
-  padding: 0 13px;
-  border-radius: 9px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
   color: var(--ink-3);
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 600;
 }
 .mx-meet .cx-call .cx-modes button:hover { color: var(--ink); }
@@ -60,10 +60,10 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   height: 40px;
   padding: 0 14px;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   border: 1px solid var(--line-2);
   background: var(--surface);
   color: var(--ink);
@@ -92,10 +92,10 @@
   align-items: center;
   height: 44px;
   padding: 0 20px;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   background: var(--pill);
   color: var(--pill-on);
-  font-size: 14.5px;
+  font-size: 15px;
   font-weight: 700;
   box-shadow: var(--sh-3);
 }
@@ -136,7 +136,7 @@
 .mx-meet .cx-conn.is-error {
   align-items: flex-start;
   padding: 10px 10px 10px 14px;
-  border-radius: var(--mx-r-card);
+  border-radius: var(--radius-card);
   background: var(--priority-high-soft);
   border-color: color-mix(in srgb, var(--priority-high) 30%, transparent);
   line-height: 1.45;
@@ -150,11 +150,11 @@
   gap: 6px;
   height: 32px;
   padding: 0 12px;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   background: var(--surface);
   border: 1px solid var(--line-2);
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 600;
 }
 .mx-meet .cx-conn-retry:hover { background: var(--surface-2); }
@@ -179,7 +179,7 @@
 
 .mx-meet .cx-call .nv { height: 100%; min-height: 0; display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 14px; }
 .mx-meet .cx-call .nv-side { min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; padding: 2px; }
-.mx-meet .cx-call .nv-label { color: var(--ink-3); font-size: 13px; font-weight: 600; }
+.mx-meet .cx-call .nv-label { color: var(--ink-3); font-size: 12.5px; font-weight: 600; }
 .mx-meet .cx-call .nv-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .mx-meet .cx-call .nv-tile {
   position: relative;
@@ -187,7 +187,7 @@
   overflow: hidden;
   display: grid;
   place-items: center;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--tone, var(--tint-peach)) 46%, var(--surface));
   container-type: size;
   outline: 2.5px solid transparent;
@@ -220,7 +220,7 @@
   gap: 4px;
   max-width: calc(100% - 12px);
   height: 24px;
-  padding: 0 9px;
+  padding: 0 10px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--surface) 92%, transparent);
   color: var(--ink);
@@ -235,17 +235,17 @@
   max-height: 132px;
   overflow: hidden;
   padding: 12px 14px;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   background: var(--surface);
   border: 1px solid var(--line);
   color: var(--ink-2);
   font-size: 14px;
   line-height: 1.5;
 }
-.mx-meet .cx-call .nv-now b { display: block; margin-bottom: 2px; color: var(--ink); font-size: 13px; }
+.mx-meet .cx-call .nv-now b { display: block; margin-bottom: 2px; color: var(--ink); font-size: 12.5px; }
 .mx-meet .cx-call .nv-quiet { color: var(--ink-3); }
 .mx-meet .cx-call .nv-talk { display: flex; flex-direction: column; gap: 8px; }
-.mx-meet .cx-call .nv-talk li { display: grid; grid-template-columns: 84px minmax(0, 1fr) 40px; align-items: center; gap: 10px; font-size: 13px; }
+.mx-meet .cx-call .nv-talk li { display: grid; grid-template-columns: 84px minmax(0, 1fr) 40px; align-items: center; gap: 10px; font-size: 12.5px; }
 .mx-meet .cx-call .nv-talk-name { color: var(--ink-2); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mx-meet .cx-call .nv-talk-bar { height: 8px; overflow: hidden; border-radius: 999px; background: var(--bg-2); }
 .mx-meet .cx-call .nv-talk-bar i { display: block; height: 100%; border-radius: inherit; background: var(--signal); transition: width 0.4s var(--ease-out); }
@@ -256,7 +256,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: var(--mx-r-card);
+  border-radius: var(--radius-card);
   background: var(--surface);
   border: 1px solid var(--line);
 }
@@ -268,16 +268,16 @@
   min-height: 0;
   overflow-y: auto;
   padding: 28px clamp(18px, 4vw, 56px) 44px;
-  border-radius: var(--mx-r-hero);
+  border-radius: var(--radius-hero);
   background: var(--surface);
   border: 1px solid var(--line);
   box-shadow: var(--sh-1);
 }
-.mx-meet .cx-call .nv-title { color: var(--ink-display); font-family: var(--font-display); font-size: clamp(26px, 2.8vw, 34px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; text-wrap: balance; }
+.mx-meet .cx-call .nv-title { color: var(--ink-display); font-family: var(--font-display); font-size: clamp(28px, 3vw, 34px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; text-wrap: balance; }
 .mx-meet .cx-call .nv-sub { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 10px 0 24px; color: var(--ink-3); font-size: 14px; }
-.mx-meet .cx-call .nv-card { margin-bottom: 14px; padding: 18px 20px; border-radius: var(--mx-r-card); background: var(--surface-2); border: 1px solid var(--line); }
+.mx-meet .cx-call .nv-card { margin-bottom: 14px; padding: 18px 20px; border-radius: var(--radius-card); background: var(--surface-2); border: 1px solid var(--line); }
 .mx-meet .cx-call .nv-card h3 { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--ink); font-size: 15px; font-weight: 650; }
-.mx-meet .cx-call .nv-card h3 > svg { color: var(--ink-3); }
+.mx-meet .cx-call .nv-card h3 > svg { flex-shrink: 0; color: var(--ink-3); }
 .mx-meet .cx-call .nv-card h3 small { margin-left: auto; color: var(--ink-3); font-size: 12.5px; font-weight: 500; }
 .mx-meet .cx-call .nv-notes { padding-left: 18px; list-style: disc; }
 .mx-meet .cx-call .nv-notes li { color: var(--ink-2); font-size: 15px; line-height: 1.6; white-space: pre-line; }
@@ -288,8 +288,8 @@
 .mx-meet .cx-call .nv-empty { color: var(--ink-3); font-size: 14px; line-height: 1.5; }
 .mx-meet .cx-call .nv-empty-line { display: block; width: 88px; height: 26px; margin-bottom: 6px; }
 .mx-meet .cx-call .nv-tx-label { display: flex; align-items: center; gap: 8px; margin: 28px 0 6px; }
-.mx-meet .cx-call .nv-tx li { display: grid; grid-template-columns: 56px 140px minmax(0, 1fr); gap: 12px; padding: 11px 2px; border-top: 1px solid var(--line); }
-.mx-meet .cx-call .nv-tx time { padding-top: 2px; color: var(--ink-3); font-size: 13px; font-weight: 600; }
+.mx-meet .cx-call .nv-tx li { display: grid; grid-template-columns: 56px 140px minmax(0, 1fr); gap: 12px; padding: 12px 2px; border-top: 1px solid var(--line); }
+.mx-meet .cx-call .nv-tx time { padding-top: 2px; color: var(--ink-3); font-size: 12.5px; font-weight: 600; }
 .mx-meet .cx-call .nv-tx b { color: var(--ink); font-size: 14px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mx-meet .cx-call .nv-tx p { color: var(--ink-2); font-size: 15px; line-height: 1.55; }
 
@@ -297,12 +297,12 @@
 
 .mx-meet .cx-call .pj { max-width: 1240px; margin: 0 auto; padding: 4px 24px 48px; }
 .mx-meet .cx-call .pj-head { padding: 8px 0 24px; }
-.mx-meet .cx-call .pj-head h1 { color: var(--ink-display); font-family: var(--font-display); font-size: clamp(30px, 3.4vw, 38px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.08; }
-.mx-meet .cx-call .pj-head p { margin-top: 8px; max-width: 62ch; color: var(--ink-3); font-size: 16px; }
+.mx-meet .cx-call .pj-head h1 { color: var(--ink-display); font-family: var(--font-display); font-size: clamp(28px, 3vw, 34px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.08; }
+.mx-meet .cx-call .pj-head p { margin-top: 8px; max-width: 62ch; color: var(--ink-3); font-size: 15px; }
 .mx-meet .cx-call .pj-grid { display: grid; grid-template-columns: minmax(0, 1fr) 408px; gap: 24px; align-items: start; }
 .mx-meet .cx-call .pj-left,
 .mx-meet .cx-call .pj-right { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
-.mx-meet .cx-call .pj-card { padding: 22px; border-radius: var(--mx-r-card); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--sh-1); }
+.mx-meet .cx-call .pj-card { padding: 22px; border-radius: var(--radius-card); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--sh-1); }
 .mx-meet .cx-call .pj-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
 .mx-meet .cx-call .pj-card-head h2 { color: var(--ink); font-size: 17px; font-weight: 650; }
 
@@ -314,7 +314,7 @@
   max-height: calc(100dvh - 260px);
   min-height: 300px;
   overflow: hidden;
-  border-radius: var(--mx-r-hero);
+  border-radius: var(--radius-hero);
   background: var(--wash);
   border: 1px solid color-mix(in srgb, var(--signal-line) 20%, var(--line));
   box-shadow: var(--sh-2);
@@ -336,7 +336,7 @@
   box-shadow: 0 0 0 8px color-mix(in srgb, var(--surface) 40%, transparent);
   color: var(--ink);
   font-family: var(--font-display);
-  font-size: clamp(26px, 9cqmin, 46px);
+  font-size: clamp(22px, 9cqmin, 30px);
   font-weight: 500;
 }
 .mx-meet .cx-call .pj-tag {
@@ -347,11 +347,11 @@
   gap: 8px;
   max-width: calc(100% - 28px);
   min-height: 34px;
-  padding: 6px 13px 6px 12px;
+  padding: 6px 14px 6px 12px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--surface) 92%, transparent);
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1.35;
   box-shadow: var(--sh-1);
@@ -364,7 +364,7 @@
 .mx-meet .cx-call .pv-status svg { flex-shrink: 0; color: var(--priority-high); }
 /* The level bars follow the microphone's real input (`--lvl`, set by PreJoin each frame). */
 .mx-meet .cx-call .pj-wave { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
-.mx-meet .cx-call .pj-wave i { width: 3px; height: 100%; border-radius: 2px; background: var(--signal-line); transform-origin: bottom; transform: scaleY(calc(var(--lvl, 0.15) * var(--k, 1))); transition: transform 0.08s linear; }
+.mx-meet .cx-call .pj-wave i { width: 3px; height: 100%; border-radius: 999px; background: var(--signal-line); transform-origin: bottom; transform: scaleY(calc(var(--lvl, 0.15) * var(--k, 1))); transition: transform 0.08s linear; }
 .mx-meet .cx-call .pj-wave i:nth-child(1) { --k: 0.55; }
 .mx-meet .cx-call .pj-wave i:nth-child(2) { --k: 0.9; }
 .mx-meet .cx-call .pj-wave i:nth-child(3) { --k: 0.7; }
@@ -375,7 +375,7 @@
 /* Devices. */
 .mx-meet .cx-call .pj-dev { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 18px; }
 .mx-meet .cx-call .pj-level { grid-column: 1 / -1; }
-.mx-meet .cx-call .pj-level-label { display: block; margin-bottom: 8px; color: var(--ink); font-size: 13.5px; font-weight: 600; }
+.mx-meet .cx-call .pj-level-label { display: block; margin-bottom: 8px; color: var(--ink); font-size: 14px; font-weight: 600; }
 .mx-meet .cx-call .pj-meter-row { display: flex; align-items: center; gap: 12px; }
 .mx-meet .cx-call .pj-meter { position: relative; flex: 1; height: 10px; overflow: hidden; border-radius: 999px; background: var(--bg-2); }
 .mx-meet .cx-call .pj-meter-fill {
@@ -388,12 +388,12 @@
   transition: transform 0.08s linear;
 }
 .mx-meet .cx-call .pj-meter.is-off .pj-meter-fill { transform: scaleX(0); }
-.mx-meet .cx-call .pj-meter-state { min-width: 64px; text-align: right; color: var(--ink-3); font-size: 13px; font-weight: 600; }
-.mx-meet .cx-call .pj-help { margin-top: 8px; color: var(--ink-3); font-size: 13px; line-height: 1.5; }
+.mx-meet .cx-call .pj-meter-state { min-width: 64px; text-align: right; color: var(--ink-3); font-size: 12.5px; font-weight: 600; }
+.mx-meet .cx-call .pj-help { margin-top: 8px; color: var(--ink-3); font-size: 12.5px; line-height: 1.5; }
 
 /* The custom device dropdown (components/call/Select). */
 .mx-meet .cx-call .select { position: relative; min-width: 0; }
-.mx-meet .cx-call .select-label { display: block; margin-bottom: 8px; color: var(--ink); font-size: 13.5px; font-weight: 600; }
+.mx-meet .cx-call .select-label { display: block; margin-bottom: 8px; color: var(--ink); font-size: 14px; font-weight: 600; }
 .mx-meet .cx-call .select-btn {
   width: 100%;
   display: flex;
@@ -402,11 +402,11 @@
   gap: 8px;
   height: 44px;
   padding: 0 14px;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   border: 1px solid var(--line-2);
   background: var(--surface);
   color: var(--ink);
-  font-size: 14.5px;
+  font-size: 15px;
   text-align: left;
 }
 .mx-meet .cx-call .select-btn span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -422,7 +422,7 @@
   right: 0;
   top: calc(100% + 6px);
   padding: 6px;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   background: var(--surface);
   border: 1px solid var(--line);
   box-shadow: var(--sh-3);
@@ -436,7 +436,7 @@
   gap: 8px;
   min-height: 40px;
   padding: 8px 10px;
-  border-radius: 9px;
+  border-radius: var(--radius-pill);
   color: var(--ink-2);
   font-size: 14px;
   text-align: left;
@@ -445,7 +445,7 @@
 .mx-meet .cx-call .select-opt.is-selected { background: var(--signal-soft); color: var(--signal-ink); font-weight: 600; }
 
 /* The meeting card. */
-.mx-meet .cx-call .pj-meet h2 { margin-top: 12px; color: var(--ink-display); font-family: var(--font-display); font-size: 26px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; overflow-wrap: anywhere; }
+.mx-meet .cx-call .pj-meet h2 { margin-top: 12px; color: var(--ink-display); font-family: var(--font-display); font-size: 22px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; overflow-wrap: anywhere; }
 .mx-meet .cx-call .pj-list { display: grid; gap: 10px; margin-top: 14px; }
 .mx-meet .cx-call .pj-list li { display: flex; align-items: center; gap: 10px; color: var(--ink-2); font-size: 15px; }
 .mx-meet .cx-call .pj-list svg { flex-shrink: 0; color: var(--ink-3); }
@@ -454,17 +454,17 @@
 /* What your agent will do. */
 .mx-meet .cx-call .pj-agent-list li { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; align-items: start; padding: 10px 0; }
 .mx-meet .cx-call .pj-agent-list li + li { border-top: 1px solid var(--line); }
-.mx-meet .cx-call .pj-agent-ico { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; background: var(--bg-2); color: var(--ink-2); }
-.mx-meet .cx-call .pj-agent-list p { color: var(--ink-2); font-size: 14.5px; line-height: 1.5; padding-top: 5px; }
-.mx-meet .cx-call .pj-foot { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 13.5px; line-height: 1.5; }
+.mx-meet .cx-call .pj-agent-ico { width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--radius-pill); background: var(--bg-2); color: var(--ink-2); }
+.mx-meet .cx-call .pj-agent-list p { color: var(--ink-2); font-size: 15px; line-height: 1.5; padding-top: 6px; }
+.mx-meet .cx-call .pj-foot { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 14px; line-height: 1.5; }
 .mx-meet .cx-call .pj-foot svg { flex-shrink: 0; margin-top: 2px; color: var(--signal-ink); }
 
 /* Consent: read it, tick it, then Join unlocks. */
 .mx-meet .cx-call .pj-consent-head { display: flex; gap: 12px; align-items: flex-start; }
-.mx-meet .cx-call .pj-consent-ico { width: 40px; height: 40px; flex-shrink: 0; display: grid; place-items: center; border-radius: var(--mx-r-ctl); background: var(--signal-soft); color: var(--signal-ink); }
+.mx-meet .cx-call .pj-consent-ico { width: 40px; height: 40px; flex-shrink: 0; display: grid; place-items: center; border-radius: var(--radius-pill); background: var(--signal-soft); color: var(--signal-ink); }
 .mx-meet .cx-call .pj-consent-head h2 { color: var(--ink); font-size: 17px; font-weight: 650; line-height: 1.3; }
 .mx-meet .cx-call .pj-consent-head p { margin-top: 3px; color: var(--ink-3); font-size: 14px; }
-.mx-meet .cx-call .pj-terms { margin-top: 16px; overflow: hidden; border-radius: var(--mx-r-ctl); border: 1px solid var(--line); }
+.mx-meet .cx-call .pj-terms { margin-top: 16px; overflow: hidden; border-radius: var(--radius-pill); border: 1px solid var(--line); }
 .mx-meet .cx-call .pj-terms li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; padding: 12px 14px; }
 .mx-meet .cx-call .pj-terms li + li { border-top: 1px solid var(--line); }
 .mx-meet .cx-call .pj-terms svg { margin-top: 2px; color: var(--signal-ink); }
@@ -478,7 +478,7 @@
   align-items: start;
   margin-top: 16px;
   padding: 14px;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   background: var(--bg-2);
   cursor: pointer;
 }
@@ -489,7 +489,7 @@
   height: 22px;
   display: grid;
   place-items: center;
-  border-radius: 7px;
+  border-radius: var(--radius-pill);
   border: 2px solid var(--ink-4);
   background: var(--surface);
   color: transparent;
@@ -497,9 +497,9 @@
 }
 .mx-meet .cx-call .pj-check input:checked + .pj-box { background: var(--pill); border-color: var(--pill); color: var(--pill-on); }
 .mx-meet .cx-call .pj-check input:focus-visible + .pj-box { outline: 2px solid var(--signal); outline-offset: 2px; }
-.mx-meet .cx-call .pj-check-text { color: var(--ink); font-size: 14.5px; font-weight: 550; line-height: 1.45; }
+.mx-meet .cx-call .pj-check-text { color: var(--ink); font-size: 15px; font-weight: 550; line-height: 1.45; }
 .mx-meet .cx-call .pj-join { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; margin-top: 16px; }
-.mx-meet .cx-call .pj-gate { display: flex; align-items: center; gap: 6px; min-height: 20px; margin-top: 10px; color: var(--ink-3); font-size: 13px; }
+.mx-meet .cx-call .pj-gate { display: flex; align-items: center; gap: 6px; min-height: 20px; margin-top: 10px; color: var(--ink-3); font-size: 12.5px; }
 
 /* ================================================================ responsive */
 
@@ -523,9 +523,9 @@
   /* Room: one column. The stage on top, the panel as a sheet under it. */
   .mx-meet .cx-call .cx-body { flex-direction: column; gap: 8px; padding: 0 8px 8px; }
   .mx-meet .cx-call .stage { flex-direction: column; gap: 8px; min-height: 260px; }
-  .mx-meet .main-video { min-height: 220px; border-radius: var(--mx-r-card); }
+  .mx-meet .main-video { min-height: 220px; border-radius: var(--radius-card); }
   .mx-meet .thumbs { width: auto; height: 88px; flex-direction: row; gap: 8px; }
-  .mx-meet .thumbs .thumb { flex: 1 1 0; min-width: 0; max-height: none; border-radius: var(--mx-r-ctl); }
+  .mx-meet .thumbs .thumb { flex: 1 1 0; min-width: 0; max-height: none; border-radius: var(--radius-pill); }
   .mx-meet .thumbs .more-pill { height: auto; padding: 0 12px; }
   .mx-meet .thumb-name { left: 6px; bottom: 6px; height: 24px; padding: 0 8px; max-width: calc(100% - 40px); }
   .mx-meet .thumb-mic { right: 6px; bottom: 6px; width: 24px; height: 24px; }
@@ -533,7 +533,7 @@
   .mx-meet .name-pill { top: 10px; left: 10px; height: 32px; max-width: calc(100% - 150px); }
   .mx-meet .timer-pill { top: 10px; left: 10px; height: 32px; }
   .mx-meet .main-video:has(> .name-pill) .timer-pill { right: 10px; }
-  .mx-meet .controls { bottom: 10px; gap: 4px; padding: 7px; max-width: calc(100% - 16px); }
+  .mx-meet .controls { bottom: 10px; gap: 4px; padding: 8px; max-width: calc(100% - 16px); }
   .mx-meet .ctl { width: 40px; height: 40px; }
   .mx-meet .ctl-sep { margin: 0 1px; height: 22px; }
   .mx-meet .ctl-leave { height: 40px; width: 40px; padding: 0; justify-content: center; }
@@ -543,13 +543,13 @@
   .mx-meet .cx-grid .thumb {
     flex-basis: calc((100% - (var(--cols, 2) - 1) * 8px) / var(--cols, 2));
     height: calc((100% - (var(--rows, 1) - 1) * 8px) / var(--rows, 1));
-    border-radius: var(--mx-r-ctl);
+    border-radius: var(--radius-pill);
   }
   .mx-meet .main-video:has(.captions) .cx-grid { bottom: 140px; }
 
   .mx-meet .side { width: 100%; height: 46dvh; min-height: 240px; flex-shrink: 0; }
   .mx-meet .side-collapsed .side { width: 100%; height: 60px; min-height: 0; }
-  .mx-meet .side-inner { border-radius: var(--mx-r-hero) var(--mx-r-hero) var(--mx-r-card) var(--mx-r-card); }
+  .mx-meet .side-inner { border-radius: var(--radius-hero) var(--radius-hero) var(--radius-card) var(--radius-card); }
   .mx-meet .side-mini { width: 100%; height: 60px; flex-direction: row; justify-content: center; gap: 10px; padding: 0 10px; }
   .mx-meet .mini-sep { width: 1px; height: 22px; margin: 0 2px; }
 
@@ -561,7 +561,7 @@
   .mx-meet .cx-call .nv-chat,
   .mx-meet .cx-call .nv-fill { display: none; }
   .mx-meet .cx-call .nv-two { grid-template-columns: minmax(0, 1fr); }
-  .mx-meet .cx-call .nv-doc { overflow: visible; border-radius: var(--mx-r-card); }
+  .mx-meet .cx-call .nv-doc { overflow: visible; border-radius: var(--radius-card); }
   .mx-meet .cx-call .nv-tx li { grid-template-columns: 48px minmax(0, 1fr); }
   .mx-meet .cx-call .nv-tx li b,
   .mx-meet .cx-call .nv-tx li p { grid-column: 2; }
@@ -584,7 +584,7 @@
   .mx-meet .cx-call .cx-modes button { padding: 0 10px; }
   .mx-meet .cx-call .cx-modes button span { display: none; }
   .mx-meet .cx-call .cx-top-title p .cx-invited { display: none; }
-  .mx-meet .captions { bottom: 62px; padding: 6px 10px; font-size: 13px; line-height: 1.35; gap: 1px; }
+  .mx-meet .captions { bottom: 62px; padding: 6px 10px; font-size: 12.5px; line-height: 1.35; gap: 1px; }
   .mx-meet .cap-line,
   .mx-meet .cap-interim { -webkit-line-clamp: 1; }
   .mx-meet .cap-interim { min-height: 18px; }
@@ -601,7 +601,7 @@
 }
 
 @media (max-width: 420px) {
-  .mx-meet .side-tab { padding: 0 6px; gap: 5px; }
+  .mx-meet .side-tab { padding: 0 6px; gap: 6px; }
   .mx-meet .side-tab > svg { display: none; }
 }
 

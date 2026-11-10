@@ -38,7 +38,6 @@
   .mx-meet .ag-ed-title { grid-column: 1 / -1; }
 }
 
-.mx-meet .mx-card-title { display: inline-flex; align-items: center; gap: 8px; }
 .mx-meet .mx-card-title > svg { color: var(--ink-3); flex-shrink: 0; }
 
 /* The catch-up link, quiet for all, coral-tinted when it is yours. */
@@ -67,9 +66,9 @@
   align-self: flex-start;
   min-height: 40px;
   padding: 0 4px 0 0;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   color: var(--ink);
-  font-size: 14.5px;
+  font-size: 15px;
   font-weight: 600;
 }
 .mx-meet .nm-switch-track {
@@ -108,10 +107,10 @@
 .mx-meet .nm-draft .mh-new-hint { flex: 1 1 200px; line-height: 1.45; }
 .mx-meet .nm-notice {
   padding: 10px 14px;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   background: var(--priority-low-soft);
   color: var(--ink-2);
-  font-size: 13.5px;
+  font-size: 14px;
   line-height: 1.5;
 }
 .mx-meet .nm-notice.is-error { background: var(--priority-high-soft); color: var(--priority-high); font-weight: 600; }
@@ -128,16 +127,16 @@
   border: 1px solid var(--line-2);
   background: var(--surface);
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   text-overflow: ellipsis;
 }
 .mx-meet .ag-ed-goal select:hover { border-color: var(--ink-4); }
 .mx-meet .ag-ed-goal select:focus-visible { outline: none; border-color: var(--signal); box-shadow: 0 0 0 3px var(--signal-soft); }
 .mx-meet .ag-ed-goal select:disabled { opacity: 0.6; }
-.mx-meet .ag-ed-src { display: inline-flex; align-items: center; gap: 5px; color: var(--ink-3); font-family: var(--font-display); font-style: italic; font-size: 13.5px; }
+.mx-meet .ag-ed-src { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-3); font-family: var(--font-display); font-style: italic; font-size: 14px; }
 .mx-meet .ag-ed-src svg { color: var(--signal-ink); }
-.mx-meet .ag-goal { display: inline-flex; align-items: center; gap: 5px; align-self: flex-start; margin-top: 2px; padding: 2px 9px; border-radius: 999px; background: var(--bg-2); color: var(--ink-2); font-size: 12.5px; font-weight: 600; }
+.mx-meet .ag-goal { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; margin-top: 2px; padding: 2px 10px; border-radius: 999px; background: var(--bg-2); color: var(--ink-2); font-size: 12.5px; font-weight: 600; }
 .mx-meet .ag-goal svg { color: var(--ink-3); }
 
 /* ================================================================ carried forward and brief */
@@ -145,23 +144,23 @@
 .mx-meet .cf-list li.cf-action,
 .mx-meet .cf-list li.br-item { flex-direction: column; align-items: stretch; gap: 4px; }
 .mx-meet .cf-action-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; color: var(--ink-2); }
-.mx-meet .cf-action-head small { color: var(--ink-3); font-size: 13px; }
+.mx-meet .cf-action-head small { color: var(--ink-3); font-size: 12.5px; }
 
 .mx-meet .br { scroll-margin-top: 16px; }
 .mx-meet .br:target { box-shadow: 0 0 0 2px var(--signal-line), var(--sh-1); }
 .mx-meet .br:focus { outline: none; }
-.mx-meet .br-lead { color: var(--ink); font-family: var(--font-display); font-size: 18px; line-height: 1.45; }
-.mx-meet .br-empty { margin-top: 2px; padding: 14px 16px; border-radius: var(--mx-r-ctl); background: var(--surface-2); color: var(--ink-3); font-size: 14px; line-height: 1.5; }
+.mx-meet .br-lead { color: var(--ink); font-family: var(--font-display); font-size: 17px; line-height: 1.45; }
+.mx-meet .br-empty { margin-top: 2px; padding: 14px 16px; border-radius: var(--radius-pill); background: var(--surface-2); color: var(--ink-3); font-size: 14px; line-height: 1.5; }
 .mx-meet .br-groups { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
 .mx-meet .br { container-type: inline-size; }
 @container (min-width: 620px) {
   .mx-meet .br-groups { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px 28px; }
 }
 .mx-meet .br-group { min-width: 0; }
-.mx-meet .br-goal { display: inline-flex; align-items: center; gap: 5px; align-self: flex-start; padding: 2px 9px; border-radius: 999px; background: var(--bg-2); color: var(--ink-2); font-size: 12.5px; font-weight: 600; }
+.mx-meet .br-goal { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; padding: 2px 10px; border-radius: 999px; background: var(--bg-2); color: var(--ink-2); font-size: 12.5px; font-weight: 600; }
 .mx-meet .br-proxy { color: var(--ink-2); font-family: var(--font-display); font-style: italic; font-size: 15px; line-height: 1.45; white-space: pre-line; }
-.mx-meet .br-none { color: var(--ink-3); font-size: 13px; font-style: italic; }
-.mx-meet .br-more { display: inline-flex; align-items: center; min-height: 36px; margin-top: 4px; color: var(--signal-ink); font-size: 13.5px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.mx-meet .br-none { color: var(--ink-3); font-size: 12.5px; font-style: italic; }
+.mx-meet .br-more { display: inline-flex; align-items: center; min-height: 36px; margin-top: 4px; color: var(--signal-ink); font-size: 14px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 
 /* ================================================================ send my agent instead */
 
@@ -175,7 +174,7 @@
   width: 100%;
   min-height: 108px;
   padding: 12px 14px;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   border: 1px solid var(--line-2);
   background: var(--surface);
   color: var(--ink);
@@ -196,11 +195,11 @@
   width: 100%;
   height: 40px;
   padding: 0 12px;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   border: 1px solid var(--line-2);
   background: var(--surface);
   color: var(--ink);
-  font-size: 14.5px;
+  font-size: 15px;
 }
 .mx-meet .at-q input::placeholder { color: var(--ink-3); }
 .mx-meet .at-q input:focus-visible { outline: none; border-color: var(--signal); box-shadow: 0 0 0 3px var(--signal-soft); }
@@ -209,7 +208,7 @@
 .mx-meet .at-q-err { grid-column: 1 / -1; }
 .mx-meet .at-add { align-self: flex-start; margin-top: 4px; }
 .mx-meet .at-sent { display: flex; flex-direction: column; gap: 14px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
-.mx-meet .at-sent-text { color: var(--ink-2); font-family: var(--font-display); font-style: italic; font-size: 16px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; }
+.mx-meet .at-sent-text { color: var(--ink-2); font-family: var(--font-display); font-style: italic; font-size: 15px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; }
 .mx-meet .at-sent-qs { list-style: decimal inside; }
 .mx-meet .at-sent .ag-edit-acts { margin-top: 0; }
 .mx-meet .at-ok { margin-top: 12px; color: var(--ok); font-size: 14px; font-weight: 600; }
@@ -223,20 +222,20 @@
   .mx-meet .hc-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 .mx-meet .hc-stats > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.mx-meet .hc-stats dt { color: var(--ink-3); font-size: 13.5px; }
+.mx-meet .hc-stats dt { color: var(--ink-3); font-size: 14px; }
 .mx-meet .hc-stats dd { color: var(--ink); font-family: var(--font-display); font-size: 30px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.1; }
 .mx-meet .hc-stats dd small { color: var(--ink-3); font-family: var(--font-sans, inherit); font-size: 14px; font-weight: 600; letter-spacing: 0; }
 .mx-meet .hc-na { color: var(--ink-3); font-family: var(--font-sans, inherit); font-size: 15px; font-weight: 600; letter-spacing: 0; }
-.mx-meet .hc-sub { color: var(--ink-3); font-size: 13px; }
+.mx-meet .hc-sub { color: var(--ink-3); font-size: 12.5px; }
 .mx-meet .hc-meter { display: block; height: 6px; margin-top: 6px; overflow: hidden; border-radius: 999px; background: var(--bg-2); }
 .mx-meet .hc-meter i { display: block; height: 100%; border-radius: 999px; background: var(--ok); }
 
-.mx-meet .hc-async { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: var(--mx-r-ctl); background: var(--priority-low-soft); color: var(--ink-2); font-size: 14px; line-height: 1.5; }
+.mx-meet .hc-async { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: var(--radius-pill); background: var(--priority-low-soft); color: var(--ink-2); font-size: 14px; line-height: 1.5; }
 .mx-meet .hc-async svg { flex-shrink: 0; margin-top: 1px; color: var(--priority-low); }
 
 .mx-meet .hc-block { padding-top: 16px; border-top: 1px solid var(--line); }
 .mx-meet .hc-block .md-sub { display: flex; align-items: center; gap: 6px; }
-.mx-meet .hc-note { margin-top: 8px; color: var(--ink-3); font-size: 13.5px; line-height: 1.5; }
+.mx-meet .hc-note { margin-top: 8px; color: var(--ink-3); font-size: 14px; line-height: 1.5; }
 
 .mx-meet .hc-balance { display: flex; height: 14px; overflow: hidden; border-radius: 999px; background: var(--bg-2); gap: 2px; }
 .mx-meet .hc-balance i { display: block; height: 100%; min-width: 2px; }
@@ -245,7 +244,7 @@
 .mx-meet .hc-t3 { background: var(--ok); }
 .mx-meet .hc-t4 { background: var(--ink-4); }
 .mx-meet .hc-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; }
-.mx-meet .hc-legend li { display: inline-flex; align-items: center; gap: 6px; min-width: 0; font-size: 13.5px; }
+.mx-meet .hc-legend li { display: inline-flex; align-items: center; gap: 6px; min-width: 0; font-size: 14px; }
 .mx-meet .hc-legend li > i { width: 10px; height: 10px; flex-shrink: 0; border-radius: 999px; }
 .mx-meet .hc-legend-name { max-width: 16ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); font-weight: 600; }
 .mx-meet .hc-legend-pct { color: var(--ink-3); font-variant-numeric: tabular-nums; }
@@ -253,11 +252,11 @@
 /* The trend: one bar per meeting along the follow-up chain, this one in coral. */
 .mx-meet .hc-trend { display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; gap: 8px; height: 132px; margin-top: 12px; }
 .mx-meet .hc-trend li { min-width: 0; }
-.mx-meet .hc-bar-col { display: flex; flex-direction: column; height: 100%; gap: 6px; border-radius: var(--mx-r-ctl); color: inherit; text-decoration: none; }
+.mx-meet .hc-bar-col { display: flex; flex-direction: column; height: 100%; gap: 6px; border-radius: var(--radius-pill); color: inherit; text-decoration: none; }
 .mx-meet a.hc-bar-col:hover .hc-bar { background: var(--ink-4); }
 .mx-meet a.hc-bar-col:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
-.mx-meet .hc-bar-wrap { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch; border-radius: var(--mx-r-ctl); background: var(--surface-2); }
-.mx-meet .hc-bar { display: block; width: 100%; border-radius: var(--mx-r-ctl); background: var(--bg-3); transition: background-color 0.15s; }
+.mx-meet .hc-bar-wrap { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch; border-radius: var(--radius-pill); background: var(--surface-2); }
+.mx-meet .hc-bar { display: block; width: 100%; border-radius: var(--radius-pill); background: var(--bg-3); transition: background-color 0.15s; }
 .mx-meet .hc-trend li.is-current .hc-bar { background: var(--signal-line); }
 .mx-meet .hc-trend li.is-none .hc-bar-wrap { background: transparent; border: 1px dashed var(--line-2); }
 .mx-meet .hc-bar-pct { position: absolute; top: 4px; left: 0; right: 0; color: var(--ink-3); font-size: 12.5px; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; }
@@ -273,38 +272,24 @@
   gap: 16px 24px;
   margin-bottom: 20px;
   padding: 20px 24px;
-  border-radius: var(--mx-r-hero);
+  border-radius: var(--radius-hero);
   background: var(--wash);
-  border-color: transparent;
-  box-shadow: none;
 }
 .mx-meet .cu-face { width: 56px; height: 56px; flex-shrink: 0; overflow: hidden; border-radius: 999px; background: var(--surface); box-shadow: var(--sh-1); }
 .mx-meet .cu-lead-text { flex: 1 1 320px; min-width: 0; }
-.mx-meet .cu-from { color: var(--ink-3); font-size: 13.5px; font-weight: 600; }
-.mx-meet .cu-sentence { max-width: 62ch; color: var(--ink); font-family: var(--font-display); font-size: clamp(19px, 2.1vw, 23px); font-weight: 500; line-height: 1.35; letter-spacing: -0.01em; }
+.mx-meet .cu-from { color: var(--ink-3); font-size: 14px; font-weight: 600; }
+.mx-meet .cu-sentence { max-width: 62ch; color: var(--ink); font-family: var(--font-display); font-size: 22px; font-weight: 500; line-height: 1.35; letter-spacing: -0.01em; }
 .mx-meet .cu-stats { display: flex; gap: 8px 28px; flex-wrap: wrap; }
-.mx-meet .cu-stats dt { color: var(--ink-3); font-size: 13px; }
-.mx-meet .cu-stats dd { color: var(--ink); font-size: 26px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.mx-meet .cu-stats dt { color: var(--ink-3); font-size: 12.5px; }
+.mx-meet .cu-stats dd { color: var(--ink); font-size: 22px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; font-variant-numeric: tabular-nums; }
 .mx-meet .cu-stats dd small { color: var(--ink-3); font-size: 14px; font-weight: 600; letter-spacing: 0; }
 
-.mx-meet .cu-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
-@container md (min-width: 720px) {
-  .mx-meet .cu-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .mx-meet .cu-grid > :nth-child(3) { grid-column: 1 / -1; }
-}
-@container md (min-width: 1120px) {
-  .mx-meet .cu-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
-  .mx-meet .cu-grid > :nth-child(3) { grid-column: auto; }
-}
-
-/* What you now own comes first, and looks like it. */
-.mx-meet .cu-own { border-color: color-mix(in srgb, var(--signal) 28%, var(--line)); }
-.mx-meet .cu-own .mx-card-title > svg { color: var(--signal-ink); }
-.mx-meet .cu-own-list li { display: flex; flex-direction: column; gap: 2px; padding: 11px 0; }
+/* What you now own comes first (its card's coral edge is set on the Card in the page). */
+.mx-meet .cu-own-list li { display: flex; flex-direction: column; gap: 2px; padding: 12px 0; }
 .mx-meet .cu-own-list li + li { border-top: 1px solid var(--line); }
-.mx-meet .cu-own-title { color: var(--ink); font-size: 15.5px; font-weight: 650; line-height: 1.4; overflow-wrap: anywhere; }
-.mx-meet .cu-own-due { color: var(--signal-ink); font-size: 13px; font-weight: 600; }
-.mx-meet .cu-more { color: var(--ink-2); font-size: 13.5px; font-weight: 600; text-decoration: underline; text-decoration-color: var(--line-2); text-underline-offset: 3px; }
+.mx-meet .cu-own-title { color: var(--ink); font-size: 15px; font-weight: 650; line-height: 1.4; overflow-wrap: anywhere; }
+.mx-meet .cu-own-due { color: var(--signal-ink); font-size: 12.5px; font-weight: 600; }
+.mx-meet .cu-more { color: var(--ink-2); font-size: 14px; font-weight: 600; text-decoration: underline; text-decoration-color: var(--line-2); text-underline-offset: 3px; }
 .mx-meet .cu-more:hover { color: var(--ink); }
 .mx-meet .cu-qs { list-style: decimal inside; }
 
@@ -350,39 +335,11 @@
   color: var(--ink-2);
   font-family: var(--font-display);
   font-style: italic;
-  font-size: clamp(12.5px, 6cqmin, 16px);
+  font-size: clamp(12.5px, 6cqmin, 15px);
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.mx-meet .cx-proxy-update {
-  position: absolute;
-  inset: 8px 8px 46px;
-  z-index: 3;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 12px 14px;
-  overflow-y: auto;
-  border-radius: var(--mx-r-ctl);
-  background: color-mix(in srgb, var(--surface) 96%, transparent);
-  box-shadow: var(--sh-2);
-  color: var(--ink-2);
-  font-size: 13.5px;
-  line-height: 1.5;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.18s var(--ease-out), visibility 0s linear 0.18s;
-}
-.mx-meet .cx-proxy-update strong { color: var(--ink); font-size: 13px; font-weight: 650; }
-.mx-meet .cx-proxy-update p { white-space: pre-line; overflow-wrap: anywhere; }
-.mx-meet .cx-proxy:hover .cx-proxy-update,
-.mx-meet .cx-proxy:focus-visible .cx-proxy-update,
-.mx-meet .cx-proxy:focus-within .cx-proxy-update { opacity: 1; visibility: visible; transition: opacity 0.18s var(--ease-out); }
-.mx-meet .cx-proxy.is-large .cx-proxy-update { inset: auto 16px 64px; max-width: 560px; max-height: 50%; margin: 0 auto; }
-@media (prefers-reduced-motion: reduce) {
-  .mx-meet .cx-proxy-update { transition: none; }
 }
 .mx-meet .thumb.is-proxy { outline: 1.5px dashed color-mix(in srgb, var(--ink-4) 70%, transparent); outline-offset: -1.5px; }
 .mx-meet .cx-proxy .thumb-name { z-index: 4; }
@@ -393,13 +350,11 @@
 
 /* ================================================================ room: already decided */
 
-.mx-meet .ad-quote { margin: 10px 0 0; padding: 10px 12px; border-radius: var(--mx-r-ctl); background: color-mix(in srgb, var(--surface) 78%, transparent); border: 1px solid var(--line); }
-.mx-meet .ad-quote-text { color: var(--ink); font-family: var(--font-display); font-size: 15.5px; line-height: 1.45; overflow-wrap: anywhere; }
+.mx-meet .ad-quote { margin: 10px 0 0; padding: 10px 12px; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--surface) 78%, transparent); border: 1px solid var(--line); }
+.mx-meet .ad-quote-text { color: var(--ink); font-family: var(--font-display); font-size: 15px; line-height: 1.45; overflow-wrap: anywhere; }
 .mx-meet .ad-quote-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 10px; margin-top: 6px; color: var(--ink-3); font-size: 12.5px; }
 .mx-meet .ad-quote-link { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; color: var(--ink); font-weight: 650; text-decoration: underline; text-decoration-color: var(--line-2); text-underline-offset: 3px; }
 .mx-meet .ad-quote-link:hover { text-decoration-color: currentColor; }
 .mx-meet .ad-snippet { display: block; margin-top: 4px; color: var(--ink-3); font-family: var(--font-display); font-style: italic; }
 
-/* The catch-up's error state reuses the hub's state block with an h2 (the page has its h1). */
-.mx-meet .cu .mt-state h2 { margin-top: 12px; color: var(--ink); font-family: var(--font-display); font-size: 21px; font-weight: 500; }
 .mx-meet .nm-body > .mh-new-error { grid-column: 1 / -1; }

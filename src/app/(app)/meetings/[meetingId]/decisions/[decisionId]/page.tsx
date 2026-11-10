@@ -17,7 +17,8 @@ export const metadata: Metadata = { title: "Decision lineage | Mytheus" };
    decision, oldest first. What it superseded comes before it, what superseded it comes after.
    Read from `bff` -> `knowledge-graph-service`'s `decision_lineage` template, which only ever
    holds confirmed decisions. With no gateway configured the page says history is unavailable
-   rather than showing a sample. The topbar breadcrumb reads Decisions / the decision. */
+   rather than showing a sample. The topbar breadcrumb reads Meetings / the meeting / the decision
+   (the meeting's title comes from the meeting layout). */
 
 type ChainNode = {
   id: string;

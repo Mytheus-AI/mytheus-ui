@@ -180,7 +180,7 @@ test("related chips: decision to its lineage page, action to its meeting or My T
   assert.equal(relatedLink({ kind: "decision", id: D0, label: "", meetingId: null }, alert).href, "/decisions");
   assert.equal(relatedLink({ kind: "decision", id: D0, label: "", meetingId: null }, alert).label, "Decision");
   assert.equal(relatedLink({ kind: "action", id: T1, label: "Migrate API", meetingId: M0 }, alert).href, `/meetings/${M0}`);
-  assert.equal(relatedLink({ kind: "action", id: T1, label: "Migrate API", meetingId: null }, alert).href, "/tasks");
+  assert.equal(relatedLink({ kind: "action", id: T1, label: "Migrate API", meetingId: null }, alert).href, "/work/tasks");
   assert.deepEqual(relatedLink({ kind: "user", id: U1, label: "Priya", meetingId: null }, alert), {
     label: "Priya",
     href: `/people/${U1}`,
@@ -193,6 +193,9 @@ test("the alert's own link maps /decisions/{id} onto the lineage page", () => {
   assert.equal(alertHref({ link: `/decisions/${D0}`, meetingId: M1, subject }), "/decisions");
   assert.equal(alertHref({ link: `/meetings/${M0}`, meetingId: M1, subject }), `/meetings/${M0}`);
   assert.equal(alertHref({ link: null, meetingId: M1, subject }), null);
+  // My Tasks moved: the contract's /tasks opens its new home directly
+  assert.equal(alertHref({ link: "/tasks", meetingId: M1, subject }), "/work/tasks");
+  assert.equal(alertHref({ link: "/work/tasks", meetingId: M1, subject }), "/work/tasks");
 });
 
 test("the link allowlist: a meeting, one of its decisions, a decision, or My Tasks, nothing else", () => {
@@ -200,7 +203,8 @@ test("the link allowlist: a meeting, one of its decisions, a decision, or My Tas
   assert.equal(safeLink(`/meetings/${M1}/decisions/${D1}`), `/meetings/${M1}/decisions/${D1}`);
   assert.equal(safeLink(`/decisions/${D1}`), `/decisions/${D1}`);
   assert.equal(safeLink("/tasks"), "/tasks");
-  for (const bad of ["/", "/tasks/", "/decisions", "/people/" + U1, "/meetings", null, 7, undefined]) {
+  assert.equal(safeLink("/work/tasks"), "/work/tasks");
+  for (const bad of ["/", "/tasks/", "/work/tasks/", "/work", "/decisions", "/people/" + U1, "/meetings", null, 7, undefined]) {
     assert.equal(safeLink(bad), null, String(bad));
   }
   const s = applyLiveAlert(emptyAlertsState, live(A1, 2, "2026-11-10T10:00:00Z", { link: "/settings/billing" }));

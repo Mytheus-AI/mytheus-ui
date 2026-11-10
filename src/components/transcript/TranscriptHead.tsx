@@ -1,22 +1,21 @@
-import Link from "next/link";
-import { ArrowLeft } from "@phosphor-icons/react/ssr";
+import { LinkButton } from "@/components/ui/Button";
+import { PageHead } from "@/components/ui/Page";
 
-/* The transcript's title row: the way back to the meeting, the meeting title in the display serif
-   and one line of context. No hooks, so the RSC page can render it for the empty state and the
-   client reader can render it too. */
+/* The transcript's title row on the shared frame: the meeting title in the display serif, one line
+   of context, and the way back to the meeting as the page's one action (the topbar breadcrumb
+   reads Meetings, the meeting, Transcript; this button is the way back where the breadcrumb is
+   hidden, on a phone). No hooks, so the RSC page can render it for the empty state and the client
+   reader can render it too. */
 export function TranscriptHead({ title, meta, backHref }: { title: string; meta: string; backHref: string }) {
   return (
-    <>
-      <Link href={backHref} className="mx-back">
-        <ArrowLeft size={16} weight="bold" aria-hidden />
-        Back to meeting
-      </Link>
-      <header className="mx-head">
-        <div className="mx-head-main">
-          <h1 className="mx-title">{title}</h1>
-          <p className="mx-sub">{meta}</p>
-        </div>
-      </header>
-    </>
+    <PageHead
+      title={title}
+      context={meta}
+      action={
+        <LinkButton href={backHref} variant="outline">
+          Open the meeting
+        </LinkButton>
+      }
+    />
   );
 }

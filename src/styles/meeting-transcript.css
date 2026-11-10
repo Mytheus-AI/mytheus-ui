@@ -3,16 +3,11 @@
    of meeting.css (page frame, cards, chips, avatars, the search field, talk-time bars) and on the
    global tokens only, so dark mode needs nothing here. Every selector stays under `.mx-meet`. */
 
-.mx-meet .tx-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
-.mx-meet .tx-main { display: flex; flex-direction: column; overflow: hidden; }
-.mx-meet .tx-rail { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
-
 .mx-meet .tx-bar { display: flex; gap: 10px; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line); }
 .mx-meet .tx-search { flex: 1; }
 .mx-meet .tx-search input::-webkit-search-cancel-button { display: none; }
 .mx-meet .tx-step { display: inline-flex; align-items: center; gap: 2px; margin-right: -8px; }
-.mx-meet .tx-step-count { min-width: 74px; text-align: center; color: var(--ink-3); font-size: 13px; font-weight: 600; white-space: nowrap; }
-.mx-meet .tx-step .cx-icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.mx-meet .tx-step-count { min-width: 74px; text-align: center; color: var(--ink-3); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
 
 /* "Who is Speaker 2?" */
 .mx-meet .tx-assign {
@@ -22,7 +17,7 @@
   gap: 10px 12px;
   margin: 12px 16px 0;
   padding: 12px 14px;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   background: var(--priority-medium-soft);
   color: var(--mx-medium-ink);
   font-size: 14px;
@@ -43,10 +38,10 @@
   border-bottom: 1px solid var(--line);
   background: var(--surface-2);
   color: var(--ink-3);
-  font-size: 13px;
+  font-size: 12.5px;
 }
 .mx-meet .tx-legend > span:first-child { margin-right: auto; color: var(--ink-2); font-weight: 600; }
-.mx-meet .tx-legend-key { display: inline-flex; align-items: center; gap: 7px; }
+.mx-meet .tx-legend-key { display: inline-flex; align-items: center; gap: 8px; }
 .mx-meet .tx-sw { width: 22px; height: 0; border-top: 2px solid var(--ink-3); }
 .mx-meet .tx-sw.is-interim { border-top-style: dashed; border-color: var(--ink-4); }
 
@@ -63,7 +58,7 @@
   gap: 12px;
   align-items: start;
   padding: 10px 12px;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   transition: background-color 0.15s, opacity 0.15s;
 }
 .mx-meet .tr-row:hover { background: var(--surface-2); }
@@ -74,9 +69,9 @@
   min-height: 26px;
   padding: 2px 4px;
   margin-left: -4px;
-  border-radius: 6px;
+  border-radius: var(--radius-pill);
   color: var(--ink-3);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   text-align: left;
@@ -97,9 +92,9 @@
 .mx-meet .tr-body { min-width: 0; }
 .mx-meet .tr-text { color: var(--ink-2); font-size: 15px; line-height: 1.6; overflow-wrap: anywhere; }
 .mx-meet .tr-text.is-interim { color: var(--ink-3); font-style: italic; }
-.mx-meet .tr-text mark { padding: 0 2px; border-radius: 4px; background: color-mix(in srgb, var(--signal-line) 30%, transparent); color: var(--ink); }
+.mx-meet .tr-text mark { padding: 0 2px; border-radius: 999px; background: color-mix(in srgb, var(--signal-line) 30%, transparent); color: var(--ink); }
 .mx-meet .tr-text mark[data-current] { background: var(--pill); color: var(--pill-on); }
-.mx-meet .tr-linked { margin-top: 4px; color: var(--signal-ink); font-size: 13px; font-weight: 600; }
+.mx-meet .tr-linked { margin-top: 4px; color: var(--signal-ink); font-size: 12.5px; font-weight: 600; }
 .mx-meet .tx-flag {
   display: inline-flex;
   align-items: center;
@@ -115,12 +110,6 @@
   vertical-align: 1px;
 }
 
-/* No match. */
-.mx-meet .tx-none { display: flex; flex-direction: column; align-items: center; padding: 48px 24px 52px; text-align: center; }
-.mx-meet .tx-none-ico { color: var(--ink-4); }
-.mx-meet .tx-none h3 { margin-top: 12px; color: var(--ink); font-family: var(--font-display); font-size: 21px; font-weight: 500; }
-.mx-meet .tx-none p { margin: 6px 0 16px; color: var(--ink-3); font-size: 15px; }
-
 /* Speakers. */
 .mx-meet .tx-spk { scroll-margin-top: 16px; }
 .mx-meet .tx-spk-list { margin-top: 6px; }
@@ -128,8 +117,8 @@
 .mx-meet .tx-spk-row + .tx-spk-row { border-top: 1px solid var(--line); }
 .mx-meet .tx-spk-row:target { scroll-margin-top: 80px; }
 .mx-meet .tx-spk-top { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
-.mx-meet .tx-spk-top strong { color: var(--ink); font-size: 14.5px; font-weight: 650; }
-.mx-meet .tx-spk-top small { color: var(--ink-3); font-size: 13px; }
+.mx-meet .tx-spk-top strong { color: var(--ink); font-size: 15px; font-weight: 650; }
+.mx-meet .tx-spk-top small { color: var(--ink-3); font-size: 12.5px; }
 .mx-meet .tx-spk-top > :last-child { margin-left: auto; }
 .mx-meet .tx-spk-av { background: var(--bg-2); color: var(--ink-2); }
 .mx-meet .tx-spk-row.is-unk .tx-spk-av { background: var(--priority-medium-soft); color: var(--mx-medium-ink); box-shadow: inset 0 0 0 1.5px var(--priority-medium); }
@@ -139,11 +128,11 @@
   width: 100%;
   height: 40px;
   padding: 0 12px;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   border: 1px solid var(--line-2);
   background: var(--surface);
   color: var(--ink);
-  font-size: 14.5px;
+  font-size: 15px;
   appearance: none;
 }
 .mx-meet .tx-field::placeholder { color: var(--ink-3); }
@@ -157,28 +146,15 @@
 /* Talk time rows use the shared bars; names here can be "Speaker 12". */
 .mx-meet .md-talk-row.tx-talk-row { grid-template-columns: 96px minmax(0, 1fr) 44px; }
 
-/* Empty, loading and error. */
+/* The empty page (no transcript yet). */
 .mx-meet .tx-empty-page { max-width: 720px; }
-.mx-meet .tx-skel { border-radius: 8px; background: var(--bg-2); }
-@media (prefers-reduced-motion: no-preference) {
-  .mx-meet .tx-skel { animation: tx-pulse 1.4s ease-in-out infinite; }
-}
-@keyframes tx-pulse { 50% { opacity: 0.55; } }
-.mx-meet .tx-scroll-skel { padding: 12px 8px; }
-.mx-meet .tx-error-card { display: flex; flex-direction: column; align-items: center; max-width: 640px; margin: 24px auto 0; padding: 48px 24px; text-align: center; }
-.mx-meet .tx-error-ico { color: var(--priority-high); }
-.mx-meet .tx-error-card h2 { margin-top: 12px; color: var(--ink); font-family: var(--font-display); font-size: 22px; font-weight: 500; }
-.mx-meet .tx-error-card p { max-width: 46ch; margin: 6px 0 18px; color: var(--ink-3); font-size: 15px; line-height: 1.5; }
 
 /* ---------------------------------------------------------------- responsive */
 
 @media (max-width: 1100px) {
-  .mx-meet .tx-layout { grid-template-columns: minmax(0, 1fr); }
-  .mx-meet .tx-rail { display: grid; grid-template-columns: 1fr 1fr; align-items: start; }
   .mx-meet .tx-scroll { height: 62dvh; }
 }
 @media (max-width: 700px) {
-  .mx-meet .tx-rail { grid-template-columns: minmax(0, 1fr); }
   .mx-meet .tr-row { grid-template-columns: 64px minmax(0, 1fr); gap: 4px 10px; padding: 10px 8px; }
   .mx-meet .tr-when { grid-column: 1; grid-row: 1; }
   .mx-meet .tr-who { grid-column: 2; grid-row: 1; }

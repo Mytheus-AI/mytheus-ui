@@ -2,7 +2,6 @@
 import "../../../src/app/globals.css";
 import "../../../src/styles/app-theme.css";
 import "../../../src/styles/meeting.css";
-import "../../../src/styles/meeting-dark.css";
 import "../../../src/styles/meeting-call.css";
 import "../../../src/styles/meeting-agenda.css";
 import "../../../src/styles/meeting-brain.css";

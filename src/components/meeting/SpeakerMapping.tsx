@@ -18,6 +18,8 @@
 
 import { useState, useTransition } from "react";
 import { CaretDown } from "@phosphor-icons/react";
+import { Button } from "@/components/ui/Button";
+import { Card, CardBody, CardHead } from "@/components/ui/Card";
 import { Chip } from "@/components/meetings/Chip";
 import { assignSpeaker } from "@/app/(app)/meetings/[meetingId]/transcript/actions";
 import type { MeetingSpeaker } from "@/lib/api/transcript";
@@ -68,107 +70,100 @@ export function SpeakerMapping({
   };
 
   return (
-    <section id="speakers" aria-labelledby="speaker-mapping-heading" className="mx-card mx-card-pad tx-spk">
-      <div className="mx-card-head">
-        <h2 className="mx-card-title" id="speaker-mapping-heading">
-          Speakers
-        </h2>
-        <span className="mx-card-note">{open > 0 ? `${open} not matched` : "All matched"}</span>
-      </div>
-      <p className="mx-help">
-        Transcription labels each voice it hears. Match each one to a teammate and the transcript reads by name.
-      </p>
-
-      <ul className="tx-spk-list">
-        {speakers.map((s) => {
-          const lines = lineCounts[s.speaker_id];
-          const value = draft[s.speaker_id] ?? "";
-          const saving = pending && savingId === s.speaker_id;
-          const unmatched = !s.user_id;
-          return (
-            <li key={s.speaker_id} className={`tx-spk-row${unmatched ? " is-unk" : ""}`}>
-              <div className="tx-spk-top">
-                <span className="mx-av sm tx-spk-av" aria-hidden="true">
-                  {s.speaker_id}
-                </span>
-                <strong>Speaker {s.speaker_id}</strong>
-                {typeof lines === "number" && (
-                  <small>
-                    {lines} {lines === 1 ? "line" : "lines"}
-                  </small>
-                )}
-                {s.assignment === "manual" && s.user_id ? (
-                  <Chip tone="ok">Matched</Chip>
-                ) : s.user_id ? (
-                  /* Advisory: stated as a guess, with its confidence, and never pre-filled into
+    <Card as="section" flush id="speakers" aria-labelledby="speaker-mapping-heading" className="tx-spk">
+      <CardHead
+        id="speaker-mapping-heading"
+        title="Speakers"
+        description="Transcription labels each voice it hears. Match each one to a teammate and the transcript reads by name."
+        right={<span className="text-[14px] text-ink-3">{open > 0 ? `${open} not matched` : "All matched"}</span>}
+      />
+      <CardBody>
+        <ul className="tx-spk-list">
+          {speakers.map((s) => {
+            const lines = lineCounts[s.speaker_id];
+            const value = draft[s.speaker_id] ?? "";
+            const saving = pending && savingId === s.speaker_id;
+            const unmatched = !s.user_id;
+            return (
+              <li key={s.speaker_id} className={`tx-spk-row${unmatched ? " is-unk" : ""}`}>
+                <div className="tx-spk-top">
+                  <span className="mx-av sm tx-spk-av" aria-hidden="true">
+                    {s.speaker_id}
+                  </span>
+                  <strong>Speaker {s.speaker_id}</strong>
+                  {typeof lines === "number" && (
+                    <small>
+                      {lines} {lines === 1 ? "line" : "lines"}
+                    </small>
+                  )}
+                  {s.assignment === "manual" && s.user_id ? (
+                    <Chip tone="ok">Matched</Chip>
+                  ) : s.user_id ? (
+                    /* Advisory: stated as a guess, with its confidence, and never pre-filled into
                      the control below. */
-                  <Chip>
-                    Suggested
-                    {typeof s.confidence === "number" ? `, ${Math.round(s.confidence * 100)}%` : ""}
-                  </Chip>
-                ) : (
-                  <Chip tone="medium">Not matched</Chip>
-                )}
-              </div>
+                    <Chip>
+                      Suggested
+                      {typeof s.confidence === "number" ? `, ${Math.round(s.confidence * 100)}%` : ""}
+                    </Chip>
+                  ) : (
+                    <Chip tone="medium">Not matched</Chip>
+                  )}
+                </div>
 
-              <div className="tx-spk-form">
-                <label htmlFor={`sp-${s.speaker_id}`} className="sr-only">
-                  Assign speaker {s.speaker_id}
-                </label>
-                {people.length > 0 ? (
-                  <span className="tx-field-wrap">
-                    <select
-                      id={`sp-${s.speaker_id}`}
-                      value={value}
-                      onChange={(e) => setDraft((d) => ({ ...d, [s.speaker_id]: e.target.value }))}
-                      className="tx-field"
-                    >
-                      <option value="">Choose a person...</option>
-                      {people.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                    <CaretDown size={16} weight="bold" aria-hidden className="tx-field-chev" />
-                  </span>
-                ) : (
-                  <span className="tx-field-wrap">
-                    <input
-                      id={`sp-${s.speaker_id}`}
-                      value={value}
-                      onChange={(e) => setDraft((d) => ({ ...d, [s.speaker_id]: e.target.value }))}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          submit(s.speaker_id);
-                        }
-                      }}
-                      placeholder="User id"
-                      autoComplete="off"
-                      className="tx-field"
-                    />
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => submit(s.speaker_id)}
-                  disabled={pending || !value.trim()}
-                  className="mx-btn is-sm tap"
-                >
-                  {saving ? "Saving..." : "Assign"}
-                </button>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+                <div className="tx-spk-form">
+                  <label htmlFor={`sp-${s.speaker_id}`} className="sr-only">
+                    Assign speaker {s.speaker_id}
+                  </label>
+                  {people.length > 0 ? (
+                    <span className="tx-field-wrap">
+                      <select
+                        id={`sp-${s.speaker_id}`}
+                        value={value}
+                        onChange={(e) => setDraft((d) => ({ ...d, [s.speaker_id]: e.target.value }))}
+                        className="tx-field"
+                      >
+                        <option value="">Choose a person...</option>
+                        {people.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                      </select>
+                      <CaretDown size={16} weight="bold" aria-hidden className="tx-field-chev" />
+                    </span>
+                  ) : (
+                    <span className="tx-field-wrap">
+                      <input
+                        id={`sp-${s.speaker_id}`}
+                        value={value}
+                        onChange={(e) => setDraft((d) => ({ ...d, [s.speaker_id]: e.target.value }))}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            submit(s.speaker_id);
+                          }
+                        }}
+                        placeholder="User id"
+                        autoComplete="off"
+                        className="tx-field"
+                      />
+                    </span>
+                  )}
+                  <Button type="button" size="sm" onClick={() => submit(s.speaker_id)} disabled={pending || !value.trim()}>
+                    {saving ? "Saving..." : "Assign"}
+                  </Button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
 
-      {error && (
-        <p className="tx-error" role="alert">
-          {error}
-        </p>
-      )}
-    </section>
+        {error && (
+          <p className="tx-error" role="alert">
+            {error}
+          </p>
+        )}
+      </CardBody>
+    </Card>
   );
 }

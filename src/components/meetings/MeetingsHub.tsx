@@ -3,22 +3,14 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  ArrowClockwise,
-  CalendarCheck,
-  CaretLeft,
-  CaretRight,
-  CursorClick,
-  Funnel,
-  MagnifyingGlass,
-  UserCircle,
-  Users,
-  WarningCircle,
-} from "@phosphor-icons/react";
+import { CalendarCheck, CaretLeft, CaretRight, CursorClick, Funnel, MagnifyingGlass, UserCircle, Users } from "@phosphor-icons/react";
 import { Button, LinkButton } from "@/components/ui/Button";
+import { Card, CardBody, CardHead } from "@/components/ui/Card";
+import { Chip } from "@/components/ui/Chip";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { Bone, PageColumns } from "@/components/ui/Page";
 import { initials, toneOf } from "@/components/room/tone";
-import { Chip } from "./Chip";
 import type { MeetingTemplate, OrgGoal } from "@/lib/api/meeting-brain-types";
 import { NewMeeting, type NewMeetingMe } from "./NewMeeting";
 import type { PickableMember } from "./MemberPicker";
@@ -62,24 +54,27 @@ function hours(minutes: number): string {
   return h === 0 ? "0" : h < 10 ? h.toFixed(1).replace(/\.0$/, "") : String(Math.round(h));
 }
 
+/** The week card's figures: a big number is the point of each cell. */
+const wkNumber = "text-[22px] font-bold leading-[1.15] tracking-[-0.02em] text-ink";
+
 function SkeletonRows() {
   return (
     <div role="status" aria-label="Loading meetings">
       <div className="mt-group-head" aria-hidden="true">
-        <span className="mt-skel" style={{ width: 120, height: 22 }} />
+        <Bone className="h-[22px] w-[120px]" />
       </div>
-      <div className="mx-card mt-card" aria-hidden="true">
+      <Card flush aria-hidden="true">
         {[0, 1, 2, 3].map((i) => (
           <div className="mt-skel-row" key={i}>
-            <span className="mt-skel" style={{ height: 34 }} />
+            <Bone className="h-[34px]" />
             <span>
-              <span className="mt-skel" style={{ width: "60%", height: 16, marginBottom: 8 }} />
-              <span className="mt-skel" style={{ width: "38%", height: 12 }} />
+              <Bone className="mb-2 h-4 w-[60%]" />
+              <Bone className="h-3 w-[38%]" />
             </span>
-            <span className="mt-skel" style={{ height: 30 }} />
+            <Bone className="h-[30px]" />
           </div>
         ))}
-      </div>
+      </Card>
     </div>
   );
 }
@@ -226,15 +221,11 @@ export function MeetingsHub({
   let body;
   if (unavailable) {
     body = (
-      <div className="mx-card mt-state" role="alert">
-        <WarningCircle size={34} weight="fill" className="mt-state-ico is-error" aria-hidden />
-        <h3>Could not load your meetings</h3>
-        <p>The meeting service did not respond. Your meetings are safe, only the list failed to load.</p>
-        <Button onClick={() => router.refresh()}>
-          <ArrowClockwise size={18} weight="bold" aria-hidden />
-          Try again
-        </Button>
-      </div>
+      <ErrorState
+        title="Could not load your meetings"
+        text="The meeting service did not respond. Your meetings are safe, only the list failed to load."
+        onRetry={() => router.refresh()}
+      />
     );
   } else if (!now || !today) {
     body = <SkeletonRows />;
@@ -273,19 +264,126 @@ export function MeetingsHub({
             <h3>{label.primary}</h3>
             <span>{label.secondary}</span>
           </div>
-          <div className="mx-card mt-card">
+          <Card flush>
             {g.items.map((m) => (
               <Row key={m.id} m={m} now={now} people={people} />
             ))}
-          </div>
+          </Card>
         </div>
       );
     });
   }
 
   return (
-    <div className="mt-layout">
-      <section aria-label="Meeting list" className="mt-main">
+    <PageColumns
+      sticky
+      asideLabel="Calendar and this week"
+      aside={
+        <>
+          <Card flush>
+            <CardHead
+              title={month ? `${MONTHS[month.getMonth()]} ${month.getFullYear()}` : "Calendar"}
+              right={
+                <>
+                  <button
+                    type="button"
+                    className="cx-icon-btn sm tap"
+                    aria-label="Previous month"
+                    disabled={!month}
+                    onClick={() => month && setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}
+                  >
+                    <CaretLeft size={16} weight="bold" aria-hidden />
+                  </button>
+                  <button
+                    type="button"
+                    className="cx-icon-btn sm tap"
+                    aria-label="Next month"
+                    disabled={!month}
+                    onClick={() => month && setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}
+                  >
+                    <CaretRight size={16} weight="bold" aria-hidden />
+                  </button>
+                </>
+              }
+            />
+            <CardBody>
+              {month && today ? (
+                <div className="cal-grid">
+                  {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
+                    <span className="cal-dow" aria-hidden="true" key={i}>
+                      {d}
+                    </span>
+                  ))}
+                  {Array.from({ length: 42 }, (_, i) => addDays(mondayOf(month), i)).map((d) => {
+                    const n = perDay.get(dayKey(d)) ?? 0;
+                    const isToday = sameDay(d, today);
+                    const sel = day ? sameDay(d, day) : false;
+                    return (
+                      <button
+                        key={d.getTime()}
+                        type="button"
+                        className={`cal-day tap${d.getMonth() !== month.getMonth() ? " is-out" : ""}${isToday ? " is-today" : ""}${n ? " has-mt" : ""}${sel ? " is-sel" : ""}`}
+                        aria-pressed={sel}
+                        aria-label={`${shortDate(d)}${isToday ? ", today" : ""}, ${n ? plural(n, "meeting", "meetings") : "no meetings"}`}
+                        onClick={() => pickDay(d)}
+                      >
+                        {d.getDate()}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <Bone className="h-[250px]" />
+              )}
+              <p className="cal-note">
+                {day ? (
+                  <>
+                    <Funnel size={16} aria-hidden />
+                    Filtering to {shortDate(day)}. Select it again to clear.
+                  </>
+                ) : (
+                  <>
+                    <CursorClick size={16} aria-hidden />
+                    Select a day to filter the list.
+                  </>
+                )}
+              </p>
+            </CardBody>
+          </Card>
+
+          <Card flush>
+            <CardHead title="This week" right={week ? <span className="text-[14px] text-ink-3">{week.range}</span> : null} />
+            <CardBody>
+              {week ? (
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-3.5">
+                  <div>
+                    <dt className="text-[14px] text-ink-3">Meetings</dt>
+                    <dd className={wkNumber}>{week.total}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[14px] text-ink-3">Still ahead</dt>
+                    <dd className={wkNumber}>{week.ahead}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[14px] text-ink-3">Held</dt>
+                    <dd className={wkNumber}>{week.held}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[14px] text-ink-3">Time booked</dt>
+                    <dd className={wkNumber}>
+                      {hours(week.booked)} <small className="text-[14px] font-semibold tracking-normal text-ink-3">hrs</small>
+                    </dd>
+                  </div>
+                </dl>
+              ) : (
+                <Bone className="h-[120px]" />
+              )}
+            </CardBody>
+          </Card>
+        </>
+      }
+    >
+      <section aria-label="Meeting list">
         <div className="mt-tools">
           <div className="mt-tabs" role="tablist" aria-label="Meeting status" onKeyDown={onTabKey}>
             {TABS.map((t) => (
@@ -342,107 +440,7 @@ export function MeetingsHub({
           {now && !unavailable ? plural(list.length, "meeting", "meetings") : ""}
         </p>
       </section>
-
-      <aside className="mt-rail" aria-label="Calendar and this week">
-        <div className="mx-card mx-card-pad">
-          <div className="cal-head">
-            <h2 className="cal-month">{month ? `${MONTHS[month.getMonth()]} ${month.getFullYear()}` : "Calendar"}</h2>
-            <div className="cal-nav">
-              <button
-                type="button"
-                className="cx-icon-btn sm tap"
-                aria-label="Previous month"
-                disabled={!month}
-                onClick={() => month && setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}
-              >
-                <CaretLeft size={16} weight="bold" aria-hidden />
-              </button>
-              <button
-                type="button"
-                className="cx-icon-btn sm tap"
-                aria-label="Next month"
-                disabled={!month}
-                onClick={() => month && setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}
-              >
-                <CaretRight size={16} weight="bold" aria-hidden />
-              </button>
-            </div>
-          </div>
-          {month && today ? (
-            <div className="cal-grid">
-              {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
-                <span className="cal-dow" aria-hidden="true" key={i}>
-                  {d}
-                </span>
-              ))}
-              {Array.from({ length: 42 }, (_, i) => addDays(mondayOf(month), i)).map((d) => {
-                const n = perDay.get(dayKey(d)) ?? 0;
-                const isToday = sameDay(d, today);
-                const sel = day ? sameDay(d, day) : false;
-                return (
-                  <button
-                    key={d.getTime()}
-                    type="button"
-                    className={`cal-day tap${d.getMonth() !== month.getMonth() ? " is-out" : ""}${isToday ? " is-today" : ""}${n ? " has-mt" : ""}${sel ? " is-sel" : ""}`}
-                    aria-pressed={sel}
-                    aria-label={`${shortDate(d)}${isToday ? ", today" : ""}, ${n ? plural(n, "meeting", "meetings") : "no meetings"}`}
-                    onClick={() => pickDay(d)}
-                  >
-                    {d.getDate()}
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <span className="mt-skel" style={{ height: 250 }} aria-hidden="true" />
-          )}
-          <p className="cal-note">
-            {day ? (
-              <>
-                <Funnel size={16} aria-hidden />
-                Filtering to {shortDate(day)}. Select it again to clear.
-              </>
-            ) : (
-              <>
-                <CursorClick size={16} aria-hidden />
-                Select a day to filter the list.
-              </>
-            )}
-          </p>
-        </div>
-
-        <div className="mx-card mx-card-pad">
-          <div className="mx-card-head">
-            <h2 className="mx-card-title">This week</h2>
-            {week ? <span className="mx-card-note">{week.range}</span> : null}
-          </div>
-          {week ? (
-            <dl className="wk-grid">
-              <div>
-                <dt>Meetings</dt>
-                <dd>{week.total}</dd>
-              </div>
-              <div>
-                <dt>Still ahead</dt>
-                <dd>{week.ahead}</dd>
-              </div>
-              <div>
-                <dt>Held</dt>
-                <dd>{week.held}</dd>
-              </div>
-              <div>
-                <dt>Time booked</dt>
-                <dd>
-                  {hours(week.booked)} <small>hrs</small>
-                </dd>
-              </div>
-            </dl>
-          ) : (
-            <span className="mt-skel" style={{ height: 120 }} aria-hidden="true" />
-          )}
-        </div>
-      </aside>
-    </div>
+    </PageColumns>
   );
 }
 
