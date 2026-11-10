@@ -32,6 +32,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/bff/meetings/{meeting_id}/brief": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Meeting Brief
+         * @description Before a meeting: the caller's agenda items, their open actions from the previous
+         *     meeting with the latest status, their saved questions, and who sent their agent.
+         */
+        get: operations["meeting_brief"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/bff/meetings/{meeting_id}/catch-up": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Meeting Catch Up
+         * @description What the meeting did, for a participant who sent their agent (or missed it): the agenda
+         *     with statuses and agent notes, the confirmed decisions, the actions assigned to the caller,
+         *     the caller's own surfaced notes and the questions they left their agent. Any participant
+         *     may read it: attendance is not tracked beyond `attendance`, so "missed it" cannot be told
+         *     apart from "was there".
+         */
+        get: operations["meeting_catch_up"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/bff/meetings/{meeting_id}/decisions/{decision_id}/lineage": {
         parameters: {
             query?: never;
@@ -41,6 +86,32 @@ export interface paths {
         };
         /** Decision Lineage */
         get: operations["decision_lineage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/bff/meetings/{meeting_id}/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Meeting Health
+         * @description After a meeting (409 before it ended): length, people-hours, agenda coverage, what was
+         *     confirmed, who talked, whether it could have been async, and the trend over the meetings it
+         *     follows up (up to 6 back through `previous_meeting_id`, oldest first, then this one).
+         *
+         *     `duration_minutes` is the scheduled length (no actual start and end are stored); without a
+         *     schedule it falls back to the transcript's span, else null. `people_hours` counts the
+         *     participants who attended live.
+         */
+        get: operations["meeting_health"];
         put?: never;
         post?: never;
         delete?: never;
@@ -112,6 +183,142 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AgendaCoverage */
+        AgendaCoverage: {
+            /** Covered */
+            covered: number;
+            /** Total */
+            total: number;
+        };
+        /** BriefAction */
+        BriefAction: {
+            /** Due Date */
+            due_date: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            latest_status: components["schemas"]["LatestStatus"] | null;
+            /** Title */
+            title: string;
+        };
+        /** BriefAgendaItem */
+        BriefAgendaItem: {
+            /** Duration Minutes */
+            duration_minutes: number | null;
+            /** Goal Id */
+            goal_id: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Position */
+            position: number;
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
+        };
+        /** BriefMeeting */
+        BriefMeeting: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Scheduled Start */
+            scheduled_start: string | null;
+            /** Title */
+            title: string | null;
+        };
+        /** BriefProxy */
+        BriefProxy: {
+            /** Proxy Update */
+            proxy_update: string | null;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** BriefQuestion */
+        BriefQuestion: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Question */
+            question: string;
+        };
+        /** CatchUpAction */
+        CatchUpAction: {
+            /** Content */
+            content: string;
+            /** Due Date */
+            due_date: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Status */
+            status: string;
+        };
+        /** CatchUpAgendaItem */
+        CatchUpAgendaItem: {
+            /** Agent Note */
+            agent_note: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Owner User Id */
+            owner_user_id: string | null;
+            /** Position */
+            position: number;
+            /** Status */
+            status: string;
+            /** Status Source */
+            status_source: string | null;
+            /** Title */
+            title: string;
+        };
+        /** CatchUpDecision */
+        CatchUpDecision: {
+            /** Content */
+            content: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Rationale */
+            rationale: string | null;
+        };
+        /** CatchUpNote */
+        CatchUpNote: {
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+        };
         /** Dashboard */
         Dashboard: {
             action_items: components["schemas"]["TasksArm"];
@@ -347,6 +554,19 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /**
+         * LatestStatus
+         * @description The assignee's most recent answer to a status request for an action (ADR-0039 B7).
+         */
+        LatestStatus: {
+            /**
+             * Answered At
+             * Format: date-time
+             */
+            answered_at: string;
+            /** Text */
+            text: string;
+        };
         /** LineageDecision */
         LineageDecision: {
             /** Confidence */
@@ -371,6 +591,52 @@ export interface components {
             role: "ancestor" | "subject" | "descendant";
             /** Status */
             status?: string | null;
+        };
+        /** MeetingBrief */
+        MeetingBrief: {
+            meeting: components["schemas"]["BriefMeeting"];
+            /** My Agenda Items */
+            my_agenda_items: components["schemas"]["BriefAgendaItem"][];
+            /** My Open Actions */
+            my_open_actions: components["schemas"]["BriefAction"][];
+            previous_meeting: components["schemas"]["PreviousMeeting"] | null;
+            /** Proxies */
+            proxies: components["schemas"]["BriefProxy"][];
+            /** Saved Questions */
+            saved_questions: components["schemas"]["BriefQuestion"][];
+        };
+        /** MeetingCatchUp */
+        MeetingCatchUp: {
+            /** Agenda */
+            agenda: components["schemas"]["CatchUpAgendaItem"][];
+            /** Assigned To Me */
+            assigned_to_me: components["schemas"]["CatchUpAction"][];
+            /** Attendance */
+            attendance: string;
+            /** Decisions */
+            decisions: components["schemas"]["CatchUpDecision"][];
+            /** My Notes */
+            my_notes: components["schemas"]["CatchUpNote"][];
+            /** My Questions */
+            my_questions: string[];
+        };
+        /** MeetingHealth */
+        MeetingHealth: {
+            /** Actions */
+            actions: number;
+            agenda: components["schemas"]["AgendaCoverage"];
+            /** Async Suggestion */
+            async_suggestion: boolean;
+            /** Decisions */
+            decisions: number;
+            /** Duration Minutes */
+            duration_minutes: number | null;
+            /** People Hours */
+            people_hours: number | null;
+            /** Talk Balance */
+            talk_balance: components["schemas"]["TalkShare"][] | null;
+            /** Trend */
+            trend: components["schemas"]["TrendPoint"][];
         };
         /**
          * MeetingRef
@@ -477,6 +743,16 @@ export interface components {
              */
             user_id: string;
         };
+        /** PreviousMeeting */
+        PreviousMeeting: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string | null;
+        };
         /** @description RFC 7807 problem detail. Every 4xx and 5xx this service emits has this shape, including the ones FastAPI would otherwise return in its own format: `libs/shared/errors.py` registers handlers for `ProblemDetail`, `HTTPException`, `RequestValidationError` and bare `Exception`. */
         Problem: {
             code: components["schemas"]["ErrorCode"];
@@ -505,6 +781,16 @@ export interface components {
              * @enum {string}
              */
             status: "ok" | "degraded" | "empty";
+        };
+        /** TalkShare */
+        TalkShare: {
+            /** Share */
+            share: number;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
         };
         /** TasksArm */
         TasksArm: {
@@ -543,6 +829,22 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+        };
+        /** TrendPoint */
+        TrendPoint: {
+            /** Coverage */
+            coverage: number | null;
+            /** Decisions */
+            decisions: number;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Scheduled Start */
+            scheduled_start: string | null;
+            /** Title */
+            title: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -625,6 +927,104 @@ export interface operations {
             };
         };
     };
+    meeting_brief: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingBrief"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    meeting_catch_up: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingCatchUp"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     decision_lineage: {
         parameters: {
             query?: never;
@@ -644,6 +1044,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DecisionLineage"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    meeting_health: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingHealth"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
