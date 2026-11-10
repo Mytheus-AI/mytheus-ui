@@ -1,5 +1,5 @@
-/* The signed-in app's look: warm cream stage, one coral accent, Hanken Grotesk with serif page
-   titles, thin warm scrollbars, light and dark.
+/* The signed-in app's extras on top of the global tokens: dark mode, thin warm scrollbars and
+   the sidebar rail.
 
    SCOPED ON PURPOSE. Everything below sits under `.mx-app`, which the app shell and the admin
    layout put on their root. It redefines the SAME custom properties the existing Tailwind
@@ -8,42 +8,9 @@
    was. Dark mode is `.mx-app[data-theme="dark"]`, set before paint by an inline script and flipped by `ThemeToggle`. */
 
 .mx-app {
-  --bg: #f0eee6;
-  --bg-2: #e8e5da;
-  --bg-3: #ded9cb;
-  --surface: #ffffff;
-  --ink: #1f1e1d;
-  --ink-display: #1f1e1d;
-  --ink-2: #3a352f;
-  --ink-3: #6b645b;
-  --line: #e6e2d6;
-  --line-2: #d6d1c2;
-
-  --signal: #c15f3c;
-  --signal-deep: #a8472a;
-  --signal-bright: #e0805f;
-  --signal-soft: #f7e9e1;
-  --signal-glow: rgba(217, 119, 87, 0.45);
-  --pill: #262625;
-
-  --priority-high: #b3402e;
-  --priority-high-soft: #f6e0da;
-  --priority-medium: #9a6b1c;
-  --priority-medium-soft: #f6ecd9;
-  --priority-low: #4f6f84;
-  --priority-low-soft: #e6eef2;
-  --ok: #3f6a37;
-  --ok-soft: #e4efe1;
-
-  /* Shape: controls 14, cards 20. Badges stay visually full because they are short. */
-  --radius-pill: 14px;
-  --radius-card: 20px;
-
-  --wash: linear-gradient(157deg, #eab9a0, #efcbb5 30%, #f4dfd0 58%, #f8f1e7);
+  /* Light tokens are the global ones in globals.css :root. Only app-only values live here. */
   --sb-thumb: rgba(60, 45, 35, 0.24);
   --sb-thumb-hover: rgba(193, 95, 60, 0.55);
-
-  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
   color: var(--ink-2);
@@ -65,7 +32,21 @@
   --signal-deep: #d97757;
   --signal-bright: #f0a285;
   --signal-soft: #3a2a23;
+  --signal-line: #e0805f;
+  --signal-ink: #f0a285;
+  --surface-2: #2b2826;
+  --ink-4: #8a8378;
   --pill: #f3f0e8;
+  --pill-2: #e2ddd2;
+  --pill-on: #1a1816;
+  --tint-peach: #4a3226;
+  --tint-ochre: #46391f;
+  --tint-sage: #313a2b;
+  --tint-sky: #263640;
+  --wash-ochre: linear-gradient(200deg, #4a3c1f, #3a3020 40%, #2a2420 75%, #232120);
+  --sh-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --sh-2: 0 6px 14px rgba(0, 0, 0, 0.32), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --sh-3: 0 18px 40px -8px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.3);
   --priority-high: #ee8a78;
   --priority-high-soft: #3b221d;
   --priority-medium: #e0b062;
@@ -81,28 +62,12 @@
 }
 
 /* The dark pill (`bg-pill`) flips to cream in dark mode, so its label must flip to ink. */
-.mx-app[data-theme="dark"] .bg-pill.text-white { color: #1a1816; }
+.mx-app[data-theme="dark"] .bg-pill.text-white { color: var(--pill-on); }
 
-/* Type. Titles that opt into `.display` become the serif; everything else is the sans. */
-.mx-app .display {
-  font-family: var(--font-newsreader), Georgia, serif;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.08;
-}
-.mx-app .display-tight { line-height: 1; letter-spacing: -0.025em; }
-.mx-app h1, .mx-app h2, .mx-app h3 { font-weight: 600; letter-spacing: -0.01em; }
-.mx-app .kicker {
-  font-family: var(--font-sans);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--ink-3);
-}
+/* Type: the app's titles are smaller than the marketing ones, so they sit one weight heavier. */
+.mx-app .display { font-weight: 600; letter-spacing: -0.015em; line-height: 1.08; }
+.mx-app .display-tight { line-height: 1; letter-spacing: -0.02em; }
 .mx-app .font-mono { font-family: var(--font-sans); font-variant-numeric: tabular-nums; }
-.mx-app .pill-surface { background-image: none; background-color: var(--surface); }
-.mx-app ::selection { background: var(--signal-soft); color: var(--ink); }
-.mx-app :focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
 .mx-app :is(input, textarea, select):focus-visible { outline-offset: 0; }
 
 /* Scrollbar: thin, rounded, warm, invisible until the container is hovered or focused. */

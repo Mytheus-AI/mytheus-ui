@@ -4,7 +4,7 @@ type Tone = "default" | "success" | "warning" | "danger" | "high" | "medium" | "
 
 const toneClass: Record<Tone, string> = {
   default: "bg-bg-2 text-ink-2",
-  success: "bg-[var(--ok-soft,#e4efe1)] text-[var(--ok,#3a6b34)]",
+  success: "bg-ok-soft text-ok",
   warning: "bg-priority-medium-soft text-priority-medium",
   danger: "bg-priority-high-soft text-priority-high",
   high: "bg-priority-high-soft text-priority-high",
@@ -23,7 +23,7 @@ export function Badge({
 }) {
   return (
     <span
-      className={`inline-flex items-center rounded-pill px-3 py-1 text-[12px] font-medium tracking-tight ${toneClass[tone]} ${className}`}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-[3px] text-[12.5px] font-semibold leading-[1.35] ${toneClass[tone]} ${className}`}
     >
       {children}
     </span>

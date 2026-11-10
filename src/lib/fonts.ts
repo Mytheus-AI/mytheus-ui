@@ -1,9 +1,9 @@
 import { Caveat, Fraunces, Hanken_Grotesk, Newsreader } from "next/font/google";
 
 /**
- * The signed-in app's type pair, declared here rather than in the root layout so the marketing
- * site keeps Geist and does not pay for fonts it never renders. Hanken Grotesk carries the
- * interface; Newsreader is for page titles only (the `.display` class inside `.mx-app`).
+ * The type pair for every surface. The root layout puts both variables on <body>; globals.css
+ * maps them to `--font-sans` and `--font-display`. Hanken Grotesk carries the interface and body
+ * copy; Newsreader is for display titles (`.display`) and the wordmark.
  */
 export const hanken = Hanken_Grotesk({
   subsets: ["latin"],
@@ -15,6 +15,7 @@ export const newsreader = Newsreader({
   subsets: ["latin"],
   variable: "--font-newsreader",
   display: "swap",
+  style: ["normal", "italic"],
   axes: ["opsz"],
 });
 

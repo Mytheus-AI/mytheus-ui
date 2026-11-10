@@ -63,10 +63,9 @@ export function PillCTA({
   return (
     <Link
       href={href}
-      className={`group inline-flex items-center gap-2.5 rounded-pill bg-signal py-4 pl-7 pr-6 text-[15px] font-medium tracking-tight text-white shadow-[0_20px_44px_-18px_rgba(189,93,58,0.85)] transition-colors duration-300 hover:bg-signal-deep ${className}`}
+      className={`inline-flex h-[52px] items-center justify-center whitespace-nowrap rounded-ctl border border-pill bg-pill px-6 text-[16px] font-semibold leading-none text-pill-on transition-[background-color,box-shadow,transform] duration-150 hover:-translate-y-px hover:bg-pill-2 hover:shadow-warm-2 active:translate-y-0 active:shadow-none ${className}`}
     >
       {children}
-      <ArrowRight className="h-[18px] w-[18px] transition-transform duration-300 group-hover:translate-x-0.5" />
     </Link>
   );
 }
@@ -84,7 +83,7 @@ export function OutlinePill({
   return (
     <Link
       href={href}
-      className={`pill-surface inline-flex items-center justify-center rounded-pill px-6 py-3 text-[15px] font-medium text-ink-2 transition-colors duration-300 hover:text-ink ${className}`}
+      className={`inline-flex h-11 items-center justify-center whitespace-nowrap rounded-ctl border border-line-2 bg-surface px-[18px] text-[15px] font-semibold text-ink transition-colors duration-150 hover:bg-surface-2 ${className}`}
     >
       {children}
     </Link>

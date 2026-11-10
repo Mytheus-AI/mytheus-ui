@@ -6,10 +6,10 @@
    The mark is landscape (~1.94:1), so `size` is its HEIGHT and the width is
    derived from the intrinsic aspect. The PNG originals (public/logo-mark*.png)
    are kept for the favicon / app icons only. */
-const MARK_ASPECT = 802 / 414; // intrinsic w/h of the tight-cropped mark
+export const MARK_ASPECT = 802 / 414; // intrinsic w/h of the tight-cropped mark
 
 /* one continuous line: four tangled loops resolving into the rising zigzag */
-const MARK_PATH =
+export const MARK_PATH =
   "M 250 55 C 180 10 70 30 45 110 C 25 175 60 235 120 225 C 190 212 240 140 205 100 " +
   "C 165 55 90 110 85 180 C 80 255 135 300 200 285 C 265 268 285 205 245 172 " +
   "C 205 140 135 205 140 270 C 145 345 215 395 275 355 C 325 320 305 250 255 245 " +
@@ -35,7 +35,7 @@ export function LogoMark({
       <path
         className="logo-path"
         d={MARK_PATH}
-        stroke="var(--signal)"
+        stroke="var(--signal-line)"
         strokeWidth={36}
         strokeLinecap="round"
         strokeLinejoin="round"

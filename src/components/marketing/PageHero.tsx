@@ -1,69 +1,67 @@
-"use client";
-
 import type { ReactNode } from "react";
-import { Reveal, WordReveal } from "@/components/landing/motion";
-import { PillCTA } from "@/components/landing/ui";
-import { FlowField } from "@/components/landing/FlowField";
+import Link from "next/link";
+import { Wrap } from "@/components/site/Section";
 
-/* Standard page hero for secondary marketing pages — eyebrow + big grotesk
-   title + blurb + optional CTA, over the warm mesh field with the flowing
-   "signal" ribbon + sweeping orb behind it. String titles get the editorial
-   WordReveal treatment; ReactNode titles fall back to a plain Reveal. All
-   entrances are reduced-motion-guarded by the primitives. */
+/* The opening of every secondary marketing page: a centred serif title, a short lead, one dark
+   primary action with an optional quiet text link, and an optional visual below (usually a
+   product window on a Stage). Wrap one phrase of the title in <Loop> to draw the coral loop that
+   starts the page-long line; without a Loop the line starts under the nav.
 
-const TITLE_CLASS =
-  "display display-tight mt-5 max-w-[20ch] text-balance text-[clamp(2.3rem,6.5vw,4.8rem)]";
-
+   `eyebrow` is the small context label above the title (for example the feature family); keep it
+   to a few words, sentence case. */
 export function PageHero({
   eyebrow,
   title,
   blurb,
   ctaHref,
   ctaLabel = "Get started free",
+  secondaryHref,
+  secondaryLabel,
   children,
 }: {
-  eyebrow: string;
+  eyebrow?: ReactNode;
   title: ReactNode;
   blurb?: ReactNode;
   ctaHref?: string;
   ctaLabel?: string;
+  secondaryHref?: string;
+  secondaryLabel?: string;
   children?: ReactNode;
 }) {
   return (
-    <section className="mesh-field mesh-anim grain relative isolate overflow-hidden border-b border-line">
-      {/* flowing "signal" ribbon + sweeping orb behind the hero */}
-      <FlowField className="absolute inset-0 z-0 opacity-50" />
-      <div className="relative z-10 mx-auto max-w-[1340px] px-6 pb-20 pt-20 sm:px-8 sm:pb-28 sm:pt-28">
-        <Reveal y={14}>
-          <p className="kicker text-signal">{eyebrow}</p>
-        </Reveal>
-        {typeof title === "string" ? (
-          <WordReveal as="h1" text={title} className={TITLE_CLASS} delay={90} />
-        ) : (
-          <Reveal delay={90}>
-            <h1 className={TITLE_CLASS}>{title}</h1>
-          </Reveal>
-        )}
-        {blurb && (
-          <Reveal delay={260}>
-            <p className="mt-6 max-w-[54ch] text-[17px] leading-relaxed text-ink-3 sm:text-[18px]">
-              {blurb}
-            </p>
-          </Reveal>
-        )}
-        {ctaHref && (
-          <Reveal delay={360}>
-            <div className="mt-9">
-              <PillCTA href={ctaHref}>{ctaLabel}</PillCTA>
-            </div>
-          </Reveal>
-        )}
-        {children && (
-          <Reveal delay={360}>
-            <div className="mt-9">{children}</div>
-          </Reveal>
-        )}
-      </div>
+    <section className="pb-[clamp(56px,8vw,104px)] pt-[clamp(48px,6vw,88px)] text-center">
+      <Wrap>
+        {eyebrow ? <p className="kicker mb-5">{eyebrow}</p> : null}
+        <h1 className="display mx-auto max-w-[18ch] text-[clamp(2.7rem,6.6vw,5rem)] leading-[0.98] tracking-[-0.03em]">
+          {title}
+        </h1>
+        {blurb ? (
+          <p className="mx-auto mt-[clamp(26px,3.4vw,40px)] max-w-[54ch] text-[clamp(1.1rem,1.6vw,1.28rem)] leading-relaxed text-ink-3">
+            {blurb}
+          </p>
+        ) : null}
+        {ctaHref || secondaryHref ? (
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-3.5">
+            {ctaHref ? (
+              <Link
+                href={ctaHref}
+                className="inline-flex h-12 items-center rounded-ctl bg-pill px-[22px] text-[16px] font-semibold text-pill-on transition-[background-color,box-shadow,transform] hover:-translate-y-px hover:bg-pill-2 hover:shadow-warm-2"
+              >
+                {ctaLabel}
+              </Link>
+            ) : null}
+            {secondaryHref && secondaryLabel ? (
+              <Link
+                href={secondaryHref}
+                className="font-semibold text-ink underline decoration-signal-line decoration-2 underline-offset-[6px] hover:decoration-signal"
+              >
+                {secondaryLabel}
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
+        {children ? <div className="mt-[clamp(36px,4.6vw,60px)] text-left">{children}</div> : null}
+      </Wrap>
     </section>
   );
 }
