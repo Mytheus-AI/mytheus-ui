@@ -21,6 +21,7 @@ import { loadIntegrations } from "@/lib/api/integrations";
 import { fetchReadiness } from "@/lib/api/org-brain";
 import { welcomeDaysLeft } from "@/lib/api/org-brain-types";
 import { checklistSteps } from "@/lib/checklist";
+import { fetchMyOpenTasks } from "@/lib/api/tasks";
 
 export const metadata: Metadata = {
   title: "Dashboard | Mytheus",
@@ -35,8 +36,8 @@ export const metadata: Metadata = {
  *
  * Every panel is real. The meetings arm drives the hero, the header and the Today timeline;
  * `needs_review` is the Needs you queue (unconfirmed candidates from your meetings, with
- * Confirm and Dismiss); `action_items`, `decisions`, `recent_meetings` and `worklogs` fill
- * the rest. Each panel tells "nothing here" apart from "could not load" by its arm status.
+ * Confirm and Dismiss); `decisions`, `recent_meetings` and `worklogs` fill the rest. Your tasks
+ * are read from core-api's `/api/v1/actions/mine`, so tasks added by hand appear too. Each panel tells "nothing here" apart from "could not load" by its arm status.
  *
  * Catch up (recent meetings) carries the memory line, the view's one drawn moment; nothing
  * else animates in.
@@ -52,11 +53,12 @@ export const metadata: Metadata = {
  * Needs you queue's Confirm and Dismiss.
  */
 export default async function DashboardPage() {
-  const [orgContext, dashboard, profile, integrations] = await Promise.all([
+  const [orgContext, dashboard, profile, integrations, myTasks] = await Promise.all([
     resolveOrgContext(),
     apiSafe<DashboardResponse>("/bff/dashboard"),
     fetchMyProfile(),
     loadIntegrations(),
+    fetchMyOpenTasks(),
   ]);
   const isAdmin = orgContext?.user.role === "admin";
   const readiness = isAdmin ? await fetchReadiness() : null;
@@ -76,7 +78,9 @@ export default async function DashboardPage() {
   const notesArm = arm("worklogs");
   const notes: DashboardNote[] = notesArm.items;
   const notesFailed = notesArm.failed;
-  const tasks = arm("action_items");
+  // Tasks come from core-api's `/api/v1/actions/mine`, not the dashboard's `action_items` arm:
+  // that arm only knows tasks from meetings, so one added by hand would be missing from Home.
+  const tasks = myTasks;
   const decisions = arm("decisions");
   const recent = arm("recent_meetings");
   const review = arm("needs_review");
