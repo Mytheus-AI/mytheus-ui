@@ -62,7 +62,8 @@ export interface paths {
         /**
          * Meeting Brief
          * @description Before a meeting: the caller's agenda items, their open actions from the previous
-         *     meeting with the latest status, their saved questions, and who sent their agent.
+         *     meeting with the latest status, their saved questions, who sent their agent, and what the
+         *     previous meeting's minutes left open (`previous_minutes`, null without minutes).
          */
         get: operations["meeting_brief"];
         put?: never;
@@ -334,6 +335,45 @@ export interface components {
             scheduled_start: string | null;
             /** Title */
             title: string | null;
+        };
+        /**
+         * BriefMinutes
+         * @description What the previous meeting's minutes left open (minutes for everyone): its shared open
+         *     items (the caller's own first, `mine`) and unanswered questions, and the caller's own
+         *     promises from their personal minutes of it.
+         */
+        BriefMinutes: {
+            /** My Promises */
+            my_promises: components["schemas"]["BriefPromise"][];
+            /** Open Items */
+            open_items: components["schemas"]["BriefOpenItem"][];
+            /** Unanswered Questions */
+            unanswered_questions: string[];
+        };
+        /** BriefOpenItem */
+        BriefOpenItem: {
+            /** Due */
+            due?: string | null;
+            /**
+             * Mine
+             * @default false
+             */
+            mine: boolean;
+            /** Owner Name */
+            owner_name?: string | null;
+            /** Owner User Id */
+            owner_user_id?: string | null;
+            /** Text */
+            text: string;
+        };
+        /** BriefPromise */
+        BriefPromise: {
+            /** Due */
+            due?: string | null;
+            /** Text */
+            text: string;
+            /** To Name */
+            to_name?: string | null;
         };
         /** BriefProxy */
         BriefProxy: {
@@ -702,6 +742,7 @@ export interface components {
             /** My Open Actions */
             my_open_actions: components["schemas"]["BriefAction"][];
             previous_meeting: components["schemas"]["PreviousMeeting"] | null;
+            previous_minutes?: components["schemas"]["BriefMinutes"] | null;
             /** Proxies */
             proxies: components["schemas"]["BriefProxy"][];
             /** Saved Questions */
