@@ -365,6 +365,8 @@
 .mx-meet .ask-source-link:hover { text-decoration-color: var(--signal-line); }
 .mx-meet .ask-source-meta { color: var(--ink-3); font-size: 12.5px; }
 .mx-meet .ask-source-text { color: var(--ink-2); font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
+.mx-meet button.ask-source-link { align-self: flex-start; padding: 0; border: 0; background: none; font: inherit; font-size: 13px; font-weight: 650; color: var(--ink); cursor: pointer; text-align: left; }
+.mx-meet button.ask-source-link:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; border-radius: 4px; }
 
 .mx-meet .ask-loading { display: flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 6px; color: var(--signal-ink); }
 .mx-meet .ask-skel { flex: 1; height: 10px; border-radius: 999px; background: var(--bg-2); }

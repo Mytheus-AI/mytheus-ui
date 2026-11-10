@@ -245,7 +245,14 @@ test("asking your agent is private, answered with sources, and can be retried", 
     "href",
     `/meetings/${MEETING_ID}/decisions/33333333-3333-4333-8333-333333333333`,
   );
-  await expect(sources.getByRole("link", { name: /Pricing review/ })).toBeVisible();
+  await expect(sources.getByRole("link", { name: /Pricing review/ })).toHaveAttribute("href", "/meetings/44444444-4444-4444-8444-444444444444/transcript#t=754");
+  await expect(sources.getByText("at 12:34, Raj Patel")).toBeVisible();
+  // A company-brain passage is read in place, by everyone.
+  const passage = sources.getByRole("button", { name: /Show passage/ });
+  await expect(passage).toHaveAttribute("aria-expanded", "false");
+  await passage.click();
+  await expect(sources.getByRole("button", { name: /Show less/ })).toHaveAttribute("aria-expanded", "true");
+  await expect(sources.getByText(/needs the finance lead's approval in writing/)).toBeVisible();
   // A marker jumps to its source.
   await panel.getByRole("button", { name: "Source 2" }).click();
   await expect(sources.getByRole("listitem").nth(1)).toBeFocused();

@@ -18,8 +18,9 @@ export interface AskCitation {
   speaker?: string | null;
   decision_id?: string | null;
   action_id?: string | null;
-  /** Not sent by bff yet; used when it is (a brain document's id, a transcript line's time). */
+  /** A company-brain passage's document (bff, wave 3). */
   document_id?: string | null;
+  /** Where a transcript passage starts, ms from the meeting's start (bff, wave 3). */
   start_ms?: number | null;
 }
 
@@ -46,8 +47,9 @@ export function citationKind(c: AskCitation): AskCitationKind {
 /**
  * Where a citation opens, in a new tab so the call stays put. A meeting passage opens that
  * meeting's transcript (at the second, when the time is known); a decision opens its history; a
- * task opens My work; a brain document has no page a member can open, so it shows its passage. Ids that are not UUIDs never
- * reach an href.
+ * task opens My work. A company-brain document opens in place instead (`askCitationInline`):
+ * no service serves a document page (ingestion-service only ingests), so everyone, admin or
+ * member, reads the cited passage itself. Ids that are not UUIDs never reach an href.
  */
 export function askCitationHref(c: AskCitation): string | null {
   const meeting = seg(c.meeting_id);
@@ -65,8 +67,7 @@ export function askCitationHref(c: AskCitation): string | null {
     case "action":
       return "/work/tasks";
     case "document":
-      // The brain's pages live in the admins' Workspace console (a 404 for everyone else) and
-      // bff sends no document id yet, so a document source shows its passage instead of a link.
+      // Shown in place: see `askCitationInline`.
       return null;
   }
 }
@@ -81,9 +82,26 @@ export function askCitationLabel(c: AskCitation, currentMeetingId?: string | nul
   return c.meeting_title?.trim() || "A past meeting";
 }
 
+/** "12:34" (or "1:02:03"): where a transcript passage starts, when bff sends it. */
+export function askCitationTime(c: AskCitation): string | null {
+  if (citationKind(c) !== "transcript" || typeof c.start_ms !== "number" || !Number.isFinite(c.start_ms) || c.start_ms < 0) return null;
+  const total = Math.floor(c.start_ms / 1000);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const sec = String(total % 60).padStart(2, "0");
+  return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
+}
+
+/** True for a company-brain passage the asker reads in place (a "Show passage" disclosure). */
+export function askCitationInline(c: AskCitation): boolean {
+  return citationKind(c) === "document" && c.text.trim().length > 0;
+}
+
 /** "Pricing review, Nov 4" or "Maya Chen, Nov 4": the quiet second line under a source. */
 export function askCitationMeta(c: AskCitation, locale = "en-US"): string {
   const parts: string[] = [];
+  const at = askCitationTime(c);
+  if (at) parts.push(`at ${at}`);
   if (c.speaker?.trim()) parts.push(c.speaker.trim());
   if (citationKind(c) !== "transcript" && c.meeting_title?.trim()) parts.push(c.meeting_title.trim());
   if (c.occurred_at) {

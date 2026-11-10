@@ -121,7 +121,7 @@ function ErasureDialog({
       notifyError(res.message);
       return;
     }
-    notifySuccess(kind === "person" ? `${person?.name ?? "Their"} data erased` : "Meeting data erased", { description: `${res.summary}.` });
+    notifySuccess(kind === "person" ? `${person?.name ?? "Their"} data erased` : "Meeting data erased", { description: `${res.summary}. Transcripts, search and the knowledge graph finish in a moment; each store is ticked off in the list.` });
     reset();
     onClose();
     router.refresh();

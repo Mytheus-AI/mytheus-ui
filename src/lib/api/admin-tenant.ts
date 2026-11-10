@@ -13,7 +13,7 @@
  *   DELETE /admin/tenant/support-grants/{id}     revoke
  *   GET    /admin/tenant/data-export             {items: ExportRequest[]}
  *   POST   /admin/tenant/data-export             202 ExportRequest
- *   GET    /admin/tenant/erasures                {items: Erasure[]}   completed erasures
+ *   GET    /admin/tenant/erasures                {items: Erasure[]}   erasures, each with status and stores[]
  *   POST   /admin/tenant/erasures                {kind, target_id, confirm} -> Erasure
  *
  * HAND-WRITTEN TYPES (see `lib/tenant-admin.ts`): re-run `npm run generate:api` once the backend

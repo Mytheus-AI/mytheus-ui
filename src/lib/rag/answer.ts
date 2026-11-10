@@ -62,7 +62,8 @@ export function segmentAnswer(text: string, passageCount: number): AnswerSegment
 
 /** Where a citation opens. A transcript line opens the transcript at that second (the
     transcript view's `#t=` jump); a decision opens its lineage page; an action opens My Tasks.
-    A document has no viewer yet, so it has no link and the source card shows its text. */
+    A company-brain document opens in place: no service serves a document page (ingestion-service
+    only ingests), so the source card shows the cited passage with its context to everyone. */
 export function citationHref(c: RagCitation): string | null {
   if (c.kind === "transcript" && c.meeting_id) {
     const seconds = Math.max(0, Math.floor((c.start_ms ?? 0) / 1000));
@@ -77,7 +78,7 @@ export function citationHref(c: RagCitation): string | null {
 
 export const KIND_LABEL: Record<CitationKind, string> = {
   transcript: "Said in a meeting",
-  document: "Document",
+  document: "Company brain",
   decision: "Confirmed decision",
   action: "Confirmed task",
 };

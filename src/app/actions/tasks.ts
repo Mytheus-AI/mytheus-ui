@@ -32,6 +32,28 @@ export async function markTaskDone(id: string): Promise<MarkDoneResult> {
   return { ok: true };
 }
 
+/**
+ * Reopen a completed task: `POST /api/v1/actions/{id}/reopen` on core-api (done -> open, for the
+ * assignee or the task's owner; audited). The "Task completed" toast's Undo, and the check on a
+ * done task, call it. Already open is a 200, so a repeat is harmless.
+ */
+export async function reopenTask(id: string): Promise<MarkDoneResult> {
+  if (!UUID.test(id)) return { ok: false, message: "That task does not exist." };
+  try {
+    await api(`/api/v1/actions/${id}/reopen`, { method: "POST" });
+  } catch (err) {
+    if (err instanceof ApiError) {
+      if (err.isAuthFailure) return { ok: false, message: "Your session expired. Sign in again." };
+      if (err.status === 404) return { ok: false, message: "That task no longer exists." };
+      if (err.status === 403) return { ok: false, message: "Only the assignee or the task's owner can reopen it." };
+      if (err.status === 409) return { ok: false, message: "This task cannot be reopened." };
+    }
+    return { ok: false, message: "Could not reopen the task. Try again." };
+  }
+  revalidatePath("/work/tasks");
+  return { ok: true };
+}
+
 export type CreateTaskResult =
   | { ok: true; id: string }
   | { ok: false; message: string; notConnected?: boolean; field?: "content" | "due_date" };
