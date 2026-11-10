@@ -1,5 +1,6 @@
 import type { Icon } from "@phosphor-icons/react";
 import {
+  Brain,
   CreditCard,
   GearSix,
   Gauge,
@@ -52,6 +53,7 @@ export const FOOT_ITEMS: NavItem[] = [
 /* Shown to workspace owners and admins: the tenant admin console (doc 20 section 7). */
 export const ADMIN_ITEMS: NavItem[] = [
   { href: "/tenant", label: "Workspace admin", icon: UsersThree },
+  { href: "/tenant/brain", label: "Company brain", icon: Brain },
   { href: "/tenant/usage", label: "Usage", icon: ChartBar },
 ];
 
