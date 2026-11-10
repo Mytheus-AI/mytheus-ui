@@ -15,10 +15,10 @@ import {
 import { PinnedScene, Reveal, MaskReveal, Tilt, WordReveal } from "./motion";
 import { Eyebrow, ArrowRight } from "./ui";
 import {
-  mockTeamCapacity,
-  mockSourcedAnswer,
+  sampleTeamCapacity,
+  sampleSourcedAnswer,
   type TeammateCapacity,
-} from "@/lib/mock/data";
+} from "./sample-content";
 
 /* Statement — "between meetings" as THE RELAY: a scroll-pinned, continuously
    scrubbed single shot. The pin lasts four viewport-heights and scroll drives
@@ -40,8 +40,8 @@ import {
    wave — spheres and random constellations both read badly at 96px),
    the answer card tilts under the cursor, and the right-edge beat rail
    jumps the camera between beats. Mobile and reduced motion render the
-   story as a calm static stack instead. Data is mockTeamCapacity /
-   mockSourcedAnswer; the 96% bar stays the single red attention accent. */
+   story as a calm static stack instead. Data is sampleTeamCapacity /
+   sampleSourcedAnswer; the 96% bar stays the single red attention accent. */
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -311,7 +311,7 @@ function MomentOverlay({ p }: { p: MotionValue<number> }) {
 
         <div className="mt-3 grid gap-4 sm:grid-cols-[1fr_210px] lg:grid-cols-[1fr_264px]">
           <div className="space-y-2.5">
-            {mockTeamCapacity.map((t, i) => (
+            {sampleTeamCapacity.map((t, i) => (
               <ScrubRow key={t.name} t={t} index={i} p={p} />
             ))}
           </div>
@@ -1034,7 +1034,7 @@ function AnswerReveal({ p }: { p: MotionValue<number> }) {
               Answer · delivered to your agent
             </p>
             <p className="mt-3 text-left text-[clamp(1.3rem,2.2vw,1.75rem)] font-medium leading-snug tracking-tight text-ink-display">
-              &ldquo;{mockSourcedAnswer.quote}&rdquo;
+              &ldquo;{sampleSourcedAnswer.quote}&rdquo;
             </p>
 
             <motion.div
@@ -1055,14 +1055,14 @@ function AnswerReveal({ p }: { p: MotionValue<number> }) {
                   </svg>
                 </span>
                 <span className="kicker text-ink-3">
-                  Sourced · {mockSourcedAnswer.source.meeting} ·{" "}
-                  {mockSourcedAnswer.source.date}
+                  Sourced · {sampleSourcedAnswer.source.meeting} ·{" "}
+                  {sampleSourcedAnswer.source.date}
                 </span>
               </span>
 
               {/* the FOLLOWS_FROM chain, drawing itself link by link */}
               <span className="flex max-w-full flex-wrap items-center gap-1.5 rounded-full border border-line bg-bg-2 px-3 py-1">
-                {mockSourcedAnswer.lineage.map((m, i) => (
+                {sampleSourcedAnswer.lineage.map((m, i) => (
                   <LineageStep key={m} p={p} index={i} first={i === 0} label={m} />
                 ))}
               </span>
@@ -1211,7 +1211,7 @@ function CapacityCard() {
       </div>
 
       <div className="mt-5 space-y-3.5">
-        {mockTeamCapacity.map((t, i) => (
+        {sampleTeamCapacity.map((t, i) => (
           <CapacityRow key={t.name} t={t} index={i} show={show} reduce={!!reduce} />
         ))}
       </div>
@@ -1394,7 +1394,7 @@ function SourcedCard() {
     <MaskReveal delay={250} y={56}>
       <div className="card-interactive rounded-card border border-line bg-white p-5 shadow-[0_40px_80px_-32px_rgba(40,30,20,0.25)] sm:p-6">
         <p className="text-left text-[clamp(1.05rem,1.8vw,1.3rem)] font-medium leading-snug tracking-tight text-ink-display">
-          &ldquo;{mockSourcedAnswer.quote}&rdquo;
+          &ldquo;{sampleSourcedAnswer.quote}&rdquo;
         </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -1412,13 +1412,13 @@ function SourcedCard() {
               </svg>
             </span>
             <span className="kicker text-ink-3">
-              Sourced · {mockSourcedAnswer.source.meeting} ·{" "}
-              {mockSourcedAnswer.source.date}
+              Sourced · {sampleSourcedAnswer.source.meeting} ·{" "}
+              {sampleSourcedAnswer.source.date}
             </span>
           </span>
 
           <span className="flex max-w-full flex-wrap items-center gap-1.5 rounded-full border border-line bg-bg-2 px-3 py-1">
-            {mockSourcedAnswer.lineage.map((m, i) => (
+            {sampleSourcedAnswer.lineage.map((m, i) => (
               <span key={m} className="flex items-center gap-1.5">
                 {i > 0 && <ArrowRight className="h-3 w-3 text-ink-3" />}
                 <span className="text-[11.5px] font-medium text-ink-2">{m}</span>
