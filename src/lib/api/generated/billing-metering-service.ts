@@ -46,6 +46,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/internal/plan-features": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Plan Features */
+        get: operations["plan_features"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/plans": {
         parameters: {
             query?: never;
@@ -142,6 +159,15 @@ export interface components {
          * @enum {string}
          */
         ErrorCode: "MALFORMED_BODY" | "INVALID_CURSOR" | "AUTH_REQUIRED" | "TOKEN_EXPIRED" | "FORBIDDEN_ROLE" | "CROSS_TENANT_DENIED" | "NOT_FOUND" | "IDEMPOTENCY_KEY_REUSED" | "VERSION_CONFLICT" | "VALIDATION_FAILED" | "RATE_LIMITED" | "QUOTA_EXCEEDED" | "INTERNAL" | "DEPENDENCY_UNAVAILABLE" | "NOT_IMPLEMENTED" | "NOT_A_PARTICIPANT" | "CONSENT_REQUIRED";
+        /** PlanFeatures */
+        PlanFeatures: {
+            /** Features */
+            features: {
+                [key: string]: unknown;
+            };
+            /** Plan Code */
+            plan_code: string;
+        };
         /** PlanOut */
         PlanOut: {
             /** Code */
@@ -255,6 +281,44 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    plan_features: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanFeatures"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Unhandled server error. Carries a `trace_id` and no internals. */

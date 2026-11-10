@@ -13,6 +13,8 @@ import type { Suggestion } from "@/lib/realtime/suggestions";
 import { SuggestionCard, type SuggestionOutcome } from "@/components/sidebar/SuggestionCard";
 import type { ContextFill } from "@/lib/realtime/contextFills";
 import { ContextFillCard, type ContextFillOutcome } from "@/components/sidebar/ContextFillCard";
+import { alertsNeedingAttention, bannerAlerts, cardAlerts, type Alert } from "@/lib/realtime/alerts";
+import { AlertBanner, AlertCard, type AlertOutcome } from "@/components/sidebar/AlertCard";
 
 /* The agent sidebar - the product's centerpiece - in the meeting design's shape: a conflict banner
    pinned above everything, then "My agent" with the Needs-you cards, My notes, Saved for later and
@@ -33,13 +35,19 @@ import { ContextFillCard, type ContextFillOutcome } from "@/components/sidebar/C
    Acknowledging a warning only moves it into the Activity feed; nothing is sent anywhere.
 
    Priority uses the frozen language (red acts now, amber attention, blue info) through the kind
-   dot, the label colour and the meta text; the act-now card is also tinted. No coloured edge. */
+   dot, the label colour and the meta text; the act-now card is also tinted. No coloured edge.
+
+   ProactiveAgent alerts are live too (Phase P11, plan 3.9): private to this participant. A
+   priority-1 alert (a conflict) is the red banner pinned above everything, whatever order things
+   arrived in; workload and dependency alerts are yellow cards and a missing stakeholder is a blue
+   card, first in Needs you, priority then time. Mark read keeps an alert, quieter; Dismiss removes
+   it for good. Both write through to notification-service and commit nothing. */
 
 const PRIORITY_LEVEL: Record<SidebarPriority, 1 | 2 | 3> = { high: 1, medium: 2, low: 3 };
 const PRIORITY_LABEL: Record<SidebarPriority, string> = { high: "act now", medium: "attention", low: "info" };
 
-type FeedKind = "conflict" | "question" | "decision" | "note" | "context" | "action";
-type Resolution = "confirmed" | "saved" | "dismissed" | "acknowledged" | "created" | "asked";
+type FeedKind = "conflict" | "question" | "decision" | "note" | "context" | "action" | "alert";
+type Resolution = "confirmed" | "saved" | "dismissed" | "acknowledged" | "created" | "asked" | "read";
 
 const KIND_LABEL: Record<FeedKind, string> = {
   conflict: "Conflict",
@@ -48,6 +56,7 @@ const KIND_LABEL: Record<FeedKind, string> = {
   note: "Note",
   context: "Shared context",
   action: "Action",
+  alert: "Alert",
 };
 
 const RES_LABEL: Record<Resolution, string> = {
@@ -57,6 +66,7 @@ const RES_LABEL: Record<Resolution, string> = {
   acknowledged: "Acknowledged",
   created: "Task created",
   asked: "Asked",
+  read: "Read",
 };
 
 type FeedEntry = {
@@ -108,6 +118,9 @@ export function AgentSidebar({
   onSuggestionSaved,
   contextFills = [],
   onContextFillDismissed,
+  alerts = [],
+  onAlertRead,
+  onAlertDismissed,
 }: {
   /** The agent's cards for this meeting. Empty until the `agent-results` stream is wired, which
    *  renders the empty state rather than invented cards. */
@@ -134,6 +147,10 @@ export function AgentSidebar({
   /** This participant's surfaced context fills for this meeting, oldest first. */
   contextFills?: ContextFill[];
   onContextFillDismissed?: (id: string) => void;
+  /** This participant's ProactiveAgent alerts, priority then time (`orderedAlerts`). */
+  alerts?: Alert[];
+  onAlertRead?: (id: string) => void;
+  onAlertDismissed?: (id: string) => void;
 }) {
   const toast = useCallToast();
   const [decisionState, setDecisionState] = useState<"pending" | "confirmed" | "dismissed">(
@@ -146,6 +163,9 @@ export function AgentSidebar({
   const [leavingCandidates, setLeavingCandidates] = useState<Set<string>>(new Set());
   const [leavingSuggestions, setLeavingSuggestions] = useState<Set<string>>(new Set());
   const [leavingFills, setLeavingFills] = useState<Set<string>>(new Set());
+  const [leavingAlerts, setLeavingAlerts] = useState<Set<string>>(new Set());
+  const banners = useMemo(() => bannerAlerts(alerts), [alerts]);
+  const alertCards = useMemo(() => cardAlerts(alerts), [alerts]);
   const joinedAt = useRef<number>(0);
   useEffect(() => {
     joinedAt.current = Date.now();
@@ -164,6 +184,7 @@ export function AgentSidebar({
   const isOpen = (cid: CardId) => !closed.has(cid);
 
   const count =
+    alertsNeedingAttention(alerts) +
     candidates.length +
     suggestions.filter((s) => s.priority !== 3).length +
     (conflict ? 1 : 0) +
@@ -171,7 +192,7 @@ export function AgentSidebar({
     (suggestion && suggestion.priority !== "low" && isOpen("suggestion") ? 1 : 0) +
     (workload && isOpen("workload") ? 1 : 0) +
     (dependency && isOpen("dependency") ? 1 : 0);
-  const hasConflict = Boolean(conflict);
+  const hasConflict = Boolean(conflict) || banners.some((a) => a.status === "unread");
   useEffect(() => {
     onAttentionChange?.({ count, conflict: hasConflict });
   }, [count, hasConflict, onAttentionChange]);
@@ -271,6 +292,46 @@ export function AgentSidebar({
       ]);
     }, 230);
   };
+
+  /** An alert was marked read (it stays, quieter) or dismissed / gone (it slides out and never
+   *  comes back). Either way it is recorded in Activity, except when it was already gone. */
+  const settleAlert = (a: Alert, outcome: AlertOutcome) => {
+    const time = now();
+    if (outcome === "read") {
+      onAlertRead?.(a.id);
+      setLog((l) => [{ id: `${a.id}-${Date.now()}`, kind: "alert", text: a.title, time, isNew: true, resolved: "read" }, ...l]);
+      return;
+    }
+    setLeavingAlerts((l) => new Set(l).add(a.id));
+    window.setTimeout(() => {
+      setLeavingAlerts((l) => {
+        const next = new Set(l);
+        next.delete(a.id);
+        return next;
+      });
+      onAlertDismissed?.(a.id);
+      if (outcome === "gone") return;
+      setLog((l) => [
+        { id: `${a.id}-${Date.now()}`, kind: "alert", text: a.title, time, isNew: true, resolved: "dismissed" },
+        ...l,
+      ]);
+    }, 230);
+  };
+
+  const alertBanners =
+    banners.length > 0 ? (
+      <div className="alert-banners" aria-label="Pinned alerts">
+        {banners.map((a) => (
+          <AlertBanner
+            key={a.id}
+            alert={a}
+            leaving={leavingAlerts.has(a.id)}
+            onResolved={(outcome) => settleAlert(a, outcome)}
+            onError={(message) => toast(message)}
+          />
+        ))}
+      </div>
+    ) : null;
 
   /* Needs-you cards, in the frozen order. */
   const cards: {
@@ -473,7 +534,8 @@ export function AgentSidebar({
     candidates.length === 0 &&
     suggestions.length === 0 &&
     savedSuggestions.length === 0 &&
-    contextFills.length === 0
+    contextFills.length === 0 &&
+    alerts.length === 0
   ) {
     return (
       <div className="reveal" id={id} style={{ animationDelay: ".14s" }}>
@@ -489,6 +551,7 @@ export function AgentSidebar({
 
   return (
     <>
+      {alertBanners}
       {conflict ? (
         <div className="conflict-banner" role="alert">
           <div className="cbn-kind">
@@ -530,11 +593,20 @@ export function AgentSidebar({
           }
         >
           <div className="agent-panel">
-            {cards.length > 0 || candidates.length > 0 || suggestions.length > 0 ? (
+            {cards.length > 0 || candidates.length > 0 || suggestions.length > 0 || alertCards.length > 0 ? (
               <div className="nfy">
                 <div className="nfy-head">
                   Needs you <b>{count}</b>
                 </div>
+                {alertCards.map((a) => (
+                  <AlertCard
+                    key={a.id}
+                    alert={a}
+                    leaving={leavingAlerts.has(a.id)}
+                    onResolved={(outcome) => settleAlert(a, outcome)}
+                    onError={(message) => toast(message)}
+                  />
+                ))}
                 {suggestions.map((s) => (
                   <SuggestionCard
                     key={s.id}
@@ -600,8 +672,11 @@ export function AgentSidebar({
                   </span>
                 </div>
                 {notes.map((n) => (
+                  // Keyed by the agent window (the stream's correlation key), so the settled note
+                  // replaces its draft in place: same node, no remount, no jump. The body reserves
+                  // its height while the deltas append.
                   <div
-                    className={`mynote${n.final ? "" : " is-new"}`}
+                    className={`mynote${n.final ? " is-final" : " is-new is-draft"}`}
                     key={n.windowId}
                     aria-busy={n.final ? undefined : true}
                   >
@@ -610,7 +685,11 @@ export function AgentSidebar({
                       {noteLines(n.text).map((line, i) => (
                         <p key={i}>{line}</p>
                       ))}
-                      {n.final ? null : <p className="saved-empty">Writing...</p>}
+                      {n.final ? null : (
+                        <p className="saved-empty mynote-writing">
+                          Writing<span className="stream-caret" aria-hidden="true"></span>
+                        </p>
+                      )}
                     </span>
                   </div>
                 ))}
