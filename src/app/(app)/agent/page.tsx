@@ -6,6 +6,7 @@ import type { DashboardResponse } from "@/lib/api/types";
 import { AgentWorkspace } from "@/components/agent/AgentWorkspace";
 import { ListeningCard } from "@/components/agent/ListeningCard";
 import { KeptNotes } from "@/components/agent/KeptNotes";
+import { TopicWatchCard } from "@/components/watch/TopicWatchCard";
 
 export const metadata: Metadata = { title: "Your agent | Mytheus" };
 
@@ -30,6 +31,7 @@ export default async function AgentPage() {
   const aside = (
     <>
       <ListeningCard profile={profile} />
+      <TopicWatchCard />
       <KeptNotes notes={notes} />
     </>
   );

@@ -12,6 +12,10 @@ import {
   TreeStructure,
   VideoCamera,
   CheckSquare,
+  Bell,
+  Handshake,
+  ChatCircleDots,
+  Compass,
   ChartBar,
   UsersThree,
 } from "@phosphor-icons/react/ssr";
@@ -29,6 +33,8 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/meetings", label: "Meetings", icon: VideoCamera },
       { href: "/decisions", label: "Decisions", icon: Scales },
       { href: "/tasks", label: "Tasks", icon: CheckSquare },
+      { href: "/promises", label: "Promises", icon: Handshake },
+      { href: "/notifications", label: "Notifications", icon: Bell },
     ],
   },
   {
@@ -43,6 +49,13 @@ export const NAV_SECTIONS: NavSection[] = [
 /* Your agent has its own row under "New meeting", drawn with its face rather than an icon (see
    Sidebar's AgentTab); this entry is what the topbar title and the command palette use. */
 export const AGENT_ITEM: NavItem = { href: "/agent", label: "Your agent", icon: Smiley };
+
+/* Screens reached from cards and notifications rather than the sidebar; listed so the topbar
+   title and the command palette know them. */
+export const LINKED_ITEMS: NavItem[] = [
+  { href: "/status-requests", label: "Status requests", icon: ChatCircleDots },
+  { href: "/welcome", label: "Welcome", icon: Compass },
+];
 
 /* Account screens sit at the foot of the sidebar, apart from the work. */
 export const FOOT_ITEMS: NavItem[] = [
@@ -69,7 +82,7 @@ export const NEW_MEETING_HREF = "/meetings?new=1";
 
 /** Every screen a signed-in person can jump to, for the palette and the topbar title. */
 export function allNavItems(isAdmin: boolean): NavItem[] {
-  return [AGENT_ITEM, ...NAV_SECTIONS.flatMap((s) => s.items), ...FOOT_ITEMS, ...(isAdmin ? ADMIN_ITEMS : [])];
+  return [AGENT_ITEM, ...NAV_SECTIONS.flatMap((s) => s.items), ...LINKED_ITEMS, ...FOOT_ITEMS, ...(isAdmin ? ADMIN_ITEMS : [])];
 }
 
 export function isActive(pathname: string | null, href: string): boolean {

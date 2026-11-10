@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Buildings, ChartBar, DownloadSimple, Handshake, Lifebuoy, SlidersHorizontal, UsersThree } from "@phosphor-icons/react";
+import { Brain, Buildings, ChartBar, DownloadSimple, Handshake, Lifebuoy, SlidersHorizontal, UsersThree } from "@phosphor-icons/react";
 
 /* Section switcher for the workspace admin console. A horizontal row in the same language as the
    settings nav (raised white tab for the current page). Seven sections stay in one row that
@@ -10,6 +10,7 @@ import { Buildings, ChartBar, DownloadSimple, Handshake, Lifebuoy, SlidersHorizo
 
 const TABS = [
   { href: "/tenant", label: "Overview", icon: Buildings },
+  { href: "/tenant/brain", label: "Company brain", icon: Brain },
   { href: "/tenant/members", label: "Members", icon: UsersThree },
   { href: "/tenant/settings", label: "Settings", icon: SlidersHorizontal },
   { href: "/tenant/usage", label: "Usage and budget", icon: ChartBar },
@@ -24,7 +25,8 @@ export function TenantTabs() {
     <nav aria-label="Workspace admin sections" className="-mx-4 min-w-0 sm:mx-0">
       <ul className="flex gap-1.5 overflow-x-auto px-4 py-1 [scrollbar-width:none] sm:px-0 xl:flex-wrap xl:overflow-visible [&::-webkit-scrollbar]:hidden">
         {TABS.map((t) => {
-          const active = pathname === t.href;
+          // The brain has sub-pages; every other tab is a single page.
+          const active = t.href === "/tenant/brain" ? !!pathname?.startsWith(t.href) : pathname === t.href;
           const Icon = t.icon;
           return (
             <li key={t.href} className="shrink-0">

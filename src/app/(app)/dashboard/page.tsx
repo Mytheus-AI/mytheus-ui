@@ -13,6 +13,12 @@ import { RecentMeetings } from "@/components/app/dashboard/RecentMeetings";
 import { TaskList } from "@/components/app/dashboard/TaskList";
 import { TodayTimeline } from "@/components/app/dashboard/TodayTimeline";
 import type { HomeMeeting } from "@/components/app/dashboard/types";
+import { Suspense } from "react";
+import { ReadinessCard } from "@/components/org-brain/ReadinessCard";
+import { WelcomeCard } from "@/components/org-brain/WelcomeCard";
+import { MeetingBriefCard } from "@/components/briefs/MeetingBriefCard";
+import { StatusRequestsCard } from "@/components/status/StatusRequestsCard";
+import { PromisesCard } from "@/components/promises/PromisesCard";
 
 export const metadata: Metadata = {
   title: "Dashboard | Mytheus",
@@ -80,7 +86,7 @@ export default async function DashboardPage() {
   const later = meetings.filter((m) => !isToday(m) && m.status !== "past");
 
   return (
-    <div className="mx-auto max-w-[1240px]">
+    <div className="mx-auto max-w-[1480px]">
       <DashboardHeader
         firstName={firstName}
         nowIso={now.toISOString()}
@@ -93,12 +99,26 @@ export default async function DashboardPage() {
       />
 
       <AgentProfilePrompt />
+      {/* Each of these streams in on its own and renders nothing when it has nothing to say:
+          the new joiner brief (first 14 days), the company brain's readiness (admins). */}
+      <Suspense fallback={null}>
+        <WelcomeCard />
+      </Suspense>
+      <Suspense fallback={null}>
+        <ReadinessCard />
+      </Suspense>
 
       {/* Wide main column plus a fixed, narrower rail. Under 1100px the rail drops below and
           becomes two columns; under 720px everything is one column. */}
       <div className="grid grid-cols-1 items-start gap-6 min-[1101px]:grid-cols-[minmax(0,1fr)_minmax(300px,368px)]">
         <div className="flex min-w-0 flex-col gap-7">
           <HeroUpNext next={next} after={after} calendarFailed={calendarFailed} nowMs={nowMs} />
+          <Suspense fallback={null}>
+            <MeetingBriefCard />
+          </Suspense>
+          <Suspense fallback={null}>
+            <StatusRequestsCard />
+          </Suspense>
           <NeedsYou items={review.items} failed={review.failed} />
           <RecentMeetings meetings={recent.items} failed={recent.failed} />
         </div>
@@ -109,6 +129,9 @@ export default async function DashboardPage() {
         >
           <TodayTimeline today={today} later={later} nextId={next?.id} calendarFailed={calendarFailed} nowMs={nowMs} />
           <TaskList tasks={tasks.items} failed={tasks.failed} nowIso={now.toISOString()} />
+          <Suspense fallback={null}>
+            <PromisesCard />
+          </Suspense>
           <MyNotes notes={notes} failed={notesFailed} />
           <RecentDecisions
             decisions={decisions.items}
