@@ -78,7 +78,7 @@ export function Topbar({
         <span className="flex-1 truncate">Search or ask Mytheus</span>
         <kbd
           aria-hidden
-          className="hidden shrink-0 rounded-full border border-line-2 bg-surface-2 px-2 py-0.5 font-sans text-[12px] font-semibold text-ink-3 md:inline"
+          className="hidden shrink-0 rounded-full border border-line-2 bg-surface-2 px-2 py-0.5 font-sans text-[12.5px] font-semibold text-ink-3 md:inline"
         >
           {mac ? "⌘ K" : "Ctrl K"}
         </kbd>

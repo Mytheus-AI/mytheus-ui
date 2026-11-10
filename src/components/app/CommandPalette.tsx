@@ -13,6 +13,7 @@ import {
   Smiley,
   Sparkle,
   ArrowsLeftRight,
+  Broadcast,
   User,
   VideoCamera,
   type Icon,
@@ -40,6 +41,7 @@ const ICONS: Record<string, Icon> = {
   task: CheckSquare,
   moon: Moon,
   swap: ArrowsLeftRight,
+  capture: Broadcast,
   agent: Smiley,
   meeting: VideoCamera,
   person: User,
@@ -98,6 +100,7 @@ export function CommandPalette({ open, onClose, agentName = null }: { open: bool
     const out: PaletteEntry[] = [...recent];
     out.push(
       { key: "a:meeting", group: "actions", label: "Start a new meeting", href: NEW_MEETING_HREF, icon: "plus", keywords: "create schedule call" },
+      { key: "a:capture", group: "actions", label: "Capture a call", href: "/capture", icon: "capture", keywords: "zoom meet teams record companion extension" },
       { key: "a:task", group: "actions", label: "New task", href: NEW_TASK_HREF, icon: "task", keywords: "create add to do action" },
       { key: "a:theme", group: "actions", label: "Switch light or dark theme", action: "theme", icon: "moon", keywords: "dark mode appearance toggle" },
       { key: "a:workspace", group: "actions", label: "Switch workspace", href: "/onboarding/organization?switch=1", icon: "swap", keywords: "organization change invitation" },
@@ -242,11 +245,11 @@ export function CommandPalette({ open, onClose, agentName = null }: { open: bool
             autoComplete="off"
             data-ring="none"
             spellCheck={false}
-            className="h-[60px] w-full min-w-0 bg-transparent text-[16px] text-ink !outline-none placeholder:text-ink-3"
+            className="h-[60px] w-full min-w-0 bg-transparent text-[17px] text-ink !outline-none placeholder:text-ink-3"
           />
           <kbd
             aria-hidden
-            className="hidden shrink-0 rounded-full border border-line-2 bg-surface-2 px-2 py-0.5 font-sans text-[12px] font-semibold text-ink-3 sm:inline"
+            className="hidden shrink-0 rounded-full border border-line-2 bg-surface-2 px-2 py-0.5 font-sans text-[12.5px] font-semibold text-ink-3 sm:inline"
           >
             Esc
           </kbd>

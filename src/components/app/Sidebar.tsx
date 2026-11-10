@@ -245,11 +245,11 @@ export function Sidebar({
         aria-label={`${org.name}: switch workspace`}
         className={`mb-3 flex shrink-0 items-center rounded-ctl border transition-colors hover:border-line-2 ${lay(ORG)}`}
       >
-        <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full bg-pill text-[13px] font-bold text-pill-on">
+        <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full bg-pill text-[12.5px] font-bold text-pill-on">
           {org.name.slice(0, 1).toUpperCase()}
         </span>
         <span className={`sb-fade min-w-0 flex-1 ${label}`}>
-          <span className="block truncate text-[13.5px] font-semibold leading-tight text-ink">{org.name}</span>
+          <span className="block truncate text-[14px] font-semibold leading-tight text-ink">{org.name}</span>
           <span className="block text-[12.5px] text-ink-3">{isAdmin ? "Workspace admin" : "Member"}</span>
         </span>
         <CaretUpDown size={16} aria-hidden className={`shrink-0 text-ink-3 ${openOnly}`} />
@@ -287,7 +287,7 @@ export function Sidebar({
             <span className="h-2.5 w-2.5 rounded-full bg-priority-high" />
           </span>
           <span className={`sb-fade min-w-0 ${label}`}>
-            <span className="block text-[13px] font-semibold leading-tight">In call</span>
+            <span className="block text-[12.5px] font-semibold leading-tight">In call</span>
             <span className="block truncate text-[12.5px] opacity-75">{liveCall.title}</span>
           </span>
         </Link>

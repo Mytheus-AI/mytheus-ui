@@ -25,12 +25,14 @@ import {
   UsersThree,
   VideoCamera,
   Bell,
+  Broadcast,
 } from "@phosphor-icons/react/ssr";
 
 /* The app's information architecture, in one place. One list feeds the sidebar, the topbar
    breadcrumb, the section tabs and the command palette, so a screen is added in exactly one place.
 
-   Sidebar, top to bottom: your agent, then Home, Inbox (with its count), Meetings, My work,
+   Sidebar, top to bottom: your agent, then Home, Inbox (with its count), Meetings, Capture a call
+   (the companion for Zoom, Meet and Teams calls, /capture, built on its own branch), My work,
    Decisions and People; then Admin (Workspace, admins only); then Settings (personal only). */
 
 export type NavItem = {
@@ -51,6 +53,7 @@ export const MAIN_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Home", icon: House, keywords: "dashboard today" },
   { href: "/inbox", label: "Inbox", icon: Tray, count: "inbox", keywords: "notifications alerts review status requests" },
   { href: "/meetings", label: "Meetings", icon: VideoCamera, keywords: "calendar calls" },
+  { href: "/capture", label: "Capture a call", icon: Broadcast, keywords: "zoom meet teams chrome extension companion record" },
   { href: "/work", label: "My work", icon: Briefcase, keywords: "tasks promises updates status requests" },
   { href: "/decisions", label: "Decisions", icon: Scales, keywords: "decision log" },
   { href: "/people", label: "People", icon: Users, keywords: "org chart team directory" },

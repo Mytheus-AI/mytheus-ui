@@ -93,7 +93,7 @@ export function DoodlePicker({
       </div>
 
       <div className="min-w-0 flex-1">
-        <p id="doodle-picker-label" className="mb-2 text-[13px] font-medium text-ink-2">
+        <p id="doodle-picker-label" className="mb-2 text-[12.5px] font-medium text-ink-2">
           {label}
         </p>
         <div
