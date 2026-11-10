@@ -53,33 +53,36 @@ const STAGE: Record<Exclude<Step, "sso-callback">, StageCopy> = {
   },
 };
 
-/* What the doodle meeting on the brand panel talks about; the visitor's own doodle takes the
-   open seat at the table as soon as it is dealt. */
-const SCENE: Record<Exclude<Step, "sso-callback">, Pick<SceneProps, "lines" | "note">> = {
+/* The meeting on the brand panel: your kickoff. The visitor's own doodle takes the open seat at
+   the table as soon as it is dealt. */
+const SCENE: Record<Exclude<Step, "sso-callback">, Pick<SceneProps, "title" | "when" | "lines">> = {
   start: {
+    title: "Kickoff",
+    when: "Your first meeting",
     lines: [
-      { text: "Who's joining us today?" },
-      { text: "Saved them a seat." },
-      { text: "Let's welcome the new teammate.", decision: true },
-      { text: "Their agent's already listening." },
+      { who: 0, text: "Who's joining us today?" },
+      { who: 1, text: "Saved them a seat.", keep: { tag: "Action", text: "Seat saved for you" } },
+      { who: 4, text: "Let's welcome the new teammate.", keep: { tag: "Decision", text: "New teammate welcomed" } },
+      { who: 2, text: "Their agent's already listening.", keep: { tag: "Done", text: "Your agent is ready" } },
     ],
-    note: "New teammate welcomed",
   },
   verify: {
+    title: "Kickoff",
+    when: "Your first meeting",
     lines: [
-      { text: "Did the code arrive?" },
-      { text: "Check the inbox, then spam." },
-      { text: "Email checked. Come on in.", decision: true },
+      { who: 3, text: "Did the code arrive?", keep: { tag: "Question", text: "Did the code arrive?" } },
+      { who: 1, text: "Check spam if it's not there.", keep: { tag: "Action", text: "Check inbox, then spam" } },
+      { who: 0, text: "Email checked. Come on in.", keep: { tag: "Done", text: "Email confirmed" } },
     ],
-    note: "Email checked",
   },
   continue: {
+    title: "Kickoff",
+    when: "Your first meeting",
     lines: [
-      { text: "Almost there." },
-      { text: "Just a couple of details." },
-      { text: "Then you're in.", decision: true },
+      { who: 2, text: "Almost there.", keep: { tag: "Done", text: "Email confirmed" } },
+      { who: 4, text: "Just a couple of details.", keep: { tag: "Action", text: "Add your details" } },
+      { who: 1, text: "Then you're in.", keep: { tag: "Decision", text: "A seat at the table" } },
     ],
-    note: "Details added, seat taken",
   },
 };
 

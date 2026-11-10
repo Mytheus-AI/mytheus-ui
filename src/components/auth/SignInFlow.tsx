@@ -55,32 +55,38 @@ const STAGE: Record<Exclude<Step, "sso-callback" | "task">, StageCopy> = {
   },
 };
 
-/* What the doodle meeting on the brand panel talks about on each step. */
+/* The meeting on the brand panel on each step: what is said, and what the agent keeps. */
 const SCENES: Record<Exclude<Step, "sso-callback" | "task">, SceneProps> = {
   start: {},
   "factor-one": {
+    title: "Quick check-in",
+    when: "Today",
     lines: [
-      { text: "Forgot the password again?" },
-      { text: "A code's on its way." },
-      { text: "One code, one use. Done.", decision: true },
+      { who: 0, text: "Forgot the password again?" },
+      { who: 1, text: "No need. A code's on its way.", keep: { tag: "Action", text: "Code sent to your inbox" } },
+      { who: 3, text: "It works once, then expires.", keep: { tag: "Done", text: "One use, expires soon" } },
+      { who: 4, text: "Then straight back to the notes.", keep: { tag: "Decision", text: "Pick up where you left off" } },
     ],
-    note: "Code sent, expires soon",
   },
   "factor-two": {
+    title: "Security review",
+    when: "Today",
     lines: [
-      { text: "Second key, please." },
-      { text: "Authenticator open?" },
-      { text: "Both keys check out.", decision: true },
+      { who: 2, text: "Second key, please." },
+      { who: 1, text: "Authenticator open?", keep: { tag: "Action", text: "Enter the six-digit code" } },
+      { who: 0, text: "Both keys check out.", keep: { tag: "Done", text: "Two-step verified" } },
+      { who: 4, text: "Your meetings stay yours.", keep: { tag: "Decision", text: "Only you get in" } },
     ],
-    note: "Two-step verified",
   },
   "forgot-password": {
+    title: "Account recovery",
+    when: "Today",
     lines: [
-      { text: "New password, same memories?" },
-      { text: "Nothing gets lost." },
-      { text: "Reset it by email.", decision: true },
+      { who: 3, text: "New password, same memories?", keep: { tag: "Question", text: "Is anything lost?" } },
+      { who: 1, text: "Nothing gets lost.", keep: { tag: "Done", text: "History kept, untouched" } },
+      { who: 0, text: "Reset it by email.", keep: { tag: "Action", text: "Reset code sent by email" } },
+      { who: 4, text: "New key, same notes." },
     ],
-    note: "Password reset, history kept",
   },
 };
 

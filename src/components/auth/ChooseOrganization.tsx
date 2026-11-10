@@ -139,19 +139,21 @@ export function ChooseOrganization() {
       scene={{
         you: youSeed,
         label: path === "create" ? name.trim() || "your team" : undefined,
+        title: path === "create" ? name.trim() || "Your team" : "Team standup",
+        when: path === "create" ? "First meeting" : "Today",
         lines:
           path === "create"
             ? [
-                { text: "New table, who's in?" },
-                { text: "Invite the team later." },
-                { text: "Start the workspace.", decision: true },
+                { who: 0, text: "New table, who's in?" },
+                { who: 1, text: "Invite the team later.", keep: { tag: "Action", text: "Invite your teammates" } },
+                { who: 4, text: "Start the workspace.", keep: { tag: "Decision", text: "Workspace created" } },
+                { who: 2, text: "Every meeting lands here.", keep: { tag: "Done", text: "Shared memory is on" } },
               ]
             : [
-                { text: "Got an invite?" },
-                { text: "Your admin can send one." },
-                { text: "Pull up a chair with us.", decision: true },
+                { who: 3, text: "Got an invite?", keep: { tag: "Question", text: "Waiting on an invite?" } },
+                { who: 1, text: "Your admin can send one.", keep: { tag: "Action", text: "Ask your admin" } },
+                { who: 0, text: "Pull up a chair with us.", keep: { tag: "Done", text: "Teammate joined" } },
               ],
-        note: path === "create" ? "Workspace created" : "New teammate joined",
       }}
       aside={
         user ? (
