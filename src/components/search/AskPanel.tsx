@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowClockwise, ArrowUpRight, ArrowBendDownRight, ShieldCheck, Sparkle } from "@phosphor-icons/react";
-import { Badge } from "@/components/ui/Badge";
+import { Chip } from "@/components/ui/Chip";
+import { cardClass } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Bone } from "@/components/app/PageHead";
+import { Bone } from "@/components/ui/Page";
 import {
   KIND_LABEL,
   citationHref,
@@ -48,6 +49,7 @@ export function AskPanel({ state, onAsk }: { state: AskState; onAsk: (q: string)
     return (
       <div className="flex flex-col gap-6">
         <EmptyState
+          art="search"
           title="Ask about anything your meetings covered"
           description="Mytheus searches the meetings you were in, your team's documents and confirmed decisions, then answers with numbered sources you can open."
         />
@@ -61,7 +63,7 @@ export function AskPanel({ state, onAsk }: { state: AskState; onAsk: (q: string)
                 key={s}
                 type="button"
                 onClick={() => onAsk(s)}
-                className="flex min-h-[52px] items-start gap-3 rounded-card border border-line bg-surface p-4 text-left text-[14.5px] font-semibold text-ink shadow-warm-1 transition-[border-color,box-shadow] duration-150 hover:border-line-2 hover:shadow-warm-2 active:bg-surface-2"
+                className={cardClass({ className: "flex min-h-[52px] items-start gap-3 text-left text-[15px] font-semibold text-ink transition-colors duration-150 hover:border-line-2 active:bg-surface-2" })}
               >
                 <ArrowBendDownRight size={17} className="mt-0.5 shrink-0 text-signal" aria-hidden="true" />
                 <span>{s}</span>
@@ -74,7 +76,7 @@ export function AskPanel({ state, onAsk }: { state: AskState; onAsk: (q: string)
   }
 
   const heading = (
-    <h2 className="display text-[clamp(22px,2.4vw,28px)] text-ink-display">{state.question}</h2>
+    <h2 className="display text-[22px] text-ink-display">{state.question}</h2>
   );
 
   if (state.status === "loading") {
@@ -99,7 +101,7 @@ export function AskPanel({ state, onAsk }: { state: AskState; onAsk: (q: string)
         {heading}
         <div className={answerCard}>
           <AnswerHead state="Not available" />
-          <p role="alert" className="max-w-[60ch] text-[15.5px] leading-relaxed text-ink-2">
+          <p role="alert" className="max-w-[60ch] text-[15px] leading-relaxed text-ink-2">
             {state.message}
           </p>
           <Button variant="outline" size="sm" className="mt-4" onClick={() => onAsk(state.question)}>
@@ -141,13 +143,13 @@ export function AskPanel({ state, onAsk }: { state: AskState; onAsk: (q: string)
         <AnswerHead state={headState} />
 
         {answer && !answer.abstained ? (
-          <p className="max-w-[68ch] text-[16.5px] leading-[1.7] text-ink">
+          <p className="max-w-[68ch] text-[17px] leading-[1.7] text-ink">
             {segmentAnswer(answer.text, passages.length).map((seg, i) =>
               seg.kind === "cite" ? cite(seg.n, `c${i}`) : <span key={`t${i}`}>{seg.text}</span>,
             )}
           </p>
         ) : answer?.abstained ? (
-          <p role="status" className="max-w-[60ch] text-[16px] leading-relaxed text-ink">
+          <p role="status" className="max-w-[60ch] text-[17px] leading-relaxed text-ink">
             I couldn&apos;t find this in your meetings or documents, so I won&apos;t guess.
             {passages.length > 0 ? " These were the closest matches." : " Try naming a project, a person or a decision."}
           </p>
@@ -190,7 +192,7 @@ export function AskPanel({ state, onAsk }: { state: AskState; onAsk: (q: string)
           </div>
         ) : null}
 
-        <p className="mt-5 flex items-start gap-2 border-t border-line pt-4 text-[13px] text-ink-3">
+        <p className="mt-5 flex items-start gap-2 border-t border-line pt-4 text-[12.5px] text-ink-3">
           <ShieldCheck size={16} className="mt-px shrink-0" aria-hidden="true" />
           Answers come only from meetings you were in, your team&apos;s documents and confirmed
           decisions. Open a source before you rely on it.
@@ -209,7 +211,7 @@ function SourcePreview({ p }: { p: RagPassage }) {
       aria-label={`Source ${p.n}`}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <Badge>{KIND_LABEL[p.citation.kind]}</Badge>
+        <Chip>{KIND_LABEL[p.citation.kind]}</Chip>
         {provenance(p) ? <span className="text-[12.5px] text-ink-3">{provenance(p)}</span> : null}
       </div>
       <p className="mt-2 text-[14px] leading-relaxed text-ink-2">
@@ -220,7 +222,7 @@ function SourcePreview({ p }: { p: RagPassage }) {
       {href ? (
         <Link
           href={href}
-          className="mt-3 inline-flex min-h-[40px] items-center gap-1.5 rounded-ctl text-[13.5px] font-semibold text-signal-ink underline-offset-4 hover:underline active:opacity-70"
+          className="mt-3 inline-flex min-h-[40px] items-center gap-1.5 rounded-ctl text-[14px] font-semibold text-signal-ink underline-offset-4 hover:underline active:opacity-70"
         >
           {p.citation.kind === "transcript"
             ? "Open in transcript"
@@ -234,7 +236,7 @@ function SourcePreview({ p }: { p: RagPassage }) {
   );
 }
 
-const answerCard = "rounded-card border border-line bg-surface p-5 shadow-warm-1 sm:px-6 sm:py-6";
+const answerCard = cardClass();
 
 function AnswerHead({ state }: { state: string }) {
   return (
@@ -243,7 +245,7 @@ function AnswerHead({ state }: { state: string }) {
         <Sparkle size={15} weight="fill" aria-hidden="true" />
       </span>
       Mytheus
-      <span role="status" className="ml-auto text-[13px] font-medium text-ink-3">
+      <span role="status" className="ml-auto text-[12.5px] font-medium text-ink-3">
         {state}
       </span>
     </div>

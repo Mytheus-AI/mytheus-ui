@@ -1,6 +1,7 @@
 import { fetchTopicWatches } from "@/lib/api/topic-watches";
 import type { TopicWatch } from "@/lib/api/personal-types";
-import { PanelError } from "@/components/promises/parts";
+import { Card, CardBody, CardHead } from "@/components/ui/Card";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { TopicWatchEditor } from "./TopicWatchEditor";
 
 /**
@@ -18,25 +19,19 @@ export async function TopicWatchCard({ className = "" }: { className?: string })
   }
 
   return (
-    <section
-      id="topic-watch"
-      aria-labelledby="watch-h"
-      className={`scroll-mt-4 rounded-card border border-line bg-surface p-5 shadow-warm-1 sm:p-6 ${className}`}
-    >
-      <h2 id="watch-h" className="display text-[22px] text-ink">
-        Topics you watch
-      </h2>
-      <p className="mt-1.5 max-w-[68ch] text-[14.5px] leading-relaxed text-ink-3">
-        When one of these comes up in a meeting you are not in, your agent tells you. It only covers meetings you are
-        allowed to see, and never confidential ones.
-      </p>
+    <Card as="section" flush id="topic-watch" aria-labelledby="watch-h" className={`scroll-mt-4 ${className}`}>
+      <CardHead
+        id="watch-h"
+        title="Topics you watch"
+        description="When one of these comes up in a meeting you are not in, your agent tells you. It only covers meetings you are allowed to see, and never confidential ones."
+      />
       {watches === null ? (
-        <div className="-mx-5 mt-2 sm:-mx-6">
-          <PanelError title="We could not load your topics" text="They are safe. Try again in a moment." />
-        </div>
+        <ErrorState variant="inline" title="We could not load your topics" text="They are safe. Try again in a moment." />
       ) : (
-        <TopicWatchEditor initial={watches} />
+        <CardBody>
+          <TopicWatchEditor initial={watches} />
+        </CardBody>
       )}
-    </section>
+    </Card>
   );
 }

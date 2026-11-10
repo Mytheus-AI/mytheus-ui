@@ -1,13 +1,15 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   CalendarBlank,
   CaretDown,
   Flag,
   Kanban,
   ListBullets,
+  Plus,
   User,
   VideoCamera,
 } from "@phosphor-icons/react";
@@ -15,19 +17,24 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { PageHead } from "@/components/app/PageHead";
+import { SectionBar } from "@/components/ui/Page";
+import { Count } from "@/components/ui/Chip";
 import { useOrgContext } from "@/lib/org-context";
+import { graceful, notifyInfo } from "@/lib/toast";
 import { markTaskDone } from "@/app/actions/tasks";
 import type { TaskItem } from "@/lib/tasks";
 import { SidePanel } from "./SidePanel";
+import { NewTaskDialog } from "./NewTaskDialog";
 import { TaskDetailBody, TaskDetailHeader } from "./TaskDetail";
 import { CheckButton, DueChip, PriorityBadge } from "./task-ui";
 import { daysUntil, groupOf, sortTasks, type Task, type TaskGroup } from "./dates";
 
-/* My Tasks. Completing a task is optimistic: it moves to Completed at once, `markTaskDone`
-   (POST /api/v1/actions/{id}/done) runs, and a refusal rolls it back with the server's reason.
-   Done is final server-side, so a completed task cannot be reopened. Everything else (view,
-   filters, groups, quick view) is client-side presentation of the tasks the page read. */
+/* My work, Tasks tab. Completing a task shows it done at once with a "Task completed" toast and
+   Undo; `markTaskDone` (POST /api/v1/actions/{id}/done) is only sent after a five second grace
+   period, because done is final server-side. Undo (the toast, or the task's own check while the
+   grace runs) simply never sends it; a refusal rolls it back with the server's reason. "New task"
+   (the tab's action, or `?new=1` from the command palette) opens the New task dialog. Everything
+   else (view, filters, groups, quick view) is client-side presentation of the tasks the page read. */
 
 type View = "list" | "board";
 type FilterKey = "mine" | "week" | "high";
@@ -63,11 +70,12 @@ function passes(t: Task, f: Filters, userName: string, skip?: FilterKey): boolea
 /* ---------------- list ---------------- */
 
 function MeetingLink({ task }: { task: Task }) {
+  if (!task.meetingId) return <span className="text-[12.5px] text-ink-3">Added by hand</span>;
   return (
     <Link
       href={`/meetings/${task.meetingId}`}
       onClick={(e) => e.stopPropagation()}
-      className="inline-flex w-fit max-w-full items-center gap-1.5 rounded-ctl text-[13px] text-ink-3 underline-offset-4 transition-colors hover:text-ink hover:underline"
+      className="inline-flex w-fit max-w-full items-center gap-1.5 rounded-ctl text-[12.5px] text-ink-3 underline-offset-4 transition-colors hover:text-ink hover:underline"
     >
       <VideoCamera size={14} className="shrink-0" aria-hidden />
       <span className="truncate">{task.meetingTitle}</span>
@@ -153,7 +161,7 @@ function ListView({
         if (items.length === 0) return null;
         const isCollapsed = !!collapsed[g.key];
         return (
-          <Card key={g.key} className={`p-0 ${g.key === "done" || openGroups === 1 ? "xl:col-span-2" : ""}`} data-group={g.key}>
+          <Card key={g.key} flush className={g.key === "done" || openGroups === 1 ? "xl:col-span-2" : ""} data-group={g.key}>
             <button
               type="button"
               aria-expanded={!isCollapsed}
@@ -176,12 +184,10 @@ function ListView({
               >
                 {g.label}
               </span>
-              <span className="rounded-full bg-bg-2 px-2 py-px text-[12.5px] font-semibold text-ink-2">
-                {items.length}
-              </span>
-              {g.hint ? <span className="ml-auto text-[13px] text-ink-3">{g.hint}</span> : null}
+              <Count n={items.length} label={items.length === 1 ? "task" : "tasks"} />
+              {g.hint ? <span className="ml-auto text-[12.5px] text-ink-3">{g.hint}</span> : null}
               {g.key === "done" ? (
-                <span className="ml-auto text-[13px] font-semibold text-ink-3">{isCollapsed ? "Show" : "Hide"}</span>
+                <span className="ml-auto text-[12.5px] font-semibold text-ink-3">{isCollapsed ? "Show" : "Hide"}</span>
               ) : null}
             </button>
             <ul id={`task-group-${g.key}`} hidden={isCollapsed} className="divide-y divide-line">
@@ -219,7 +225,7 @@ function BoardCard({
     <article
       onClick={() => onOpen(task.id)}
       className={`flex cursor-pointer flex-col gap-3 rounded-ctl border bg-surface p-3.5 shadow-warm-1 transition-[border-color,box-shadow] duration-150 ${
-        selected ? "border-signal shadow-[0_0_0_4px_var(--signal-soft)]" : "border-line hover:border-line-2 hover:shadow-warm-2"
+        selected ? "border-signal shadow-[0_0_0_4px_var(--signal-soft)]" : "border-line hover:border-line-2"
       }`}
     >
       <div className="flex items-start gap-3">
@@ -233,7 +239,7 @@ function BoardCard({
             onOpen(task.id);
           }}
           aria-haspopup="dialog"
-          className={`min-w-0 flex-1 rounded-ctl text-left text-[14.5px] font-semibold leading-snug transition-colors hover:text-signal-ink ${
+          className={`min-w-0 flex-1 rounded-ctl text-left text-[14px] font-semibold leading-snug transition-colors hover:text-signal-ink ${
             task.done ? "text-ink-3 line-through decoration-ink-4" : "text-ink"
           }`}
         >
@@ -280,16 +286,14 @@ function BoardView({
         >
           <div className="flex items-center gap-2 px-1.5 pt-1">
             <h2 className="text-[14px] font-semibold text-ink">{c.label}</h2>
-            <span className="rounded-full bg-surface px-2 py-px text-[12.5px] font-semibold text-ink-2">
-              {c.items.length}
-            </span>
+            <Count n={c.items.length} label={c.items.length === 1 ? "task" : "tasks"} tone="outline" />
           </div>
           {c.items.length > 0 ? (
             c.items.map((t) => (
               <BoardCard key={t.id} task={t} selected={selectedId === t.id} onOpen={onOpen} onToggle={onToggle} />
             ))
           ) : (
-            <p className="grid min-h-[80px] place-items-center rounded-ctl border border-dashed border-line-2 p-3 text-center text-[13.5px] text-ink-3">
+            <p className="grid min-h-[80px] place-items-center rounded-ctl border border-dashed border-line-2 p-3 text-center text-[14px] text-ink-3">
               {c.empty}
             </p>
           )}
@@ -338,24 +342,44 @@ export function TasksView({ actions }: { actions: TaskItem[] }) {
           .filter(Boolean)
           .join(", ") + ".";
 
-  const [notice, setNotice] = useState<string | null>(null);
+  // Undo for a completion still inside its grace period, by task id.
+  const pendingUndo = useRef<Record<string, () => void>>({});
   const toggleDone = useCallback(
     (id: string) => {
       if (doneMap[id]) {
-        setNotice("Completed tasks stay completed.");
+        const undo = pendingUndo.current[id];
+        if (undo) undo();
+        else notifyInfo("Completed tasks stay completed", { description: "Done is final once the grace period has passed." });
         return;
       }
-      setNotice(null);
-      setDoneMap((m) => ({ ...m, [id]: true }));
-      void markTaskDone(id).then((result) => {
-        if (!result.ok) {
+      const { undo } = graceful({
+        message: "Task completed",
+        apply: () => setDoneMap((m) => ({ ...m, [id]: true })),
+        revert: () => {
+          delete pendingUndo.current[id];
           setDoneMap((m) => ({ ...m, [id]: false }));
-          setNotice(result.message);
-        }
+        },
+        commit: () => {
+          delete pendingUndo.current[id];
+          return markTaskDone(id);
+        },
       });
+      pendingUndo.current[id] = undo;
     },
     [doneMap],
   );
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
+  const [creating, setCreating] = useState(false);
+  useEffect(() => {
+    if (params?.get("new") === "1") setCreating(true);
+  }, [params]);
+  const closeCreate = useCallback(() => {
+    setCreating(false);
+    if (params?.get("new")) router.replace(pathname ?? "/work/tasks", { scroll: false });
+  }, [params, pathname, router]);
   const filterDefs = tasks.some((t) => t.priority)
     ? FILTER_DEFS
     : FILTER_DEFS.filter((f) => f.key !== "high");
@@ -378,58 +402,52 @@ export function TasksView({ actions }: { actions: TaskItem[] }) {
   };
 
   return (
-    <div
-      data-panel={panelOpen ? "open" : "closed"}
-      className={`group/page mx-auto max-w-[1240px] ${
-        panelOpen ? "min-[1560px]:pr-[460px]" : ""
-      }`}
-    >
-      <PageHead
-        title="Tasks"
+    <div data-panel={panelOpen ? "open" : "closed"} className={`group/page ${panelOpen ? "min-[1560px]:pr-[460px]" : ""}`}>
+      <SectionBar
         context={summary}
         liveContext
         action={
-          tasks.length > 0 ? (
-            <div
-              role="tablist"
-              aria-label="Task view"
-              onKeyDown={onTabKey}
-              className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-bg-2 p-1"
-            >
-              {([
-                ["list", "List", ListBullets],
-                ["board", "Board", Kanban],
-              ] as const).map(([key, label, Icon]) => (
-                <button
-                  key={key}
-                  ref={(el) => {
-                    tabRefs.current[key] = el;
-                  }}
-                  type="button"
-                  role="tab"
-                  id={`tasks-tab-${key}`}
-                  aria-selected={view === key}
-                  aria-controls="tasks-panel"
-                  tabIndex={view === key ? 0 : -1}
-                  onClick={() => setView(key)}
-                  className={`inline-flex h-9 items-center gap-2 rounded-full px-4 text-[13.5px] font-semibold transition-colors duration-150 focus-visible:!rounded-full ${
-                    view === key ? "bg-surface text-ink shadow-warm-1" : "text-ink-3 hover:text-ink active:bg-bg-3"
-                  }`}
-                >
-                  <Icon size={16} aria-hidden />
-                  {label}
-                </button>
-              ))}
-            </div>
-          ) : null
+          <>
+            {tasks.length > 0 ? (
+              <div
+                role="tablist"
+                aria-label="Task view"
+                onKeyDown={onTabKey}
+                className="inline-flex shrink-0 items-center gap-0.5 rounded-ctl bg-bg-2 p-1"
+              >
+                {([
+                  ["list", "List", ListBullets],
+                  ["board", "Board", Kanban],
+                ] as const).map(([key, label, Icon]) => (
+                  <button
+                    key={key}
+                    ref={(el) => {
+                      tabRefs.current[key] = el;
+                    }}
+                    type="button"
+                    role="tab"
+                    id={`tasks-tab-${key}`}
+                    aria-selected={view === key}
+                    aria-controls="tasks-panel"
+                    tabIndex={view === key ? 0 : -1}
+                    onClick={() => setView(key)}
+                    className={`inline-flex h-9 items-center gap-2 rounded-ctl px-3.5 text-[14px] font-semibold transition-colors duration-150 ${
+                      view === key ? "bg-surface text-ink" : "text-ink-3 hover:text-ink active:bg-bg-3"
+                    }`}
+                  >
+                    <Icon size={16} aria-hidden />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            <Button onClick={() => setCreating(true)} aria-haspopup="dialog">
+              <Plus size={16} weight="bold" aria-hidden />
+              New task
+            </Button>
+          </>
         }
-      >
-        {notice ? (
-          <p role="status" className="mt-1.5 text-[14px] font-medium text-priority-high">
-            {notice}
-          </p>
-        ) : null}
-      </PageHead>
+      />
 
       {tasks.length > 0 && (
         <div role="group" aria-label="Filter tasks" className="mb-5 flex flex-wrap items-center gap-2">
@@ -444,7 +462,7 @@ export function TasksView({ actions }: { actions: TaskItem[] }) {
                 type="button"
                 aria-pressed={on}
                 onClick={() => setFilters((f) => ({ ...f, [key]: !f[key] }))}
-                className={`inline-flex h-10 items-center gap-2 rounded-full border px-3.5 text-[13.5px] font-semibold transition-[background-color,color,border-color,transform] duration-150 motion-safe:active:scale-[0.97] ${
+                className={`inline-flex h-10 items-center gap-2 rounded-full border px-3.5 text-[14px] font-semibold transition-[background-color,color,border-color,transform] duration-150 motion-safe:active:scale-[0.97] ${
                   on
                     ? "border-signal bg-signal-soft text-signal-ink"
                     : "border-line-2 text-ink-2 hover:bg-surface hover:text-ink"
@@ -479,12 +497,24 @@ export function TasksView({ actions }: { actions: TaskItem[] }) {
       >
         {tasks.length === 0 ? (
           <EmptyState
+            art="tasks"
             title="Nothing assigned yet"
-            description="When an action item is captured in a meeting and someone confirms it, it lands here with its owner and due date."
-            action={<LinkButton href="/meetings">Open meetings</LinkButton>}
+            description="When an action item is captured in a meeting and someone confirms it, it lands here with its owner and due date. You can also add one by hand."
+            action={
+              <>
+                <Button onClick={() => setCreating(true)} aria-haspopup="dialog">
+                  <Plus size={16} weight="bold" aria-hidden />
+                  New task
+                </Button>
+                <LinkButton href="/meetings" variant="outline">
+                  Open meetings
+                </LinkButton>
+              </>
+            }
           />
         ) : visible.length === 0 ? (
           <EmptyState
+            art="search"
             title="No tasks match these filters"
             description="Remove a filter to see the rest of your list."
             action={
@@ -521,6 +551,8 @@ export function TasksView({ actions }: { actions: TaskItem[] }) {
       >
         {selected ? <TaskDetailBody task={selected} isMine={selected.assignee === user.name} /> : null}
       </SidePanel>
+
+      <NewTaskDialog open={creating} onClose={closeCreate} onCreated={() => router.refresh()} />
     </div>
   );
 }

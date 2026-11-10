@@ -29,7 +29,7 @@ export function AgentWorkspace({
   const firstName = personName.trim().split(/\s+/)[0] || "you";
 
   return (
-    <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
+    <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="min-w-0 space-y-6">
         <AgentPortrait
           name={agentDisplayName(persona.name, personName)}
@@ -38,9 +38,9 @@ export function AgentWorkspace({
           ownerFirstName={firstName}
           instructions={persona.instructions.trim() || null}
         />
-        <div className="space-y-6 xl:hidden">{aside}</div>
+        <div className="space-y-5 xl:hidden">{aside}</div>
         <section aria-labelledby="make-h">
-          <h2 id="make-h" className="display text-[clamp(1.5rem,2.6vw,1.85rem)] text-ink">
+          <h2 id="make-h" className="display text-[22px] text-ink">
             Make it yours
           </h2>
           <p className="mt-1 max-w-[68ch] text-[15px] text-ink-3">
@@ -51,7 +51,7 @@ export function AgentWorkspace({
           </div>
         </section>
       </div>
-      <aside aria-label="What your agent knows and kept" className="hidden space-y-6 xl:sticky xl:top-4 xl:block">
+      <aside aria-label="What your agent knows and kept" className="hidden space-y-5 xl:sticky xl:top-2 xl:block">
         {aside}
       </aside>
     </div>

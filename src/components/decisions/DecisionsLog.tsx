@@ -11,11 +11,13 @@ import {
   VideoCamera,
   X,
 } from "@phosphor-icons/react";
-import { Badge } from "@/components/ui/Badge";
+import { Chip } from "@/components/ui/Chip";
+import { cardClass } from "@/components/ui/Card";
+import { fieldClass } from "@/components/ui/Form";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { PageHead } from "@/components/app/PageHead";
+import { Page, PageHead } from "@/components/ui/Page";
 import { SidePanel } from "@/components/tasks/SidePanel";
 import type { DecisionView as Decision } from "@/lib/api/decisions";
 
@@ -49,15 +51,11 @@ const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
 
 function StatusChip({ status }: { status: Decision["status"] }) {
   return status === "superseded" ? (
-    <Badge tone="default">
-      <ClockCounterClockwise size={14} weight="bold" aria-hidden />
-      Replaced
-    </Badge>
+    <Chip icon={<ClockCounterClockwise size={14} weight="bold" />}>Replaced</Chip>
   ) : (
-    <Badge tone="success">
-      <CheckCircle size={14} weight="fill" aria-hidden />
+    <Chip tone="ok" icon={<CheckCircle size={14} weight="fill" />}>
       In force
-    </Badge>
+    </Chip>
   );
 }
 
@@ -66,11 +64,10 @@ function StatusChip({ status }: { status: Decision["status"] }) {
 function LineageHop({ label, target, byId }: { label: string; target: string; byId: Map<string, Decision> }) {
   const other = byId.get(target);
   return (
-    <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full bg-bg-2 px-2.5 py-[3px] text-[12.5px]">
-      <ArrowsClockwise size={13} className="shrink-0 text-ink-3" aria-hidden />
-      <span className="shrink-0 font-semibold text-ink-2">{label}</span>
-      {other ? <span className="truncate text-ink-3">{other.content}</span> : null}
-    </span>
+    <Chip icon={<ArrowsClockwise size={13} className="text-ink-3" />} className="min-w-0">
+      <span className="shrink-0">{label}</span>
+      {other ? <span className="truncate font-normal text-ink-3">{other.content}</span> : null}
+    </Chip>
   );
 }
 
@@ -90,13 +87,13 @@ function DecisionCard({
   return (
     <article
       onClick={() => onOpen(decision.id)}
-      className={`flex cursor-pointer flex-col gap-3 rounded-card border bg-surface p-4 shadow-warm-1 transition-[border-color,box-shadow] duration-150 sm:px-6 sm:py-5 ${
-        selected
-          ? "border-signal shadow-[0_0_0_4px_var(--signal-soft)]"
-          : "border-line hover:border-line-2 hover:shadow-warm-2"
-      }`}
+      className={cardClass({
+        className: `flex cursor-pointer flex-col gap-3 transition-[border-color,box-shadow] duration-150 ${
+          selected ? "!border-signal shadow-[0_0_0_4px_var(--signal-soft)]" : "hover:border-line-2"
+        }`,
+      })}
     >
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px] text-ink-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[12.5px] text-ink-3">
         <StatusChip status={decision.status} />
         <Link
           href={`/meetings/${decision.meetingId}`}
@@ -111,7 +108,7 @@ function DecisionCard({
         </time>
       </div>
 
-      <h3 className="text-[17.5px] leading-snug tracking-[-0.01em]">
+      <h3 className="text-[17px] leading-snug">
         <button
           type="button"
           onClick={(e) => {
@@ -125,7 +122,7 @@ function DecisionCard({
         </button>
       </h3>
       {decision.rationale ? (
-        <p className="line-clamp-3 max-w-[64ch] text-[14.5px] leading-relaxed text-ink-2">{decision.rationale}</p>
+        <p className="line-clamp-3 max-w-[64ch] text-[14px] leading-relaxed text-ink-2">{decision.rationale}</p>
       ) : null}
 
       {hasHops ? (
@@ -171,7 +168,7 @@ function Lineage({
   }
 
   if (steps.length === 1) {
-    return <p className="mt-2 text-[14.5px] text-ink-3">Nothing came before this decision and nothing has replaced it.</p>;
+    return <p className="mt-2 text-[14px] text-ink-3">Nothing came before this decision and nothing has replaced it.</p>;
   }
 
   return (
@@ -181,7 +178,7 @@ function Lineage({
         const body = (
           <>
             <span className="block text-[12.5px] font-semibold text-ink-3">{s.label}</span>
-            <span className={`block text-[14.5px] leading-snug ${s.self ? "font-semibold text-ink" : "text-ink-2"}`}>
+            <span className={`block text-[14px] leading-snug ${s.self ? "font-semibold text-ink" : "text-ink-2"}`}>
               {s.text}
             </span>
           </>
@@ -229,7 +226,7 @@ function DetailBody({
 }) {
   return (
     <div className="flex flex-col gap-7">
-      <h2 className="display text-[26px] leading-tight text-ink-display">{decision.content}</h2>
+      <h2 className="display text-[22px] leading-tight text-ink-display">{decision.content}</h2>
 
       <dl className="grid grid-cols-1 gap-x-5 gap-y-5 min-[420px]:grid-cols-2">
         <div>
@@ -265,7 +262,7 @@ function DetailBody({
             <VideoCamera size={18} aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[14.5px] font-semibold text-ink">{decision.meetingTitle}</span>
+            <span className="block truncate text-[14px] font-semibold text-ink">{decision.meetingTitle}</span>
             <span className="block text-[12.5px] text-ink-3">Open the meeting</span>
           </span>
           <CaretRight size={16} className="shrink-0 text-ink-3 group-hover:text-ink" aria-hidden />
@@ -352,22 +349,18 @@ export function DecisionsLog({ decisions }: { decisions: Decision[] }) {
   const closePanel = useCallback(() => setPanelOpen(false), []);
 
   return (
-    <div className={`mx-auto max-w-[1240px] ${panelOpen ? "min-[1560px]:pr-[460px]" : ""}`}>
+    <Page className={panelOpen ? "min-[1560px]:pr-[460px]" : ""}>
       <PageHead
         title="Decisions"
         context="What your meetings decided. Every entry was confirmed by a person; when one is replaced, both stay on the record."
         action={
           sorted.length > 0 ? (
             <div className="flex flex-wrap items-center gap-2" aria-label="Summary">
-              <Badge tone="success">
-                <CheckCircle size={14} weight="fill" aria-hidden />
+              <Chip tone="ok" icon={<CheckCircle size={14} weight="fill" />}>
                 {inForce} in force
-              </Badge>
+              </Chip>
               {sorted.length - inForce > 0 ? (
-                <Badge>
-                  <ClockCounterClockwise size={14} weight="bold" aria-hidden />
-                  {sorted.length - inForce} replaced
-                </Badge>
+                <Chip icon={<ClockCounterClockwise size={14} weight="bold" />}>{sorted.length - inForce} replaced</Chip>
               ) : null}
             </div>
           ) : null
@@ -376,6 +369,7 @@ export function DecisionsLog({ decisions }: { decisions: Decision[] }) {
 
       {sorted.length === 0 ? (
         <EmptyState
+          art="decisions"
           title="No decisions yet"
           description="When someone confirms a decision in one of your meetings, it goes on the record here with the meeting it came from."
           action={<LinkButton href="/meetings">Open meetings</LinkButton>}
@@ -397,13 +391,13 @@ export function DecisionsLog({ decisions }: { decisions: Decision[] }) {
                   placeholder="Search decisions and meetings"
                   aria-label="Search decisions"
                   autoComplete="off"
-                  className="h-11 w-full rounded-ctl border border-line-2 bg-surface pl-10 pr-3 text-[15px] text-ink placeholder:text-ink-3 transition-colors hover:border-ink-4 focus-visible:border-signal"
+                  className={`${fieldClass} pl-10`}
                 />
               </div>
               <div
                 role="group"
                 aria-label="Status"
-                className="inline-flex h-11 shrink-0 items-center gap-0.5 rounded-full bg-bg-2 p-1 max-sm:grid max-sm:w-full max-sm:grid-cols-3"
+                className="inline-flex h-11 shrink-0 items-center gap-0.5 rounded-ctl bg-bg-2 p-1 max-sm:grid max-sm:w-full max-sm:grid-cols-3"
               >
                 {STATUS_FILTERS.map(({ key, label }) => {
                   const count = sorted.filter((d) => matches(d, true) && (key === "all" || d.status === key)).length;
@@ -414,8 +408,8 @@ export function DecisionsLog({ decisions }: { decisions: Decision[] }) {
                       type="button"
                       aria-pressed={on}
                       onClick={() => setStatus(key)}
-                      className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-full px-3.5 text-[13.5px] font-semibold transition-colors duration-150 focus-visible:!rounded-full ${
-                        on ? "bg-surface text-ink shadow-warm-1" : "text-ink-3 hover:text-ink active:bg-bg-3"
+                      className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-ctl px-3.5 text-[14px] font-semibold transition-colors duration-150 ${
+                        on ? "bg-surface text-ink" : "text-ink-3 hover:text-ink active:bg-bg-3"
                       }`}
                     >
                       {label}
@@ -443,7 +437,7 @@ export function DecisionsLog({ decisions }: { decisions: Decision[] }) {
                   Clear filters
                 </Button>
               ) : null}
-              <p className="text-[13.5px] text-ink-3 max-sm:w-full sm:ml-auto" aria-live="polite">
+              <p className="text-[14px] text-ink-3 max-sm:w-full sm:ml-auto" aria-live="polite">
                 {visible.length === sorted.length
                   ? `${sorted.length} ${sorted.length === 1 ? "decision" : "decisions"}`
                   : `${visible.length} of ${sorted.length} decisions`}
@@ -453,6 +447,7 @@ export function DecisionsLog({ decisions }: { decisions: Decision[] }) {
 
           {visible.length === 0 ? (
             <EmptyState
+              art="search"
               className="mt-6"
               title="No decisions match"
               description="Try a different word, or remove a filter to see the full log."
@@ -467,10 +462,10 @@ export function DecisionsLog({ decisions }: { decisions: Decision[] }) {
               {months.map((m) => (
                 <section key={m.key} aria-labelledby={`month-${m.key}`}>
                   <div className="sticky top-0 z-10 -mx-1 flex items-baseline gap-3 bg-bg px-1 pb-2.5 pt-5">
-                    <h2 id={`month-${m.key}`} className="display text-[22px] text-ink-display sm:text-[24px]">
+                    <h2 id={`month-${m.key}`} className="display text-[22px] text-ink-display">
                       {m.label}
                     </h2>
-                    <span className="text-[13.5px] text-ink-3">
+                    <span className="text-[14px] text-ink-3">
                       {m.items.length} {m.items.length === 1 ? "decision" : "decisions"}
                     </span>
                   </div>
@@ -501,6 +496,6 @@ export function DecisionsLog({ decisions }: { decisions: Decision[] }) {
       >
         {selected ? <DetailBody decision={selected} byId={byId} onOpen={openDecision} /> : null}
       </SidePanel>
-    </div>
+    </Page>
   );
 }

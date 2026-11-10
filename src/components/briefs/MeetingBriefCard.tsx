@@ -1,6 +1,7 @@
-import Link from "next/link";
-import { ArrowRight, CheckSquare, ListChecks, Robot } from "@phosphor-icons/react/dist/ssr";
-import { CardHead, cardClass } from "@/components/app/dashboard/parts";
+import { CheckSquare, ListChecks, Robot } from "@phosphor-icons/react/dist/ssr";
+import { Card, CardHead } from "@/components/ui/Card";
+import { Chip } from "@/components/ui/Chip";
+import { LinkButton } from "@/components/ui/Button";
 import { listMeetings, toCallMeeting, type CallMeeting } from "@/lib/api/meetings";
 import { fetchMeetingBrief } from "@/lib/api/meeting-brain";
 import type { MeetingBrief } from "@/lib/api/meeting-brain-types";
@@ -54,18 +55,14 @@ export async function MeetingBriefCard({ className = "" }: { className?: string 
   const href = `/meetings/${next.id}#brief`;
 
   return (
-    <section aria-labelledby="brief-card-title" className={`${cardClass} ${className}`}>
+    <Card as="section" flush aria-labelledby="brief-card-title" className={className}>
       <CardHead
         id="brief-card-title"
         title="Your brief"
         caption={`${next.title}, ${time.format(start)}`}
-        right={
-          <span className="inline-flex items-center rounded-full bg-signal-soft px-2.5 py-[3px] text-[12.5px] font-semibold text-signal-ink">
-            {startsIn(start, now)}
-          </span>
-        }
+        right={<Chip tone="accent">{startsIn(start, now)}</Chip>}
       />
-      <div className="border-t border-line px-[18px] pb-[18px] pt-3.5 sm:px-[22px]">
+      <div className="border-t border-line px-4 pb-[18px] pt-3.5 sm:px-[22px]">
         {brief.ok ? (
           <BriefPreview b={brief.data} nameOf={(id) => names.get(id) ?? "A teammate"} />
         ) : (
@@ -75,15 +72,11 @@ export async function MeetingBriefCard({ className = "" }: { className?: string 
               : "There is no brief for you on this one."}
           </p>
         )}
-        <Link
-          href={href}
-          className="group/link mt-3 inline-flex min-h-[40px] items-center gap-1.5 rounded-ctl bg-pill px-4 text-[14px] font-semibold text-pill-on transition-colors duration-150 hover:bg-pill-2"
-        >
+        <LinkButton href={href} size="sm" className="mt-3">
           Read your brief
-          <ArrowRight size={14} weight="bold" aria-hidden />
-        </Link>
+        </LinkButton>
       </div>
-    </section>
+    </Card>
   );
 }
 
@@ -115,7 +108,7 @@ function BriefPreview({ b, nameOf }: { b: MeetingBrief; nameOf: (id: string) => 
                   <span className="sr-only">Your open action: </span>
                   {a.title}
                 </span>
-                <span className="text-[13px] text-ink-3">
+                <span className="text-[12.5px] text-ink-3">
                   <LatestStatus status={a.latest_status} />
                 </span>
               </span>
@@ -124,7 +117,7 @@ function BriefPreview({ b, nameOf }: { b: MeetingBrief; nameOf: (id: string) => 
         </ul>
       ) : null}
       {b.proxies.length > 0 ? (
-        <p className="mt-2.5 flex items-center gap-2 text-[13.5px] text-ink-3">
+        <p className="mt-2.5 flex items-center gap-2 text-[14px] text-ink-3">
           <Robot size={15} aria-hidden className="shrink-0" />
           {b.proxies.length === 1
             ? `${nameOf(b.proxies[0].user_id)} is sending their agent.`

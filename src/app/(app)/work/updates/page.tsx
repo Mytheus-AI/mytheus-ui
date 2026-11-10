@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { StatusRequestsView } from "@/components/status/StatusRequestsView";
 import { fetchMyStatusRequests } from "@/lib/api/status-requests";
 
-export const metadata: Metadata = { title: "Status requests | Mytheus" };
+export const metadata: Metadata = { title: "Updates I owe | Mytheus" };
 
-/* Status requests (ADR-0039 B7, Part E): the caller's pending requests from
+/* My work, Updates I owe (status requests, ADR-0039 B7, Part E): the caller's pending requests from
    `GET /api/v1/status-requests?state=pending`, answered inline, with answered ones below. A failed
    pending read is thrown to `error.tsx`; a failed answered read only quiets that list. */
 export default async function StatusRequestsPage() {
