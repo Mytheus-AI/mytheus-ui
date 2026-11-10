@@ -13,11 +13,11 @@ export type UsageOut = BillingSchemas["schemas"]["UsageOut"];
 
 /**
  * The real usage, or why there is none:
- * - `unconfigured`: no `API_GATEWAY_URL` in this environment, so the page shows sample figures;
+ * - `unconfigured`: no `API_GATEWAY_URL` in this environment, so the page says usage is unavailable;
  * - `forbidden`: the server says this user is not an admin (the page says so, it does not guess);
  * - `unavailable`: the gateway answered but has no `/usage` (404) or billing is down (502/503),
  *   e.g. a deployed backend older than Plan 7. The page says so instead of crashing.
- * Any other server answer is thrown, so a real failure is not dressed up as sample data.
+ * Any other server answer is thrown. No path returns sample figures.
  */
 export async function fetchUsage(): Promise<
   | { kind: "live"; usage: UsageOut }

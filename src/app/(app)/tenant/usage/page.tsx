@@ -1,24 +1,20 @@
 import type { Metadata } from "next";
-import { CaretDown, CheckCircle, Table, Warning, WarningOctagon } from "@phosphor-icons/react/dist/ssr";
+import { CheckCircle, Warning, WarningOctagon } from "@phosphor-icons/react/dist/ssr";
 import { LinkButton } from "@/components/ui/Button";
 import { Note, PageHeader, SectionCard } from "@/components/settings/primitives";
-import { thClass } from "@/components/admin/StatCard";
-import { resolveOrgContext } from "@/lib/api/org-context";
 import { fetchUsage, type UsageOut } from "@/lib/api/usage";
-import { mockUsage } from "@/lib/mock/data";
 
 export const metadata: Metadata = { title: "Usage and budget | Mytheus" };
 
 /* Usage and agent budget (Plan 7-9 sections 3.1 step 8 and 3.4): consumption against the
    plan's included quota per dimension, the agent-token split by model tier, and the 80% / 95%
    alert state. Reads `GET /usage` (`usage_aggregates` + the live `agent_budgets` row, RBAC
-   admin). Sample figures appear ONLY when this environment has no API gateway configured; a
-   non-admin is told so, and any other server error is a real error, never dressed as samples.
+   admin). A non-admin is told so; no gateway, a missing route or a billing outage says usage
+   is unavailable; any other server error is a real error. No figure here is ever a sample.
 
    Chart choices: each dimension is one meter (a single magnitude against a limit), so one
-   hue, the value printed beside it, and the 80/95% thresholds as ticks. The tier split and
-   the daily burn are single-series bars in the same hue; identity comes from the row label,
-   never colour. Status (warning / blocked) is the frozen priority language, always with an
+   hue, the value printed beside it, and the 80/95% thresholds as ticks. The tier split is a
+   single-series bar in the same hue; identity comes from the row label, never colour. Status (warning / blocked) is the frozen priority language, always with an
    icon and words. */
 
 const WARN = 0.8;
@@ -26,7 +22,6 @@ const CRITICAL = 0.95;
 
 const nf = (v: number) => (Number.isInteger(v) ? v.toLocaleString("en-US") : v.toLocaleString("en-US", { maximumFractionDigits: 1 }));
 const pct = (v: number) => `${Math.round(v * 100)}%`;
-const day = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 const compact = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
 
 type Level = "ok" | "warn" | "critical" | "over";
@@ -35,13 +30,9 @@ const levelOf = (ratio: number): Level => (ratio >= 1 ? "over" : ratio >= CRITIC
 type Dimension = { key: string; label: string; unit: string; used: number; included: number | null };
 type Tier = { tier: string; purpose: string; tokens: number };
 type View = {
-  sample: boolean;
   periodLabel: string;
   dimensions: Dimension[];
   tiers: Tier[];
-  /** daily burn in millions; only the sample has it (`GET /usage` serves period totals) */
-  daily: number[] | null;
-  periodStart: Date;
   tokenRatio: number;
   state: string;
   alert80: boolean;
@@ -60,7 +51,6 @@ function liveView(u: UsageOut): View {
   const [y, m] = u.period.split("-").map(Number);
   const start = new Date(Date.UTC(y, m - 1, 1));
   return {
-    sample: false,
     periodLabel: new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric", timeZone: "UTC" }).format(start),
     dimensions: [
       // The live budget, not the nightly rollup: it moves with every metered call.
@@ -80,30 +70,10 @@ function liveView(u: UsageOut): View {
       purpose: TIER_PURPOSE[t],
       tokens: Number(breakdown[t] ?? 0),
     })),
-    daily: null,
-    periodStart: start,
     tokenRatio: u.budget.token_quota ? u.budget.tokens_consumed / u.budget.token_quota : 0,
     state: u.budget.state,
     alert80: u.budget.alert_80_sent,
     alert95: u.budget.alert_95_sent,
-  };
-}
-
-function sampleView(plan: string): View {
-  const tokens = mockUsage.dimensions.find((d) => d.key === "agent_tokens");
-  const ratio = tokens ? tokens.used / tokens.included : 0;
-  const start = new Date(`${mockUsage.period.start}T00:00:00Z`);
-  return {
-    sample: true,
-    periodLabel: `${day.format(start)} to ${day.format(new Date(`${mockUsage.period.end}T00:00:00Z`))}`,
-    dimensions: mockUsage.dimensions,
-    tiers: mockUsage.tiers.map((t) => ({ tier: t.tier, purpose: t.purpose, tokens: t.tokensM * 1_000_000 })),
-    daily: mockUsage.daily,
-    periodStart: start,
-    tokenRatio: ratio,
-    state: plan === "starter" && ratio >= 1 ? "blocked" : "ok",
-    alert80: ratio >= WARN,
-    alert95: ratio >= CRITICAL,
   };
 }
 
@@ -180,10 +150,9 @@ function Meter({ d }: { d: Dimension }) {
 }
 
 export default async function UsagePage() {
-  const ctx = await resolveOrgContext();
   const result = await fetchUsage();
 
-  if (result.kind === "forbidden" || result.kind === "unavailable") {
+  if (result.kind !== "live") {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader title="Usage and budget" description="Workspace usage against the plan." />
@@ -196,13 +165,10 @@ export default async function UsagePage() {
     );
   }
 
-  const v = result.kind === "live" ? liveView(result.usage) : sampleView(ctx?.org.plan ?? "starter");
+  const v = liveView(result.usage);
   const tokenLevel = levelOf(v.tokenRatio);
   const tierTotal = v.tiers.reduce((s, t) => s + t.tokens, 0);
   const tierMax = Math.max(1, ...v.tiers.map((t) => t.tokens));
-  const daily = v.daily;
-  const dailyMax = daily ? Math.max(...daily) : 1;
-  const dayLabel = (i: number) => day.format(new Date(v.periodStart.getTime() + i * 86_400_000));
 
   return (
     <div className="flex flex-col gap-6 motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
@@ -239,7 +205,7 @@ export default async function UsagePage() {
           title="Agent tokens by model"
           description={
             tierTotal
-              ? `${compact.format(tierTotal)} tokens this period${v.sample ? "" : ", as of the last nightly rollup"}.`
+              ? `${compact.format(tierTotal)} tokens this period, as of the last nightly rollup.`
               : "No agent tokens in the nightly rollup yet."
           }
         >
@@ -261,70 +227,15 @@ export default async function UsagePage() {
           ))}
         </SectionCard>
 
-        {daily ? (
-          <SectionCard title="Daily agent tokens" description="Millions of tokens per day. Weekends dip.">
-            <div className="px-4 pb-4 pt-6 sm:px-[22px]">
-              <div className="flex h-40 items-end gap-[2px]" role="img" aria-label="Daily agent token burn this period">
-                {daily.map((value, i) => (
-                  <div key={i} className="group relative flex h-full flex-1 items-end">
-                    <div
-                      className="w-full rounded-t-[4px] bg-signal transition-opacity group-hover:opacity-80"
-                      style={{ height: `${(value / dailyMax) * 100}%` }}
-                    />
-                    <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-line bg-surface px-2.5 py-1.5 text-[12px] text-ink-2 shadow-sm group-hover:block">
-                      <span className="font-semibold text-ink">{nf(value)}M</span> &middot; {dayLabel(i)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-2 flex justify-between border-t border-line pt-2 text-[11.5px] tabular-nums text-ink-3">
-                <span>{dayLabel(0)}</span>
-                <span>{dayLabel(daily.length - 1)}</span>
-              </div>
-            </div>
-            {/* A native disclosure (works without JS, announced as expandable), styled as a row:
-                the default triangle marker is hidden and a caret rotates instead. The table scrolls
-                inside a fixed height so opening it does not push the page a screen down. */}
-            <details className="group border-t border-line">
-              <summary className="flex h-12 cursor-pointer list-none items-center gap-2.5 px-4 text-[13.5px] font-semibold text-ink-2 transition-colors hover:bg-bg hover:text-ink focus-visible:outline-offset-[-2px] sm:px-[22px] [&::-webkit-details-marker]:hidden">
-                <Table size={16} aria-hidden className="text-ink-3" />
-                <span className="flex-1">View as table</span>
-                <span className="text-[12px] font-medium text-ink-3 group-open:hidden">{daily.length} days</span>
-                <CaretDown size={14} weight="bold" aria-hidden className="text-ink-3 transition-transform duration-200 group-open:rotate-180" />
-              </summary>
-              <div className="max-h-[320px] overflow-y-auto border-t border-line">
-                <table className="w-full text-left text-[13px]">
-                  <thead className="sticky top-0 z-[1] bg-surface">
-                    <tr className="border-b border-line">
-                      <th scope="col" className={`${thClass} pl-4 sm:pl-[22px]`}>Day</th>
-                      <th scope="col" className={`${thClass} pr-4 text-right sm:pr-[22px]`}>Tokens</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-line">
-                    {daily.map((value, i) => (
-                      <tr key={i} className="transition-colors hover:bg-bg">
-                        <td className="py-2 pl-4 text-ink-2 sm:pl-[22px]">{dayLabel(i)}</td>
-                        <td className="py-2 pr-4 text-right font-medium tabular-nums text-ink sm:pr-[22px]">{nf(value)}M</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </details>
-          </SectionCard>
-        ) : (
-          <SectionCard title="Agent budget" description="What the agents check before every model call.">
-            <div className="px-4 py-5 text-[13.5px] text-ink-2 sm:px-[22px]">
-              <p>
-                State: <span className="font-semibold capitalize text-ink">{v.state}</span>
-              </p>
-              <p className="mt-1 text-ink-3">A day-by-day breakdown is not served yet. The token meter above moves with every metered call.</p>
-            </div>
-          </SectionCard>
-        )}
+        <SectionCard title="Agent budget" description="What the agents check before every model call.">
+          <div className="px-4 py-5 text-[13.5px] text-ink-2 sm:px-[22px]">
+            <p>
+              State: <span className="font-semibold capitalize text-ink">{v.state}</span>
+            </p>
+            <p className="mt-1 text-ink-3">A day-by-day breakdown is not served yet. The token meter above moves with every metered call.</p>
+          </div>
+        </SectionCard>
       </div>
-
-      {v.sample ? <Note>Sample figures. This environment has no API gateway configured.</Note> : null}
     </div>
   );
 }
