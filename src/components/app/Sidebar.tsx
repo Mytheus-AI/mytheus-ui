@@ -158,7 +158,7 @@ export function Sidebar({
           <span className="block truncate text-[13.5px] font-semibold leading-tight text-ink">
             {org.name}
           </span>
-          <span className="block text-[12px] capitalize text-ink-3">{org.plan} plan</span>
+          <span className="block text-[12px] text-ink-3">{user.role === "admin" ? "Workspace admin" : "Member"}</span>
         </span>
       </Link>
 
