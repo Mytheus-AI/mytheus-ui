@@ -1,0 +1,382 @@
+/* The room's Phase 0 polish (shared ledger, honest connection state, raise hand and reactions,
+   devices, End for everyone, Notes mode's rail, real consent, call loading and error). On top of
+   meeting.css and meeting-call.css, on the global tokens only: dark mode comes from the token set.
+   Scoped under `.mx-meet`, which only the meeting surfaces render. */
+
+/* ---------------------------------------------------------------- toasts: the icon matches the words */
+
+.mx-meet .toast.is-success svg { color: var(--ok); }
+.mx-meet .toast.is-info svg { color: var(--signal-line); }
+.mx-meet .toast.is-error { background: var(--priority-high); color: var(--danger-on); }
+.mx-meet .toast.is-error svg { color: var(--danger-on); }
+.mx-meet .toast-host + .toast-host { top: 64px; }
+
+/* ---------------------------------------------------------------- the shared candidate ledger */
+
+.mx-meet .nfy-act { display: inline-flex; align-items: center; gap: 6px; }
+.mx-meet .nfy-act.is-danger { background: var(--priority-high); border-color: var(--priority-high); color: var(--danger-on); }
+.mx-meet .nfy-act.is-danger:hover { background: color-mix(in srgb, var(--priority-high) 88%, var(--ink)); }
+.mx-meet .nfy-act:disabled { opacity: 0.55; cursor: not-allowed; }
+.mx-meet .nfy-card.is-locked { background: var(--surface-2); }
+.mx-meet .nfy-lock,
+.mx-meet .nfy-by {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: var(--ink-3);
+  font-size: 13px;
+  font-weight: 600;
+}
+.mx-meet .nfy-lock { color: var(--mx-medium-ink); }
+.mx-meet .nfy-lock-note { margin: 2px 0 8px; color: var(--ink-3); font-size: 12.5px; }
+.mx-meet .nfy-confirm {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: var(--mx-r-ctl);
+  background: var(--priority-high-soft);
+}
+.mx-meet .nfy-confirm p { margin-bottom: 8px; color: var(--ink); font-size: 13.5px; line-height: 1.45; }
+.mx-meet .nfy-card.is-settled { background: var(--surface-2); box-shadow: none; }
+.mx-meet .nfy-card.is-settled .nfy-kind { color: var(--ink); }
+.mx-meet .nfy-card.is-confirmed .nfy-kind svg { color: var(--ok); }
+.mx-meet .nfy-card.is-dismissed .nfy-text { color: var(--ink-3); }
+@media (prefers-reduced-motion: no-preference) {
+  .mx-meet .nfy-card.is-settled { animation: mx-in 0.25s var(--ease-out) both; }
+}
+
+/* ---------------------------------------------------------------- chat delivery */
+
+.mx-meet .cmsg-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  color: var(--ink-3);
+  font-size: 12.5px;
+}
+.mx-meet .cmsg.is-sent .cmsg-state { justify-content: flex-end; }
+.mx-meet .cmsg-state.is-failed,
+.mx-meet .cmsg-state.is-unsaved { color: var(--priority-high); }
+.mx-meet .cmsg-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+}
+.mx-meet .chat-body:focus-visible { outline-offset: -3px; }
+
+/* ---------------------------------------------------------------- people */
+
+.mx-meet .ppl .side-sec + .ppl-list { margin-bottom: 14px; }
+.mx-meet .ppl-row.has-hand { background: var(--priority-medium-soft); margin: 0 -10px; padding: 8px 10px; border-radius: var(--mx-r-ctl); }
+.mx-meet .ppl-hand {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--mx-medium-ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+.mx-meet .ppl-host { color: var(--ink-3); }
+.mx-meet .ppl-row.is-absent .ppl-name strong { color: var(--ink-2); }
+.mx-meet .mx-av.is-agent { background: var(--bg-2); padding: 3px; }
+
+/* ---------------------------------------------------------------- stage: hands and reactions */
+
+.mx-meet .thumb-hand {
+  position: absolute;
+  z-index: 2;
+  top: 8px;
+  left: 8px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--priority-medium);
+  color: var(--pill);
+}
+.mx-meet .cx-hand { color: var(--priority-medium); }
+
+.mx-meet .react-layer {
+  position: absolute;
+  z-index: 4;
+  left: 16px;
+  bottom: 84px;
+  width: 160px;
+  height: 60%;
+  pointer-events: none;
+  overflow: hidden;
+}
+.mx-meet .react-float {
+  position: absolute;
+  bottom: 0;
+  left: calc(var(--i, 0) * 28px);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 6px;
+  border-radius: 999px;
+  background: var(--pill);
+  color: var(--pill-on);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: var(--sh-2);
+  white-space: nowrap;
+}
+.mx-meet .react-emoji { font-size: 22px; line-height: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  .mx-meet .react-float { animation: room-react-rise 4s var(--ease-out) forwards; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mx-meet .react-float { animation: room-react-fade 4s linear forwards; }
+}
+@keyframes room-react-rise {
+  0% { opacity: 0; transform: translateY(0); }
+  10% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-220px); }
+}
+@keyframes room-react-fade {
+  0%, 85% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ---------------------------------------------------------------- control bar popovers */
+
+.mx-meet .ctl-pop { position: relative; display: inline-flex; }
+.mx-meet .ctl-pop-panel {
+  position: absolute;
+  z-index: 30;
+  bottom: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 220px;
+  padding: 12px;
+  border-radius: var(--mx-r-card);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  box-shadow: var(--sh-3);
+}
+.mx-meet .ctl-pop-panel[hidden] { display: none; }
+.mx-meet .ctl-pop-panel.is-leave,
+.mx-meet .ctl-pop-panel.is-more { left: auto; right: -8px; transform: none; }
+.mx-meet .ctl-pop-panel.is-devices,
+.mx-meet .ctl-pop-panel.is-more { width: min(320px, calc(100vw - 32px)); }
+.mx-meet .pop-title { margin-bottom: 8px; color: var(--ink); font-size: 14px; font-weight: 650; }
+.mx-meet .pop-problem { margin-top: 8px; color: var(--priority-high); font-size: 13px; }
+
+.mx-meet .react-row { display: flex; gap: 4px; }
+.mx-meet .react-btn {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  font-size: 22px;
+}
+.mx-meet .react-btn:hover { background: var(--bg-2); }
+
+.mx-meet .dev-menu { display: flex; flex-direction: column; gap: 10px; }
+.mx-meet .dev-row { display: flex; flex-direction: column; gap: 4px; color: var(--ink-2); font-size: 13px; font-weight: 600; }
+.mx-meet .dev-row select {
+  height: 38px;
+  padding: 0 10px;
+  border-radius: var(--mx-r-ctl);
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.mx-meet .more-menu { display: flex; flex-direction: column; gap: 12px; }
+.mx-meet .more-toggles { display: flex; flex-direction: column; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.mx-meet .more-switch { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+.mx-meet .more-switch input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--pill); flex-shrink: 0; }
+.mx-meet .more-switch span { display: flex; flex-direction: column; gap: 2px; }
+.mx-meet .more-switch strong { color: var(--ink); font-size: 14px; font-weight: 650; }
+.mx-meet .more-switch small { color: var(--ink-3); font-size: 12.5px; }
+.mx-meet .more-keys { display: grid; gap: 6px; }
+.mx-meet .more-keys div { display: flex; align-items: center; gap: 10px; color: var(--ink-2); font-size: 13px; }
+.mx-meet .more-keys kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 6px;
+  border: 1px solid var(--line-2);
+  background: var(--bg-2);
+  color: var(--ink);
+  font: 600 12px/1 var(--font-sans, inherit);
+}
+
+.mx-meet .leave-menu { display: flex; flex-direction: column; gap: 6px; min-width: 240px; }
+.mx-meet .leave-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: var(--mx-r-ctl);
+  color: var(--ink);
+  text-align: left;
+  text-decoration: none;
+}
+.mx-meet .leave-opt:hover { background: var(--bg-2); }
+.mx-meet .leave-opt strong { font-size: 14px; font-weight: 650; }
+.mx-meet .leave-opt small { color: var(--ink-3); font-size: 12.5px; }
+.mx-meet .leave-opt.is-danger strong { color: var(--priority-high); }
+
+/* ---------------------------------------------------------------- Notes mode: the rail */
+
+.mx-meet .cx-call .nv.has-rail { grid-template-columns: 280px minmax(0, 1fr) 340px; }
+.mx-meet .cx-call .nv-rail {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px;
+  border-radius: var(--mx-r-card);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.mx-meet .cx-call .nv-rail .agent.is-rail { display: flex; flex-direction: column; gap: 12px; }
+.mx-meet .cx-call .nv-decided { display: flex; flex-direction: column; gap: 10px; }
+.mx-meet .cx-call .nv-decided li { padding: 10px 12px; border-radius: var(--mx-r-ctl); background: var(--surface); border: 1px solid var(--line); }
+.mx-meet .cx-call .nv-decided p { color: var(--ink); font-size: 14.5px; line-height: 1.5; }
+.mx-meet .cx-call .nv-decided .nv-decided-why { color: var(--ink-2); font-size: 13.5px; }
+.mx-meet .cx-call .nv-decided small { display: block; margin-top: 4px; color: var(--ink-3); font-size: 12.5px; }
+@media (max-width: 1279px) {
+  .mx-meet .cx-call .nv.has-rail { grid-template-columns: 240px minmax(0, 1fr) 300px; }
+}
+@media (max-width: 1099px) {
+  .mx-meet .cx-call .nv.has-rail { grid-template-columns: minmax(0, 1fr) 300px; }
+  .mx-meet .cx-call .nv.has-rail .nv-side { display: none; }
+}
+@media (max-width: 959px) {
+  .mx-meet .cx-call .nv.has-rail { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .mx-meet .cx-call .nv.has-rail .nv-side { display: flex; }
+  .mx-meet .cx-call .nv-rail { order: 1; overflow: visible; }
+  .mx-meet .cx-call .nv-doc { order: 2; }
+}
+
+/* ---------------------------------------------------------------- consent, in the room and on the pre-join */
+
+.mx-meet .room-consent {
+  align-self: center;
+  width: min(720px, 100%);
+  margin: 0 auto;
+  padding: 24px;
+  border-radius: var(--mx-r-card);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--sh-2);
+}
+.mx-meet .room-consent h2 { color: var(--ink-display); font-family: var(--font-display); font-size: 22px; font-weight: 600; }
+.mx-meet .room-consent .pj-consent-head p { color: var(--ink-2); }
+.mx-meet .room-consent-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.mx-meet .pj-agreed {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 14px 0 4px;
+  padding: 10px 12px;
+  border-radius: var(--mx-r-ctl);
+  background: var(--ok-soft);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.mx-meet .pj-agreed svg { flex-shrink: 0; margin-top: 2px; color: var(--ok); }
+.mx-meet .pj-join-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  color: var(--priority-high);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.mx-meet .pj-join-error svg { flex-shrink: 0; margin-top: 2px; }
+
+/* ---------------------------------------------------------------- End for everyone */
+
+.room-dialog {
+  width: min(460px, calc(100vw - 32px));
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--mx-r-card, 18px);
+  background: var(--surface);
+  color: var(--ink-2);
+  box-shadow: var(--sh-3);
+}
+.room-dialog::backdrop { background: color-mix(in srgb, var(--ink) 40%, transparent); }
+.room-dialog h2 { margin-bottom: 8px; color: var(--ink-display, var(--ink)); font-size: 19px; font-weight: 650; }
+.room-dialog p { font-size: 14.5px; line-height: 1.5; }
+.room-dialog-acts { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+
+.mx-meet .room-ended { flex: 1; display: grid; place-items: center; padding: 24px 16px; }
+.mx-meet .room-ended-card {
+  width: min(560px, 100%);
+  padding: 28px;
+  border-radius: var(--mx-r-card);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--sh-2);
+}
+.mx-meet .room-ended-card h1 { margin-bottom: 8px; color: var(--ink-display); font-family: var(--font-display); font-size: 26px; font-weight: 600; }
+.mx-meet .room-ended-card p { color: var(--ink-2); font-size: 15px; line-height: 1.55; }
+.mx-meet .room-ended-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: var(--mx-r-ctl);
+  background: var(--pill);
+  color: var(--pill-on);
+  font-weight: 650;
+  text-decoration: none;
+}
+
+/* ---------------------------------------------------------------- call loading and error */
+
+.mx-meet .call-state { min-height: 100dvh; display: flex; }
+.mx-meet .call-state-main { flex: 1; display: grid; place-items: center; gap: 16px; padding: 24px 16px; }
+.mx-meet .call-state-stage {
+  width: min(960px, 100%);
+  aspect-ratio: 16 / 9;
+  display: grid;
+  place-items: center;
+  border-radius: var(--mx-r-hero, 24px);
+  background: var(--bg-2);
+}
+.mx-meet .call-state-pulse { width: 64px; height: 64px; border-radius: 50%; background: var(--surface-2); }
+@media (prefers-reduced-motion: no-preference) {
+  .mx-meet .call-state-pulse { animation: room-pulse 1.4s ease-in-out infinite; }
+}
+@keyframes room-pulse { 50% { opacity: 0.45; } }
+.mx-meet .call-state-text { color: var(--ink-2); font-size: 15px; font-weight: 600; }
+.mx-meet .call-state-card {
+  width: min(560px, 100%);
+  padding: 28px;
+  border-radius: var(--mx-r-card);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--sh-2);
+}
+.mx-meet .call-state-icon { color: var(--priority-high); margin-bottom: 10px; }
+.mx-meet .call-state-card h1 { margin-bottom: 8px; color: var(--ink-display); font-family: var(--font-display); font-size: 24px; font-weight: 600; }
+.mx-meet .call-state-card p { color: var(--ink-2); font-size: 15px; line-height: 1.55; }
+.mx-meet .call-state-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }

@@ -3,75 +3,55 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
-  BookmarkSimple,
   Bell,
   CheckSquare,
   GearSix,
-  Gauge,
-  LinkBreak,
   Lock,
   NotePencil,
-  PushPin,
+  PauseCircle,
   Question,
   Scales,
-  UserPlus,
   UsersThree,
-  Warning,
   Waveform,
   type Icon,
 } from "@phosphor-icons/react";
 import { useCallToast } from "@/components/call/CallToast";
-import type { AgentSidebarCard, SidebarPriority } from "@/lib/mock/data";
 import type { LiveNote } from "@/lib/realtime/notes";
-import type { Candidate } from "@/lib/realtime/candidates";
-import { CandidateCard, type CandidateOutcome } from "@/components/sidebar/CandidateCard";
+import type { Candidate, CandidateOutcome, Settlement } from "@/lib/realtime/candidates";
+import { CandidateCard, SettledCard, type CandidateRoomAck } from "@/components/sidebar/CandidateCard";
 import type { Suggestion } from "@/lib/realtime/suggestions";
 import { SuggestionCard, type SuggestionOutcome } from "@/components/sidebar/SuggestionCard";
 import type { ContextFill } from "@/lib/realtime/contextFills";
 import { ContextFillCard, type ContextFillOutcome } from "@/components/sidebar/ContextFillCard";
 import { alertsNeedingAttention, bannerAlerts, cardAlerts, type Alert } from "@/lib/realtime/alerts";
 import { AlertBanner, AlertCard, type AlertOutcome } from "@/components/sidebar/AlertCard";
+import { useRoomName } from "@/lib/realtime/room-names";
+import { formatOffset } from "@/lib/realtime/meeting-clock";
 
-/* The agent sidebar - the product's centerpiece - as the Agent tab of the room's panel: a conflict
-   banner pinned above everything, then Needs you, Context for you, My notes, Saved for later and
-   the Activity feed. Where an answer is sourced, the coral line runs from what the agent said to
-   where it came from (`.nfy-cites`): the line's one meaning in the product, carried forward.
+/* The agent sidebar - the product's centerpiece - as the Agent tab of the room's panel: alerts
+   pinned above everything, then the shared agenda, Needs you, Context for you, My notes, Saved for
+   later and the Activity feed. Where an answer is sourced, the coral line runs from what the agent
+   said to where it came from (`.nfy-cites`).
 
-   Decision and action candidates are live (Plan 7-9 section 3.8, ADR-0031): they arrive through
-   `candidates` and Confirm calls core-api, which is the only thing that commits them. The other
-   Suggested questions are live too (Plan 7-9 section 3.10, ADR-0034): private to this participant,
-   they arrive through `suggestions` / `savedSuggestions`, and Ask / Save / Dismiss call core-api;
-   a saved one sits in Saved for later and comes back in the next meeting. Context fills are live
-   too (Phase P10, plan 3.5): private to this participant, context another participant's agent or
-   their own knowledge base supplied, with citations; Dismiss calls core-api. They are information,
-   not a request, so they do not count toward Needs you. The other
-   card kinds come in through `items` (the 9-section shape of doc 20 §7), which nothing feeds yet,
-   so they render nothing rather than sample cards. The UX contract is unchanged:
-   Confirm visibly commits (and is the ONLY thing that commits), Dismiss removes, Save for later
-   collects into Saved for later. The conflict is always pinned to the top and cannot be dismissed.
-   Acknowledging a warning only moves it into the Activity feed; nothing is sent anywhere.
+   Every card is live:
+   - Decision and action candidates are the meeting's shared ledger (ADR-0031; polish program
+     Phase 0). Confirm calls core-api, which is the only thing that commits; then the room is told,
+     so everyone's card settles ("Confirmed by Maya"). Edit locks the card for the others. Hide for
+     me is personal; the host can dismiss for everyone.
+   - Suggested questions (ADR-0034) and context fills (P10) are private to you.
+   - ProactiveAgent alerts (P11) are private to you; a priority-1 alert (a conflict) is the red
+     banner pinned above everything and cannot be dismissed from view by arrival order.
 
-   Priority uses the frozen language (red acts now, amber attention, blue info) through an icon, a
-   chip and a tint; the act-now card is tinted red. No coloured edge.
+   "Listening" is honest: it shows only while the meeting link is joined. While it reconnects the
+   chip says the agent is paused (polish program, Phase 0: the room used to say "Listening" over a
+   dead socket). Priority uses the frozen language (red acts now, amber attention, blue info). */
 
-   ProactiveAgent alerts are live too (Phase P11, plan 3.9): private to this participant. A
-   priority-1 alert (a conflict) is the red banner pinned above everything, whatever order things
-   arrived in; workload and dependency alerts are yellow cards and a missing stakeholder is a blue
-   card, first in Needs you, priority then time. Mark read keeps an alert, quieter; Dismiss removes
-   it for good. Both write through to notification-service and commit nothing. */
-
-const PRIORITY_LEVEL: Record<SidebarPriority, 1 | 2 | 3> = { high: 1, medium: 2, low: 3 };
-const PRIORITY_LABEL: Record<SidebarPriority, string> = { high: "Act now", medium: "Attention", low: "Info" };
-const PRIORITY_TONE: Record<1 | 2 | 3, string> = { 1: "is-high", 2: "is-medium", 3: "is-low" };
-
-type FeedKind = "conflict" | "question" | "decision" | "note" | "context" | "action" | "alert";
-type Resolution = "confirmed" | "saved" | "dismissed" | "acknowledged" | "created" | "asked" | "read";
+type FeedKind = "question" | "decision" | "context" | "action" | "alert";
+type Resolution = "confirmed" | "saved" | "dismissed" | "asked" | "read" | "hidden";
 
 const KIND_LABEL: Record<FeedKind, string> = {
-  conflict: "Conflict",
   question: "Question",
   decision: "Decision",
-  note: "Note",
   context: "Shared context",
   action: "Action",
   alert: "Alert",
@@ -81,10 +61,17 @@ const RES_LABEL: Record<Resolution, string> = {
   confirmed: "Confirmed",
   saved: "Saved for later",
   dismissed: "Dismissed",
-  acknowledged: "Acknowledged",
-  created: "Task created",
   asked: "Asked",
   read: "Read",
+  hidden: "Hidden for you",
+};
+
+const KIND_ICON: Record<FeedKind, Icon> = {
+  question: Question,
+  decision: Scales,
+  context: UsersThree,
+  action: CheckSquare,
+  alert: Bell,
 };
 
 type FeedEntry = {
@@ -93,42 +80,29 @@ type FeedEntry = {
   text: string;
   time?: string;
   cite?: string;
+  by?: string;
   resolved?: Resolution;
   isNew?: boolean;
-  /** The title this entry can be saved under (context fills keep their bookmark). */
-  saveAs?: string;
 };
-
-const KIND_ICON: Record<FeedKind, Icon> = {
-  conflict: Warning,
-  question: Question,
-  decision: Scales,
-  note: NotePencil,
-  context: UsersThree,
-  action: CheckSquare,
-  alert: Bell,
-};
-
-const CARD_ICON: Record<string, Icon> = {
-  question: Question,
-  decision: Scales,
-  workload: Gauge,
-  stakeholder: UserPlus,
-  dependency: LinkBreak,
-};
-
-type CardId = "suggestion" | "decision" | "workload" | "stakeholder" | "dependency";
-
-function pick<K extends AgentSidebarCard["kind"]>(cards: AgentSidebarCard[], kind: K) {
-  return cards.find((c) => c.kind === kind) as Extract<AgentSidebarCard, { kind: K }> | undefined;
-}
-
-const pad = (n: number) => String(n).padStart(2, "0");
 
 export interface AgentAttention {
-  /** Items that want the user right now: the open conflict plus anything pending or warning. */
+  /** Items that want the user right now: unread conflicts, cards, non-low suggestions. */
   count: number;
   conflict: boolean;
+}
+
+/** The candidate ledger's callbacks, wired to the meeting socket by the room. */
+export interface CandidateLedger {
+  meId: string | null;
+  /** You host or created the meeting: you may dismiss a card for everyone. */
+  steers: boolean;
+  settlements: Settlement[];
+  lockedBy: (id: string) => string | null;
+  settle: (id: string, outcome: "confirmed" | "dismissed", by?: string | null) => void;
+  announce: (id: string, outcome: CandidateOutcome) => Promise<unknown>;
+  update: (id: string, patch: Partial<Pick<Candidate, "content" | "rationale" | "dueDate">>) => void;
+  hide: (id: string) => void;
+  lock: (id: string, locked: boolean) => Promise<CandidateRoomAck>;
 }
 
 /** A note's bullets, one per line, without the leading "- " the agent writes. */
@@ -142,12 +116,12 @@ function noteLines(text: string): string[] {
 export function AgentSidebar({
   onAttentionChange,
   id,
-  items,
+  live,
   notes = [],
   candidates = [],
-  onCandidateResolved,
-  onCandidateUpdated,
+  ledger,
   meetingId = "",
+  meetingSeconds,
   suggestions = [],
   savedSuggestions = [],
   onSuggestionResolved,
@@ -159,49 +133,39 @@ export function AgentSidebar({
   onAlertDismissed,
   head,
   agenda,
+  variant = "full",
 }: {
-  /** The agent's cards for this meeting. Empty until the `agent-results` stream is wired, which
-   *  renders the empty state rather than invented cards. */
-  items: AgentSidebarCard[];
-  /** Optional. The room uses it for the badge on the collapsed panel rail. */
+  /** "rail": Notes mode's compact column, only pinned alerts, the agenda and Needs you. */
+  variant?: "full" | "rail";
   onAttentionChange?: (attention: AgentAttention) => void;
   /** Anchor id for the "My agent" section, so the collapsed rail can open the panel at it. */
   id?: string;
-  /** This participant's live PersonalListener notes (Plan 7-9 §3.4), oldest first. Only
-   *  surfaced notes ever reach the client; a draft is one still streaming. */
+  /** The meeting link is joined (captions and the agent are flowing). */
+  live: "listening" | "paused" | "off";
   notes?: LiveNote[];
   /** The meeting's decision and action candidates waiting for a person, oldest first. */
   candidates?: Candidate[];
-  onCandidateResolved?: (id: string, outcome: "confirmed" | "dismissed") => void;
-  onCandidateUpdated?: (id: string, patch: Partial<Pick<Candidate, "content" | "rationale" | "dueDate">>) => void;
+  ledger: CandidateLedger;
   /** The meeting this sidebar is open on; a citation without its own meeting points here. */
   meetingId?: string;
-  /** This participant's open suggested questions for this meeting, most urgent first. */
+  /** Seconds into the meeting now, for Activity times; null before the start is known. */
+  meetingSeconds: () => number | null;
   suggestions?: Suggestion[];
-  /** This participant's saved suggested questions, from this meeting and earlier ones. */
   savedSuggestions?: Suggestion[];
   onSuggestionResolved?: (id: string, outcome: "asked" | "dismissed") => void;
   onSuggestionSaved?: (id: string) => void;
-  /** This participant's surfaced context fills for this meeting, oldest first. */
   contextFills?: ContextFill[];
   onContextFillDismissed?: (id: string) => void;
-  /** This participant's ProactiveAgent alerts, priority then time (`orderedAlerts`). */
   alerts?: Alert[];
   onAlertRead?: (id: string) => void;
   onAlertDismissed?: (id: string) => void;
-  /** Your agent's face, name and personality (ADR-0038 D11). When given it heads the panel and
-   *  carries the settings link, so the sections below drop theirs. */
+  /** Your agent's face, name and personality (ADR-0038 D11). */
   head?: ReactNode;
   /** The shared live agenda (and the host's nudges), under any pinned alerts and above Needs you. */
   agenda?: ReactNode;
 }) {
   const toast = useCallToast();
-  const [decisionState, setDecisionState] = useState<"pending" | "confirmed" | "dismissed">(
-    "pending",
-  );
-  const [saved, setSaved] = useState<string[]>([]);
-  const [closed, setClosed] = useState<Set<CardId>>(new Set());
-  const [leaving, setLeaving] = useState<Set<CardId>>(new Set());
+  const nameOf = useRoomName();
   const [log, setLog] = useState<FeedEntry[]>([]);
   const [leavingCandidates, setLeavingCandidates] = useState<Set<string>>(new Set());
   const [leavingSuggestions, setLeavingSuggestions] = useState<Set<string>>(new Set());
@@ -209,365 +173,114 @@ export function AgentSidebar({
   const [leavingAlerts, setLeavingAlerts] = useState<Set<string>>(new Set());
   const banners = useMemo(() => bannerAlerts(alerts), [alerts]);
   const alertCards = useMemo(() => cardAlerts(alerts), [alerts]);
-  const joinedAt = useRef<number>(0);
-  useEffect(() => {
-    joinedAt.current = Date.now();
-  }, []);
 
-  const note = useMemo(() => pick(items, "note"), [items]);
-  const suggestion = useMemo(() => pick(items, "suggestion"), [items]);
-  const decision = useMemo(() => pick(items, "decision"), [items]);
-  const task = useMemo(() => pick(items, "task"), [items]);
-  const context = useMemo(() => pick(items, "context"), [items]);
-  const conflict = useMemo(() => pick(items, "conflict"), [items]);
-  const workload = useMemo(() => pick(items, "workload"), [items]);
-  const stakeholder = useMemo(() => pick(items, "stakeholder"), [items]);
-  const dependency = useMemo(() => pick(items, "dependency"), [items]);
-
-  const isOpen = (cid: CardId) => !closed.has(cid);
-
-  const count =
-    alertsNeedingAttention(alerts) +
-    candidates.length +
-    suggestions.filter((s) => s.priority !== 3).length +
-    (conflict ? 1 : 0) +
-    (decision && decisionState === "pending" ? 1 : 0) +
-    (suggestion && suggestion.priority !== "low" && isOpen("suggestion") ? 1 : 0) +
-    (workload && isOpen("workload") ? 1 : 0) +
-    (dependency && isOpen("dependency") ? 1 : 0);
-  const hasConflict = Boolean(conflict) || banners.some((a) => a.status === "unread");
+  const count = alertsNeedingAttention(alerts) + candidates.length + suggestions.filter((s) => s.priority !== 3).length;
+  const hasConflict = banners.some((a) => a.status === "unread");
   useEffect(() => {
     onAttentionChange?.({ count, conflict: hasConflict });
   }, [count, hasConflict, onAttentionChange]);
 
   const now = () => {
-    const secs = joinedAt.current ? Math.floor((Date.now() - joinedAt.current) / 1000) : 0;
-    return `${pad(Math.floor(secs / 60))}:${pad(secs % 60)}`;
+    const s = meetingSeconds();
+    return s === null ? undefined : formatOffset(s);
   };
 
-  const toggleSave = (title: string) =>
-    setSaved((s) => (s.includes(title) ? s.filter((x) => x !== title) : [...s, title]));
+  const push = (entry: Omit<FeedEntry, "time" | "isNew">) =>
+    setLog((l) => [{ ...entry, time: now(), isNew: true }, ...l].slice(0, 80));
 
-  /** Slides a card out, then records what happened to it at the top of the Activity feed. */
-  const resolve = (cid: CardId, entry: Omit<FeedEntry, "id" | "time" | "isNew">, after?: () => void) => {
-    const time = now();
-    setLeaving((s) => new Set(s).add(cid));
+  // The room ledger: a card someone settled (you included) goes into Activity, once, with who.
+  const logged = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    for (const s of ledger.settlements) {
+      if (logged.current.has(s.id)) continue;
+      logged.current.add(s.id);
+      const who = s.byUserId === ledger.meId ? "You" : nameOf(s.byUserId, "Someone");
+      push({
+        id: `${s.id}-settled`,
+        kind: s.kind,
+        text: s.content,
+        resolved: s.outcome,
+        by: who,
+        cite: s.outcome === "confirmed" ? (s.kind === "decision" ? "Saved for the team" : "Added to the owner's tasks") : undefined,
+      });
+      if (s.byUserId !== ledger.meId) {
+        toast(
+          `${who} ${s.outcome === "confirmed" ? "confirmed" : "dismissed"} a ${s.kind === "decision" ? "decision" : "task"}`,
+          "info",
+        );
+      }
+    }
+    // `push` and `toast` are stable enough; settlements drive this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ledger.settlements, ledger.meId, nameOf]);
+
+  /** Slide a card out, then run `after` (which removes it from the room's state). */
+  const slideOut = (set: (fn: (s: Set<string>) => Set<string>) => void, key: string, after: () => void) => {
+    set((s) => new Set(s).add(key));
     window.setTimeout(() => {
-      setLeaving((s) => {
+      set((s) => {
         const next = new Set(s);
-        next.delete(cid);
+        next.delete(key);
         return next;
       });
-      setClosed((s) => new Set(s).add(cid));
-      after?.();
-      setLog((l) => [{ ...entry, id: `${cid}-${Date.now()}`, time, isNew: true }, ...l]);
+      after();
     }, 230);
   };
 
-  /** A candidate was confirmed or dismissed here (or turned out to be gone): slide it out, then
-   *  drop it from the room's state and record it in Activity. */
-  const settleCandidate = (c: Candidate, outcome: CandidateOutcome | "gone") => {
-    const time = now();
-    setLeavingCandidates((s) => new Set(s).add(c.id));
-    window.setTimeout(() => {
-      setLeavingCandidates((s) => {
-        const next = new Set(s);
-        next.delete(c.id);
-        return next;
-      });
-      onCandidateResolved?.(c.id, outcome === "confirmed" ? "confirmed" : "dismissed");
-      if (outcome === "gone") return;
-      const confirmed = outcome === "confirmed";
-      setLog((l) => [
-        {
-          id: `${c.id}-${Date.now()}`,
-          kind: c.kind,
-          text: c.content,
-          time,
-          isNew: true,
-          resolved: confirmed ? "confirmed" : "dismissed",
-          cite: confirmed ? (c.kind === "decision" ? "Saved for the team" : "Added to My Tasks") : undefined,
-        },
-        ...l,
-      ]);
-      if (confirmed) toast(c.kind === "decision" ? "Decision confirmed" : "Task added");
-    }, 230);
+  const onCandidateConfirmed = (c: Candidate, by: string | null) => {
+    slideOut(setLeavingCandidates, c.id, () => {
+      ledger.settle(c.id, "confirmed", by);
+      if (!by || by === ledger.meId) {
+        toast(c.kind === "decision" ? "Decision confirmed for the team" : "Task confirmed", "success");
+        void ledger.announce(c.id, "confirmed");
+      }
+    });
   };
+  const onCandidateDismissed = (c: Candidate) => {
+    slideOut(setLeavingCandidates, c.id, () => {
+      ledger.settle(c.id, "dismissed");
+      toast(`Dismissed for everyone`, "success");
+      void ledger.announce(c.id, "dismissed");
+    });
+  };
+  const onCandidateHidden = (c: Candidate) => {
+    slideOut(setLeavingCandidates, c.id, () => {
+      ledger.hide(c.id);
+      push({ id: `${c.id}-hidden`, kind: c.kind, text: c.content, resolved: "hidden" });
+    });
+  };
+  const onCandidateGone = (c: Candidate) => slideOut(setLeavingCandidates, c.id, () => ledger.settle(c.id, "dismissed"));
 
-  /** A suggestion was asked, saved or dismissed here (or turned out to be gone): slide it out,
-   *  then move it in the room's state and record it in Activity. */
   const settleSuggestion = (s: Suggestion, outcome: SuggestionOutcome) => {
-    const time = now();
-    setLeavingSuggestions((l) => new Set(l).add(s.id));
-    window.setTimeout(() => {
-      setLeavingSuggestions((l) => {
-        const next = new Set(l);
-        next.delete(s.id);
-        return next;
-      });
+    slideOut(setLeavingSuggestions, s.id, () => {
       if (outcome === "saved") onSuggestionSaved?.(s.id);
       else onSuggestionResolved?.(s.id, outcome === "asked" ? "asked" : "dismissed");
       if (outcome === "gone") return;
-      setLog((l) => [
-        { id: `${s.id}-${Date.now()}`, kind: "question", text: s.question, time, isNew: true, resolved: outcome },
-        ...l,
-      ]);
-      if (outcome === "asked") toast("Question copied. Paste it into chat.");
-    }, 230);
+      push({ id: `${s.id}-${Date.now()}`, kind: "question", text: s.question, resolved: outcome });
+      if (outcome === "asked") toast("Question copied. Paste it into chat.", "success");
+    });
   };
 
-  /** A context fill was dismissed here (or turned out to be gone): slide it out, then drop it
-   *  from the room's state and record it in Activity. */
   const settleContextFill = (f: ContextFill, outcome: ContextFillOutcome) => {
-    const time = now();
-    setLeavingFills((l) => new Set(l).add(f.id));
-    window.setTimeout(() => {
-      setLeavingFills((l) => {
-        const next = new Set(l);
-        next.delete(f.id);
-        return next;
-      });
+    slideOut(setLeavingFills, f.id, () => {
       onContextFillDismissed?.(f.id);
       if (outcome === "gone") return;
-      setLog((l) => [
-        { id: `${f.id}-${Date.now()}`, kind: "context", text: f.content, time, isNew: true, resolved: "dismissed" },
-        ...l,
-      ]);
-    }, 230);
+      push({ id: `${f.id}-${Date.now()}`, kind: "context", text: f.content, resolved: "dismissed" });
+    });
   };
 
-  /** An alert was marked read (it stays, quieter) or dismissed / gone (it slides out and never
-   *  comes back). Either way it is recorded in Activity, except when it was already gone. */
   const settleAlert = (a: Alert, outcome: AlertOutcome) => {
-    const time = now();
     if (outcome === "read") {
       onAlertRead?.(a.id);
-      setLog((l) => [{ id: `${a.id}-${Date.now()}`, kind: "alert", text: a.title, time, isNew: true, resolved: "read" }, ...l]);
+      push({ id: `${a.id}-${Date.now()}`, kind: "alert", text: a.title, resolved: "read" });
       return;
     }
-    setLeavingAlerts((l) => new Set(l).add(a.id));
-    window.setTimeout(() => {
-      setLeavingAlerts((l) => {
-        const next = new Set(l);
-        next.delete(a.id);
-        return next;
-      });
+    slideOut(setLeavingAlerts, a.id, () => {
       onAlertDismissed?.(a.id);
       if (outcome === "gone") return;
-      setLog((l) => [
-        { id: `${a.id}-${Date.now()}`, kind: "alert", text: a.title, time, isNew: true, resolved: "dismissed" },
-        ...l,
-      ]);
-    }, 230);
+      push({ id: `${a.id}-${Date.now()}`, kind: "alert", text: a.title, resolved: "dismissed" });
+    });
   };
-
-  const alertBanners =
-    banners.length > 0
-      ? banners.map((a) => (
-          <AlertBanner
-            key={a.id}
-            alert={a}
-            leaving={leavingAlerts.has(a.id)}
-            onResolved={(outcome) => settleAlert(a, outcome)}
-            onError={(message) => toast(message)}
-          />
-        ))
-      : null;
-
-  /* Needs-you cards, in the frozen order. */
-  const cards: {
-    id: CardId;
-    kind: string;
-    prio: 1 | 2 | 3;
-    label: string;
-    meta: string;
-    text: ReactNode;
-    sub?: string;
-    acts: ReactNode;
-  }[] = [];
-
-  if (suggestion && isOpen("suggestion")) {
-    const title = "Suggested question";
-    cards.push({
-      id: "suggestion",
-      kind: "question",
-      prio: PRIORITY_LEVEL[suggestion.priority],
-      label: "Suggested question",
-      meta: PRIORITY_LABEL[suggestion.priority],
-      text: suggestion.text,
-      acts: (
-        <>
-          <button
-            type="button"
-            className="nfy-act tap"
-            onClick={() => {
-              navigator.clipboard
-                ?.writeText(suggestion.text)
-                .then(() => toast("Question copied. Paste it into chat."))
-                .catch(() => toast("Could not copy the question"));
-            }}
-          >
-            Copy question
-          </button>
-          <button
-            type="button"
-            className={`nfy-act is-quiet tap${saved.includes(title) ? " is-on" : ""}`}
-            aria-pressed={saved.includes(title)}
-            onClick={() => toggleSave(title)}
-          >
-            {saved.includes(title) ? "Saved" : "Save for later"}
-          </button>
-          <button
-            type="button"
-            className="nfy-act is-quiet tap"
-            onClick={() => resolve("suggestion", { kind: "question", text: suggestion.text, resolved: "dismissed" })}
-          >
-            Dismiss
-          </button>
-        </>
-      ),
-    });
-  }
-
-  if (decision && decisionState === "pending" && isOpen("decision")) {
-    cards.push({
-      id: "decision",
-      kind: "decision",
-      prio: 3,
-      label: "Decision detected",
-      meta: "Not saved yet",
-      text: decision.title,
-      sub: decision.detail,
-      acts: (
-        <>
-          <button
-            type="button"
-            className="nfy-act tap"
-            onClick={() =>
-              resolve(
-                "decision",
-                { kind: "decision", text: decision.title, cite: "Saved to the knowledge graph", resolved: "confirmed" },
-                () => {
-                  setDecisionState("confirmed");
-                  toast("Decision confirmed");
-                },
-              )
-            }
-          >
-            Confirm
-          </button>
-          <button
-            type="button"
-            className={`nfy-act is-quiet tap${saved.includes(decision.title) ? " is-on" : ""}`}
-            aria-pressed={saved.includes(decision.title)}
-            onClick={() => toggleSave(decision.title)}
-          >
-            {saved.includes(decision.title) ? "Saved" : "Save for later"}
-          </button>
-          <button
-            type="button"
-            className="nfy-act is-quiet tap"
-            onClick={() =>
-              resolve("decision", { kind: "decision", text: decision.title, resolved: "dismissed" }, () =>
-                setDecisionState("dismissed"),
-              )
-            }
-          >
-            Dismiss
-          </button>
-        </>
-      ),
-    });
-  }
-
-  if (workload && isOpen("workload")) {
-    cards.push({
-      id: "workload",
-      kind: "workload",
-      prio: workload.util >= 95 ? 1 : 2,
-      label: "Workload warning",
-      meta: `${workload.util}% capacity`,
-      text: workload.text,
-      acts: (
-        <button
-          type="button"
-          className="nfy-act is-quiet tap"
-          onClick={() =>
-            resolve("workload", { kind: "note", text: `${workload.person} at ${workload.util}% capacity, noted.`, resolved: "acknowledged" })
-          }
-        >
-          Acknowledge
-        </button>
-      ),
-    });
-  }
-
-  if (stakeholder && isOpen("stakeholder")) {
-    cards.push({
-      id: "stakeholder",
-      kind: "stakeholder",
-      prio: 2,
-      label: "Missing stakeholder",
-      meta: "Suggested",
-      text: (
-        <>
-          Add <b>{stakeholder.person}</b>: {stakeholder.reason}.
-        </>
-      ),
-      acts: (
-        <button
-          type="button"
-          className="nfy-act is-quiet tap"
-          onClick={() =>
-            resolve("stakeholder", {
-              kind: "note",
-              text: `${stakeholder.person} ${stakeholder.reason}.`,
-              resolved: "acknowledged",
-            })
-          }
-        >
-          Noted
-        </button>
-      ),
-    });
-  }
-
-  if (dependency && isOpen("dependency")) {
-    cards.push({
-      id: "dependency",
-      kind: "dependency",
-      prio: 2,
-      label: "Dependency",
-      meta: "Attention",
-      text: dependency.text,
-      acts: (
-        <button
-          type="button"
-          className="nfy-act is-quiet tap"
-          onClick={() => resolve("dependency", { kind: "note", text: dependency.text, resolved: "acknowledged" })}
-        >
-          Noted
-        </button>
-      ),
-    });
-  }
-
-  /* Activity: what you resolved (newest first), then what the agent already did on its own. */
-  const feed: FeedEntry[] = [...log];
-  if (task) {
-    feed.push({
-      id: "task",
-      kind: "action",
-      text: /^Own\b/.test(task.title)
-        ? `${task.assignee} ${task.title.replace(/^Own\b/, "owns")}, due ${task.due}.`
-        : `${task.title}: ${task.assignee}, due ${task.due}.`,
-      cite: "Added to My Tasks",
-      resolved: "created",
-    });
-  }
-  if (context) {
-    feed.push({ id: "context", kind: "context", text: context.text, cite: context.source, saveAs: "Context from Sarah's agent" });
-  }
 
   const settings = (
     <Link
@@ -582,15 +295,44 @@ export function AgentSidebar({
     </Link>
   );
 
-  if (
-    items.length === 0 &&
+  const listening =
+    live === "listening" ? (
+      <span className="mx-chip">
+        <Waveform size={14} aria-hidden />
+        Listening
+      </span>
+    ) : live === "paused" ? (
+      <span className="mx-chip is-medium" role="status">
+        <PauseCircle size={14} weight="fill" aria-hidden />
+        Paused, reconnecting
+      </span>
+    ) : null;
+
+  const pinned = banners.length > 0 ? (
+    <div className="agent-pin" aria-label="Pinned alerts">
+      {banners.map((a) => (
+        <AlertBanner
+          key={a.id}
+          alert={a}
+          leaving={leavingAlerts.has(a.id)}
+          onResolved={(outcome) => settleAlert(a, outcome)}
+          onError={(message) => toast(message, "error")}
+        />
+      ))}
+    </div>
+  ) : null;
+
+  const nothing =
     notes.length === 0 &&
     candidates.length === 0 &&
+    ledger.settlements.length === 0 &&
     suggestions.length === 0 &&
     savedSuggestions.length === 0 &&
     contextFills.length === 0 &&
-    alerts.length === 0
-  ) {
+    alerts.length === 0 &&
+    log.length === 0;
+
+  if (nothing && variant === "full") {
     return (
       <div className="agent" id={id}>
         {head ?? (
@@ -604,40 +346,93 @@ export function AgentSidebar({
           <svg viewBox="0 0 120 36" aria-hidden="true">
             <path className="mx-line" d="M4 26 C24 26 30 26 44 26 C62 26 72 4 60 4 C48 4 50 26 70 26 C86 26 96 26 116 26" />
           </svg>
-          <h4>Nothing captured yet</h4>
+          <h4>{live === "off" ? "Your agent is not connected" : "Nothing captured yet"}</h4>
           <p>
-            Your agent posts notes, decisions and questions here once live transcription is running for this
-            meeting. Nothing is captured until then.
+            {live === "listening"
+              ? "Your agent is listening. Notes, decisions and questions land here as the meeting goes."
+              : live === "paused"
+                ? "Your agent is paused while the meeting link reconnects. Nothing said meanwhile is lost: the transcript is kept, and notes catch up."
+                : "Live transcription is not running for this meeting, so your agent has nothing to work from yet."}
           </p>
+          {listening}
         </div>
       </div>
     );
   }
 
-  const needsYou = cards.length > 0 || candidates.length > 0 || suggestions.length > 0 || alertCards.length > 0;
-  const savedCount = saved.length + savedSuggestions.length;
+  const needsYou = candidates.length > 0 || ledger.settlements.length > 0 || suggestions.length > 0 || alertCards.length > 0;
+
+  const needsYouCards = (
+    <>
+      {alertCards.map((a) => (
+        <AlertCard
+          key={a.id}
+          alert={a}
+          leaving={leavingAlerts.has(a.id)}
+          onResolved={(outcome) => settleAlert(a, outcome)}
+          onError={(message) => toast(message, "error")}
+        />
+      ))}
+      {suggestions.map((s) => (
+        <SuggestionCard
+          key={s.id}
+          suggestion={s}
+          currentMeetingId={meetingId}
+          leaving={leavingSuggestions.has(s.id)}
+          onResolved={(outcome) => settleSuggestion(s, outcome)}
+          onError={(message) => toast(message, "error")}
+        />
+      ))}
+      {ledger.settlements.map((s) => (
+        <SettledCard key={`settled-${s.id}`} settlement={s} meId={ledger.meId} />
+      ))}
+      {candidates.map((c) => (
+        <CandidateCard
+          key={c.id}
+          candidate={c}
+          leaving={leavingCandidates.has(c.id)}
+          meId={ledger.meId}
+          canDismissForEveryone={ledger.steers}
+          lockedBy={ledger.lockedBy(c.id)}
+          onConfirmed={(by) => onCandidateConfirmed(c, by)}
+          onEdited={(patch) => {
+            ledger.update(c.id, patch);
+            toast("Saved for everyone", "success");
+            void ledger.announce(c.id, "edited");
+          }}
+          onDismissedForEveryone={() => onCandidateDismissed(c)}
+          onHide={() => onCandidateHidden(c)}
+          onGone={() => onCandidateGone(c)}
+          onLock={(locked) => ledger.lock(c.id, locked)}
+          onNotice={(message, tone) => toast(message, tone)}
+        />
+      ))}
+    </>
+  );
+
+  if (variant === "rail") {
+    return (
+      <div className="agent is-rail" id={id}>
+        {pinned}
+        <div className="side-sec">
+          <h3>Needs you</h3>
+          {count > 0 ? <span className="mx-count is-hot">{count}</span> : null}
+          <span className="side-sec-end">{listening}</span>
+        </div>
+        {needsYou ? (
+          <div className="agent-group">{needsYouCards}</div>
+        ) : (
+          <p className="agent-quiet">Nothing needs you right now.</p>
+        )}
+        {agenda}
+      </div>
+    );
+  }
 
   return (
     <>
       {head ? <div className="agent-head-wrap">{head}</div> : null}
-      {alertBanners || conflict ? (
-        <div className="agent-pin" aria-label="Pinned alerts">
-          {alertBanners}
-          {conflict ? (
-            <div className="conflict-banner" role="alert">
-              <div className="cbn-kind">
-                <Warning size={16} weight="bold" aria-hidden />
-                Possible conflict
-                <span className="cbn-meta">
-                  <PushPin size={13} weight="fill" aria-hidden />
-                  Pinned
-                </span>
-              </div>
-              <p className="cbn-text">{conflict.text}</p>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+      {pinned}
 
       <div className="agent" id={id}>
         {agenda}
@@ -645,65 +440,13 @@ export function AgentSidebar({
           <h3>Needs you</h3>
           {count > 0 ? <span className="mx-count is-hot">{count}</span> : null}
           <span className="side-sec-end">
-            <span className="mx-chip">
-              <Waveform size={14} aria-hidden />
-              Listening
-            </span>
+            {listening}
             {head ? null : settings}
           </span>
         </div>
 
         {needsYou ? (
-          <div className="agent-group">
-            {alertCards.map((a) => (
-              <AlertCard
-                key={a.id}
-                alert={a}
-                leaving={leavingAlerts.has(a.id)}
-                onResolved={(outcome) => settleAlert(a, outcome)}
-                onError={(message) => toast(message)}
-              />
-            ))}
-            {suggestions.map((s) => (
-              <SuggestionCard
-                key={s.id}
-                suggestion={s}
-                currentMeetingId={meetingId}
-                leaving={leavingSuggestions.has(s.id)}
-                onResolved={(outcome) => settleSuggestion(s, outcome)}
-                onError={(message) => toast(message)}
-              />
-            ))}
-            {candidates.map((c) => (
-              <CandidateCard
-                key={c.id}
-                candidate={c}
-                leaving={leavingCandidates.has(c.id)}
-                onResolved={(outcome) => settleCandidate(c, outcome)}
-                onUpdated={(patch) => onCandidateUpdated?.(c.id, patch)}
-                onError={(message) => toast(message)}
-              />
-            ))}
-            {cards.map((card) => {
-              const KindIcon = CARD_ICON[card.kind] ?? Question;
-              return (
-                <div
-                  className={`nfy-card is-${card.kind} is-p${card.prio}${leaving.has(card.id) ? " is-leaving" : ""}`}
-                  key={card.id}
-                  role={card.prio === 1 ? "alert" : undefined}
-                >
-                  <div className="nfy-kind">
-                    <KindIcon size={16} weight="bold" aria-hidden />
-                    {card.label}
-                    <span className={`nfy-meta ${PRIORITY_TONE[card.prio]}`}>{card.meta}</span>
-                  </div>
-                  <p className="nfy-text">{card.text}</p>
-                  {card.sub ? <p className="nfy-sub">{card.sub}</p> : null}
-                  <div className="nfy-acts">{card.acts}</div>
-                </div>
-              );
-            })}
-          </div>
+          <div className="agent-group">{needsYouCards}</div>
         ) : (
           <p className="agent-quiet">Nothing needs you right now. Cards land here when your agent wants a decision from you.</p>
         )}
@@ -722,18 +465,18 @@ export function AgentSidebar({
                   currentMeetingId={meetingId}
                   leaving={leavingFills.has(f.id)}
                   onResolved={(outcome) => settleContextFill(f, outcome)}
-                  onError={(message) => toast(message)}
+                  onError={(message) => toast(message, "error")}
                 />
               ))}
             </div>
           </div>
         ) : null}
 
-        {notes.length > 0 || note ? (
+        {notes.length > 0 ? (
           <div>
             <div className="side-sec">
               <h3>My notes</h3>
-              {notes.length > 0 ? <span className="mx-count">{notes.length}</span> : null}
+              <span className="mx-count">{notes.length}</span>
               <span className="side-sec-end">
                 <span className="mx-chip">
                   <Lock size={13} weight="fill" aria-hidden />
@@ -741,53 +484,34 @@ export function AgentSidebar({
                 </span>
               </span>
             </div>
-            {notes.length > 0 ? (
-              <div className="mynotes" aria-live="polite">
-                {notes.map((n) => (
-                  // Keyed by the agent window (the stream's correlation key), so the settled note
-                  // replaces its draft in place: same node, no remount, no jump. The body reserves
-                  // its height while the deltas append.
-                  <div
-                    className={`mynote${n.final ? " is-final" : " is-new is-draft"}`}
-                    key={n.windowId}
-                    aria-busy={n.final ? undefined : true}
-                  >
-                    <NotePencil size={16} aria-hidden />
-                    <span className="mynote-body">
-                      {noteLines(n.text).map((line, i) => (
-                        <p key={i}>{line}</p>
-                      ))}
-                      {n.final ? null : (
-                        <p className="mynote-writing">
-                          Writing<span className="stream-caret" aria-hidden="true"></span>
-                        </p>
-                      )}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : note ? (
-              <div className="mynotes">
-                {note.lines.map((line) => (
-                  <div className="mynote" key={line}>
-                    <NotePencil size={16} aria-hidden />
-                    <span className="mynote-body">
-                      <p>{line}</p>
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : null}
+            <div className="mynotes" aria-live="polite">
+              {notes.map((n) => (
+                // Keyed by the agent window, so the settled note replaces its draft in place.
+                <div className={`mynote${n.final ? " is-final" : " is-new is-draft"}`} key={n.windowId} aria-busy={n.final ? undefined : true}>
+                  <NotePencil size={16} aria-hidden />
+                  <span className="mynote-body">
+                    {noteLines(n.text).map((line, i) => (
+                      <p key={i}>{line}</p>
+                    ))}
+                    {n.final ? null : (
+                      <p className="mynote-writing">
+                        Writing<span className="stream-caret" aria-hidden="true"></span>
+                      </p>
+                    )}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         ) : null}
 
         <div>
           <div className="side-sec">
             <h3>Saved for later</h3>
-            {savedCount ? <span className="mx-count">{savedCount}</span> : null}
+            {savedSuggestions.length ? <span className="mx-count">{savedSuggestions.length}</span> : null}
           </div>
           {savedSuggestions.length > 0 ? (
-            <div className="agent-group" style={{ marginBottom: saved.length ? 10 : 0 }}>
+            <div className="agent-group">
               {savedSuggestions.map((s) => (
                 <SuggestionCard
                   key={s.id}
@@ -795,73 +519,53 @@ export function AgentSidebar({
                   currentMeetingId={meetingId}
                   leaving={leavingSuggestions.has(s.id)}
                   onResolved={(outcome) => settleSuggestion(s, outcome)}
-                  onError={(message) => toast(message)}
+                  onError={(message) => toast(message, "error")}
                 />
               ))}
             </div>
-          ) : null}
-          {saved.length === 0 && savedSuggestions.length === 0 ? (
-            <p className="saved-empty">Nothing saved yet. Use Save for later on any card to keep it here.</p>
-          ) : saved.length > 0 ? (
-            <div className="mynotes">
-              {saved.map((s) => (
-                <div className="mynote is-new" key={s}>
-                  <BookmarkSimple size={16} weight="fill" aria-hidden />
-                  <span className="mynote-body">
-                    <p>{s}</p>
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : null}
+          ) : (
+            <p className="saved-empty">Nothing saved yet. Use Save for later on a suggested question to keep it for your next meeting.</p>
+          )}
         </div>
 
         <div className="afeed" role="log" aria-live="polite" aria-label="Agent activity">
           <div className="side-sec">
             <h3>Activity</h3>
           </div>
-          <ol className="afeed-list">
-            {feed.map((e) => {
-              const KindIcon = KIND_ICON[e.kind];
-              const carried = e.resolved === "confirmed" || e.resolved === "created";
-              return (
-                <li
-                  className={`afeed-item is-${e.kind}${e.resolved ? " is-resolved" : ""}${carried ? " is-carried" : ""}${e.isNew ? " is-new" : ""}`}
-                  key={e.id}
-                >
-                  <span className="afeed-ico" aria-hidden>
-                    <KindIcon size={15} weight={carried ? "fill" : "regular"} />
-                  </span>
-                  <div>
-                    <div className="afeed-kind">
-                      <b>{KIND_LABEL[e.kind]}</b>
-                      {e.resolved ? (
-                        <span className={`afeed-res${e.resolved === "dismissed" ? " is-muted" : ""}`}>
-                          {RES_LABEL[e.resolved]}
-                        </span>
-                      ) : null}
-                      {e.time ? <time className="afeed-time">{e.time}</time> : null}
-                    </div>
-                    <p className="afeed-text">{e.text}</p>
-                    {e.cite ? <span className="cite-chip">{e.cite}</span> : null}
-                    {e.saveAs ? (
-                      <div className="nfy-acts">
-                        <button
-                          type="button"
-                          className={`nfy-act is-quiet tap${saved.includes(e.saveAs) ? " is-on" : ""}`}
-                          aria-pressed={saved.includes(e.saveAs)}
-                          onClick={() => toggleSave(e.saveAs!)}
-                        >
-                          {saved.includes(e.saveAs) ? "Saved" : "Save for later"}
-                        </button>
+          {log.length === 0 ? (
+            <p className="saved-empty">What you and others settle in this meeting is listed here.</p>
+          ) : (
+            <ol className="afeed-list">
+              {log.map((e) => {
+                const KindIcon = KIND_ICON[e.kind];
+                const carried = e.resolved === "confirmed";
+                return (
+                  <li
+                    className={`afeed-item is-${e.kind}${e.resolved ? " is-resolved" : ""}${carried ? " is-carried" : ""}${e.isNew ? " is-new" : ""}`}
+                    key={e.id}
+                  >
+                    <span className="afeed-ico" aria-hidden>
+                      <KindIcon size={15} weight={carried ? "fill" : "regular"} />
+                    </span>
+                    <div>
+                      <div className="afeed-kind">
+                        <b>{KIND_LABEL[e.kind]}</b>
+                        {e.resolved ? (
+                          <span className={`afeed-res${e.resolved === "dismissed" || e.resolved === "hidden" ? " is-muted" : ""}`}>
+                            {RES_LABEL[e.resolved]}
+                            {e.by ? ` by ${e.by === "You" ? "you" : e.by}` : ""}
+                          </span>
+                        ) : null}
+                        {e.time ? <time className="afeed-time">{e.time}</time> : null}
                       </div>
-                    ) : null}
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-          <p className="afeed-start">Your agent joined at 00:00</p>
+                      <p className="afeed-text">{e.text}</p>
+                      {e.cite ? <span className="cite-chip">{e.cite}</span> : null}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
         </div>
       </div>
     </>

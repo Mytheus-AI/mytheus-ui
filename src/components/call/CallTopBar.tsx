@@ -20,6 +20,8 @@ export type CallTopBarRoom = {
   /** Call keeps the video up front; Notes turns the room into the living document. */
   mode?: "call" | "notes";
   onMode?: (mode: "call" | "notes") => void;
+  /** Keyboard shortcuts are on: name their keys in the tooltips. */
+  shortcutsOn?: boolean;
 };
 
 export function CallTopBar({ room, end }: { room?: CallTopBarRoom; end?: ReactNode }) {
@@ -50,7 +52,7 @@ export function CallTopBar({ room, end }: { room?: CallTopBarRoom; end?: ReactNo
                 aria-pressed={room.mode === "call"}
                 className="tap tip-below"
                 onClick={() => room.onMode?.("call")}
-                data-tip="Call view (1)"
+                data-tip={room.shortcutsOn ? "Call view (1)" : "Call view"}
               >
                 <VideoCamera size={16} aria-hidden />
                 <span>Call</span>
@@ -60,7 +62,7 @@ export function CallTopBar({ room, end }: { room?: CallTopBarRoom; end?: ReactNo
                 aria-pressed={room.mode === "notes"}
                 className="tap tip-below"
                 onClick={() => room.onMode?.("notes")}
-                data-tip="Notes view (2)"
+                data-tip={room.shortcutsOn ? "Notes view (2)" : "Notes view"}
               >
                 <Notebook size={16} aria-hidden />
                 <span>Notes</span>
@@ -77,8 +79,8 @@ export function CallTopBar({ room, end }: { room?: CallTopBarRoom; end?: ReactNo
               onClick={() => {
                 navigator.clipboard
                   ?.writeText(room.shareUrl)
-                  .then(() => toast("Meeting link copied"))
-                  .catch(() => toast("Could not copy the link"));
+                  .then(() => toast("Meeting link copied", "success"))
+                  .catch(() => toast("Could not copy the link. Copy it from the address bar instead.", "error"));
               }}
             >
               <LinkSimple size={16} weight="bold" aria-hidden />

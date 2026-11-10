@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Check,
   CheckSquare,
   Clock,
-  Database,
-  Ear,
   LockSimple,
   Microphone,
   MicrophoneSlash,
@@ -26,14 +25,23 @@ import { Button, LinkButton } from "@/components/ui/Button";
 import { initials, toneOf } from "@/components/room/tone";
 import { CallToastProvider } from "@/components/call/CallToast";
 import { CallTopBar } from "@/components/call/CallTopBar";
+import { CONSENT_VERSION, ConsentTerms } from "@/components/call/consent";
 import { CALL_PREFS_KEY } from "@/components/call/prefs";
 import { Select, type SelectOption } from "@/components/call/Select";
 import { useOrgContext } from "@/lib/org-context";
 import type { CallMeeting } from "@/components/call/resolve-meeting";
+import type { RoomSessionInfo } from "@/components/meeting/MeetingRoom";
 
 /* The pre-join: your own camera preview on the warm stage with mic and camera toggles and a live
    level meter, device pickers, the meeting card, what your agent will do, and the recording
    consent that unlocks Join.
+
+   Consent is real (polish program, Phase 0; ADR-0018). The notice says exactly what is stored
+   (components/call/consent.tsx). Agreeing and pressing Join sends the acknowledgment with the
+   token request, and meeting-service records when you agreed and to which notice version. It is
+   asked once per person per meeting: if you already agreed for this meeting, the card says when
+   and Join is open. If the server refuses (not on the list, the meeting ended), the reason shows
+   here and you stay on this page; there is no loop between the pre-join and the room.
 
    The preview is real: it asks the browser for the camera and microphone, lists the devices it
    finds, and switches between them. Nothing leaves the browser. If access is denied or there is
@@ -54,8 +62,28 @@ function stopAll(stream: MediaStream | null) {
   stream?.getTracks().forEach((t) => t.stop());
 }
 
-export function PreJoin({ meeting }: { meeting: CallMeeting }) {
+const consentedFormat = new Intl.DateTimeFormat(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" });
+
+/** Why the server would not let you in, in words, by its stable code. */
+function joinRefusal(code: string | undefined): string {
+  switch (code) {
+    case "NOT_A_PARTICIPANT":
+      return "You are not on this meeting's participant list. Ask the host to add you, then try again.";
+    case "VERSION_CONFLICT":
+      return "This meeting has ended, so it cannot be joined.";
+    case "NOT_FOUND":
+      return "This meeting could not be found. It may have been removed.";
+    default:
+      return "Could not reach the meeting just now. Check your connection and try again.";
+  }
+}
+
+export function PreJoin({ meeting, session = null }: { meeting: CallMeeting; session?: RoomSessionInfo | null }) {
   const { user } = useOrgContext();
+  const router = useRouter();
+  const alreadyAgreed = session?.consentedAt ?? null;
+  const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
   const [micOff, setMicOff] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [agreed, setAgreed] = useState(false);
@@ -205,6 +233,36 @@ export function PreJoin({ meeting }: { meeting: CallMeeting }) {
             minute: "2-digit",
           })}`;
   const micLive = !micOff && ready && hasAudio;
+  const canJoin = Boolean(alreadyAgreed) || agreed;
+
+  const join = async () => {
+    if (!canJoin || joining) return;
+    setJoining(true);
+    setJoinError(null);
+    remember();
+    if (!alreadyAgreed) {
+      // The acknowledgment travels with the token request; meeting-service records it before it
+      // mints, so the room's own mint never meets a consent gate.
+      try {
+        const response = await fetch("/api/livekit-token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ meeting_id: meeting.id, consent: { version: CONSENT_VERSION } }),
+        });
+        if (!response.ok) {
+          const problem = (await response.json().catch(() => ({}))) as { code?: string };
+          setJoinError(joinRefusal(problem.code));
+          setJoining(false);
+          return;
+        }
+      } catch {
+        setJoinError(joinRefusal(undefined));
+        setJoining(false);
+        return;
+      }
+    }
+    router.push(`/meetings/${meeting.id}/room`);
+  };
 
   return (
     <CallToastProvider>
@@ -389,67 +447,57 @@ export function PreJoin({ meeting }: { meeting: CallMeeting }) {
                     <Record size={22} weight="fill" />
                   </span>
                   <div>
-                    <h2 id="pj-consent-h">This meeting is recorded and transcribed</h2>
-                    <p>Read this before you join. You need to agree to enter.</p>
+                    <h2 id="pj-consent-h">
+                      {session?.recording ? "This meeting is recorded and transcribed" : "This meeting is transcribed"}
+                    </h2>
+                    <p>{alreadyAgreed ? "What is kept, as you agreed." : "Read this before you join. You need to agree to enter."}</p>
                   </div>
                 </div>
-                <ul className="pj-terms">
-                  <li>
-                    <Ear size={18} aria-hidden />
-                    <div>
-                      <strong>Your agent listens</strong>
-                      <span>It listens to take notes for you. Its notes are yours only.</span>
-                    </div>
-                  </li>
-                  <li>
-                    <Database size={18} aria-hidden />
-                    <div>
-                      <strong>Where it is kept</strong>
-                      <span>The recording and transcript stay in your workspace and follow its retention rules.</span>
-                    </div>
-                  </li>
-                  <li>
-                    <LockSimple size={18} aria-hidden />
-                    <div>
-                      <strong>Nothing saved without you</strong>
-                      <span>Decisions and action items wait for your Confirm before they are saved.</span>
-                    </div>
-                  </li>
-                </ul>
-                <label className="pj-check">
-                  <input
-                    type="checkbox"
-                    checked={agreed}
-                    onChange={(e) => setAgreed(e.target.checked)}
-                    aria-describedby="pj-gate"
-                  />
-                  <span className="pj-box" aria-hidden="true">
-                    <Check size={14} weight="bold" />
-                  </span>
-                  <span className="pj-check-text">I understand, join with recording on</span>
-                </label>
+                <ConsentTerms recording={session?.recording ?? null} />
+                {alreadyAgreed ? (
+                  <p className="pj-agreed" role="status">
+                    <Check size={16} weight="bold" aria-hidden />
+                    You agreed to this for this meeting on {consentedFormat.format(new Date(alreadyAgreed))}. You will not
+                    be asked again.
+                  </p>
+                ) : (
+                  <label className="pj-check">
+                    <input
+                      type="checkbox"
+                      checked={agreed}
+                      onChange={(e) => setAgreed(e.target.checked)}
+                      aria-describedby="pj-gate"
+                    />
+                    <span className="pj-box" aria-hidden="true">
+                      <Check size={14} weight="bold" />
+                    </span>
+                    <span className="pj-check-text">I have read this and agree to join on these terms</span>
+                  </label>
+                )}
                 <div className="pj-join">
                   <LinkButton href={`/meetings/${meeting.id}`} variant="outline" size="lg">
                     Cancel
                   </LinkButton>
-                  {agreed ? (
-                    // The wrapper takes no box (display: contents) but still hears the link's click,
-                    // so the device choices are saved however Join is activated.
-                    <div className="contents" onClick={remember}>
-                      <LinkButton href={`/meetings/${meeting.id}/room`} size="lg" className="w-full">
-                        <VideoCamera size={18} weight="fill" aria-hidden />
-                        Join meeting
-                      </LinkButton>
-                    </div>
-                  ) : (
-                    <Button type="button" size="lg" className="w-full" disabled aria-describedby="pj-gate">
-                      <VideoCamera size={18} weight="fill" aria-hidden />
-                      Join meeting
-                    </Button>
-                  )}
+                  <Button
+                    type="button"
+                    size="lg"
+                    className="w-full"
+                    disabled={!canJoin || joining}
+                    aria-describedby="pj-gate"
+                    onClick={() => void join()}
+                  >
+                    <VideoCamera size={18} weight="fill" aria-hidden />
+                    {joining ? "Joining..." : "Join meeting"}
+                  </Button>
                 </div>
+                {joinError ? (
+                  <p className="pj-join-error" role="alert">
+                    <WarningCircle size={16} weight="fill" aria-hidden />
+                    {joinError}
+                  </p>
+                ) : null}
                 <p className="pj-gate" id="pj-gate" aria-live="polite">
-                  {agreed ? (
+                  {canJoin ? (
                     <>
                       <Check size={14} weight="bold" aria-hidden />
                       Ready. Your mic and camera choices come with you.

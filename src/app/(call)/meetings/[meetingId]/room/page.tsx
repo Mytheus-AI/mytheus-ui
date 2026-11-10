@@ -3,9 +3,11 @@ import { resolveCallMeeting } from "@/components/call/resolve-meeting";
 import { MeetingRoom } from "@/components/meeting/MeetingRoom";
 import { fetchMyAgentPersonality, listMembers } from "@/lib/api/members";
 import type { RoomNames } from "@/lib/realtime/room-names";
+import { readRoomSession } from "../session";
 import "@/styles/meeting-call.css";
 import "@/styles/meeting-agenda.css";
 import "@/styles/meeting-brain.css";
+import "@/components/room/room-polish.css";
 
 export const metadata: Metadata = { title: "Meeting room | Mytheus" };
 
@@ -20,10 +22,11 @@ export default async function MeetingRoomPage({
 }: {
   params: { meetingId: string };
 }) {
-  const [meeting, members, personality] = await Promise.all([
+  const [meeting, members, personality, session] = await Promise.all([
     resolveCallMeeting(params.meetingId),
     listMembers(),
     fetchMyAgentPersonality(),
+    readRoomSession(params.meetingId),
   ]);
   // Internal user id -> display name, for the tiles, participants, chat and captions. Every
   // identity in the room is an internal user id; a member list that cannot be loaded only
@@ -48,5 +51,5 @@ export default async function MeetingRoomPage({
       }
     : null;
 
-  return <MeetingRoom meeting={meeting} names={names} me={me} />;
+  return <MeetingRoom meeting={meeting} names={names} me={me} session={session} />;
 }

@@ -32,12 +32,26 @@ interface TokenResponse {
   token: string;
   room: string;
   livekit_url?: string | null;
+  consented_at?: string | null;
+  consent_version?: string | null;
+  started_at?: string | null;
 }
 
+/** The notice version label meeting-service stores (`ConsentAck.version`). */
+const CONSENT_VERSION = /^[A-Za-z0-9._-]{1,64}$/;
+
+/*
+ * CONSENT THAT IS REAL (polish program, Phase 0; ADR-0018). The pre-join (and the room, if the
+ * server still asks) sends `{ meeting_id, consent: { version } }`: the person read the notice
+ * with that version label and agreed. It is forwarded as meeting-service's optional token-request
+ * body, which stamps `meeting_participants.consented_at` / `consent_version` once, before the 428
+ * gate. Nothing else from the browser is forwarded: identity comes from the session.
+ */
 export async function POST(request: Request): Promise<NextResponse> {
   let meetingId: unknown;
+  let consent: unknown;
   try {
-    ({ meeting_id: meetingId } = (await request.json()) as { meeting_id?: unknown });
+    ({ meeting_id: meetingId, consent } = (await request.json()) as { meeting_id?: unknown; consent?: unknown });
   } catch {
     return NextResponse.json({ code: "MALFORMED_BODY" }, { status: 400 });
   }
@@ -45,11 +59,19 @@ export async function POST(request: Request): Promise<NextResponse> {
   if (typeof meetingId !== "string" || meetingId.length === 0) {
     return NextResponse.json({ code: "VALIDATION_FAILED" }, { status: 400 });
   }
+  let version: string | null = null;
+  if (consent !== undefined && consent !== null) {
+    const v = (consent as { version?: unknown }).version;
+    if (typeof v !== "string" || !CONSENT_VERSION.test(v)) {
+      return NextResponse.json({ code: "VALIDATION_FAILED" }, { status: 400 });
+    }
+    version = v;
+  }
 
   try {
     const minted = await api<TokenResponse>(
       `/api/meetings/${encodeURIComponent(meetingId)}/token`,
-      { method: "POST" },
+      version ? { method: "POST", body: { consent: { version } } } : { method: "POST" },
     );
     return NextResponse.json(minted);
   } catch (error) {
