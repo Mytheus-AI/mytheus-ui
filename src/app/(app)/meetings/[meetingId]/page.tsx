@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ComponentProps } from "react";
 import Link from "next/link";
 import {
   ArrowBendUpLeft,
@@ -8,9 +9,11 @@ import {
   CalendarBlank,
   CheckSquare,
   Clock,
+  LockSimple,
   NotePencil,
   Question,
   Robot,
+  Sparkle,
   Scales,
   ShieldCheck,
   UserCircle,
@@ -22,7 +25,10 @@ import { resolveCallMeeting } from "@/components/call/resolve-meeting";
 import { LinkButton } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { AgendaPerson } from "@/components/meetings/AgendaEditor";
+import { AttendanceCard } from "@/components/meetings/AttendanceCard";
 import { CarryForwardCard } from "@/components/meetings/CarryForwardCard";
+import { BriefSection } from "@/components/briefs/BriefSection";
+import { HealthCard } from "@/components/health/HealthCard";
 import { Chip } from "@/components/meetings/Chip";
 import { MeetingAgendaCard } from "@/components/meetings/MeetingAgendaCard";
 import { InviteToMeeting } from "@/components/meetings/InviteToMeeting";
@@ -30,12 +36,16 @@ import type { PickableMember } from "@/components/meetings/MemberPicker";
 import { wordCount } from "@/components/meetings/transcript-utils";
 import { initials, toneOf } from "@/components/room/tone";
 import { fetchCarryForward } from "@/lib/api/meeting";
+import { fetchActiveGoals, fetchMeetingBrief, fetchMeetingHealth, type BrainRead } from "@/lib/api/meeting-brain";
+import type { MeetingBrief, MeetingHealth, OrgGoal } from "@/lib/api/meeting-brain-types";
+import { agentFace } from "@/lib/realtime/agent-persona";
 import type { CarryForward } from "@/lib/api/meeting-agenda-types";
 import type { CallMeeting } from "@/lib/api/meetings";
 import { listMembers, type WorkspaceMemberView } from "@/lib/api/members";
 import { fetchTranscriptSurface, type TranscriptChunk } from "@/lib/api/transcript";
 import "@/styles/meeting-hub.css";
 import "@/styles/meeting-agenda.css";
+import "@/styles/meeting-brain.css";
 
 export const metadata: Metadata = { title: "Meeting | Mytheus" };
 
@@ -53,7 +63,13 @@ export const metadata: Metadata = { title: "Meeting | Mytheus" };
 
    ADR-0038 D11: the host is named in the title row, a follow-up links the meeting it follows, the
    agenda shows each item's status and the meeting agent's note (the host or creator can edit it
-   and set statuses), and a follow-up shows what the earlier meeting left open. */
+   and set statuses), and a follow-up shows what the earlier meeting left open.
+
+   ADR-0039 E: before it starts you can send your agent instead (with an update and questions,
+   reversible until it starts) and read your brief (#brief, where the reminder links); carried
+   forward actions show their latest status; after it ends the health card sits beside the recap
+   and the catch-up is a link away. On a wide screen the main area is two columns of cards beside
+   the people rail, so nothing sits in a narrow centred strip. */
 
 export const dynamic = "force-dynamic";
 
@@ -76,13 +92,31 @@ function relative(from: Date, to: Date): string {
   return mins >= 0 ? `in ${span}` : `${span} ago`;
 }
 
-type Person = { id: string; name: string; email: string; imageUrl: string | null; isYou: boolean; host: boolean };
+type Person = {
+  id: string;
+  name: string;
+  email: string;
+  imageUrl: string | null;
+  isYou: boolean;
+  host: boolean;
+  /** Sent their agent instead (ADR-0039 B5). */
+  proxy: boolean;
+};
 
 /** The parts of the page that ADR-0038 adds, assembled once in the page and passed down. */
 type Plan = {
   agenda: AgendaItemsProps;
   carry: { previous: { id: string; title: string }; data: CarryForward | null } | null;
   nameOf: (id: string) => string;
+  /** Send my agent instead, for a participant (null otherwise). */
+  attendance: ComponentProps<typeof AttendanceCard> | null;
+  /** Your brief, before it ends and when you are in it. */
+  brief: BrainRead<MeetingBrief> | null;
+  /** The health card, after it ended. */
+  health: BrainRead<MeetingHealth> | null;
+  goals: OrgGoal[];
+  /** You sent your agent: the catch-up is yours. */
+  sentAgent: boolean;
 };
 type AgendaItemsProps = {
   meetingId: string;
@@ -94,8 +128,24 @@ type AgendaItemsProps = {
 };
 
 function PlanCards({ plan, side }: { plan: Plan; side: "main" | "aside" }) {
-  if (side === "main") return <MeetingAgendaCard {...plan.agenda} />;
+  if (side === "main") return <MeetingAgendaCard {...plan.agenda} goals={plan.goals} />;
   return plan.carry ? <CarryForwardCard previous={plan.carry.previous} data={plan.carry.data} nameOf={plan.nameOf} /> : null;
+}
+
+/* The catch-up, for whoever missed it or sent their agent (ADR-0039 B8). */
+function CatchUpLink({ meetingId, sentAgent }: { meetingId: string; sentAgent: boolean }) {
+  return (
+    <Link href={`/meetings/${meetingId}/catch-up`} className={`mx-card md-linkcard tap${sentAgent ? " cu-link is-yours" : " cu-link"}`}>
+      <span className="md-plan-ico" aria-hidden="true">
+        <Sparkle size={18} />
+      </span>
+      <span className="md-linkcard-text">
+        <strong>{sentAgent ? "Your agent's catch-up" : "Catch up in a minute"}</strong>
+        <span>What you now own, what was decided, and how far the agenda got</span>
+      </span>
+      <ArrowRight size={16} weight="bold" aria-hidden="true" />
+    </Link>
+  );
 }
 
 function people(meeting: CallMeeting, members: WorkspaceMemberView[] | null): Person[] {
@@ -110,6 +160,7 @@ function people(meeting: CallMeeting, members: WorkspaceMemberView[] | null): Pe
         imageUrl: m?.imageUrl ?? null,
         isYou: m?.isYou ?? false,
         host: meeting.hostUserId ? p.id === meeting.hostUserId : p.role === "host",
+        proxy: p.attendance === "agent",
       };
     })
     .sort((a, b) => Number(b.host) - Number(a.host) || Number(b.isYou) - Number(a.isYou) || a.name.localeCompare(b.name));
@@ -152,6 +203,12 @@ function PeopleCard({ list, title }: { list: Person[]; title: string }) {
                 </strong>
                 {p.email && <span>{p.email}</span>}
               </span>
+              {p.proxy ? (
+                <Chip tone="low" title={`${p.isYou ? "You are" : `${p.name} is`} sending an agent instead`}>
+                  <Robot size={14} aria-hidden="true" />
+                  Sending agent
+                </Chip>
+              ) : null}
               {p.host && <Chip>Host</Chip>}
             </li>
           ))}
@@ -251,25 +308,31 @@ function UpcomingDetail({
 
   return (
     <div className="md-cols">
-      <div className="md-col">
-        <WhenCard meeting={meeting} note={note} live={live} />
-        <PlanCards plan={plan} side="main" />
-        {hasTranscript ? (
-          <Link href={`/meetings/${meeting.id}/transcript`} className="mx-card md-linkcard tap">
-            <span className="md-plan-ico" aria-hidden="true">
-              <Article size={18} />
-            </span>
-            <span className="md-linkcard-text">
-              <strong>Transcript so far</strong>
-              <span>Searchable, with speakers, updated as the call runs</span>
-            </span>
-            <ArrowRight size={16} weight="bold" aria-hidden="true" />
-          </Link>
-        ) : null}
-        <AgentCard />
+      <div className="md-pair">
+        <div className="md-col">
+          <WhenCard meeting={meeting} note={note} live={live} />
+          {plan.attendance ? <AttendanceCard {...plan.attendance} /> : null}
+          {plan.brief ? <BriefSection brief={plan.brief} nameOf={plan.nameOf} goals={plan.goals} /> : null}
+        </div>
+        <div className="md-col">
+          <PlanCards plan={plan} side="main" />
+          <PlanCards plan={plan} side="aside" />
+          {hasTranscript ? (
+            <Link href={`/meetings/${meeting.id}/transcript`} className="mx-card md-linkcard tap">
+              <span className="md-plan-ico" aria-hidden="true">
+                <Article size={18} />
+              </span>
+              <span className="md-linkcard-text">
+                <strong>Transcript so far</strong>
+                <span>Searchable, with speakers, updated as the call runs</span>
+              </span>
+              <ArrowRight size={16} weight="bold" aria-hidden="true" />
+            </Link>
+          ) : null}
+          <AgentCard />
+        </div>
       </div>
-      <div className="md-col">
-        <PlanCards plan={plan} side="aside" />
+      <div className="md-col md-rail">
         <PeopleCard list={list} title="Invited" />
       </div>
     </div>
@@ -312,23 +375,29 @@ function EndedDetail({
   if (meeting.missed || chunks.length === 0) {
     return (
       <div className="md-cols">
-        <div className="md-col">
-          <WhenCard
-            meeting={meeting}
-            note={meeting.missed ? "Nobody joined before it ended" : "No transcript was captured for this call"}
-          />
-          <EmptyState
-            title={meeting.missed ? "This meeting did not happen" : "No transcript for this meeting"}
-            description={
-              meeting.missed
-                ? "Its time came and went with nobody joining, so there is nothing to recap. Start a new meeting when you are ready."
-                : "The call ran without transcription, so there are no notes, decisions or tasks from it here."
-            }
-          />
-          {plan.agenda.items.length > 0 ? <PlanCards plan={plan} side="main" /> : null}
+        <div className="md-pair">
+          <div className="md-col">
+            <WhenCard
+              meeting={meeting}
+              note={meeting.missed ? "Nobody joined before it ended" : "No transcript was captured for this call"}
+            />
+            <EmptyState
+              title={meeting.missed ? "This meeting did not happen" : "No transcript for this meeting"}
+              description={
+                meeting.missed
+                  ? "Its time came and went with nobody joining, so there is nothing to recap. Start a new meeting when you are ready."
+                  : "The call ran without transcription, so there are no notes, decisions or tasks from it here."
+              }
+            />
+            {plan.health ? <HealthCard meetingId={meeting.id} health={plan.health} nameOf={plan.nameOf} /> : null}
+          </div>
+          <div className="md-col">
+            {!meeting.missed ? <CatchUpLink meetingId={meeting.id} sentAgent={plan.sentAgent} /> : null}
+            {plan.agenda.items.length > 0 ? <PlanCards plan={plan} side="main" /> : null}
+            <PlanCards plan={plan} side="aside" />
+          </div>
         </div>
-        <div className="md-col">
-          <PlanCards plan={plan} side="aside" />
+        <div className="md-col md-rail">
           <PeopleCard list={list} title="Invited" />
         </div>
       </div>
@@ -346,6 +415,12 @@ function EndedDetail({
     { icon: Scales, title: "Decisions", desc: "Decisions you have confirmed", href: "/decisions" },
     { icon: CheckSquare, title: "Tasks", desc: "Action items, wherever they were captured", href: "/tasks" },
     {
+      icon: Sparkle,
+      title: "Catch-up",
+      desc: "The one-minute version: what you own, what was decided",
+      href: `/meetings/${meeting.id}/catch-up`,
+    },
+    {
       icon: Robot,
       title: "Agent collaboration",
       desc: "When agents asked each other for context, and what policy allowed",
@@ -355,82 +430,86 @@ function EndedDetail({
 
   return (
     <div className="md-cols">
-      <div className="md-col">
-        <section className="mx-card mx-card-pad" aria-labelledby="md-recap-h">
-          <div className="mx-card-head">
-            <h2 className="mx-card-title" id="md-recap-h">
-              Recap
-            </h2>
-            <span className="mx-card-note">From the transcript</span>
-          </div>
-          <dl className="md-stats">
-            <div>
-              <dt>Talked for</dt>
-              <dd>
-                {spokenMin} <small>{spokenMin === 1 ? "min" : "mins"}</small>
-              </dd>
+      <div className="md-pair">
+        <div className="md-col">
+          <section className="mx-card mx-card-pad" aria-labelledby="md-recap-h">
+            <div className="mx-card-head">
+              <h2 className="mx-card-title" id="md-recap-h">
+                Recap
+              </h2>
+              <span className="mx-card-note">From the transcript</span>
             </div>
-            <div>
-              <dt>Speakers</dt>
-              <dd>{talk.length}</dd>
+            <dl className="md-stats">
+              <div>
+                <dt>Talked for</dt>
+                <dd>
+                  {spokenMin} <small>{spokenMin === 1 ? "min" : "mins"}</small>
+                </dd>
+              </div>
+              <div>
+                <dt>Speakers</dt>
+                <dd>{talk.length}</dd>
+              </div>
+              <div>
+                <dt>Words</dt>
+                <dd>{words.toLocaleString("en-US")}</dd>
+              </div>
+              <div>
+                <dt>Lines</dt>
+                <dd>{chunks.length.toLocaleString("en-US")}</dd>
+              </div>
+            </dl>
+            {talk.length > 0 && (
+              <div className="md-talk">
+                <h3 className="md-sub">Talk time</h3>
+                {talk.map((t) => (
+                  <div className="md-talk-row" key={t.id}>
+                    <span className="md-talk-name" title={t.name}>
+                      {t.name}
+                    </span>
+                    <span className="md-bar" role="img" aria-label={`${t.name} spoke ${t.share} percent of the words`}>
+                      <i style={{ width: `${t.share}%` }}></i>
+                    </span>
+                    <span className="md-talk-pct">{t.share}%</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+          {plan.health ? <HealthCard meetingId={meeting.id} health={plan.health} nameOf={plan.nameOf} /> : null}
+        </div>
+        <div className="md-col">
+          {plan.sentAgent ? <CatchUpLink meetingId={meeting.id} sentAgent /> : null}
+          <PlanCards plan={plan} side="main" />
+          <section className="mx-card mx-card-pad" aria-labelledby="md-thread-h">
+            <div className="mx-card-head">
+              <h2 className="mx-card-title" id="md-thread-h">
+                From this meeting
+              </h2>
             </div>
-            <div>
-              <dt>Words</dt>
-              <dd>{words.toLocaleString("en-US")}</dd>
-            </div>
-            <div>
-              <dt>Lines</dt>
-              <dd>{chunks.length.toLocaleString("en-US")}</dd>
-            </div>
-          </dl>
-          {talk.length > 0 && (
-            <div className="md-talk">
-              <h3 className="md-sub">Talk time</h3>
-              {talk.map((t) => (
-                <div className="md-talk-row" key={t.id}>
-                  <span className="md-talk-name" title={t.name}>
-                    {t.name}
-                  </span>
-                  <span className="md-bar" role="img" aria-label={`${t.name} spoke ${t.share} percent of the words`}>
-                    <i style={{ width: `${t.share}%` }}></i>
-                  </span>
-                  <span className="md-talk-pct">{t.share}%</span>
-                </div>
+            <p className="mx-help">What was said, and what was kept from it. Nothing reaches decisions or tasks until someone confirms it.</p>
+            <ol className="md-thread">
+              {thread.map((t) => (
+                <li key={t.title}>
+                  <Link href={t.href} className="md-thread-row tap">
+                    <span className="md-thread-bead" aria-hidden="true" />
+                    <span className="md-plan-ico" aria-hidden="true">
+                      <t.icon size={17} />
+                    </span>
+                    <span className="md-linkcard-text">
+                      <strong>{t.title}</strong>
+                      <span>{t.desc}</span>
+                    </span>
+                    <ArrowRight size={16} weight="bold" aria-hidden="true" />
+                  </Link>
+                </li>
               ))}
-            </div>
-          )}
-        </section>
-
-        <PlanCards plan={plan} side="main" />
-
-        <section className="mx-card mx-card-pad" aria-labelledby="md-thread-h">
-          <div className="mx-card-head">
-            <h2 className="mx-card-title" id="md-thread-h">
-              From this meeting
-            </h2>
-          </div>
-          <p className="mx-help">What was said, and what was kept from it. Nothing reaches decisions or tasks until someone confirms it.</p>
-          <ol className="md-thread">
-            {thread.map((t) => (
-              <li key={t.title}>
-                <Link href={t.href} className="md-thread-row tap">
-                  <span className="md-thread-bead" aria-hidden="true" />
-                  <span className="md-plan-ico" aria-hidden="true">
-                    <t.icon size={17} />
-                  </span>
-                  <span className="md-linkcard-text">
-                    <strong>{t.title}</strong>
-                    <span>{t.desc}</span>
-                  </span>
-                  <ArrowRight size={16} weight="bold" aria-hidden="true" />
-                </Link>
-              </li>
-            ))}
-          </ol>
-        </section>
+            </ol>
+          </section>
+        </div>
       </div>
 
-      <div className="md-col">
+      <div className="md-col md-rail">
         <PlanCards plan={plan} side="aside" />
         <PeopleCard list={list} title="Took part" />
       </div>
@@ -441,10 +520,16 @@ function EndedDetail({
 export default async function MeetingDetailPage({ params }: { params: { meetingId: string } }) {
   const meeting = await resolveCallMeeting(params.meetingId);
   // A transcript that cannot be reached is shown as no transcript; the meeting itself still loads.
-  const [transcript, members, carried] = await Promise.all([
+  const ended = meeting.status === "past";
+  // ADR-0039: the brief before and during it, the health card after (not for one that never
+  // happened); goals name and pick an agenda item's goal. Each failing costs only its own card.
+  const [transcript, members, carried, brief, health, goals] = await Promise.all([
     fetchTranscriptSurface(meeting.id).catch(() => null),
     listMembers(),
     meeting.previousMeetingId ? fetchCarryForward(meeting.id) : Promise.resolve(null),
+    ended ? Promise.resolve(null) : fetchMeetingBrief(meeting.id),
+    ended && !meeting.missed ? fetchMeetingHealth(meeting.id) : Promise.resolve(null),
+    fetchActiveGoals(),
   ]);
   // Older transcripts saved silence as empty lines.
   const chunks = (transcript?.chunks ?? []).filter((c) => c.text.trim().length > 0);
@@ -454,7 +539,6 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
     members
       ?.filter((m) => !m.isYou && !meeting.participantIds.includes(m.id))
       .map(({ id, name, email }) => ({ id, name, email })) ?? null;
-  const ended = meeting.status === "past";
   const live = meeting.status === "live";
   const start = new Date(meeting.startTime);
   const end = new Date(start.getTime() + meeting.durationMinutes * 60000);
@@ -472,6 +556,7 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
           "The earlier meeting",
       }
     : null;
+  const mine = you ? meeting.participants.find((p) => p.id === you.id) ?? null : null;
   const plan: Plan = {
     agenda: {
       meetingId: meeting.id,
@@ -483,6 +568,20 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
     },
     carry: previous ? { previous, data: carried?.ok ? carried.data : null } : null,
     nameOf,
+    attendance:
+      you && mine && !ended
+        ? {
+            meetingId: meeting.id,
+            saved: { attendance: mine.attendance, proxyUpdate: mine.proxyUpdate, proxyQuestions: mine.proxyQuestions },
+            editable: meeting.status === "upcoming",
+            agent: agentFace(you.id, you.name, you.agentName, you.agentSeed),
+            hostName: host && !host.isYou ? host.name : null,
+          }
+        : null,
+    brief: mine ? brief : null,
+    health,
+    goals,
+    sentAgent: mine?.attendance === "agent",
   };
 
   return (
@@ -519,6 +618,18 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
               <Chip>
                 <Article size={14} aria-hidden="true" />
                 Transcript ready
+              </Chip>
+            ) : null}
+            {meeting.confidential ? (
+              <Chip title="Kept out of topic watch, and never shown in other meetings to people who weren't in this one">
+                <LockSimple size={14} aria-hidden="true" />
+                Confidential
+              </Chip>
+            ) : null}
+            {plan.sentAgent && !ended ? (
+              <Chip tone="low">
+                <Robot size={14} aria-hidden="true" />
+                Your agent attends for you
               </Chip>
             ) : null}
           </div>

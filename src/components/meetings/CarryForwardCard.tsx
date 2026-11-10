@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { ArrowBendDownRight, BookmarkSimple, CheckSquare, Scales } from "@phosphor-icons/react/ssr";
+import { LatestStatus } from "@/components/briefs/LatestStatus";
 import type { CarryForward } from "@/lib/api/meeting-agenda-types";
 
 /* "Carried forward" on the meeting page (ADR-0038 D6, D11): what the meeting this one follows
    left open. Its confirmed decisions, its action items not yet done, and your own saved
    questions from it (nobody else's). Only shown on a follow-up. A list that could not be read
-   says so; an empty one says nothing was left open. A server component: no interaction. */
+   says so; an empty one says nothing was left open. A server component: no interaction.
+
+   ADR-0039 B7: each open action shows its owner's latest status, asked for an hour before this
+   meeting, or says none came yet. */
 
 const dueFormatter = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
@@ -72,9 +76,15 @@ export function CarryForwardCard({
                 {data.open_actions.map((a) => {
                   const meta = [a.owner_user_id ? nameOf(a.owner_user_id) : null, due(a.due_date)].filter(Boolean).join(", ");
                   return (
-                    <li key={a.id}>
-                      {a.title}
-                      {meta ? <small>{meta}</small> : null}
+                    <li key={a.id} className="cf-action">
+                      <span className="cf-action-head">
+                        {a.title}
+                        {meta ? <small>{meta}</small> : null}
+                      </span>
+                      <LatestStatus
+                        status={a.latest_status}
+                        ownerName={a.owner_user_id ? nameOf(a.owner_user_id) : null}
+                      />
                     </li>
                   );
                 })}
