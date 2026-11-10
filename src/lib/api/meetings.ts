@@ -10,6 +10,7 @@
 import { ApiError, api } from "@/lib/api/client";
 import { toMockStatus } from "@/lib/api/present";
 import type { AgendaItem, MeetingAgendaFields, MeetingLinkSummary } from "@/lib/api/meeting-agenda-types";
+import type { Attendance, MeetingBrainFields, ParticipantAttendanceFields } from "@/lib/api/meeting-brain-types";
 import type { ApiMeeting, MeetingPage } from "@/lib/api/types";
 import type { MeetingStatus } from "@/lib/types";
 
@@ -25,8 +26,20 @@ export interface CallMeeting {
   invited: number;
   /** Internal user ids of those participants, for leaving them out of an invite picker. */
   participantIds: string[];
-  /** Who is in it and in what role (`host`, or null for an attendee). */
-  participants: { id: string; role: string | null }[];
+  /** Who is in it and in what role (`host`, or null for an attendee), and whether they attend
+   *  themselves or send their agent (ADR-0039 B5). `proxyQuestions` is only filled for you and,
+   *  when you host, for everyone; it is [] otherwise. */
+  participants: {
+    id: string;
+    role: string | null;
+    attendance: Attendance;
+    proxyUpdate: string | null;
+    proxyQuestions: string[];
+  }[];
+  /** Kept out of topic watch and other meetings' carry-forward (ADR-0039 B2). */
+  confidential: boolean;
+  /** The meeting type it was created from (B2), or null. */
+  templateId: string | null;
   /** Its time came and went with nobody ever joining: shown as ended, never as joinable. */
   missed: boolean;
   /** The one host (ADR-0038 D5): `host_user_id`, else the participant marked host, else the creator. */
@@ -50,7 +63,7 @@ const DEFAULT_MINUTES = 30;
 
 export function toCallMeeting(raw: ApiMeeting): CallMeeting {
   // ADR-0038 fields, read by hand until the generated core-api client is regenerated.
-  const m = raw as ApiMeeting & Partial<MeetingAgendaFields>;
+  const m = raw as ApiMeeting & Partial<MeetingAgendaFields> & MeetingBrainFields;
   const minutes =
     m.scheduled_start && m.scheduled_end
       ? Math.max(1, Math.round((Date.parse(m.scheduled_end) - Date.parse(m.scheduled_start)) / 60000))
@@ -69,7 +82,20 @@ export function toCallMeeting(raw: ApiMeeting): CallMeeting {
     status: missed ? "past" : toMockStatus(m.status),
     invited: m.participants?.length ?? 0,
     participantIds: (m.participants ?? []).map((p) => p.user_id),
-    participants: (m.participants ?? []).map((p) => ({ id: p.user_id, role: p.role_in_meeting ?? null })),
+    participants: (m.participants ?? []).map((raw) => {
+      const p = raw as typeof raw & ParticipantAttendanceFields;
+      return {
+        id: p.user_id,
+        role: p.role_in_meeting ?? null,
+        attendance: p.attendance === "agent" ? "agent" : "live",
+        proxyUpdate: typeof p.proxy_update === "string" && p.proxy_update.trim() ? p.proxy_update.trim() : null,
+        proxyQuestions: Array.isArray(p.proxy_questions)
+          ? p.proxy_questions.filter((q): q is string => typeof q === "string" && q.trim().length > 0)
+          : [],
+      };
+    }),
+    confidential: m.confidential === true,
+    templateId: m.template_id ?? null,
     missed,
     hostUserId:
       m.host_user_id ?? (m.participants ?? []).find((p) => p.role_in_meeting === "host")?.user_id ?? m.created_by ?? null,

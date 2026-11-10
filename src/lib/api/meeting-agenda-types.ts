@@ -32,6 +32,8 @@ export interface AgendaItem {
   status_source: AgendaStatusSource | null;
   agent_note: string | null;
   updated_at: string;
+  /** An `org_goals` id this item serves (ADR-0039 B3), or null. */
+  goal_id?: string | null;
 }
 
 /** `previous_meeting` on a meeting read and on carry-forward (D6). */
@@ -56,6 +58,8 @@ export interface AgendaItemCreate {
   title: string;
   owner_user_id?: string | null;
   duration_minutes?: number | null;
+  /** An active `org_goals` id (ADR-0039 B3), or null. */
+  goal_id?: string | null;
 }
 
 /** One row of `PUT /meetings/{id}/agenda` (D6). An `id` keeps that item's status. */
@@ -67,7 +71,14 @@ export interface AgendaItemPut extends AgendaItemCreate {
 export interface CarryForward {
   previous_meeting: MeetingLinkSummary | null;
   decisions: { id: string; content: string }[];
-  open_actions: { id: string; title: string; owner_user_id: string | null; due_date: string | null }[];
+  open_actions: {
+    id: string;
+    title: string;
+    owner_user_id: string | null;
+    due_date: string | null;
+    /** The assignee's latest answer to a status request (ADR-0039 B7), or null. */
+    latest_status?: { text: string; answered_at: string | null } | null;
+  }[];
   saved_questions: { id: string; question: string }[];
 }
 
@@ -78,14 +89,19 @@ export interface AgentAgendaPayload {
   note: string | null;
 }
 
-export type NudgeType = "off_agenda" | "over_time" | "unaddressed";
+/** `proxy_update` (ADR-0039 C5): an item owned by someone who sent their agent became in
+ *  progress, so the host sees that person's update. Once per item, no model call. */
+export type NudgeType = "off_agenda" | "over_time" | "unaddressed" | "proxy_update";
 
-/** `"agent-nudge"` socket payload (D9), only to the host's sockets. */
+/** `"agent-nudge"` socket payload (D9), only to the host's sockets. A `proxy_update` nudge
+ *  (ADR-0039 C5) carries the person's whole update (up to 2000 chars) and, optionally, `userId`,
+ *  the participant who sent their agent. */
 export interface AgentNudgePayload {
   id: string;
   type: NudgeType;
   itemId: string | null;
   content: string;
+  userId?: string | null;
 }
 
 /** The persona fields `GET /users` adds per member (D3). */
