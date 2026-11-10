@@ -1,12 +1,15 @@
 import type { CSSProperties } from "react";
 import { Avatar } from "@/components/ui/Avatar";
+import { Doodle } from "@/components/ui/Doodle";
+import { defaultDoodleSeed } from "@/lib/doodle";
 
 /* ================================================================== */
 /*  The brand-panel illustrations. Each is the coral line, drawn once  */
 /*  on arrival (`.auth-draw`, see src/styles/auth.css), with beads for */
 /*  meetings:                                                          */
-/*    sign-in    a short memory line of recent meetings, ending on a   */
-/*               solid bead where you pick up                          */
+/*    sign-in    the week's meetings as cards on the line (doodle      */
+/*               faces of who was there, what was kept), ending on     */
+/*               today's card and a solid bead                         */
 /*    sign-up    the line starting fresh from one solid bead           */
 /*    workspace  the line branching from you to your teammates         */
 /*  All decorative: the panel's headline carries the meaning.          */
@@ -28,50 +31,101 @@ export function AuthArt({ kind, label }: { kind: AuthArtKind; label?: string }) 
       <svg viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 h-full w-full overflow-visible">
         {kind === "sign-in" ? <MemoryLine /> : kind === "sign-up" ? <FirstMeeting /> : <Branches label={label} />}
       </svg>
-      {kind === "workspace" ? <Teammates /> : null}
+      {kind === "workspace" ? <Teammates /> : kind === "sign-in" ? <WeekCards /> : null}
     </div>
   );
 }
 
 /* ---------------- sign-in: the week so far ---------------- */
 
-const PAST = [
-  { y: 70, title: "Roadmap sync", note: "Monday: ship date locked", dl: 0.45 },
-  { y: 190, title: "Pricing review", note: "Wednesday: Pro tier set at $29", dl: 1.05 },
-  { y: 310, title: "Customer call", note: "Thursday: SSO promised", dl: 1.6 },
+/* Three meetings from the week as small cards on the thread: who was in the room (their doodle
+   faces) and the one thing the agent kept. The thread ends on today's card, the one you are
+   signing in to. Cards are HTML over the SVG thread, placed in viewBox units like Teammates. */
+
+type Met = { y: number; title: string; day: string; kept: string; people: string[]; dl: number };
+
+const WEEK: Met[] = [
+  { y: 62, title: "Roadmap sync", day: "Monday", kept: "Ship date locked", people: ["Maya", "Raj", "Priya"], dl: 0.45 },
+  { y: 178, title: "Pricing review", day: "Wednesday", kept: "Pro tier at $29", people: ["Sarah", "Diego"], dl: 1.0 },
+  { y: 294, title: "Customer call", day: "Thursday", kept: "SSO promised", people: ["Aiko", "Daniel", "Maya"], dl: 1.5 },
 ];
+const TODAY = { y: 412, dl: 2.15 };
+const RAIL_X = 34;
+const CARD_X = 68;
 
 function MemoryLine() {
-  const x = 120;
-  const bend = 78;
+  const x = RAIL_X;
+  const bend = 12;
+  const ys = [...WEEK.map((m) => m.y), TODAY.y];
   const seg = (from: number, to: number) => {
     const mid = (from + to) / 2;
-    return `C ${x} ${from + 30} ${bend} ${from + 30} ${bend} ${mid} C ${bend} ${to - 30} ${x} ${to - 30} ${x} ${to}`;
+    return `C ${x} ${from + 28} ${bend} ${from + 28} ${bend} ${mid} C ${bend} ${to - 28} ${x} ${to - 28} ${x} ${to}`;
   };
-  const d = `M ${bend} -16 C ${bend} 30 ${x} 30 ${x} 70 ${seg(70, 190)} ${seg(190, 310)} ${seg(310, 430)}`;
+  let d = `M ${bend} -16 C ${bend} 24 ${x} 24 ${x} ${ys[0]}`;
+  for (let i = 1; i < ys.length; i++) d += ` ${seg(ys[i - 1], ys[i])}`;
   return (
     <>
       <path className="art-line auth-draw" pathLength={1} style={timing(2.3, 0.1)} d={d} />
-      {PAST.map((m) => (
-        <g key={m.title} className="auth-appear" style={delay(m.dl)}>
-          <circle className="art-bead" cx={x} cy={m.y} r={7} />
-          <text className="art-title" x={x + 30} y={m.y + 1}>
-            {m.title}
-          </text>
-          <text className="art-note" x={x + 30} y={m.y + 26}>
-            {m.note}
-          </text>
-        </g>
+      {WEEK.map((m) => (
+        <circle key={m.title} className="art-bead auth-appear" style={delay(m.dl)} cx={x} cy={m.y} r={7} />
       ))}
-      <g className="auth-appear" style={delay(2.25)}>
-        <circle className="art-bead-now" cx={x} cy={430} r={9} />
-        <text className="art-strong" x={x + 30} y={429}>
-          Today
-        </text>
-        <text className="art-note" x={x + 30} y={455}>
-          the room picks up from here
-        </text>
-      </g>
+      <circle className="art-bead-now auth-appear" style={delay(TODAY.dl)} cx={x} cy={TODAY.y} r={9} />
+    </>
+  );
+}
+
+function Faces({ people, size = 34 }: { people: string[]; size?: number }) {
+  return (
+    <span className="flex">
+      {people.map((p, i) => (
+        <span
+          key={p}
+          className="block overflow-hidden rounded-full bg-surface shadow-warm-1 ring-2 ring-surface"
+          style={{ width: size, height: size, marginLeft: i ? -size / 3.2 : 0, zIndex: people.length - i }}
+        >
+          <Doodle seed={defaultDoodleSeed(p)} className="block h-full w-full" />
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function WeekCards() {
+  const place = (y: number) => ({ left: `${(CARD_X / W) * 100}%`, top: `${(y / H) * 100}%` });
+  return (
+    <>
+      {WEEK.map((m) => (
+        <div
+          key={m.title}
+          className="auth-appear absolute right-0 -translate-y-1/2 rounded-card bg-surface px-4 py-3 shadow-warm-1 ring-1 ring-line"
+          style={{ ...place(m.y), ...delay(m.dl) }}
+        >
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="font-display text-[17px] font-medium leading-tight tracking-[-0.01em] text-ink">{m.title}</p>
+            <span className="text-[13px] text-ink-3">{m.day}</span>
+          </div>
+          <div className="mt-2 flex items-center justify-between gap-3">
+            <span className="truncate rounded-full bg-signal-soft px-2.5 py-0.5 text-[13px] font-medium text-signal-ink">
+              {m.kept}
+            </span>
+            <Faces people={m.people} />
+          </div>
+        </div>
+      ))}
+      <div
+        className="auth-appear absolute right-0 -translate-y-1/2 rounded-card bg-surface px-4 pb-3.5 pt-3 shadow-warm-2 ring-1 ring-signal-line"
+        style={{ ...place(TODAY.y), ...delay(TODAY.dl) }}
+      >
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-[13px] font-semibold text-signal-ink">Today</span>
+          <span className="text-[13px] text-ink-3">10:30</span>
+        </div>
+        <p className="mt-0.5 font-display text-[20px] font-medium leading-tight tracking-[-0.01em] text-ink">Launch review</p>
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <span className="font-display text-[15px] italic text-ink-3">picks up with 3 open questions</span>
+          <Faces people={["Maya", "Raj", "Sarah", "Diego"]} size={36} />
+        </div>
+      </div>
     </>
   );
 }
