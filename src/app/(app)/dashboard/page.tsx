@@ -3,6 +3,7 @@ import { apiSafe } from "@/lib/api/client";
 import { toMeetingView } from "@/lib/api/present";
 import type { DashboardResponse } from "@/lib/api/types";
 import { resolveOrgContext } from "@/lib/api/org-context";
+import { AgentProfilePrompt } from "@/components/app/dashboard/AgentProfilePrompt";
 import { DashboardHeader } from "@/components/app/dashboard/DashboardHeader";
 import { HeroUpNext } from "@/components/app/dashboard/HeroUpNext";
 import { NeedsYou } from "@/components/app/dashboard/NeedsYou";
@@ -90,6 +91,8 @@ export default async function DashboardPage() {
         openTasks={tasks.failed ? null : tasks.items.length}
         needsYou={review.failed ? null : review.items.length}
       />
+
+      <AgentProfilePrompt />
 
       {/* Wide main column plus a fixed, narrower rail. Under 1100px the rail drops below and
           becomes two columns; under 720px everything is one column. */}
