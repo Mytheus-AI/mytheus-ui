@@ -3,8 +3,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, Bell, Binoculars, Check, CheckSquare, Checks, Gavel, Scales, Warning, X } from "@phosphor-icons/react";
-import { Button } from "@/components/ui/Button";
+import {
+  ArrowRight,
+  ArrowsClockwise,
+  Bell,
+  Binoculars,
+  Check,
+  CheckSquare,
+  Checks,
+  Gavel,
+  Hourglass,
+  Newspaper,
+  Scales,
+  Warning,
+  X,
+} from "@phosphor-icons/react";
+import { Button, LinkButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -12,6 +26,7 @@ import { Page, PageHead } from "@/components/ui/Page";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { textLinkClass } from "@/components/ui/TextLink";
 import { LocalWhen } from "@/components/status/LocalWhen";
+import { ReversalActions, taskOf } from "@/components/reversals/ReversalActions";
 import { StatusAnswerRow } from "@/components/status/StatusAnswerRow";
 import { useStatusAnswers } from "@/components/status/useStatusAnswers";
 import { dismissAlert, markAlertRead } from "@/app/actions/notifications";
@@ -61,12 +76,23 @@ const PRIORITY_TILE: Record<1 | 2 | 3, string> = {
   3: "bg-priority-low-soft text-priority-low",
 };
 
-const NOTE_ICON = { topic_watch: Binoculars, already_decided: Gavel, alert: Warning, reminder: Bell } as const;
+const NOTE_ICON = {
+  topic_watch: Binoculars,
+  already_decided: Gavel,
+  alert: Warning,
+  reminder: Bell,
+  decision_changed: ArrowsClockwise,
+  promise_drift: Hourglass,
+  weekly_digest: Newspaper,
+} as const;
 const NOTE_LABEL = {
   topic_watch: "Topic you watch",
   already_decided: "Already decided",
   alert: "Agent alert",
   reminder: "Reminder",
+  decision_changed: "Decision changed",
+  promise_drift: "Promise past due",
+  weekly_digest: "Weekly digest",
 } as const;
 
 function asFilter(v: string | null): InboxFilter {
@@ -298,12 +324,18 @@ export function InboxView({ initial, failed, nowIso }: { initial: InboxItem[]; f
         liveContext
         context={context}
         action={
-          unreadNotes.length > 0 ? (
-            <Button variant="outline" onClick={markAllRead}>
-              <Checks size={16} aria-hidden />
-              Mark all read
-            </Button>
-          ) : undefined
+          <>
+            <LinkButton href="/digest" variant="ghost">
+              <Newspaper size={16} aria-hidden />
+              Weekly digest
+            </LinkButton>
+            {unreadNotes.length > 0 ? (
+              <Button variant="outline" onClick={markAllRead}>
+                <Checks size={16} aria-hidden />
+                Mark all read
+              </Button>
+            ) : null}
+          </>
         }
       />
 
@@ -437,6 +469,15 @@ function NotificationRow({
             </Link>
           ) : null}
         </div>
+        {n.kind === "decision_changed" && n.sourceEventId ? (
+          <ReversalActions
+            reversalId={n.reversal?.id ?? n.sourceEventId.slice("decision-reversal:".length)}
+            status={n.reversal?.status ?? "pending"}
+            task={taskOf(n.reversal)}
+            notificationId={item.id}
+            label={n.reversal?.action.content}
+          />
+        ) : null}
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-start">
         {n.unread ? (

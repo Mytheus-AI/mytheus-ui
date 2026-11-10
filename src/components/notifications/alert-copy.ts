@@ -11,7 +11,17 @@
  * shown with the title, body and link notification-service stored.
  */
 
-export type FeedKind = "topic_watch" | "already_decided" | "alert" | "reminder";
+export type FeedKind =
+  | "topic_watch"
+  | "already_decided"
+  | "alert"
+  | "reminder"
+  | "decision_changed"
+  | "promise_drift"
+  | "weekly_digest";
+
+import type { DecisionReversal } from "../../lib/api/only-mytheus-types";
+import { parseSourceEvent } from "../../lib/reversals.ts";
 
 export interface FeedRowInput {
   id: string;
@@ -40,6 +50,12 @@ export interface FeedItem {
   linkLabel: string;
   unread: boolean;
   createdAt: string;
+  /** `payload.source_event_id`: which job made it (only-Mytheus wave: `decision-reversal:`,
+   *  `promise-drift:`, `weekly-digest:`). */
+  sourceEventId?: string | null;
+  /** A decision reversal's own row, joined on the server so the Inbox can settle it in place;
+   *  null when it could not be read (the row still offers the three choices). */
+  reversal?: DecisionReversal | null;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -113,6 +129,49 @@ export function describeNotification(row: FeedRowInput): FeedItem {
       // the lineage page (which is keyed by that meeting) is reachable only through a server link.
       href: safeLink(row.link) ?? "/decisions",
       linkLabel: "See the decision",
+    };
+  }
+
+  // The only-Mytheus jobs: a decision changed under your task, a promise past due with its Jira
+  // ticket still open, the weekly digest. Their title, body and link come from the server.
+  const sourceEventId = str(p.source_event_id) || null;
+  const event = parseSourceEvent(sourceEventId);
+  if (event) {
+    const own = {
+      ...base,
+      sourceEventId,
+      title: row.title,
+      body: row.body,
+      quote: null,
+    };
+    if (event.kind === "decision-reversal") {
+      return {
+        ...own,
+        kind: "decision_changed",
+        // A choice waits on you: attention, amber.
+        priority: 2,
+        title: row.title || "Decision changed: re-scope, keep or close this task?",
+        href: safeLink(row.link) ?? `/work/tasks?reversal=${event.reversalId}`,
+        linkLabel: "See it with your tasks",
+      };
+    }
+    if (event.kind === "promise-drift") {
+      return {
+        ...own,
+        kind: "promise_drift",
+        title: row.title || "A promise is past due",
+        href: safeLink(row.link) ?? (event.audience === "owner" ? `/work/tasks?focus=${event.actionId}` : meetingHref),
+        linkLabel: event.audience === "owner" ? "Open the task" : "Open the meeting",
+      };
+    }
+    return {
+      ...own,
+      kind: "weekly_digest",
+      // Informs, blue.
+      priority: 3,
+      title: row.title || "What changed for you this week",
+      href: safeLink(row.link) ?? "/digest",
+      linkLabel: "Read your digest",
     };
   }
 
