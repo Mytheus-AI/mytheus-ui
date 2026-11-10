@@ -13,9 +13,9 @@ export const metadata: Metadata = {
 };
 
 /* The platform-staff consoles. Clerk middleware already requires a session here; the org
-   context is the signed-in user's own, from the verified session. There is no staff role yet,
-   so the pages under this layout show no cross-tenant data at all (see
-   `PlatformConsoleUnavailable`); the real gate lands with that role and `admin-ops-service`. */
+   context is the signed-in user's own, from the verified session. The staff gate itself is in
+   `ops/layout.tsx` (`GET /admin/ops/whoami`, deny by default); admin-ops-service enforces it
+   again on every `/admin/ops/*` call. */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const orgContext = await resolveOrgContext();
   return (
