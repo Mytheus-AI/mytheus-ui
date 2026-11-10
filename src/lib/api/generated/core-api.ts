@@ -334,6 +334,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/erasures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apply Erasure
+         * @description authz: admin. Erase core-api's data for one person or one meeting (module docstring).
+         */
+        post: operations["apply_erasure"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/meeting-templates": {
         parameters: {
             query?: never;
@@ -2594,6 +2614,59 @@ export interface components {
              * Format: uuid
              */
             user_id: string;
+        };
+        /** ErasureApplied */
+        ErasureApplied: {
+            /**
+             * Anonymized
+             * @description Records kept with the person removed.
+             */
+            anonymized: {
+                [key: string]: number;
+            };
+            /**
+             * Erased
+             * @description Rows deleted, by kind of data.
+             */
+            erased: {
+                [key: string]: number;
+            };
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "person" | "meeting";
+            /**
+             * Label
+             * @description What the confirmation matched: an email or a meeting title.
+             */
+            label: string;
+            /** Revoked Share Links */
+            revoked_share_links: number;
+            /**
+             * Target Id
+             * Format: uuid
+             */
+            target_id: string;
+        };
+        /** ErasureRequest */
+        ErasureRequest: {
+            /**
+             * Confirm
+             * @description Typed confirmation: the person's email, or the meeting's title (`Untitled meeting` when it has none). Case and outer spaces are ignored.
+             */
+            confirm: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "person" | "meeting";
+            /**
+             * Target Id
+             * Format: uuid
+             * @description The person's `users.id` or the meeting's id.
+             */
+            target_id: string;
         };
         /**
          * @description The frozen program-wide error enum. Clients branch on this and never on `detail`, which is human-readable and free to change. Values are added, never removed or repurposed. Emitted verbatim from `libs.shared.errors.ErrorCode`, so this list cannot drift from the code; the no-removal half is asserted by `test_no_published_error_code_is_ever_removed`, because `oasdiff` does not treat narrowing a response enum as a breaking change.
@@ -5293,6 +5366,78 @@ export interface operations {
                 };
             };
             /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    apply_erasure: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ErasureRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErasureApplied"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description No such person or meeting in this workspace. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The meeting is live. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The typed confirmation does not match, or it is your own data. */
             422: {
                 headers: {
                     [name: string]: unknown;

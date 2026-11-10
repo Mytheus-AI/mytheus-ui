@@ -11,7 +11,7 @@
  * Pure so it can be tested without a server.
  */
 
-export type ProviderKey = "google_calendar" | "slack" | "jira" | "linear";
+export type ProviderKey = "google_calendar" | "slack" | "jira" | "linear" | "hubspot" | "notion" | "confluence";
 export type TrackerKey = "jira" | "linear";
 export type ConnectionStatus = "active" | "degraded" | "disconnected";
 
@@ -27,21 +27,27 @@ export interface IntegrationItem {
   last_synced_at: string | null;
 }
 
-export const PROVIDERS: readonly ProviderKey[] = ["google_calendar", "slack", "jira", "linear"];
-export const CONNECTABLE: readonly ProviderKey[] = ["google_calendar", "slack", "jira"];
+export const PROVIDERS: readonly ProviderKey[] = ["google_calendar", "slack", "jira", "linear", "hubspot", "notion", "confluence"];
+export const CONNECTABLE: readonly ProviderKey[] = ["google_calendar", "slack", "jira", "hubspot", "notion", "confluence"];
+/** Phase 4 reach: the CRM a meeting note goes to, and the two tools a decision record can be
+ *  exported to. Outside R8, so connecting one never blocks another. */
+export const REACH: readonly ProviderKey[] = ["hubspot", "notion", "confluence"];
 
 export const PROVIDER_NAME: Record<ProviderKey, string> = {
   google_calendar: "Google Calendar",
   slack: "Slack",
   jira: "Jira",
   linear: "Linear",
+  hubspot: "HubSpot",
+  notion: "Notion",
+  confluence: "Confluence",
 };
 
 export function isProvider(v: unknown): v is ProviderKey {
   return typeof v === "string" && (PROVIDERS as readonly string[]).includes(v);
 }
 
-/** Only these three can ever be connected; Linear is not built (R8, contract section 0). */
+/** Only these can ever be connected; Linear is not built (R8, contract section 0). */
 export function isConnectable(v: unknown): v is ProviderKey {
   return typeof v === "string" && (CONNECTABLE as readonly string[]).includes(v);
 }
@@ -204,6 +210,12 @@ export function scopeLabel(scope: string): string {
     "manage:jira-webhook": "Manage webhooks",
     "read:jira-user": "See people",
     offline_access: "Stay connected",
+    "crm.objects.contacts.read": "Read contacts",
+    "crm.objects.companies.read": "Read companies",
+    "crm.objects.contacts.write": "Add notes to contacts",
+    "crm.objects.companies.write": "Add notes to companies",
+    "read:confluence-space.summary": "See spaces",
+    "write:confluence-content": "Create pages",
   };
   return known[scope] ?? scope;
 }

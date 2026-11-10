@@ -24,8 +24,11 @@ export default async function IntegrationsSettingsPage({
   if (!isAdmin) {
     return (
       <>
-        <SectionBar title="Integrations" context="Calendar, Slack and one project tracker for the workspace." />
-        <Note>Only workspace owners and admins can manage integrations. Ask an admin to connect one.</Note>
+        <SectionBar title="Integrations" context="Calendar, Slack, one project tracker, and the tools decision records and meeting notes can go to." />
+        <Note>
+          Only workspace owners and admins can connect integrations. Ask an admin to connect one; exporting a decision to Notion, Confluence or Slack works for
+          everyone once it is connected.
+        </Note>
       </>
     );
   }
@@ -37,7 +40,7 @@ export default async function IntegrationsSettingsPage({
     <>
       <SectionBar
         title="Integrations"
-        context="Calendar, Slack and one project tracker. Agents use them to prepare for meetings and route what you confirm."
+        context="Calendar, Slack and one project tracker for agents, plus HubSpot, Notion and Confluence for sharing what the workspace confirms."
       />
       <div className="grid gap-5">
         <IntegrationsPanel load={load} banner={banner} people={people} />

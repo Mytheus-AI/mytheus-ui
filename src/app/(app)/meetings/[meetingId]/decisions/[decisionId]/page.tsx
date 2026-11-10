@@ -10,6 +10,9 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { Page, PageColumns, PageHead } from "@/components/ui/Page";
 import { Crumb } from "@/components/app/Crumb";
 import { fetchDecisionLineage, type LineageDecision } from "@/lib/api/lineage";
+import { loadDecisionReach } from "@/lib/api/decision-reach";
+import { resolveOrgContext } from "@/lib/api/org-context";
+import { DecisionReach } from "@/components/decisions/DecisionReach";
 
 export const metadata: Metadata = { title: "Decision lineage | Mytheus" };
 
@@ -17,7 +20,11 @@ export const metadata: Metadata = { title: "Decision lineage | Mytheus" };
    decision, oldest first. What it superseded comes before it, what superseded it comes after.
    Read from `bff` -> `knowledge-graph-service`'s `decision_lineage` template, which only ever
    holds confirmed decisions. With no gateway configured the page says history is unavailable
-   rather than showing a sample. The topbar breadcrumb reads Decisions / the decision. */
+   rather than showing a sample. The topbar breadcrumb reads Decisions / the decision.
+
+   Phase 4 reach: the aside shares the record (Copy share link, Export to Notion, Confluence or
+   Slack). Every export and share carries this same lineage, built by the server as the person
+   may see it. */
 
 type ChainNode = {
   id: string;
@@ -72,7 +79,11 @@ export default async function DecisionLineagePage({
 }: {
   params: { meetingId: string; decisionId: string };
 }) {
-  const chain = await loadChain(params.meetingId, params.decisionId);
+  const [chain, reach, org] = await Promise.all([
+    loadChain(params.meetingId, params.decisionId),
+    loadDecisionReach(params.decisionId).catch(() => null),
+    resolveOrgContext(),
+  ]);
   const openMeeting = (
     <LinkButton href={`/meetings/${params.meetingId}`} variant="outline">
       <VideoCamera size={16} aria-hidden />
@@ -122,7 +133,20 @@ export default async function DecisionLineagePage({
       <PageColumns
         sticky={false}
         aside={
-          <Note>Only confirmed decisions appear in a lineage. Nothing your agent proposed is saved until someone confirms it.</Note>
+          <div className="flex flex-col gap-5">
+            {reach ? (
+              <DecisionReach
+                decisionId={params.decisionId}
+                meetingId={params.meetingId}
+                destinations={reach.destinations}
+                exports={reach.exports}
+                links={reach.links}
+                shareable={reach.shareable}
+                isAdmin={org?.user.role === "admin"}
+              />
+            ) : null}
+            <Note>Only confirmed decisions appear in a lineage. Nothing your agent proposed is saved until someone confirms it.</Note>
+          </div>
         }
       >
         <SectionCard

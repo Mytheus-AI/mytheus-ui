@@ -2,16 +2,19 @@ import type { Metadata } from "next";
 import { TasksView } from "@/components/tasks/TasksView";
 import { resolveOrgContext } from "@/lib/api/org-context";
 import { fetchMyTasks } from "@/lib/api/tasks";
+import { listMembers } from "@/lib/api/members";
 
 export const metadata: Metadata = { title: "Tasks | Mytheus" };
 
-/* My work, Tasks (Plan 7-9 §3.8 step 2): the caller's confirmed action items from
-   `GET /api/v1/actions?assignee_id=me`, grouped by due date, with mark-done. Only confirmed
+/* My work, Tasks: the caller's confirmed tasks from `GET /api/v1/actions/mine` (tasks added by
+   hand with no meeting included), grouped by due date, with mark-done. The member list feeds the
+   New task dialog's optional assignee picker; when it cannot load, the task is simply yours. Only confirmed
    items ever appear: a proposed candidate is not a task until someone confirms it. A failed
    read (including no gateway configured) is thrown to `error.tsx`, never dressed up as sample
    data. */
 export default async function TasksPage() {
   const org = await resolveOrgContext();
-  const tasks = await fetchMyTasks(org?.user.name ?? "You");
-  return <TasksView actions={tasks} />;
+  const [tasks, members] = await Promise.all([fetchMyTasks(org?.user.name ?? "You"), listMembers()]);
+  const options = members?.map((m) => ({ id: m.id, name: m.name, email: m.email, imageUrl: m.imageUrl, isYou: m.isYou })) ?? null;
+  return <TasksView actions={tasks} members={options} />;
 }

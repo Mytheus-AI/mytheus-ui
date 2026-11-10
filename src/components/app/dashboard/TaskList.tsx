@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CaretRight, Clock } from "@phosphor-icons/react/dist/ssr";
-import type { DashboardTask } from "@/lib/api/types";
+import type { MineTask } from "@/lib/api/tasks";
 import { CardHead, cardClass } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { TextLink } from "@/components/ui/TextLink";
@@ -10,8 +10,8 @@ import { daysFromNow, dueLabel } from "./format";
 
 const SHOWN = 5;
 
-/** Your open action items, from `/bff/dashboard` `action_items`: the same confirmed rows as
- *  `/work/tasks`, soonest due first. Read-only here: completing a task lives on /tasks, so each row
+/** Your open tasks, from core-api `/api/v1/actions/mine`: the same rows as `/work/tasks`
+ *  (tasks added by hand included), soonest due first. Read-only here: completing a task lives on /tasks, so each row
  *  links there instead of offering a checkbox that would only change local state. */
 export function TaskList({
   tasks,
@@ -19,7 +19,7 @@ export function TaskList({
   nowIso,
   className = "",
 }: {
-  tasks: DashboardTask[];
+  tasks: MineTask[];
   failed: boolean;
   nowIso: string;
   className?: string;
@@ -58,7 +58,7 @@ export function TaskList({
                   <span className="min-w-0 flex-1">
                     <span className="block text-[14px] font-medium leading-snug text-ink">{task.content}</span>
                     <span className="block truncate text-[12.5px] text-ink-3">
-                      From {task.meeting_title ?? "an untitled meeting"}
+                      {task.meeting_id ? `From ${task.meeting_title?.trim() || "an untitled meeting"}` : "Added by hand"}
                     </span>
                   </span>
                   {task.due_date ? (
@@ -81,7 +81,7 @@ export function TaskList({
       ) : (
         <EmptyState inCard art="tasks"
           title="No open tasks"
-          description="Action items assigned to you and confirmed in meetings show up here until they are done."
+          description="Tasks assigned to you, confirmed in meetings or added by hand, show up here until they are done."
         />
       )}
 

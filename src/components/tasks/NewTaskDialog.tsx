@@ -4,22 +4,36 @@ import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent 
 import { X } from "@phosphor-icons/react";
 import { createTask } from "@/app/actions/tasks";
 import { Button } from "@/components/ui/Button";
+import { MemberPicker, type MemberOption } from "@/components/ui/MemberPicker";
 import { FieldMsg, fieldClass } from "@/components/ui/Form";
 import { Note } from "@/components/ui/Note";
 import { notifySuccess } from "@/lib/toast";
 
-/* New task: a title (required) and an optional due date; the task is yours (assignee me, the
-   server's default). A modal dialog: focus moves to the title on open, Tab stays inside, Escape or
+/* New task: a title (required), an optional due date and an optional assignee (you by default,
+   the server's default too; anyone in the workspace through the member picker). A modal dialog: focus moves to the title on open, Tab stays inside, Escape or
    the scrim closes, and focus returns to whatever opened it.
 
    Creating a task by hand needs `POST /api/v1/actions`, which the backend is adding. Until the
    gateway has it the action answers `notConnected`, and the dialog says so plainly instead of
    failing silently; the same dialog lights up when the endpoint exists. */
-export function NewTaskDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
+export function NewTaskDialog({
+  open,
+  onClose,
+  onCreated,
+  members = null,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: () => void;
+  /** Workspace members for the assignee picker; null hides it (the task is then yours). */
+  members?: readonly MemberOption[] | null;
+}) {
   const uid = useId();
   const titleId = `${uid}-title`;
   const [content, setContent] = useState("");
   const [due, setDue] = useState("");
+  const me = members?.find((m) => m.isYou)?.id ?? null;
+  const [assignee, setAssignee] = useState<string | null>(me);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<{ message: string; field?: "content" | "due_date" } | null>(null);
   const [notConnected, setNotConnected] = useState(false);
@@ -33,6 +47,7 @@ export function NewTaskDialog({ open, onClose, onCreated }: { open: boolean; onC
     opener.current = el instanceof HTMLElement && el !== document.body ? el : null;
     setContent("");
     setDue("");
+    setAssignee(me);
     setError(null);
     setNotConnected(false);
     const t = window.setTimeout(() => input.current?.focus(), 30);
@@ -40,6 +55,8 @@ export function NewTaskDialog({ open, onClose, onCreated }: { open: boolean; onC
       window.clearTimeout(t);
       if (opener.current?.isConnected) opener.current.focus({ preventScroll: true });
     };
+    // `me` is stable for the dialog's life; only reopening resets the form.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   if (!open) return null;
@@ -49,7 +66,8 @@ export function NewTaskDialog({ open, onClose, onCreated }: { open: boolean; onC
   };
 
   const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Escape") {
+    // The member picker handles its own Escape (closing its list) and marks it handled.
+    if (e.key === "Escape" && !e.defaultPrevented) {
       e.stopPropagation();
       close();
       return;
@@ -78,10 +96,13 @@ export function NewTaskDialog({ open, onClose, onCreated }: { open: boolean; onC
     }
     setSaving(true);
     setError(null);
-    const res = await createTask({ content, dueDate: due || null });
+    const forOther = assignee && assignee !== me ? members?.find((m) => m.id === assignee) ?? null : null;
+    const res = await createTask({ content, dueDate: due || null, assigneeId: forOther ? forOther.id : null });
     setSaving(false);
     if (res.ok) {
-      notifySuccess("Task created", { description: content.trim() });
+      notifySuccess(forOther ? `Task created for ${forOther.name}` : "Task created", {
+        description: forOther ? `${content.trim()}. It is on their task list, not yours.` : content.trim(),
+      });
       onCreated();
       onClose();
       return;
@@ -111,7 +132,7 @@ export function NewTaskDialog({ open, onClose, onCreated }: { open: boolean; onC
             <h2 id={titleId} className="display text-[22px] text-ink-display">
               New task
             </h2>
-            <p className="mt-1 text-[14px] text-ink-3">It is yours, and it sits with the tasks from your meetings.</p>
+            <p className="mt-1 text-[14px] text-ink-3">It sits with the tasks from meetings, on the list of whoever owns it.</p>
           </div>
           <Button variant="ghost" size="sm" icon onClick={close} aria-label="Close new task">
             <X size={16} aria-hidden />
@@ -170,6 +191,25 @@ export function NewTaskDialog({ open, onClose, onCreated }: { open: boolean; onC
               />
               <FieldMsg id={`${uid}-due-msg`} error={dueErr} />
             </div>
+            {members && members.length > 1 ? (
+              <div>
+                <span id={`${uid}-owner-label`} className="mb-1.5 block text-[14px] font-semibold text-ink">
+                  Owner <span className="font-normal text-ink-3">(optional)</span>
+                </span>
+                <MemberPicker
+                  id={`${uid}-owner`}
+                  members={members}
+                  value={assignee}
+                  onChange={(id) => setAssignee(id ?? me)}
+                  label="Task owner"
+                  describedBy={`${uid}-owner-help`}
+                  placeholder="You"
+                />
+                <p id={`${uid}-owner-help`} className="mt-1.5 text-[12.5px] text-ink-3">
+                  You by default. Someone else gets it on their own task list.
+                </p>
+              </div>
+            ) : null}
             {error && !error.field ? <FieldMsg id={`${uid}-msg`} error={error.message} /> : null}
             <div className="mt-1 flex flex-wrap justify-end gap-2">
               <Button type="button" variant="ghost" onClick={close} disabled={saving}>

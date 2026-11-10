@@ -6,6 +6,7 @@ import {
   createSupportGrant,
   patchTenantSettings,
   removeMember,
+  postErasure,
   requestDataExport,
   revokeSupportGrant,
   setMemberTier,
@@ -19,6 +20,7 @@ import {
   parseSettingsForm,
   type SettingsFormInput,
 } from "@/lib/tenant-admin";
+import { erasureErrorMessage, erasureSummary } from "@/lib/erasure";
 
 /* Writes for the tenant-admin console (Phase P12, plan 3.13 and 3.14) over admin-ops-service's
    `/admin/tenant/*`. Owner and admin only: the server enforces the tier and writes the audit row
@@ -137,5 +139,28 @@ export async function startDataExport(): Promise<FormResult> {
     };
   } catch (err) {
     return failure(err, "The export could not be requested just now. Try again in a moment.");
+  }
+}
+
+export type EraseResult = { ok: true; summary: string; label: string | null } | { ok: false; message: string };
+
+/** Erase one person's or one meeting's data (admin-ops `POST /admin/tenant/erasures`). The server
+ *  re-checks the typed confirmation and the tier, audits the request, and tells the other stores. */
+export async function eraseData(input: { kind: "person" | "meeting"; targetId: string; confirm: string }): Promise<EraseResult> {
+  if ((input.kind !== "person" && input.kind !== "meeting") || !isUuid(input.targetId)) {
+    return { ok: false, message: "Pick who or what to erase." };
+  }
+  const confirm = input.confirm.trim();
+  if (!confirm) return { ok: false, message: "Type the confirmation to erase." };
+  try {
+    const res = await postErasure({ kind: input.kind, target_id: input.targetId, confirm });
+    revalidatePath("/workspace/data");
+    return { ok: true, summary: erasureSummary(res), label: res.label ?? null };
+  } catch (err) {
+    if (err instanceof ApiError) {
+      if (err.isAuthFailure) return { ok: false, message: "Your session expired. Sign in again." };
+      return { ok: false, message: erasureErrorMessage(input.kind, err.status, err.reason) };
+    }
+    return { ok: false, message: erasureErrorMessage(input.kind, 0, null) };
   }
 }
