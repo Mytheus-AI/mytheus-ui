@@ -166,6 +166,8 @@ export interface Nudge {
   type: NudgeType;
   itemId: string | null;
   content: string;
+  /** `proxy_update` only: the participant who sent their agent, when the gateway says. */
+  userId: string | null;
 }
 
 export interface NudgeState {
@@ -176,19 +178,26 @@ export interface NudgeState {
 
 export const emptyNudgeState: NudgeState = { current: null, queue: [], seen: {} };
 
-const NUDGE_TYPES = new Set<NudgeType>(["off_agenda", "over_time", "unaddressed"]);
+const NUDGE_TYPES = new Set<NudgeType>(["off_agenda", "over_time", "unaddressed", "proxy_update"]);
 const QUEUE_MAX = 5;
 
 export function applyNudge(state: NudgeState, p: AgentNudgePayload | null | undefined): NudgeState {
   if (!p || typeof p.id !== "string" || !p.id || state.seen[p.id]) return state;
   if (!NUDGE_TYPES.has(p.type)) return state;
-  const content = typeof p.content === "string" ? p.content.trim().slice(0, 200) : "";
+  // A proxy update is the person's own words, up to 2000 characters (ADR-0039 B5, C5); the
+  // agent's other nudges are one short line.
+  const max = p.type === "proxy_update" ? 2000 : 200;
+  const content = typeof p.content === "string" ? p.content.trim().slice(0, max) : "";
   if (!content) return state;
+  const itemId = typeof p.itemId === "string" && UUID.test(p.itemId) ? p.itemId : null;
+  // A proxy update is always about an item (C5): without one there is nothing to anchor it to.
+  if (p.type === "proxy_update" && !itemId) return state;
   const nudge: Nudge = {
     id: p.id,
     type: p.type,
-    itemId: typeof p.itemId === "string" && UUID.test(p.itemId) ? p.itemId : null,
+    itemId,
     content,
+    userId: p.type === "proxy_update" && typeof p.userId === "string" && UUID.test(p.userId) ? p.userId : null,
   };
   const seen = { ...state.seen, [p.id]: true as const };
   if (!state.current) return { ...state, current: nudge, seen };
@@ -202,7 +211,8 @@ export function dismissNudge(state: NudgeState, id: string): NudgeState {
   return { ...state, current: next, queue: rest };
 }
 
-/** The frozen priority language: over time needs attention (amber), the rest inform (blue). */
+/** The frozen priority language: over time needs attention (amber), the rest inform (blue). A
+ *  `proxy_update` (ADR-0039 C5) informs: someone who sent their agent has an update on this item. */
 export function nudgeTone(type: NudgeType): "medium" | "low" {
   return type === "over_time" ? "medium" : "low";
 }
@@ -211,4 +221,32 @@ export const NUDGE_LABEL: Record<NudgeType, string> = {
   over_time: "Running over",
   off_agenda: "Off the agenda",
   unaddressed: "Still open from last time",
+  proxy_update: "Update from an agent",
 };
+
+/**
+ * Who sent their agent and what they asked it to say, for the host's `proxy_update` nudge and
+ * the agent tiles. Built from the meeting's participants (ADR-0039 B5: `attendance` and
+ * `proxy_update` are visible to everyone in the meeting).
+ */
+export interface Proxy {
+  userId: string;
+  update: string | null;
+}
+
+/**
+ * Whose update a `proxy_update` nudge carries, and its text. The person is the nudge's `userId`
+ * when the gateway sends it, else the item's owner. The text is the nudge's own content (the
+ * whole update); only if that were empty would the room's copy of their `proxy_update` stand in.
+ */
+export function proxyNudgeText(
+  nudge: Pick<Nudge, "type" | "itemId" | "content"> & { userId?: string | null },
+  items: readonly Pick<AgendaItem, "id" | "owner_user_id">[],
+  proxies: readonly Proxy[],
+): { ownerId: string | null; text: string } {
+  if (nudge.type !== "proxy_update") return { ownerId: null, text: nudge.content };
+  const owner =
+    nudge.userId ?? (nudge.itemId ? items.find((it) => it.id === nudge.itemId)?.owner_user_id ?? null : null);
+  const fallback = owner ? proxies.find((p) => p.userId === owner)?.update ?? null : null;
+  return { ownerId: owner, text: nudge.content || fallback || "" };
+}

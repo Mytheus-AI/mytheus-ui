@@ -31,6 +31,7 @@ import { visibleContextFills } from "@/lib/realtime/contextFills";
 import { orderedAlerts } from "@/lib/realtime/alerts";
 import { useMeetingSocket } from "@/lib/realtime/useMeetingSocket";
 import { agentFace, type AgentFace } from "@/lib/realtime/agent-persona";
+import type { Proxy } from "@/lib/realtime/agenda";
 import type { AgentPersonality } from "@/lib/api/meeting-agenda-types";
 import type { CallMeeting } from "@/components/call/resolve-meeting";
 import type { AgentSidebarCard } from "@/lib/mock/data";
@@ -44,7 +45,11 @@ import type { AgentSidebarCard } from "@/lib/mock/data";
    Video is live LiveKit once the room is connected; before that the stage shows only your own
    tile. Captions are the real socket stream once joined and nothing otherwise. Once the call is
    connected the mic, camera and screen-share controls drive it: your devices from the pre-join
-   are published, muted and unpublished for real. Before that they toggle locally. */
+   are published, muted and unpublished for real. Before that they toggle locally.
+
+   ADR-0039 B5, C5: everyone who sent their agent instead of coming is on the stage as an agent
+   tile carrying their update (unless they joined after all), and the host's agenda panel shows
+   the `proxy_update` nudge with that update in full. */
 
 /** The agent's cards arrive over `agent-results`, which this room does not subscribe to yet. */
 const NO_AGENT_CARDS: AgentSidebarCard[] = [];
@@ -392,6 +397,36 @@ export function MeetingRoom({
     [me, myFace, names],
   );
 
+  // Who sent their agent (ADR-0039 B5): `attendance` and `proxy_update` are visible to everyone
+  // in the meeting. Someone who joined after all is a person on the stage, not an agent tile.
+  const proxies = useMemo<Proxy[]>(
+    () =>
+      meeting.participants
+        .filter((p) => p.attendance === "agent")
+        .map((p) => ({ userId: p.id, update: p.proxyUpdate })),
+    [meeting.participants],
+  );
+  const here = useMemo(() => new Set(live.participants.map((p) => p.identity)), [live.participants]);
+  const proxyTiles = useMemo<RoomTile[]>(
+    () =>
+      proxies
+        .filter((p) => !here.has(p.userId) && p.userId !== myUserId && p.userId !== me?.id)
+        .map((p) => {
+          const person = names[p.userId];
+          const name = person?.name ?? "A teammate";
+          return {
+            id: `${p.userId}:proxy`,
+            name,
+            kind: "proxy" as const,
+            micOn: false,
+            camOn: false,
+            agent: agentFace(p.userId, name, person?.agentName, person?.agentSeed),
+            proxy: { forName: name, update: p.update },
+          };
+        }),
+    [proxies, here, myUserId, me?.id, names],
+  );
+
   const pin = (id: string | null) => {
     setPinnedId(id);
     if (id) setLayout("spotlight");
@@ -429,7 +464,7 @@ export function MeetingRoom({
 
   const stage = (tiles: RoomTile[]) => (
     <RoomGrid
-      tiles={withAgents(tiles)}
+      tiles={[...withAgents(tiles), ...proxyTiles]}
       layout={layout}
       pinnedId={pinnedId}
       onPin={pin}
@@ -521,6 +556,7 @@ export function MeetingRoom({
                     onDismissNudge={socket.dismissNudge}
                     steers={Boolean(me?.steers)}
                     nameOf={(id) => (id === me?.id ? "You" : names[id]?.name ?? "Former member")}
+                    proxies={proxies}
                   />
                 }
                 onAttentionChange={onAttention} id={SECTION_IDS.agent} items={NO_AGENT_CARDS} notes={myNotes} candidates={candidates} onCandidateResolved={socket.resolveCandidate} onCandidateUpdated={socket.updateCandidate} meetingId={meeting.id} suggestions={suggestions} savedSuggestions={saved} onSuggestionResolved={socket.resolveSuggestion} onSuggestionSaved={socket.markSuggestionSaved} contextFills={contextFills} onContextFillDismissed={socket.dismissContextFill} alerts={alerts} onAlertRead={socket.markAlertRead} onAlertDismissed={socket.dismissAlert} />}

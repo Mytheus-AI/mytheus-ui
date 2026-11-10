@@ -18,9 +18,35 @@
  * here, or that the server says is dismissed, is remembered in `dismissed` and never comes back.
  * Order is priority first, then time: a red conflict sorts above everything regardless of when it
  * arrived. The sidebar pins priority-1 alerts as the banner and renders the rest as cards.
+ *
+ * ADR-0039 C7 adds two types:
+ *   - `already_decided`: the room is re-opening a question the org already settled. The original
+ *     decision is kept as `decided`. Live, realtime-gateway sends it camelCased beside the usual
+ *     fields (`decisionId`, `decisionContent`, optional `decidedAt`, `meetingTitle`); the
+ *     notification row's alert object has it in snake_case (`decision_id`, `decision_content`,
+ *     `decided_at`, `meeting_id`, `meeting_title`). The live copy has no id for the decision's
+ *     meeting (its `meetingId` is the room's), so the re-hydrated row fills that in.
+ *   - `topic_watch`: a meeting you are not in is discussing a topic you watch (`topic`, optional
+ *     `snippet` and `meetingTitle`). Kept as `watch`. Mostly for the notifications list, since a
+ *     watcher is rarely in the meeting.
  */
 
-export type AlertType = "conflict" | "workload" | "dependency" | "missing_stakeholder";
+import type { AlreadyDecided } from "../api/meeting-brain-types.ts";
+
+export type AlertType =
+  | "conflict"
+  | "workload"
+  | "dependency"
+  | "missing_stakeholder"
+  | "already_decided"
+  | "topic_watch";
+
+/** What a `topic_watch` alert is about (ADR-0039 C7). */
+export interface TopicWatchHit {
+  topic: string;
+  snippet: string | null;
+  meetingTitle: string | null;
+}
 export type AlertPriority = 1 | 2 | 3;
 export type AlertStatus = "unread" | "read";
 
@@ -52,6 +78,10 @@ export interface Alert {
   link: string | null;
   createdAt: string | null;
   status: AlertStatus;
+  /** The original decision of an `already_decided` alert (ADR-0039 C7); null for other types. */
+  decided: AlreadyDecided | null;
+  /** The watched topic of a `topic_watch` alert (ADR-0039 C7); null for other types. */
+  watch: TopicWatchHit | null;
   /** Arrival order, the last tie-breaker so the list is stable. */
   seq: number;
 }
@@ -78,6 +108,8 @@ export interface AlertEventPayload {
   related?: unknown;
   link?: string | null;
   createdAt?: string | null;
+  /** ADR-0039 C7 fields, when the gateway forwards them (snake_case or camelCase). */
+  [extra: string]: unknown;
 }
 
 /** A notification-service row, as `/api/meeting-alerts` returns it. */
@@ -97,7 +129,14 @@ export interface AlertRow {
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const TYPES: ReadonlySet<string> = new Set(["conflict", "workload", "dependency", "missing_stakeholder"]);
+const TYPES: ReadonlySet<string> = new Set([
+  "conflict",
+  "workload",
+  "dependency",
+  "missing_stakeholder",
+  "already_decided",
+  "topic_watch",
+]);
 const SUBJECT_KINDS: ReadonlySet<string> = new Set(["decision", "action", "meeting"]);
 const RELATED_KINDS: ReadonlySet<string> = new Set(["decision", "action", "user"]);
 const MAX_RELATED = 6;
@@ -159,26 +198,96 @@ function normalise(raw: {
   link: unknown;
   createdAt: unknown;
   status: AlertStatus;
+  /** Where the ADR-0039 fields may be: the notification row's alert object (snake_case), or the
+   *  live payload (camelCase, `live: true`). */
+  extra?: Record<string, unknown> | null;
+  live?: boolean;
 }): Incoming | null {
   const id = uuid(raw.id);
   const title = str(raw.title);
   const p = raw.priority;
   if (!id || !title || typeof raw.alertType !== "string" || !TYPES.has(raw.alertType)) return null;
   if (p !== 1 && p !== 2 && p !== 3) return null;
+  const subject = subjectOf(raw.subject);
+  const related = relatedOf(raw.related);
   return {
     id,
     meetingId: uuid(raw.meetingId),
     alertType: raw.alertType as AlertType,
-    priority: p,
+    // ADR-0039 C7 (amended): "already decided" is always attention, amber, never the red banner.
+    priority: raw.alertType === "already_decided" ? 2 : p,
     title: title.slice(0, 120),
     body: (str(raw.body) ?? "").slice(0, 400),
     confidence: typeof raw.confidence === "number" ? raw.confidence : 0,
     rationale: str(raw.rationale),
-    subject: subjectOf(raw.subject),
-    related: relatedOf(raw.related),
+    subject,
+    related,
     link: safeLink(raw.link),
     createdAt: str(raw.createdAt),
     status: raw.status,
+    decided:
+      raw.alertType === "already_decided" ? decidedOf(raw.extra ?? null, subject, related, str(raw.body), raw.live === true) : null,
+    watch: raw.alertType === "topic_watch" ? watchOf(raw.extra ?? null) : null,
+  };
+}
+
+/** The watched topic of a `topic_watch` alert, from either casing. Null without a topic. */
+export function watchOf(src: Record<string, unknown> | null): TopicWatchHit | null {
+  const topic = str(src?.topic);
+  if (!topic) return null;
+  return {
+    topic: topic.slice(0, 80),
+    snippet: str(src?.snippet)?.slice(0, 200) ?? null,
+    meetingTitle: (str(src?.meeting_title) ?? str(src?.meetingTitle))?.slice(0, 200) ?? null,
+  };
+}
+
+/**
+ * The original decision of an `already_decided` alert. Reads the C7 fields from the notification
+ * row's alert object in snake_case (`decision_id`, `decision_content`, `decided_at`, `meeting_id`,
+ * `meeting_title`, or the same under a nested `decision`), or from the live payload in camelCase
+ * (`decisionId`, `decisionContent`, `decidedAt`, `meetingTitle`). The live `meetingId` is the
+ * room's meeting, never the decision's, so it is not read. Falls back to the alert's decision
+ * subject and its related decision chip. Null when not even the decision's id is known.
+ */
+export function decidedOf(
+  src: Record<string, unknown> | null,
+  subject: AlertSubject | null,
+  related: AlertRelated[],
+  body: string | null,
+  live = false,
+): AlreadyDecided | null {
+  const nested = obj(src?.decision);
+  const pick = (snake: string, camel: string, nestedKey: string) =>
+    src?.[snake] ?? (live ? src?.[camel] : undefined) ?? nested?.[nestedKey] ?? null;
+  const chip = related.find((r) => r.kind === "decision") ?? null;
+  const decisionId =
+    uuid(pick("decision_id", "decisionId", "id")) ??
+    (subject?.kind === "decision" ? subject.id : null) ??
+    chip?.id ??
+    null;
+  if (!decisionId) return null;
+  const content = str(pick("decision_content", "decisionContent", "content")) ?? (chip?.label || null) ?? body ?? "";
+  return {
+    decisionId,
+    content: content.slice(0, 500),
+    decidedAt: str(pick("decided_at", "decidedAt", "decided_at")),
+    // Live: only a snake_case `meeting_id` would be the decision's own; camelCase is the room's.
+    meetingId: uuid(src?.meeting_id ?? nested?.meeting_id) ?? chip?.meetingId ?? null,
+    meetingTitle: str(pick("meeting_title", "meetingTitle", "meeting_title"))?.slice(0, 200) ?? null,
+  };
+}
+
+/** Fill in decision fields a live copy lacked, from a fuller copy of the same alert. */
+function mergeDecided(current: AlreadyDecided | null, incoming: AlreadyDecided | null): AlreadyDecided | null {
+  if (!incoming) return current;
+  if (!current) return incoming;
+  return {
+    decisionId: current.decisionId,
+    content: current.content || incoming.content,
+    decidedAt: current.decidedAt ?? incoming.decidedAt,
+    meetingId: current.meetingId ?? incoming.meetingId,
+    meetingTitle: current.meetingTitle ?? incoming.meetingTitle,
   };
 }
 
@@ -190,10 +299,14 @@ function upsert(state: AlertsState, incoming: Incoming[]): AlertsState {
     const current = byId[a.id];
     if (current) {
       // Live and re-hydrated copies are the same alert. Read only ever moves forward: a stale
-      // "unread" never takes a card back from read.
-      if (a.status === "read" && current.status !== "read") {
+      // "unread" never takes a card back from read. A fuller copy fills in the decision an
+      // already-decided alert points to.
+      const read = a.status === "read" && current.status !== "read";
+      const decided = mergeDecided(current.decided, a.decided);
+      const watch = current.watch ?? a.watch;
+      if (read || decided !== current.decided || watch !== current.watch) {
         if (byId === state.byId) byId = { ...state.byId };
-        byId[a.id] = { ...current, status: "read" };
+        byId[a.id] = { ...current, status: read ? "read" : current.status, decided, watch };
       }
       continue;
     }
@@ -226,6 +339,8 @@ export function applyLiveAlert(state: AlertsState, p: AlertEventPayload, roomMee
     link: p.link,
     createdAt: p.createdAt,
     status: "unread",
+    extra: p as Record<string, unknown>,
+    live: true,
   });
   return alert ? upsert(state, [alert]) : state;
 }
@@ -260,6 +375,7 @@ export function hydrateAlerts(state: AlertsState, body: { items?: AlertRow[] }):
       link: r.link ?? alert.link,
       createdAt: r.created_at,
       status: r.status === "read" ? "read" : "unread",
+      extra: alert,
     });
     if (a) incoming.push(a);
   }
@@ -361,4 +477,14 @@ export const ALERT_LABEL: Record<AlertType, string> = {
   workload: "Workload warning",
   dependency: "Blocked dependency",
   missing_stakeholder: "Missing stakeholder",
+  already_decided: "Already decided",
+  topic_watch: "Topic you watch",
 };
+
+/** Where the original decision of an `already_decided` alert opens: its lineage page under its
+ *  meeting when both ids are known, else the Decisions list. */
+export function decidedHref(d: Pick<AlreadyDecided, "decisionId" | "meetingId">): string {
+  const m = seg(d.meetingId);
+  const id = seg(d.decisionId);
+  return m && id ? `/meetings/${m}/decisions/${id}` : "/decisions";
+}

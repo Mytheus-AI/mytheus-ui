@@ -5,6 +5,7 @@ import { fetchMyAgentPersonality, listMembers } from "@/lib/api/members";
 import type { RoomNames } from "@/lib/realtime/room-names";
 import "@/styles/meeting-call.css";
 import "@/styles/meeting-agenda.css";
+import "@/styles/meeting-brain.css";
 
 export const metadata: Metadata = { title: "Meeting room | Mytheus" };
 

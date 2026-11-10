@@ -2,16 +2,32 @@
 
 import { useId, useState } from "react";
 import Link from "next/link";
-import { CaretDown, Gauge, LinkBreak, PushPin, UserPlus, Warning, type Icon } from "@phosphor-icons/react";
+import {
+  ArrowSquareOut,
+  Binoculars,
+  CaretDown,
+  ClockCounterClockwise,
+  Gauge,
+  LinkBreak,
+  PushPin,
+  UserPlus,
+  Warning,
+  type Icon,
+} from "@phosphor-icons/react";
 import { dismissAlert, markAlertRead } from "@/app/actions/notifications";
-import { ALERT_LABEL, alertHref, relatedLink, type Alert, type AlertType } from "@/lib/realtime/alerts";
+import { ALERT_LABEL, alertHref, decidedHref, relatedLink, type Alert, type AlertType } from "@/lib/realtime/alerts";
 
 /* ProactiveAgent alerts (Phase P11, plan 3.9; P11 contract section 5), private to this
    participant. Priority 1 (a conflict) is the red banner pinned above every card; workload and
    dependency are yellow cards, a missing stakeholder is a blue card. Each shows the title, the
    body, an expandable "Why", the related decisions, actions and people as chips, and Mark read /
    Dismiss. Mark read keeps it here, quieter; Dismiss removes it for good. Neither commits
-   anything or tells anyone. The cards reserve their height so the panel does not jump. */
+   anything or tells anyone. The cards reserve their height so the panel does not jump.
+
+   ADR-0039 C7: an "already decided" alert carries the decision the room is re-opening. It shows
+   that decision as a quote with when and in which meeting it was made, and a link to it, so the
+   room can choose to build on it or knowingly revisit it. Its colour is whatever priority the
+   server gave it, in the frozen language. */
 
 export type AlertOutcome = "read" | "dismissed" | "gone";
 
@@ -20,7 +36,45 @@ const ICON: Record<AlertType, Icon> = {
   workload: Gauge,
   dependency: LinkBreak,
   missing_stakeholder: UserPlus,
+  already_decided: ClockCounterClockwise,
+  topic_watch: Binoculars,
 };
+
+const decidedDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+function decidedWhen(iso: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : decidedDate.format(d);
+}
+
+/** The original decision of an `already_decided` alert: what was decided, when, where, and a link. */
+function DecidedQuote({ alert }: { alert: Alert }) {
+  const d = alert.decided;
+  if (!d) return null;
+  const when = decidedWhen(d.decidedAt);
+  const here = d.meetingId !== null && d.meetingId === alert.meetingId;
+  const where = here ? "earlier in this meeting" : d.meetingTitle ? `in ${d.meetingTitle}` : null;
+  const meta = [when ? `Decided ${when}` : "Decided earlier", where].filter(Boolean).join(", ");
+  return (
+    <figure className="ad-quote">
+      {d.content ? (
+        <blockquote className="ad-quote-text">
+          <span className="sr-only">The earlier decision: </span>
+          {d.content}
+        </blockquote>
+      ) : null}
+      <figcaption className="ad-quote-meta">
+        <span>{meta}</span>
+        <Link href={decidedHref(d)} target="_blank" rel="noopener" className="ad-quote-link tap">
+          Open the decision
+          <ArrowSquareOut size={13} aria-hidden />
+          <span className="sr-only"> (opens in a new tab)</span>
+        </Link>
+      </figcaption>
+    </figure>
+  );
+}
 
 const PRIORITY_META: Record<Alert["priority"], string> = { 1: "Act now", 2: "Attention", 3: "Info" };
 
@@ -41,9 +95,20 @@ function AlertDetails({ alert }: { alert: Alert }) {
   const [open, setOpen] = useState(false);
   const whyId = useId();
   const href = alertHref(alert);
+  const decidedLink = alert.decided ? decidedHref(alert.decided) : null;
+  const related = alert.related.filter((r) => !(alert.decided && r.kind === "decision" && r.id === alert.decided.decisionId));
+  const openHref = href && href !== decidedLink ? href : null;
   return (
     <>
-      {alert.body ? <p className="alert-body">{alert.body}</p> : null}
+      {alert.body && alert.body !== alert.decided?.content ? <p className="alert-body">{alert.body}</p> : null}
+      <DecidedQuote alert={alert} />
+      {alert.watch ? (
+        <p className="alert-body">
+          <strong>{alert.watch.topic}</strong>
+          {alert.watch.meetingTitle ? ` in ${alert.watch.meetingTitle}` : null}
+          {alert.watch.snippet ? <span className="ad-snippet">{alert.watch.snippet}</span> : null}
+        </p>
+      ) : null}
       {alert.rationale ? (
         <div className="alert-why">
           <button
@@ -61,9 +126,9 @@ function AlertDetails({ alert }: { alert: Alert }) {
           </p>
         </div>
       ) : null}
-      {alert.related.length > 0 || href ? (
+      {related.length > 0 || openHref ? (
         <div className="nfy-cites is-plain" aria-label="Related">
-          {alert.related.map((r) => {
+          {related.map((r) => {
             const { label, href: to } = relatedLink(r, alert);
             return (
               <Link key={`${r.kind}-${r.id}`} href={to} target="_blank" rel="noopener" className="cite-chip tap">
@@ -71,8 +136,8 @@ function AlertDetails({ alert }: { alert: Alert }) {
               </Link>
             );
           })}
-          {href ? (
-            <Link href={href} target="_blank" rel="noopener" className="cite-chip tap">
+          {openHref ? (
+            <Link href={openHref} target="_blank" rel="noopener" className="cite-chip tap">
               Open
             </Link>
           ) : null}
