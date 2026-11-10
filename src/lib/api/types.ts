@@ -36,7 +36,7 @@ export type ArmStatus = Bff["MeetingsArm"]["status"];
 /**
  * A panel. Generic for the callers that want to name their item type.
  *
- * The server declares one arm shape per panel (`MeetingsArm`, `UnbuiltArm`) rather than one
+ * The server declares one arm shape per panel (`MeetingsArm`, `TasksArm`, ...) rather than one
  * generic, because OpenAPI has no generics; this is the same contract expressed the way
  * TypeScript prefers to read it.
  */
@@ -50,14 +50,26 @@ export type MeetingStatus = CoreApi["Meeting"]["status"];
 /** The meetings-panel projection: six columns, not the whole `Meeting` resource. */
 export type DashboardMeeting = Bff["DashboardMeeting"];
 
-/**
- * `GET /bff/dashboard`.
- *
- * `action_items`, `worklogs` and `decisions` are shaped-but-empty until the agent bands build
- * the read models behind them, so their item type is deliberately open on the server side too.
- * That is the honest shape, not a gap in this file.
- */
+/** The caller's open task, for Your tasks (`action_items`). */
+export type DashboardTask = Bff["DashboardTask"];
+
+/** A confirmed decision from one of the caller's meetings (`decisions`). */
+export type DashboardDecision = Bff["DashboardDecision"];
+
+/** An ended meeting the caller was in, with confirmed counts (`recent_meetings`). */
+export type DashboardRecentMeeting = Bff["DashboardRecentMeeting"];
+
+/** An agent candidate still waiting for a person in one of the caller's meetings (`needs_review`). */
+export type DashboardReviewItem = Bff["DashboardReviewItem"];
+
+/** One of the caller's surfaced notes (`worklogs`). */
+export type DashboardNote = Bff["DashboardNote"];
+
+/** `GET /bff/dashboard`. Every arm is typed: each has a real read model behind it. */
 export type DashboardResponse = Bff["Dashboard"];
+
+/** `GET /api/v1/decisions`: confirmed decisions from the caller's meetings, newest first. */
+export type DecisionLogEntry = CoreApi["DecisionLogEntry"];
 
 export type Participant = CoreApi["Participant"];
 

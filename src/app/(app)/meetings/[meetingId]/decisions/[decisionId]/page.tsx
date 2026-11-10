@@ -6,15 +6,14 @@ import { Badge } from "@/components/ui/Badge";
 import { LinkButton } from "@/components/ui/Button";
 import { Note, SectionCard } from "@/components/settings/primitives";
 import { fetchDecisionLineage, type LineageDecision } from "@/lib/api/lineage";
-import { mockDecisions } from "@/lib/mock/data";
 
 export const metadata: Metadata = { title: "Decision lineage | Mytheus" };
 
 /* Decision lineage (Plan 7-9 section 3.8 step 3): the FOLLOWS_FROM chain around one confirmed
    decision, oldest first. What it superseded comes before it, what superseded it comes after.
    Read from `bff` -> `knowledge-graph-service`'s `decision_lineage` template, which only ever
-   holds confirmed decisions. With no gateway configured (a UI-only run) the sample decision is
-   shown as a chain of one. */
+   holds confirmed decisions. With no gateway configured the page says history is unavailable
+   rather than showing a sample. */
 
 type ChainNode = {
   id: string;
@@ -53,13 +52,7 @@ function caption(node: ChainNode, index: number): string {
 }
 
 async function loadChain(meetingId: string, decisionId: string): Promise<ChainNode[] | "unavailable"> {
-  if (!process.env.API_GATEWAY_URL && !process.env.NEXT_PUBLIC_API_GATEWAY_URL) {
-    const d = mockDecisions.find((x) => x.id === decisionId && x.meetingId === meetingId);
-    if (!d) notFound();
-    return [
-      { id: d.id, meetingId: d.meetingId, content: d.title, status: "confirmed", confirmedAt: d.confirmedAt, role: "subject" },
-    ];
-  }
+  if (!process.env.API_GATEWAY_URL && !process.env.NEXT_PUBLIC_API_GATEWAY_URL) return "unavailable";
   const result = await fetchDecisionLineage(meetingId, decisionId);
   if (result.kind === "not-found") notFound();
   if (result.kind === "unavailable") return "unavailable";

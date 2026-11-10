@@ -1,14 +1,10 @@
-import type { Priority } from "@/lib/mock/data";
-
-/* Shared, dependency-free formatting helpers for the dashboard widgets.
-   The mock-backed panels (tasks, decisions, recent meetings) render against a fixed "now" -
-   the day mtg_1 is live - so "Today", "Tomorrow" and overdue labels stay coherent and
-   deterministic against src/lib/mock/data.ts. Real `bff` meetings use the server clock. */
-
-export const MOCK_NOW = new Date("2026-07-01T14:30:00Z");
+/* Shared, dependency-free formatting helpers for the dashboard widgets. Every panel reads real
+   `bff` data, so relative labels ("Due today", "Overdue") are computed against the request's
+   own clock, passed in by the page. Server-rendered dates use UTC so the server and the first
+   client render agree; `LocalTime` switches times to the viewer's zone after mount. */
 
 const DAY_MS = 86_400_000;
-const TZ = "UTC"; // mock ISO times are UTC; render them in UTC so labels are stable
+const TZ = "UTC";
 
 /** "3:00 PM" */
 export function formatClock(iso: string): string {
@@ -46,14 +42,14 @@ export function isSameUTCDay(a: Date, b: Date): boolean {
   return utcMidnight(a) === utcMidnight(b);
 }
 
-/** whole days from MOCK_NOW's date to the given date (negative = past) */
-export function daysFromNow(iso: string): number {
-  return Math.round((utcMidnight(new Date(iso)) - utcMidnight(MOCK_NOW)) / DAY_MS);
+/** whole days from `now`'s date to the given date (negative = past) */
+export function daysFromNow(iso: string, now: Date): number {
+  return Math.round((utcMidnight(new Date(iso)) - utcMidnight(now)) / DAY_MS);
 }
 
 /** "Due today" / "Due tomorrow" / "Due Jul 5" / "Overdue, Jul 3" */
-export function dueLabel(iso: string): string {
-  const diff = daysFromNow(iso);
+export function dueLabel(iso: string, now: Date): string {
+  const diff = daysFromNow(iso, now);
   if (diff < 0) return `Overdue, ${formatShortDate(iso)}`;
   if (diff === 0) return "Due today";
   if (diff === 1) return "Due tomorrow";
@@ -112,9 +108,3 @@ export function minutesBetween(startIso?: string, endIso?: string): number | und
   const ms = Date.parse(endIso) - Date.parse(startIso);
   return Number.isFinite(ms) && ms > 0 ? Math.round(ms / 60_000) : undefined;
 }
-
-export const priorityLabel: Record<Priority, string> = {
-  high: "High priority",
-  medium: "Medium priority",
-  low: "Low priority",
-};

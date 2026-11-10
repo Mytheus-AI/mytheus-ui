@@ -7,7 +7,8 @@ import { LockSimple } from "@phosphor-icons/react";
 import { DoodlePicker } from "@/components/ui/DoodlePicker";
 import { defaultDoodleSeed, isDoodleSeed } from "@/lib/doodle";
 import { saveDoodle } from "@/lib/doodle-client";
-import { refreshMyProfile } from "@/app/actions/profile";
+import { refreshMyProfile, saveAgentProfile } from "@/app/actions/profile";
+import type { AgentProfile } from "@/lib/api/profile";
 import { useOrgContext } from "@/lib/org-context";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
@@ -15,25 +16,60 @@ import { Button } from "@/components/ui/Button";
 import { FormFooter, SectionCard, SettingsRow, TextInput, focusPill } from "./primitives";
 
 /* Profile: who you are and the role and focus that tune what your PersonalListener captures.
-   Edits are local state only until the Server Action wires to the backend, as before. The email
-   comes from the sign-in, so it is shown read-only. */
-export function ProfilePanel() {
+   The name is your Clerk account's (saved there, then the cached profile is dropped); role and
+   focus areas are `users.role` / `users.skills`, read from `get_user_context()` and saved by
+   `saveAgentProfile`. The email comes from the sign-in, so it is shown read-only. When the
+   profile cannot be loaded the agent card says so instead of showing blank fields to save. */
+export function ProfilePanel({ agent }: { agent: AgentProfile | null }) {
   const { user } = useOrgContext();
+  const { user: clerkUser } = useUser();
+  const router = useRouter();
 
-  const [saved, setSaved] = useState({
-    name: user.name,
-    title: "Founder",
-    focus: "Product, frontend, fundraising",
-  });
-  const [name, setName] = useState(saved.name);
-  const [title, setTitle] = useState(saved.title);
-  const [focus, setFocus] = useState(saved.focus);
-  const [justSaved, setJustSaved] = useState(false);
+  const [savedName, setSavedName] = useState(user.name);
+  const [name, setName] = useState(user.name);
+  const [nameState, setNameState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
-  const dirty = name !== saved.name || title !== saved.title || focus !== saved.focus;
-  const edit = (set: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    set(e.target.value);
-    setJustSaved(false);
+  const initial = { title: agent?.role ?? "", focus: (agent?.skills ?? []).join(", ") };
+  const [saved, setSaved] = useState(initial);
+  const [title, setTitle] = useState(initial.title);
+  const [focus, setFocus] = useState(initial.focus);
+  const [agentState, setAgentState] = useState<"idle" | "saving" | "saved">("idle");
+  const [agentError, setAgentError] = useState<string | null>(null);
+
+  const nameDirty = name.trim() !== savedName && name.trim() !== "";
+  const agentDirty = title !== saved.title || focus !== saved.focus;
+
+  const saveName = async () => {
+    if (!clerkUser) return;
+    const trimmed = name.trim();
+    const [firstName, ...rest] = trimmed.split(/\s+/);
+    setNameState("saving");
+    try {
+      await clerkUser.update({ firstName, lastName: rest.join(" ") });
+      await refreshMyProfile();
+      setSavedName(trimmed);
+      setName(trimmed);
+      setNameState("saved");
+      router.refresh();
+    } catch {
+      setNameState("error");
+    }
+  };
+
+  const saveAgent = async () => {
+    setAgentState("saving");
+    setAgentError(null);
+    const result = await saveAgentProfile({ role: title, focus });
+    if (result.ok) {
+      const next = { title: result.profile.role, focus: result.profile.skills.join(", ") };
+      setSaved(next);
+      setTitle(next.title);
+      setFocus(next.focus);
+      setAgentState("saved");
+    } else {
+      setAgentState("idle");
+      setAgentError(result.message);
+    }
   };
 
   return (
@@ -54,7 +90,16 @@ export function ProfilePanel() {
           htmlFor="name"
           help="Used in transcripts and when your agent speaks for you."
         >
-          <TextInput id="name" name="name" autoComplete="name" value={name} onChange={edit(setName)} />
+          <TextInput
+            id="name"
+            name="name"
+            autoComplete="name"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              setNameState("idle");
+            }}
+          />
         </SettingsRow>
         <SettingsRow
           label="Email"
@@ -78,6 +123,19 @@ export function ProfilePanel() {
             />
           </div>
         </SettingsRow>
+        <FormFooter>
+          <Button
+            variant="secondary"
+            disabled={!nameDirty || nameState === "saving" || !clerkUser}
+            className={`active:opacity-80 ${focusPill}`}
+            onClick={() => void saveName()}
+          >
+            {nameState === "saving" ? "Saving..." : "Save name"}
+          </Button>
+          <span role="status" className="text-[13px] text-ink-3">
+            {nameState === "saved" ? "Saved." : nameState === "error" ? "Could not save. Try again." : ""}
+          </span>
+        </FormFooter>
       </SectionCard>
 
       <DoodleCard />
@@ -86,34 +144,52 @@ export function ProfilePanel() {
         title="What your agent knows about you"
         description="Your role and focus areas tune what your agent captures. An engineer and a PM leave the same meeting with different notes."
       >
-        <SettingsRow label="Role title" htmlFor="title">
-          <TextInput id="title" name="title" value={title} onChange={edit(setTitle)} />
-        </SettingsRow>
-        <SettingsRow label="Focus areas" htmlFor="focus" help="Separate topics with commas.">
-          <TextInput
-            id="focus"
-            name="focus"
-            value={focus}
-            onChange={edit(setFocus)}
-            placeholder="e.g. Billing, infrastructure, hiring"
-          />
-        </SettingsRow>
-        <FormFooter>
-          <Button
-            variant="secondary"
-            disabled={!dirty}
-            className={`active:opacity-80 ${focusPill}`}
-            onClick={() => {
-              setSaved({ name, title, focus });
-              setJustSaved(true);
-            }}
-          >
-            Save changes
-          </Button>
-          <span role="status" className="text-[13px] text-ink-3">
-            {justSaved ? "Saved." : ""}
-          </span>
-        </FormFooter>
+        {agent === null ? (
+          <p className="px-4 py-5 text-[13.5px] text-ink-3 sm:px-[22px]">
+            Your role and focus areas could not be loaded just now. Reload the page to try again.
+          </p>
+        ) : (
+          <>
+            <SettingsRow label="Role title" htmlFor="title">
+              <TextInput
+                id="title"
+                name="title"
+                value={title}
+                maxLength={200}
+                placeholder="e.g. Product manager"
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  setAgentState("idle");
+                }}
+              />
+            </SettingsRow>
+            <SettingsRow label="Focus areas" htmlFor="focus" help="Separate topics with commas.">
+              <TextInput
+                id="focus"
+                name="focus"
+                value={focus}
+                onChange={(e) => {
+                  setFocus(e.target.value);
+                  setAgentState("idle");
+                }}
+                placeholder="e.g. Billing, infrastructure, hiring"
+              />
+            </SettingsRow>
+            <FormFooter>
+              <Button
+                variant="secondary"
+                disabled={!agentDirty || agentState === "saving"}
+                className={`active:opacity-80 ${focusPill}`}
+                onClick={() => void saveAgent()}
+              >
+                {agentState === "saving" ? "Saving..." : "Save changes"}
+              </Button>
+              <span role="status" className={`text-[13px] ${agentError ? "text-priority-high" : "text-ink-3"}`}>
+                {agentError ?? (agentState === "saved" ? "Saved. Your agent uses this from now on." : "")}
+              </span>
+            </FormFooter>
+          </>
+        )}
       </SectionCard>
     </>
   );

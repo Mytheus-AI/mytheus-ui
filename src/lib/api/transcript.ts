@@ -61,11 +61,10 @@ export async function fetchSpeakers(meetingId: string): Promise<MeetingSpeaker[]
 /**
  * Both reads, or `null` when the backend is not reachable or has nothing to say.
  *
- * `null` means "fall back to the mock transcript", and the distinction it draws matters: a
- * configured gateway that returns 404 is a real not-found and must not be papered over with
- * fabricated content, whereas an unset `API_GATEWAY_URL` is simply this environment having no
- * backend yet, which is every environment today. `client.ts` throws a plain `Error` for the
- * unset-origin case (deliberately, so a wrong default cannot send session tokens to an
+ * `null` means the backend could not be reached (no `API_GATEWAY_URL`, or a network failure),
+ * and the callers render an empty transcript for it, never sample lines. A configured gateway
+ * that returns 404 is a real not-found and is rethrown. `client.ts` throws a plain `Error` for
+ * the unset-origin case (deliberately, so a wrong default cannot send session tokens to an
  * unintended host) and an `ApiError` for anything the server actually answered.
  */
 export async function fetchTranscriptSurface(
@@ -80,7 +79,7 @@ export async function fetchTranscriptSurface(
   } catch (error) {
     if (error instanceof ApiError) {
       // A real answer from a real server. 404 here means this meeting is not visible to the
-      // caller, which the page renders as not-found rather than as mock data.
+      // caller, which the page renders as not-found.
       throw error;
     }
     return null;

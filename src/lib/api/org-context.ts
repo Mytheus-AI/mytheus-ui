@@ -5,11 +5,10 @@
  * nothing downstream should need to change" note in `src/lib/org-context.tsx`, honoured: the
  * shape is identical, so every consumer of `useOrgContext()` keeps working untouched.
  *
- * Two fields cannot be filled honestly yet, and are handled rather than faked:
+ * There is no plan in this value: the plan is the `subscriptions` row, which only
+ * `GET /usage` (admin) reads, so screens that show it fetch it there instead of trusting a
+ * session-wide default. One field is handled rather than faked:
  *
- * - `org.plan` needs `subscriptions`, which is the billing band. It reports `"starter"`, the
- *   least-privileged value, so a UI that gates a feature on plan hides it rather than
- *   offering something the tenant has not paid for.
  * - `user.role` is a PERMISSION in this type, and permissions live in `rbac_grants`, which is
  *   only readable through the gateway. `"member"` is the safe default for the same reason:
  *   under-granting shows too little, over-granting shows another tenant's admin surface.
@@ -21,7 +20,7 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import type { OrgContextValue } from "@/lib/mock/data";
+import type { OrgContextValue } from "@/lib/types";
 import { defaultDoodleSeed, isDoodleSeed } from "@/lib/doodle";
 
 type Profile = { name: string; email: string; avatarSeed?: string; imageUrl?: string };
@@ -94,7 +93,6 @@ export const resolveOrgContext = cache(async (): Promise<OrgContextValue | null>
       // gateway rejects its token, so the shell shows a name rather than crashing first.
       id: orgId ?? "",
       name: (orgId ? await orgNameFor(orgId) : null) ?? orgSlug ?? "Your workspace",
-      plan: "starter",
     },
     user: {
       id: userId,

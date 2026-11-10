@@ -1,17 +1,22 @@
 "use client";
 
-/* Typed OrgContext per CLAUDE.md — normally resolved from the Clerk session
-   JWT's `org` claim in (app)/layout.tsx. Auth isn't wired up yet, so this is
-   seeded from static mock data. Swap the provider value for a real Clerk
-   session lookup once auth lands; nothing downstream should need to change. */
+/* Typed OrgContext per CLAUDE.md, resolved server-side from the verified Clerk session by
+   `resolveOrgContext()` in the (app) and (admin) layouts and handed down through `OrgProvider`.
+   The default below is only what a component sees outside any provider: blank, never a
+   sample person or workspace. */
 
 import { createContext, useContext, type ReactNode } from "react";
-import { mockOrgContext, type OrgContextValue } from "./mock/data";
+import type { OrgContextValue } from "./types";
 
-const OrgContext = createContext<OrgContextValue>(mockOrgContext);
+const SIGNED_OUT: OrgContextValue = {
+  org: { id: "", name: "" },
+  user: { id: "", name: "", email: "", role: "member" },
+};
+
+const OrgContext = createContext<OrgContextValue>(SIGNED_OUT);
 
 export function OrgProvider({
-  value = mockOrgContext,
+  value = SIGNED_OUT,
   children,
 }: {
   value?: OrgContextValue;

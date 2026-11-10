@@ -140,6 +140,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Decisions */
+        get: operations["list_decisions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/decisions/{decision_id}": {
         parameters: {
             query?: never;
@@ -1000,6 +1017,49 @@ export interface components {
          * @description Confirm body. `supersedes` names an earlier confirmed decision (FOLLOWS_FROM lineage).
          */
         DecisionConfirm: {
+            /** Supersedes */
+            supersedes?: string | null;
+        };
+        /** DecisionLog */
+        DecisionLog: {
+            /** Items */
+            items: components["schemas"]["DecisionLogEntry"][];
+        };
+        /** DecisionLogEntry */
+        DecisionLogEntry: {
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /**
+             * Meeting Started At
+             * Format: date-time
+             */
+            meeting_started_at: string;
+            /** Meeting Title */
+            meeting_title: string | null;
+            /** Rationale */
+            rationale?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "confirmed" | "superseded";
+            /** Superseded By */
+            superseded_by?: string | null;
             /** Supersedes */
             supersedes?: string | null;
         };
@@ -2026,6 +2086,44 @@ export interface operations {
             };
             /** @description Validation Error */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_decisions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionLog"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

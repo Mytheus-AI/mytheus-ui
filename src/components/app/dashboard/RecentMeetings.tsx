@@ -1,20 +1,25 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { Avatar } from "@/components/ui/Avatar";
 import { Card } from "@/components/ui/Card";
-import { CheckSquare, Scales, VideoCamera } from "@phosphor-icons/react/dist/ssr";
-import { mockMeetings } from "@/lib/mock/data";
-import { CardHead, Chip, EmptyBlock, TextLink } from "./parts";
-import { formatClock, formatDuration, formatShortDate, plural } from "./format";
+import { CheckSquare, Scales, UsersThree, VideoCamera } from "@phosphor-icons/react/dist/ssr";
+import type { DashboardRecentMeeting } from "@/lib/api/types";
+import { LocalTime } from "./LiveTime";
+import { CardHead, Chip, EmptyBlock, ErrorBlock, TextLink } from "./parts";
+import { formatDuration, minutesBetween, plural } from "./format";
 
-/** Finished meetings with what the agent captured. There is no past-meetings arm on
- *  `GET /bff/dashboard` yet, so this reads the mock (as the decisions panel does). */
-export function RecentMeetings({ className, style }: { className?: string; style?: CSSProperties }) {
-  const recent = mockMeetings
-    .filter((m) => m.status === "past")
-    .sort((a, b) => b.startTime.localeCompare(a.startTime))
-    .slice(0, 4);
-
+/** Your ended meetings with what was confirmed in them: `/bff/dashboard` `recent_meetings`.
+ *  The counts are confirmed decisions and tasks only; a candidate nobody confirmed is not one. */
+export function RecentMeetings({
+  meetings,
+  failed,
+  className,
+  style,
+}: {
+  meetings: DashboardRecentMeeting[];
+  failed: boolean;
+  className?: string;
+  style?: CSSProperties;
+}) {
   return (
     <Card role="region" aria-labelledby="recent-meetings-title" className={`p-0 ${className ?? ""}`} style={style}>
       <CardHead
@@ -22,11 +27,13 @@ export function RecentMeetings({ className, style }: { className?: string; style
         title="Recent meetings"
         right={<TextLink href="/meetings">All meetings</TextLink>}
       />
-      {recent.length > 0 ? (
+      {failed ? (
+        <ErrorBlock title="We could not load recent meetings" text="Your meetings are safe. Try again in a moment." />
+      ) : meetings.length > 0 ? (
         <ul className="divide-y divide-line pb-2">
-          {recent.map((m) => {
-            const shown = m.participants.slice(0, 3);
-            const extra = m.participants.length - shown.length;
+          {meetings.map((m) => {
+            const start = m.scheduled_start ?? m.created_at;
+            const minutes = minutesBetween(m.scheduled_start ?? undefined, m.scheduled_end ?? undefined);
             return (
               <li key={m.id}>
                 <Link
@@ -35,39 +42,27 @@ export function RecentMeetings({ className, style }: { className?: string; style
                 >
                   <span className="min-w-0">
                     <span className="block text-[14.5px] font-semibold leading-snug text-ink">
-                      {m.title}
+                      {m.title ?? "Untitled meeting"}
                     </span>
                     <span className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[12.5px] text-ink-3">
-                      <span className="flex items-center">
-                        {shown.map((name, i) => (
-                          <Avatar
-                            key={name}
-                            name={name}
-                            size="sm"
-                            ring
-                            className={i === 0 ? "" : "-ml-2"}
-                          />
-                        ))}
-                        {extra > 0 ? (
-                          <span className="-ml-2 grid h-7 w-7 place-items-center rounded-full bg-bg-2 text-[11px] font-medium text-ink-3 ring-2 ring-surface">
-                            +{extra}
-                          </span>
-                        ) : null}
+                      <span className="inline-flex items-center gap-1">
+                        <UsersThree size={14} aria-hidden />
+                        {plural(m.participant_count, "person", "people")}
                       </span>
                       <span>
-                        {formatShortDate(m.startTime)}, {formatClock(m.startTime)},{" "}
-                        {formatDuration(m.durationMinutes)}
+                        <LocalTime iso={start} variant="when" />
+                        {minutes ? `, ${formatDuration(minutes)}` : null}
                       </span>
                     </span>
                   </span>
                   <span className="flex flex-wrap gap-1.5 sm:justify-end">
                     <Chip>
                       <Scales size={13} aria-hidden />
-                      {plural(m.decisionCount, "decision", "decisions")}
+                      {plural(m.decision_count, "decision", "decisions")}
                     </Chip>
                     <Chip>
                       <CheckSquare size={13} aria-hidden />
-                      {plural(m.actionCount, "action", "actions")}
+                      {plural(m.action_count, "task", "tasks")}
                     </Chip>
                   </span>
                 </Link>
@@ -78,8 +73,8 @@ export function RecentMeetings({ className, style }: { className?: string; style
       ) : (
         <EmptyBlock
           icon={<VideoCamera size={24} aria-hidden />}
-          title="No meetings yet"
-          text="Once you have held a meeting, it shows up here with the decisions and action items your agent captured."
+          title="No finished meetings yet"
+          text="Once you have been in a meeting, it shows up here with the decisions and tasks confirmed in it."
           action={<TextLink href="/meetings">Open meetings</TextLink>}
         />
       )}

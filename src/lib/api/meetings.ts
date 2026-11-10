@@ -10,7 +10,7 @@
 import { ApiError, api } from "@/lib/api/client";
 import { toMockStatus } from "@/lib/api/present";
 import type { ApiMeeting, MeetingPage } from "@/lib/api/types";
-import type { MeetingStatus } from "@/lib/mock/data";
+import type { MeetingStatus } from "@/lib/types";
 
 /** A meeting as the hub, detail and call screens render it. */
 export interface CallMeeting {

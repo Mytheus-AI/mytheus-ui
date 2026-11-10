@@ -23,11 +23,10 @@ import { TaskDetailBody, TaskDetailHeader } from "./TaskDetail";
 import { CheckButton, DueChip, PriorityBadge } from "./task-ui";
 import { daysUntil, groupOf, sortTasks, type Task, type TaskGroup } from "./dates";
 
-/* My Tasks. With a gateway (`live`), completing a task is optimistic: it moves to Completed at
-   once, `markTaskDone` (POST /api/v1/actions/{id}/done) runs, and a refusal rolls it back with
-   the server's reason. Done is final server-side, so a live completed task cannot be reopened.
-   In sample mode (no gateway) the toggle stays local. Everything else (view, filters, groups,
-   quick view) is client-side presentation of the tasks the page read. */
+/* My Tasks. Completing a task is optimistic: it moves to Completed at once, `markTaskDone`
+   (POST /api/v1/actions/{id}/done) runs, and a refusal rolls it back with the server's reason.
+   Done is final server-side, so a completed task cannot be reopened. Everything else (view,
+   filters, groups, quick view) is client-side presentation of the tasks the page read. */
 
 type View = "list" | "board";
 type FilterKey = "mine" | "week" | "high";
@@ -301,7 +300,7 @@ function BoardView({
 
 /* ---------------- screen ---------------- */
 
-export function TasksView({ actions, live = false }: { actions: TaskItem[]; live?: boolean }) {
+export function TasksView({ actions }: { actions: TaskItem[] }) {
   const { user } = useOrgContext();
   const [view, setView] = useState<View>("list");
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
@@ -341,10 +340,6 @@ export function TasksView({ actions, live = false }: { actions: TaskItem[]; live
   const [notice, setNotice] = useState<string | null>(null);
   const toggleDone = useCallback(
     (id: string) => {
-      if (!live) {
-        setDoneMap((m) => ({ ...m, [id]: !m[id] }));
-        return;
-      }
       if (doneMap[id]) {
         setNotice("Completed tasks stay completed.");
         return;
@@ -358,7 +353,7 @@ export function TasksView({ actions, live = false }: { actions: TaskItem[]; live
         }
       });
     },
-    [live, doneMap],
+    [doneMap],
   );
   const filterDefs = tasks.some((t) => t.priority)
     ? FILTER_DEFS
