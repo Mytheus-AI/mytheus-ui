@@ -1,5 +1,5 @@
 import type { Icon } from "@phosphor-icons/react";
-import { CalendarDots, Kanban, SlackLogo, SquaresFour } from "@phosphor-icons/react/dist/ssr";
+import { CalendarDots, Kanban, SlackLogo, SquaresFour } from "@phosphor-icons/react/ssr";
 import { Badge } from "@/components/ui/Badge";
 import { FormSubmit } from "@/components/admin/FormSubmit";
 import { Note, SectionCard } from "@/components/settings/primitives";
@@ -60,17 +60,19 @@ function Details({ item, people }: { item: IntegrationItem; people: Map<string, 
   rows.push(["Last sync", fmt(item.last_synced_at) ?? "Not synced yet"]);
   return (
     <div className="flex flex-col gap-3">
-      <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-[13px]">
+      <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-4 gap-y-1.5 rounded-ctl border border-line bg-surface-2 px-3.5 py-3 text-[13.5px]">
         {rows.map(([k, v]) => (
           <div key={k} className="contents">
             <dt className="text-ink-3">{k}</dt>
-            <dd className="truncate text-ink-2">{v}</dd>
+            <dd className="truncate text-right font-semibold text-ink" title={v}>
+              {v}
+            </dd>
           </div>
         ))}
       </dl>
       {item.scopes.length > 0 ? (
         <div>
-          <p className="text-[12.5px] font-semibold text-ink-3">Permissions granted</p>
+          <p className="kicker">Permissions granted</p>
           <ul className="mt-1.5 flex flex-wrap gap-1.5">
             {item.scopes.map((s) => (
               <li key={s} title={s}>
@@ -89,7 +91,7 @@ function Actions({ provider, name, state, connectBlocked }: { provider: Provider
     return (
       <form action={disconnectProvider}>
         <input type="hidden" name="provider" value={provider} />
-        <FormSubmit confirmLabel="Confirm disconnect" pendingLabel="Disconnecting..." ariaLabel={`Disconnect ${name}`}>
+        <FormSubmit destructive confirmLabel="Confirm disconnect" pendingLabel="Disconnecting..." ariaLabel={`Disconnect ${name}`}>
           Disconnect
         </FormSubmit>
       </form>
@@ -110,27 +112,27 @@ function ProviderCard({ meta, item, people }: { meta: CardMeta; item: Integratio
   const state = cardState(item);
   const Glyph = meta.icon;
   return (
-    <li className="flex flex-col gap-4 rounded-card border border-line bg-surface p-5 shadow-sm">
+    <li className="flex flex-col gap-4 rounded-card border border-line bg-surface p-5 shadow-warm-1 sm:px-[22px]">
       <div className="flex items-start gap-3.5">
-        <span className="grid h-[46px] w-[46px] shrink-0 place-items-center rounded-pill bg-bg-2 text-ink">
-          <Glyph size={24} aria-hidden="true" />
+        <span className="grid h-[46px] w-[46px] shrink-0 place-items-center rounded-ctl bg-bg-2 text-ink" aria-hidden="true">
+          <Glyph size={24} />
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="text-[16px] font-semibold text-ink">{meta.name}</h3>
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            <StatusBadge state={state} />
-          </div>
+          <h3 className="text-[17px] font-semibold leading-snug text-ink">{meta.name}</h3>
+          <p className="mt-1 text-[14px] leading-relaxed text-ink-3">{meta.description}</p>
         </div>
       </div>
-      <p className="text-[13.5px] text-ink-3">{meta.description}</p>
+      <div className="flex flex-wrap gap-1.5">
+        <StatusBadge state={state} />
+      </div>
       {state.kind === "not_configured" ? (
-        <p className="text-[12.5px] text-ink-3">The server has no app credentials for {meta.name} yet, so it cannot be connected.</p>
+        <p className="text-[13.5px] text-ink-3">The server has no app credentials for {meta.name} yet, so it cannot be connected.</p>
       ) : null}
       {state.kind === "connected" && state.status === "degraded" ? (
         <Note tone="warning">The connection is failing at {meta.name}. Disconnect and connect again to repair it.</Note>
       ) : null}
       {item && state.kind === "connected" ? <Details item={item} people={people} /> : null}
-      <div className="mt-auto">
+      <div className="mt-auto border-t border-line pt-4">
         <Actions provider={meta.key} name={meta.name} state={state} />
       </div>
     </li>
@@ -154,17 +156,17 @@ function TrackerSection({ items, people }: { items: Map<ProviderKey, Integration
       title="Project tracker"
       description="One tracker per workspace. Only action items someone has confirmed become issues, and an issue closed in the tracker marks the action done here."
     >
-      <div className="flex flex-col gap-4 px-4 py-4 sm:px-[22px] sm:py-[18px]">
-        <fieldset className="flex flex-col gap-2">
+      <div className="flex flex-col gap-4 px-4 py-4 sm:px-[22px] md:py-[18px]">
+        <fieldset className="grid gap-2.5">
           <legend className="sr-only">Project tracker</legend>
           {options.map((o) => {
             const OptionIcon = o.key === "jira" ? SquaresFour : Kanban;
             return (
               <label
                 key={o.key}
-                className={`flex items-start gap-3 rounded-card border px-4 py-3 ${
-                  o.selected ? "border-signal bg-bg" : "border-line"
-                } ${o.selectable ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`}
+                className={`flex flex-wrap items-start gap-3 rounded-ctl border border-line-2 bg-surface px-4 py-3.5 transition-[border-color,background-color,box-shadow] duration-150 has-[:checked]:border-signal has-[:checked]:bg-surface-2 has-[:checked]:shadow-[0_0_0_1px_var(--signal)] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-signal ${
+                  o.selectable ? "cursor-pointer hover:border-ink-4 hover:bg-surface-2" : "cursor-not-allowed bg-surface-2"
+                }`}
               >
                 <input
                   type="radio"
@@ -172,19 +174,27 @@ function TrackerSection({ items, people }: { items: Map<ProviderKey, Integration
                   value={o.key}
                   defaultChecked={o.selected}
                   disabled={!o.selectable}
-                  className="mt-1 accent-[var(--signal)]"
+                  className="peer sr-only"
                 />
+                <span
+                  aria-hidden="true"
+                  className="mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border-2 border-ink-3 peer-checked:border-signal peer-disabled:border-line-2 [&>span]:hidden peer-checked:[&>span]:block"
+                >
+                  <span className="h-2 w-2 rounded-full bg-signal" />
+                </span>
                 <OptionIcon size={20} className="mt-0.5 shrink-0 text-ink-2" aria-hidden="true" />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[14px] font-semibold text-ink">{o.name}</span>
-                  <span className="mt-0.5 block text-[12.5px] text-ink-3">
+                <span className="min-w-0 flex-[1_1_12rem]">
+                  <span className={`block text-[15px] font-semibold ${o.selectable ? "text-ink" : "text-ink-3"}`}>{o.name}</span>
+                  <span className="mt-0.5 block text-[13.5px] leading-snug text-ink-3">
                     {o.key === "jira"
                       ? "Confirmed action items become Jira issues, with a link back to the meeting."
                       : "Linear is not supported yet."}
                   </span>
                 </span>
-                {o.reason && o.reason !== "connected" ? <Badge className="shrink-0">{REASON_COPY[o.reason]}</Badge> : null}
-                {o.key === "jira" ? <StatusBadge state={jiraState} /> : null}
+                <span className="flex shrink-0 flex-wrap gap-1.5">
+                  {o.reason && o.reason !== "connected" ? <Badge>{REASON_COPY[o.reason]}</Badge> : null}
+                  {o.key === "jira" ? <StatusBadge state={jiraState} /> : null}
+                </span>
               </label>
             );
           })}
@@ -198,7 +208,7 @@ function TrackerSection({ items, people }: { items: Map<ProviderKey, Integration
         ) : null}
         {jira && jiraState.kind === "connected" ? <Details item={jira} people={people} /> : null}
 
-        <div>
+        <div className="border-t border-line pt-4">
           <Actions
             provider="jira"
             name="Jira"
@@ -224,9 +234,9 @@ export function IntegrationsPanel({
   return (
     <>
       {banner ? (
-        <Note tone={banner.tone === "error" ? "error" : "info"} className={banner.tone === "success" ? "font-semibold" : ""}>
-          {banner.message}
-        </Note>
+        <div aria-live="polite">
+          <Note tone={banner.tone === "error" ? "error" : banner.tone === "success" ? "success" : "info"}>{banner.message}</Note>
+        </div>
       ) : null}
 
       {load.kind === "forbidden" ? (
@@ -235,7 +245,7 @@ export function IntegrationsPanel({
         <Note tone="warning">Integrations could not be loaded from the server just now, so nothing can be connected. Try again in a moment.</Note>
       ) : (
         <>
-          <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,290px),1fr))] gap-5">
+          <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))] gap-5">
             {CARDS.map((c) => (
               <ProviderCard key={c.key} meta={c} item={load.items.get(c.key)} people={people} />
             ))}

@@ -32,17 +32,22 @@ function PersonRow({ person, role, lead }: { person: ChartPerson; role?: string 
     <li>
       <Link
         href={`/people/${person.id}`}
-        className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-bg sm:px-[22px]"
+        className="group flex items-center gap-3 px-4 py-3 transition-colors duration-150 hover:bg-surface-2 focus-visible:!rounded-none focus-visible:outline-offset-[-2px] sm:px-[22px]"
       >
         <Avatar name={person.name} id={person.email} src={person.imageUrl ?? undefined} size="md" />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-semibold text-ink">
-            {person.name}
-            {person.isYou && <span className="ml-1.5 font-normal text-ink-3">(you)</span>}
-          </p>
-          <p className="truncate text-[12.5px] text-ink-3">{label ? `${label} · ${person.email}` : person.email}</p>
-        </div>
-        {lead ? <Badge className="shrink-0">Lead</Badge> : null}
+        <span className="min-w-0 flex-1">
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-[15px] font-semibold text-ink group-hover:underline group-hover:underline-offset-4">
+              {person.name}
+            </span>
+            {person.isYou ? <Badge className="shrink-0">You</Badge> : null}
+          </span>
+          <span className="block truncate text-[13.5px] text-ink-3">{person.email}</span>
+        </span>
+        <span className="flex shrink-0 flex-wrap justify-end gap-1.5">
+          {label ? <Badge className="max-w-[10rem] truncate">{label}</Badge> : null}
+          {lead ? <Badge className="!bg-signal-soft !text-signal-ink">Lead</Badge> : null}
+        </span>
       </Link>
     </li>
   );
@@ -51,23 +56,24 @@ function PersonRow({ person, role, lead }: { person: ChartPerson; role?: string 
 function TeamCard({ team, people }: { team: OrgTeam; people: { id: string; name: string; email: string }[] | null }) {
   const lead = team.members.find((m: OrgMember) => m.lead);
   return (
-    <article className="overflow-hidden rounded-card border border-line bg-surface shadow-sm">
-      <div className="flex items-center justify-between gap-3 px-4 pb-3 pt-4 sm:px-[22px] sm:pt-[18px]">
-        <h3 className="min-w-0 truncate text-[16px] font-semibold text-ink">{team.name}</h3>
-        <span className="flex shrink-0 items-center gap-2">
-          <span className="text-[12.5px] font-semibold text-ink-3">
+    <article className="overflow-hidden rounded-card border border-line bg-surface shadow-warm-1">
+      <div className="flex items-center justify-between gap-3 px-4 py-3.5 sm:px-[22px]">
+        <div className="min-w-0">
+          <h3 className="truncate text-[17px] font-semibold text-ink">{team.name}</h3>
+          <p className="text-[13.5px] text-ink-3">
             {plural(team.members.length, "member", "members")}
-          </span>
-          {people ? (
-            <EditTeamButton
-              team={{ id: team.id, name: team.name, memberIds: team.members.map((m) => m.id), leadId: lead?.id ?? null }}
-              people={people}
-            />
-          ) : null}
-        </span>
+            {lead ? `, led by ${lead.name}` : ""}
+          </p>
+        </div>
+        {people ? (
+          <EditTeamButton
+            team={{ id: team.id, name: team.name, memberIds: team.members.map((m) => m.id), leadId: lead?.id ?? null }}
+            people={people}
+          />
+        ) : null}
       </div>
       {team.members.length === 0 ? (
-        <p className="border-t border-line px-4 py-4 text-[13px] text-ink-3 sm:px-[22px]">No one on this team yet.</p>
+        <p className="border-t border-line px-4 py-4 text-[14px] text-ink-3 sm:px-[22px]">No one on this team yet.</p>
       ) : (
         <ul className="divide-y divide-line border-t border-line">
           {team.members.map((m) => (
@@ -89,10 +95,10 @@ export default async function OrgPage() {
 
   if (!structure) {
     return (
-      <div className="mx-auto max-w-6xl motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
+      <div className="mx-auto max-w-6xl">
         <PageHeader title={orgName} description="Departments, teams and the people on them." />
         <EmptyState
-          className="mt-8"
+          className="mt-7"
           title="The org chart couldn't be loaded"
           description="Something went wrong reaching the workspace. Refresh the page to try again."
         />
@@ -119,12 +125,12 @@ export default async function OrgPage() {
       : `${plural(chart.departments.filter((d) => d.id !== null).length, "department", "departments")}, ${plural(chart.teamCount, "team", "teams")}, ${plural(chart.peopleOnTeams, "person", "people")} on a team. Your agents read this structure to tune notes to each role and to suggest missing stakeholders.`;
 
   return (
-    <div className="mx-auto max-w-6xl motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
+    <div className="mx-auto max-w-6xl">
       <PageHeader title={orgName} description={description} actions={adminActions} />
 
       {chart.departments.length === 0 ? (
         <EmptyState
-          className="mt-8"
+          className="mt-7"
           title="No teams yet"
           description={
             isAdmin
@@ -134,22 +140,22 @@ export default async function OrgPage() {
           action={isAdmin ? <NewTeamButton departments={departments} people={people} /> : undefined}
         />
       ) : (
-        <div className="mt-8 flex flex-col gap-9">
+        <div className="mt-7 flex flex-col gap-10">
           {chart.departments.map((dep) => {
             const headingId = `dep-${dep.id ?? "none"}`;
             return (
               <section key={dep.id ?? "none"} aria-labelledby={headingId}>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <h2 id={headingId} className="display text-[24px] text-ink-display">
+                  <h2 id={headingId} className="display text-[24px] text-ink-display sm:text-[26px]">
                     {dep.name}
                   </h2>
                   <Badge>{plural(dep.teams.length, "team", "teams")}</Badge>
-                  {dep.parentName ? <span className="text-[13px] text-ink-3">in {dep.parentName}</span> : null}
+                  {dep.parentName ? <span className="text-[14px] text-ink-3">Part of {dep.parentName}</span> : null}
                 </div>
 
                 {dep.teams.length === 0 ? (
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-card border border-dashed border-line px-5 py-4">
-                    <p className="text-[13.5px] text-ink-3">No teams in this department yet.</p>
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-card border border-dashed border-line-2 bg-surface-2 px-5 py-4">
+                    <p className="text-[14px] text-ink-3">No teams in this department yet.</p>
                     {isAdmin && dep.id ? (
                       <NewTeamButton departments={departments} people={people} defaultDepartmentId={dep.id} variant="outline" />
                     ) : null}
@@ -168,12 +174,12 @@ export default async function OrgPage() {
           {members && chart.unassigned.length > 0 ? (
             <section aria-labelledby="unassigned-heading">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <h2 id="unassigned-heading" className="display text-[24px] text-ink-display">
+                <h2 id="unassigned-heading" className="display text-[24px] text-ink-display sm:text-[26px]">
                   Not on a team
                 </h2>
                 <Badge>{plural(chart.unassigned.length, "person", "people")}</Badge>
               </div>
-              <ul className="mt-4 divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-sm md:max-w-[calc(50%-10px)]">
+              <ul className="mt-4 divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-warm-1 md:max-w-[calc(50%-10px)]">
                 {chart.unassigned.map((p) => (
                   <PersonRow key={p.id} person={p} />
                 ))}

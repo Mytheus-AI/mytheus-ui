@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
 import { FeaturePage } from "@/components/marketing/FeaturePage";
+import { featureMetadata } from "@/components/features/groups";
 
-export const metadata: Metadata = { title: "Personal agent — Mytheus" };
+export const metadata = featureMetadata("personal-agent");
 
 export default function Page() {
   return <FeaturePage slug="personal-agent" />;

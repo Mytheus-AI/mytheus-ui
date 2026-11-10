@@ -3,11 +3,13 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { dangerGhost, dangerSolid, focusPill } from "@/components/settings/primitives";
 
 /* The submit button for server-action forms: shows the pending label while the action runs, and,
    with `confirmLabel`, asks for a second press before an irreversible submit (disconnect, remove,
-   suspend). The confirm step resets after a few seconds. Without client JavaScript the form still
-   submits on the first press, which is the plain-HTML fallback for a form action. */
+   suspend). The armed press turns the button solid red so the second press is never an accident;
+   the confirm step resets after a few seconds. Without client JavaScript the form still submits
+   on the first press, which is the plain-HTML fallback for a form action. */
 export function FormSubmit({
   children,
   pendingLabel = "Working...",
@@ -16,6 +18,7 @@ export function FormSubmit({
   size = "sm",
   disabled,
   ariaLabel,
+  destructive = false,
 }: {
   children: ReactNode;
   pendingLabel?: string;
@@ -24,6 +27,8 @@ export function FormSubmit({
   size?: "sm" | "md";
   disabled?: boolean;
   ariaLabel?: string;
+  /** red text and edge before the confirm press (remove, revoke, disconnect) */
+  destructive?: boolean;
 }) {
   const { pending } = useFormStatus();
   const [armed, setArmed] = useState(false);
@@ -34,13 +39,16 @@ export function FormSubmit({
     return () => clearTimeout(t);
   }, [armed]);
 
+  const red = armed || variant === "danger";
   return (
     <Button
       type="submit"
-      variant={armed ? "danger" : variant}
+      variant={armed ? "danger" : destructive ? "outline" : variant}
       size={size}
       disabled={disabled || pending}
       aria-label={armed ? undefined : ariaLabel}
+      aria-busy={pending || undefined}
+      className={red ? dangerSolid : destructive ? dangerGhost : focusPill}
       onClick={(e) => {
         if (confirmLabel && !armed) {
           e.preventDefault();

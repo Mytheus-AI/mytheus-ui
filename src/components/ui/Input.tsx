@@ -15,16 +15,16 @@ export function Input({
   return (
     <label className="block" htmlFor={inputId}>
       {label ? (
-        <span className="mb-1.5 block text-[13px] font-medium text-ink-2">{label}</span>
+        <span className="mb-1.5 block text-[14px] font-semibold text-ink">{label}</span>
       ) : null}
       <input
         id={inputId}
-        className={`w-full rounded-md border border-line bg-surface px-4 py-2.5 text-[14px] text-ink placeholder:text-ink-3 focus-visible:border-signal ${
-          error ? "border-[#b3432f]" : ""
+        className={`h-11 w-full rounded-ctl border border-line-2 bg-surface px-3.5 text-[15px] text-ink placeholder:text-ink-4 transition-[border-color,box-shadow] hover:border-ink-4 focus-visible:border-signal focus-visible:shadow-[0_0_0_4px_var(--signal-soft)] focus-visible:outline-none ${
+          error ? "border-priority-high" : ""
         } ${className}`}
         {...rest}
       />
-      {error ? <span className="mt-1.5 block text-[12px] text-[#b3432f]">{error}</span> : null}
+      {error ? <span className="mt-1.5 block text-[13px] text-priority-high">{error}</span> : null}
     </label>
   );
 }

@@ -66,22 +66,19 @@ export default async function DecisionLineagePage({
 }) {
   const chain = await loadChain(params.meetingId, params.decisionId);
   const backLink = (
-    <Link
-      href={`/meetings/${params.meetingId}#decisions`}
-      className="inline-flex items-center gap-1.5 self-start rounded-md text-[13px] font-semibold text-ink-3 transition-colors hover:text-ink"
-    >
-      <ArrowLeft size={15} weight="bold" aria-hidden />
+    <Link href={`/meetings/${params.meetingId}#decisions`} className="mx-back self-start">
+      <ArrowLeft size={16} weight="bold" aria-hidden />
       Back to the meeting
     </Link>
   );
 
   if (chain === "unavailable") {
     return (
-      <div className="mx-auto flex max-w-5xl flex-col gap-6">
+      <div className="mx-page flex max-w-5xl flex-col gap-6">
         {backLink}
-        <div role="alert" className="rounded-card border border-line bg-surface px-6 py-12 text-center">
-          <h1 className="text-[17px] font-semibold text-ink">Decision history is unavailable</h1>
-          <p className="mx-auto mt-2 max-w-sm text-[13.5px] text-ink-3">
+        <div role="alert" className="rounded-card border border-line bg-surface px-6 py-12 text-center shadow-warm-1">
+          <h1 className="font-display text-[22px] font-medium text-ink">Decision history is unavailable</h1>
+          <p className="mx-auto mt-2 max-w-sm text-[15px] text-ink-3">
             We could not reach the knowledge graph just now. The decision itself is safe. Try again in a moment.
           </p>
         </div>
@@ -96,10 +93,10 @@ export default async function DecisionLineagePage({
   const superseded = subject.status === "superseded";
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-6 motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
+    <div className="mx-page flex max-w-5xl flex-col gap-6">
       {backLink}
 
-      <header className="rounded-card border border-line bg-surface p-6 shadow-sm sm:p-8">
+      <header className="rounded-hero border border-line bg-surface p-6 shadow-warm-1 sm:p-8">
         <div className="mb-4 flex flex-wrap items-center gap-2">
           {superseded ? (
             <Badge tone="medium">
@@ -113,7 +110,7 @@ export default async function DecisionLineagePage({
             </Badge>
           )}
         </div>
-        <h1 className="display max-w-[40ch] text-balance text-[clamp(1.6rem,3vw,2.2rem)] text-ink-display">
+        <h1 className="display max-w-[40ch] text-balance text-[clamp(1.75rem,3.2vw,2.25rem)] text-ink-display">
           {subject.content ?? "Confirmed decision"}
         </h1>
       </header>
@@ -133,31 +130,36 @@ export default async function DecisionLineagePage({
               : "Nothing came before this decision and nothing has replaced it."
           }
         >
+          {/* The FOLLOWS_FROM chain as one straight coral thread with a bead per decision: the
+              line's meaning in the product, this carried forward. */}
           <ol className="relative px-4 py-5 sm:px-[22px]">
+            {chain.length > 1 ? (
+              <span
+                aria-hidden
+                className="absolute bottom-9 left-[31px] top-9 w-[2px] rounded-full bg-[var(--signal-line)] sm:left-[37px]"
+              />
+            ) : null}
             {chain.map((node, i) => {
               const current = node.role === "subject";
-              const last = i === chain.length - 1;
               const body = (
                 <>
-                  <p className={`text-[14.5px] ${current ? "font-semibold text-ink" : "font-medium text-ink-2"}`}>
+                  <p className={`text-[15px] leading-snug ${current ? "font-semibold text-ink" : "font-medium text-ink-2"}`}>
                     {node.content ?? "An earlier decision"}
                   </p>
-                  <p className="mt-0.5 text-[12.5px] text-ink-3">
+                  <p className="mt-1 text-[13px] text-ink-3">
                     {caption(node, i)}
-                    {node.confirmedAt ? ` · ${shortDate.format(new Date(node.confirmedAt))}` : ""}
+                    {node.confirmedAt ? `, ${shortDate.format(new Date(node.confirmedAt))}` : ""}
                   </p>
                 </>
               );
               return (
                 <li key={node.id} className="relative flex gap-4 pb-6 last:pb-0">
-                  {/* the FOLLOWS_FROM edge to the next node */}
-                  {!last ? (
-                    <span aria-hidden className="absolute left-[15px] top-8 h-[calc(100%-1.5rem)] w-px bg-line-2" />
-                  ) : null}
                   <span
                     aria-hidden
                     className={`relative z-10 grid h-8 w-8 shrink-0 place-items-center rounded-full ${
-                      current ? "bg-signal text-white shadow-[0_0_0_5px_var(--signal-soft)]" : "border border-line-2 bg-surface text-ink-3"
+                      current
+                        ? "bg-signal text-pill-on shadow-[0_0_0_5px_var(--signal-soft)]"
+                        : "border-2 border-[var(--signal-line)] bg-surface text-signal-ink"
                     }`}
                   >
                     {current ? <Scales size={16} weight="fill" /> : <GitCommit size={16} />}
@@ -175,7 +177,7 @@ export default async function DecisionLineagePage({
                     )}
                   </div>
                   {!current && node.meetingId ? (
-                    <ArrowRight size={15} className="mt-2 shrink-0 text-ink-3" aria-hidden />
+                    <ArrowRight size={16} className="mt-2 shrink-0 text-ink-3" aria-hidden />
                   ) : null}
                 </li>
               );

@@ -1,56 +1,45 @@
-"use client";
+import Link from "next/link";
+import { Wordmark } from "@/components/site/Wordmark";
 
-import { WordReveal, MaskReveal, Reveal, Marquee } from "@/components/landing/motion";
-import { PillCTA, OutlinePill } from "@/components/landing/ui";
-
-/* 404 — on theme: your agent looked everywhere and found no record of this
-   page. Giant tight grotesk numerals, a witty line, a way back. */
-
+/* 404: the line runs out. A short coral stroke that stops mid-page, a plain explanation and two
+   ways back. Server component; the only motion is the stroke drawing once on load. */
 export default function NotFound() {
   return (
-    <main className="mesh-field grain relative flex min-h-screen flex-col overflow-hidden bg-bg text-ink-2">
-      <div className="relative z-10 mx-auto flex w-full max-w-[80rem] flex-1 flex-col items-center justify-center px-4 py-16 text-center sm:px-6 sm:py-24">
-        <Reveal>
-          <p className="kicker mb-8 text-signal">error 404 · no record found</p>
-        </Reveal>
-
-        <div className="select-none overflow-hidden leading-none">
-          <span className="display display-tight block text-[clamp(7rem,30vw,22rem)] text-ink-display">
-            404
-          </span>
+    <main className="flex min-h-dvh flex-col bg-bg text-ink-2">
+      <header className="mx-auto w-[min(1120px,100%-40px)] pt-6 sm:w-[min(1120px,100%-80px)]">
+        <Link href="/" aria-label="Mytheus home" className="group inline-flex rounded-ctl">
+          <Wordmark size={22} />
+        </Link>
+      </header>
+      <section className="mx-auto flex w-[min(640px,100%-40px)] flex-1 flex-col items-center justify-center py-16 text-center">
+        <svg viewBox="0 0 320 90" aria-hidden className="mb-8 h-auto w-[min(320px,80vw)] overflow-visible">
+          <path
+            className="loop-path line-stroke"
+            pathLength={1}
+            d="M6 60 C60 60 80 20 128 22 C176 24 168 70 132 66 C100 62 118 30 168 34 C210 38 228 58 262 58"
+          />
+          <circle cx={262} cy={58} r={5} fill="var(--signal)" />
+        </svg>
+        <p className="kicker">Page not found</p>
+        <h1 className="display mt-3 text-[clamp(2.2rem,6vw,3.4rem)]">The line stops here.</h1>
+        <p className="mt-5 max-w-[46ch] text-[17px] leading-relaxed text-ink-3">
+          There is no page at this address. The link may be out of date, or the page has moved.
+        </p>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-3.5">
+          <Link
+            href="/"
+            className="inline-flex h-12 items-center rounded-ctl bg-pill px-[22px] text-[16px] font-semibold text-pill-on transition-colors hover:bg-pill-2"
+          >
+            Go to the home page
+          </Link>
+          <Link
+            href="/dashboard"
+            className="font-semibold text-ink underline decoration-signal-line decoration-2 underline-offset-[6px]"
+          >
+            Open your dashboard
+          </Link>
         </div>
-
-        <WordReveal
-          as="h1"
-          className="display mt-6 text-[clamp(1.8rem,5vw,3.2rem)]"
-          text="Your agent looked everywhere —"
-          accent="no record of this one."
-          accentClass="text-signal"
-        />
-
-        <MaskReveal delay={140} className="mt-6">
-          <p className="mx-auto max-w-md text-[1.02rem] leading-relaxed text-ink-3 text-pretty">
-            This page isn&apos;t on the agenda. The link may be old, or the
-            meeting it pointed to has since moved on. Let&apos;s get you back to
-            something that exists.
-          </p>
-        </MaskReveal>
-
-        <Reveal delay={240}>
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <PillCTA href="/">Back to home</PillCTA>
-            <OutlinePill href="/#how">See how it works</OutlinePill>
-          </div>
-        </Reveal>
-      </div>
-
-      <Marquee className="relative z-10 border-t border-line py-4 text-ink-3">
-        <span className="font-mono text-[0.74rem] uppercase tracking-[0.28em]">
-          {["lost the thread", "404", "off the record", "not on the agenda", "rewind"]
-            .map((w) => `· ${w} `)
-            .join("")}
-        </span>
-      </Marquee>
+      </section>
     </main>
   );
 }

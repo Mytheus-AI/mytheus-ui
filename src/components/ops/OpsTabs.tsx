@@ -4,7 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Buildings, ChartLine, ClockCounterClockwise, Flag } from "@phosphor-icons/react";
 
-/* Section switcher for the internal-ops console, in the same pill language as the tenant console. */
+/* Section switcher for the internal-ops console, in the same language as the workspace admin and
+   settings navs: a raised white tab for the current page, one row that scrolls sideways on a
+   narrow screen. */
 
 const TABS = [
   { href: "/ops", label: "Tenants", icon: Buildings },
@@ -16,24 +18,27 @@ const TABS = [
 export function OpsTabs() {
   const pathname = usePathname();
   return (
-    <nav aria-label="Ops console sections" className="-mx-4 flex gap-1.5 overflow-x-auto px-4 py-1 sm:mx-0 sm:px-0">
-      {TABS.map((t) => {
-        const active = pathname === t.href;
-        const Icon = t.icon;
-        return (
-          <Link
-            key={t.href}
-            href={t.href}
-            aria-current={active ? "page" : undefined}
-            className={`inline-flex h-10 shrink-0 items-center gap-2.5 whitespace-nowrap rounded-pill border px-3.5 text-[14px] font-semibold transition-colors duration-150 focus-visible:!rounded-pill ${
-              active ? "border-line bg-surface text-ink shadow-sm" : "border-transparent text-ink-3 hover:bg-bg-2 hover:text-ink"
-            }`}
-          >
-            <Icon size={18} weight={active ? "fill" : "regular"} className={active ? "text-signal-deep" : undefined} aria-hidden />
-            {t.label}
-          </Link>
-        );
-      })}
+    <nav aria-label="Ops console sections" className="-mx-4 min-w-0 sm:mx-0">
+      <ul className="flex gap-1.5 overflow-x-auto px-4 py-1 [scrollbar-width:none] sm:px-0 [&::-webkit-scrollbar]:hidden">
+        {TABS.map((t) => {
+          const active = pathname === t.href;
+          const Icon = t.icon;
+          return (
+            <li key={t.href} className="shrink-0">
+              <Link
+                href={t.href}
+                aria-current={active ? "page" : undefined}
+                className={`flex h-10 items-center gap-2.5 whitespace-nowrap rounded-ctl border px-3.5 text-[14.5px] font-semibold transition-[background-color,color,border-color,transform] duration-150 focus-visible:!rounded-ctl active:scale-[0.98] motion-reduce:active:scale-100 ${
+                  active ? "border-line bg-surface text-ink shadow-warm-1" : "border-transparent text-ink-3 hover:bg-bg-2 hover:text-ink"
+                }`}
+              >
+                <Icon size={19} weight={active ? "fill" : "regular"} className={active ? "text-signal" : undefined} aria-hidden />
+                {t.label}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </nav>
   );
 }

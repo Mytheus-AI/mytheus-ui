@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth, useClerk, useSignIn } from "@clerk/nextjs";
+import { LinkButton } from "@/components/ui/Button";
 import { AuthShell, type StageCopy } from "./AuthShell";
-import type { SceneProps } from "./DoodleTable";
 import {
   BackLink,
   CodeInput,
@@ -35,59 +34,23 @@ import { SsoCallback } from "./SsoCallback";
 
 type Step = "start" | "factor-one" | "factor-two" | "forgot-password" | "sso-callback" | "task";
 
+/* The brand panel's headline on each step. The drawing (the memory line) stays the same. */
 const STAGE: Record<Exclude<Step, "sso-callback" | "task">, StageCopy> = {
   start: {
-    kicker: "Welcome back",
-    title: "Pick up where",
-    accent: "the room left off.",
-    blurb: "Your agent kept the thread while you were away. Decisions, owners and open questions are waiting.",
+    title: "Pick up where the room left off.",
+    lead: "Your agent kept the thread while you were away. Decisions, owners and open questions are waiting.",
   },
   "factor-one": {
-    kicker: "One-time code",
-    title: "No password?",
-    accent: "No problem.",
-    blurb: "We'll email a six-digit code. It works once and expires in minutes.",
+    title: "Pick up where the room left off.",
+    lead: "We email a six-digit code. It works once and expires in minutes.",
   },
   "factor-two": {
-    kicker: "Two-step verification",
-    title: "Two keys,",
-    accent: "one you.",
-    blurb: "A second check keeps every meeting you've had exactly where it belongs: with you.",
+    title: "A second check, so your meetings stay yours.",
+    lead: "Two-step verification keeps every meeting you've had exactly where it belongs: with you.",
   },
   "forgot-password": {
-    kicker: "Account recovery",
-    title: "A new key.",
-    accent: "Same memory.",
-    blurb: "Resetting your password changes how you get in. Nothing your agent remembers is touched.",
-  },
-};
-
-/* What the drawn meeting talks about on each step. */
-const SCENES: Record<Exclude<Step, "sso-callback" | "task">, SceneProps> = {
-  start: {},
-  "factor-one": {
-    lines: [
-      { text: "Forgot the password again?" },
-      { text: "A code's on its way." },
-      { text: "One code, one use. Done.", decision: true },
-    ],
-    note: "Code sent, expires soon",
-  },
-  "factor-two": {
-    lines: [
-      { text: "Second key, please." },
-      { text: "Authenticator open?" },
-      { text: "Both keys check out.", decision: true },
-    ],
-    note: "Two-step verified",
-  },
-  "forgot-password": {
-    lines: [
-      { text: "New password, same memories?" },
-      { text: "Nothing gets lost." },
-      { text: "Reset it by email.", decision: true },
-    ],
-    note: "Password reset, history kept",
+    title: "A new password. The same memory.",
+    lead: "Resetting your password changes how you get in. Nothing your agent remembers is touched.",
   },
 };
 
@@ -141,21 +104,17 @@ export function SignInFlow({ segments }: { segments: string[] }) {
   const qs = params.toString() ? `?${params.toString()}` : "";
   const go = (path: string) => router.push(`${path}${qs}`);
   const stage = STAGE[step === "task" ? "start" : step];
-  const scene = SCENES[step === "task" ? "start" : step];
 
   return (
     <AuthShell
       stage={stage}
-      scene={scene}
+      art="sign-in"
       aside={
         <span className="inline-flex items-center gap-3">
           <span className="hidden whitespace-nowrap md:inline">New to Mytheus?</span>
-          <Link
-            href={`/sign-up${qs}`}
-            className="inline-flex h-10 items-center whitespace-nowrap rounded-full border-[1.5px] border-line-2 bg-surface px-4 text-[14px] font-semibold text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
-          >
+          <LinkButton href={`/sign-up${qs}`} variant="outline" size="sm" className="h-10">
             Create an account
-          </Link>
+          </LinkButton>
         </span>
       }
     >
@@ -245,19 +204,19 @@ function StartStep({ go }: { go: (p: string) => void }) {
 
   return (
     <>
-      <StepHeader kicker="Sign in" title="Welcome back.">
+      <StepHeader title="Welcome back.">
         Sign in to see what your agent caught since your last meeting.
       </StepHeader>
 
       {errors.form ? <FormAlert>{errors.form}</FormAlert> : null}
 
-      <div className="auth-rise" style={{ ["--d" as string]: "80ms" }}>
+      <div>
         <GoogleButton onClick={google} loading={busy === "google"} disabled={!!busy} />
       </div>
       <OrDivider>or with email</OrDivider>
 
       <form onSubmit={submit} noValidate className="space-y-4">
-        <div className="auth-rise space-y-4" style={{ ["--d" as string]: "140ms" }}>
+        <div className="space-y-4">
           <TextField
             label="Email address"
             type="email"
@@ -276,7 +235,7 @@ function StartStep({ go }: { go: (p: string) => void }) {
             error={errors.password}
           />
         </div>
-        <div className="auth-rise flex items-center justify-between pt-1" style={{ ["--d" as string]: "200ms" }}>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-1">
           <TextButton onClick={emailCode} disabled={!!busy}>
             {busy === "code" ? "Sending code…" : "Email me a code instead"}
           </TextButton>
@@ -289,7 +248,7 @@ function StartStep({ go }: { go: (p: string) => void }) {
             Forgot password?
           </TextButton>
         </div>
-        <div className="auth-rise pt-4" style={{ ["--d" as string]: "260ms" }}>
+        <div className="pt-3">
           <PrimaryButton loading={busy === "password"} disabled={!!busy && busy !== "password"}>
             Sign in
           </PrimaryButton>
@@ -373,7 +332,7 @@ function EmailCodeStep({ go }: { go: (p: string) => void }) {
           Enter your email and we&rsquo;ll send a six-digit code. No password needed.
         </StepHeader>
         {errors.form ? <FormAlert>{errors.form}</FormAlert> : null}
-        <form onSubmit={requestCode} noValidate className="auth-rise space-y-6" style={{ ["--d" as string]: "100ms" }}>
+        <form onSubmit={requestCode} noValidate className="space-y-6">
           <TextField
             label="Email address"
             type="email"
@@ -401,8 +360,8 @@ function EmailCodeStep({ go }: { go: (p: string) => void }) {
           e.preventDefault();
           void verify();
         }}
-        className="auth-rise space-y-7"
-        style={{ ["--d" as string]: "100ms" }}
+        className="space-y-7"
+       
       >
         <CodeInput value={code} onChange={setCode} onComplete={(v) => void verify(v)} error={errors.code} disabled={busy} />
         <PrimaryButton loading={busy} disabled={code.length < 6}>
@@ -504,8 +463,8 @@ function SecondFactorStep({ go }: { go: (p: string) => void }) {
           e.preventDefault();
           void verify();
         }}
-        className="auth-rise space-y-7"
-        style={{ ["--d" as string]: "100ms" }}
+        className="space-y-7"
+       
         key={strategy ?? "none"}
       >
         {strategy === "backup_code" ? (
@@ -621,7 +580,7 @@ function ForgotPasswordStep({ go }: { go: (p: string) => void }) {
           Enter the email on your account and we&rsquo;ll send a code to reset your password.
         </StepHeader>
         {errors.form ? <FormAlert>{errors.form}</FormAlert> : null}
-        <form onSubmit={request} noValidate className="auth-rise space-y-6" style={{ ["--d" as string]: "100ms" }}>
+        <form onSubmit={request} noValidate className="space-y-6">
           <TextField
             label="Email address"
             type="email"
@@ -644,7 +603,7 @@ function ForgotPasswordStep({ go }: { go: (p: string) => void }) {
         Enter the code we sent to <span className="font-medium text-ink">{email}</span>, then pick a new password.
       </StepHeader>
       {errors.form ? <FormAlert>{errors.form}</FormAlert> : null}
-      <form onSubmit={reset} noValidate className="auth-rise space-y-6" style={{ ["--d" as string]: "100ms" }}>
+      <form onSubmit={reset} noValidate className="space-y-6">
         <CodeInput value={code} onChange={setCode} error={errors.code} disabled={busy} />
         <div>
           <PasswordField

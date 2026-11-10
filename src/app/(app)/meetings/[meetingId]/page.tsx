@@ -1,11 +1,29 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Article, Clock, Sparkle, UsersThree } from "@phosphor-icons/react/ssr";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Article,
+  CalendarBlank,
+  CheckSquare,
+  Clock,
+  NotePencil,
+  Question,
+  Robot,
+  Scales,
+  ShieldCheck,
+  UsersThree,
+  VideoCamera,
+} from "@phosphor-icons/react/ssr";
+import type { Icon } from "@phosphor-icons/react";
 import { resolveCallMeeting } from "@/components/call/resolve-meeting";
+import { LinkButton } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Chip } from "@/components/meetings/Chip";
 import { InviteToMeeting } from "@/components/meetings/InviteToMeeting";
 import type { PickableMember } from "@/components/meetings/MemberPicker";
-import { Tag } from "@/components/meetings/Tag";
 import { wordCount } from "@/components/meetings/transcript-utils";
+import { initials, toneOf } from "@/components/room/tone";
 import type { CallMeeting } from "@/lib/api/meetings";
 import { listMembers, type WorkspaceMemberView } from "@/lib/api/members";
 import { fetchTranscriptSurface, type TranscriptChunk } from "@/lib/api/transcript";
@@ -13,13 +31,14 @@ import "@/styles/meeting-hub.css";
 
 export const metadata: Metadata = { title: "Meeting | Mytheus" };
 
-/* A meeting's page, read from core-api. Three states, each laid out for what you need then:
+/* A meeting's page, read from core-api. A title row (status, the serif title, when and who, the
+   one primary action), then two columns laid out for what you need at that moment:
 
-   - Before or during the call: when it is, who is in it (by name), and one action card to join,
-     invite or open the transcript; the agent card underneath.
-   - After it: talk time and who took part, by name, and where its transcript and outcomes live.
-     No Join: a call that has ended stays ended (meeting-service closes an empty room after
-     five minutes and refuses new tokens for an ended meeting).
+   - Before or during the call: when it is, what your agent will do, and who is invited (by name).
+   - After it: the recap with talk time, and "From this meeting": what was said (the transcript)
+     joined by the coral line to what was kept (decisions, tasks, agent collaboration). No Join: a
+     call that has ended stays ended (meeting-service closes an empty room after five minutes and
+     refuses new tokens for an ended meeting).
    - Missed: its time passed and nobody joined. Said plainly, with who was invited.
 
    Every person is an internal user id; names come from the workspace's members. */
@@ -45,16 +64,6 @@ function relative(from: Date, to: Date): string {
   return mins >= 0 ? `in ${span}` : `${span} ago`;
 }
 
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .map((p) => p[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
-
 type Person = { id: string; name: string; email: string; imageUrl: string | null; isYou: boolean; host: boolean };
 
 function people(meeting: CallMeeting, members: WorkspaceMemberView[] | null): Person[] {
@@ -74,132 +83,150 @@ function people(meeting: CallMeeting, members: WorkspaceMemberView[] | null): Pe
     .sort((a, b) => Number(b.host) - Number(a.host) || Number(b.isYou) - Number(a.isYou) || a.name.localeCompare(b.name));
 }
 
-function PeoplePanel({ list, title, delay }: { list: Person[]; title: string; delay: string }) {
+function Face({ person, size = "" }: { person: Person; size?: "" | "sm" }) {
   return (
-    <div className="panel reveal" style={{ animationDelay: delay }}>
-      <div className="panel-head">
-        <h2>{title}</h2>
-        <span className="head-when">{plural(list.length, "person", "people")}</span>
-      </div>
-      <ul className="mh-people">
-        {list.map((p) => (
-          <li key={p.id}>
-            <span className="mh-person-av" aria-hidden="true">
-              {p.imageUrl ? (
-                // Clerk's CDN; a plain <img> keeps it out of next/image's domain list.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={p.imageUrl} alt="" referrerPolicy="no-referrer" />
-              ) : (
-                initials(p.name)
-              )}
-            </span>
-            <span className="mh-person-who">
-              <strong>
-                {p.name}
-                {p.isYou && <small> (you)</small>}
-              </strong>
-              {p.email && <span>{p.email}</span>}
-            </span>
-            {p.host && <Tag variant="neutral">Host</Tag>}
-          </li>
-        ))}
-      </ul>
-    </div>
+    <span className={`mx-av ${size} ${toneOf(person.id)}`} aria-hidden="true">
+      {person.imageUrl ? (
+        // Clerk's CDN; a plain <img> keeps it out of next/image's domain list.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={person.imageUrl} alt="" referrerPolicy="no-referrer" />
+      ) : (
+        initials(person.name)
+      )}
+    </span>
   );
 }
 
-function WhenPanel({ meeting, note }: { meeting: CallMeeting; note: string }) {
+function PeopleCard({ list, title }: { list: Person[]; title: string }) {
+  return (
+    <section className="mx-card mx-card-pad" aria-labelledby="md-people-h">
+      <div className="mx-card-head">
+        <h2 className="mx-card-title" id="md-people-h">
+          {title}
+        </h2>
+        <span className="mx-card-note">{plural(list.length, "person", "people")}</span>
+      </div>
+      {list.length === 0 ? (
+        <p className="mx-help">Nobody is on this meeting&rsquo;s list yet.</p>
+      ) : (
+        <ul className="md-people">
+          {list.map((p) => (
+            <li key={p.id}>
+              <Face person={p} />
+              <span className="md-person">
+                <strong>
+                  {p.name}
+                  {p.isYou && <small> (you)</small>}
+                </strong>
+                {p.email && <span>{p.email}</span>}
+              </span>
+              {p.host && <Chip>Host</Chip>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function WhenCard({ meeting, note, live }: { meeting: CallMeeting; note: string; live?: boolean }) {
   const start = new Date(meeting.startTime);
   const end = new Date(start.getTime() + meeting.durationMinutes * 60000);
   return (
-    <div className="panel reveal" style={{ animationDelay: ".08s" }}>
-      <div className="panel-head">
-        <h2>When</h2>
+    <section className="mx-card mx-card-pad" aria-labelledby="md-when-h">
+      <div className="mx-card-head">
+        <h2 className="mx-card-title" id="md-when-h">
+          When
+        </h2>
+        {live ? (
+          <Chip tone="high">
+            <span className="mx-live-dot" aria-hidden="true" />
+            Live now
+          </Chip>
+        ) : null}
       </div>
-      <div className="panel-body mh-when">
-        <span className="mh-date" aria-hidden="true">
+      <div className="md-when">
+        <span className="md-date" aria-hidden="true">
           <small>{monthFormatter.format(start)}</small>
           <b>{start.getDate()}</b>
         </span>
-        <span className="mh-when-text">
+        <span className="md-when-text">
           <strong>
             {dayFormatter.format(start)}, {timeFormatter.format(start)} to {timeFormatter.format(end)}
           </strong>
           <span>{note}</span>
         </span>
       </div>
-    </div>
+    </section>
   );
 }
 
-function UpcomingDetail({
-  meeting,
-  list,
-  hasTranscript,
-  invitable,
-}: {
-  meeting: CallMeeting;
-  list: Person[];
-  hasTranscript: boolean;
-  invitable: PickableMember[] | null;
-}) {
+const AGENT_PLAN: { icon: Icon; text: string }[] = [
+  { icon: NotePencil, text: "Takes private notes for you while you talk. Only you can see them." },
+  { icon: Scales, text: "Flags decisions as they are made and waits for your Confirm before saving one." },
+  { icon: CheckSquare, text: "Picks up action items with an owner and a due date, for you to approve." },
+  { icon: Question, text: "Suggests questions and brings in context from your earlier meetings." },
+];
+
+function AgentCard() {
+  return (
+    <section className="mx-card mx-card-pad" aria-labelledby="md-agent-h">
+      <div className="mx-card-head">
+        <h2 className="mx-card-title" id="md-agent-h">
+          What your agent will do
+        </h2>
+      </div>
+      <p className="mx-help">
+        It joins the call with you. What it writes shows in your sidebar during the call and is yours only.
+      </p>
+      <ul className="md-plan">
+        {AGENT_PLAN.map((p) => (
+          <li key={p.text}>
+            <span className="md-plan-ico" aria-hidden="true">
+              <p.icon size={17} />
+            </span>
+            <p>{p.text}</p>
+          </li>
+        ))}
+      </ul>
+      <p className="md-foot">
+        <ShieldCheck size={16} weight="fill" aria-hidden="true" />
+        Nothing is saved to your workspace until you confirm it.
+      </p>
+    </section>
+  );
+}
+
+function UpcomingDetail({ meeting, list, hasTranscript }: { meeting: CallMeeting; list: Person[]; hasTranscript: boolean }) {
   const live = meeting.status === "live";
   const start = new Date(meeting.startTime);
   const now = new Date();
   const note = live
     ? `Started ${relative(now, start)}`
     : start > now
-      ? `Starts ${relative(now, start)}`
+      ? `Starts ${relative(now, start)}. The room opens when you join.`
       : `Was due ${relative(now, start)}, still open to join`;
 
   return (
-    <div className="canvas cols-2 mh-detail">
-      <div className="rail-stack">
-        <WhenPanel meeting={meeting} note={note} />
-        <PeoplePanel list={list} title="Invited" delay=".12s" />
-      </div>
-
-      <div className="rail-stack">
-        <div className="panel reveal mh-action" style={{ animationDelay: ".1s" }}>
-          <div className="mh-action-state">
-            {live ? (
-              <span className="live-chip">
-                <span className="live-dot" aria-hidden="true"></span>
-                Live now
-              </span>
-            ) : (
-              <span className="mh-action-when">
-                <Clock size={14} aria-hidden="true" />
-                {start > now ? `Starts ${relative(now, start)}` : "Open to join"}
-              </span>
-            )}
-          </div>
-          <Link href={`/meetings/${meeting.id}/join`} className="join-btn mh-join tap">
-            {live ? "Join the call" : "Join meeting"}
+    <div className="md-cols">
+      <div className="md-col">
+        <WhenCard meeting={meeting} note={note} live={live} />
+        {hasTranscript ? (
+          <Link href={`/meetings/${meeting.id}/transcript`} className="mx-card md-linkcard tap">
+            <span className="md-plan-ico" aria-hidden="true">
+              <Article size={18} />
+            </span>
+            <span className="md-linkcard-text">
+              <strong>Transcript so far</strong>
+              <span>Searchable, with speakers, updated as the call runs</span>
+            </span>
+            <ArrowRight size={16} weight="bold" aria-hidden="true" />
           </Link>
-          <div className="mh-action-more">
-            <InviteToMeeting meetingId={meeting.id} members={invitable} />
-            {hasTranscript && (
-              <Link href={`/meetings/${meeting.id}/transcript`} className="btn-ghost-sm tap">
-                <Article size={14} aria-hidden="true" />
-                Transcript
-              </Link>
-            )}
-          </div>
-        </div>
-
-        <div className="panel reveal" style={{ animationDelay: ".14s" }}>
-          <div className="panel-head">
-            <h2>Your agent</h2>
-            <Sparkle size={12} aria-hidden="true" />
-          </div>
-          <div className="panel-body">
-            <p className="rail-note" style={{ marginTop: 0 }}>
-              Takes notes for you once the call starts. They show in your sidebar during the call
-              and are yours only.
-            </p>
-          </div>
-        </div>
+        ) : null}
+        <AgentCard />
+      </div>
+      <div className="md-col">
+        <PeopleCard list={list} title="Invited" />
       </div>
     </div>
   );
@@ -238,94 +265,123 @@ function EndedDetail({
 
   if (meeting.missed || chunks.length === 0) {
     return (
-      <div className="canvas cols-2 mh-detail">
-        <div className="rail-stack">
-          <WhenPanel
+      <div className="md-cols">
+        <div className="md-col">
+          <WhenCard
             meeting={meeting}
             note={meeting.missed ? "Nobody joined before it ended" : "No transcript was captured for this call"}
           />
+          <EmptyState
+            title={meeting.missed ? "This meeting did not happen" : "No transcript for this meeting"}
+            description={
+              meeting.missed
+                ? "Its time came and went with nobody joining, so there is nothing to recap. Start a new meeting when you are ready."
+                : "The call ran without transcription, so there are no notes, decisions or tasks from it here."
+            }
+          />
         </div>
-        <div className="rail-stack">
-          <PeoplePanel list={list} title="Invited" delay=".12s" />
+        <div className="md-col">
+          <PeopleCard list={list} title="Invited" />
         </div>
       </div>
     );
   }
 
+  /* What was said, joined to what was kept. */
+  const thread = [
+    {
+      icon: Article,
+      title: "Transcript",
+      desc: `${plural(chunks.length, "line", "lines")}, searchable, with speakers`,
+      href: `/meetings/${meeting.id}/transcript`,
+    },
+    { icon: Scales, title: "Decisions", desc: "Decisions you have confirmed", href: "/decisions" },
+    { icon: CheckSquare, title: "Tasks", desc: "Action items, wherever they were captured", href: "/tasks" },
+    {
+      icon: Robot,
+      title: "Agent collaboration",
+      desc: "When agents asked each other for context, and what policy allowed",
+      href: `/meetings/${meeting.id}/collaborations`,
+    },
+  ];
+
   return (
-    <div className="canvas cols-2 mh-detail">
-      <div className="rail-stack">
-        <div className="panel reveal" style={{ animationDelay: ".08s" }}>
-          <div className="panel-head">
-            <h2>Recap</h2>
+    <div className="md-cols">
+      <div className="md-col">
+        <section className="mx-card mx-card-pad" aria-labelledby="md-recap-h">
+          <div className="mx-card-head">
+            <h2 className="mx-card-title" id="md-recap-h">
+              Recap
+            </h2>
+            <span className="mx-card-note">From the transcript</span>
           </div>
-          <div className="mh-facts">
-            <span>
-              <small>Talked for</small>
-              <b>{plural(spokenMin, "minute", "minutes")}</b>
-            </span>
-            <span>
-              <small>Speakers</small>
-              <b>{talk.length}</b>
-            </span>
-            <span>
-              <small>Words</small>
-              <b>{words.toLocaleString("en-US")}</b>
-            </span>
-          </div>
+          <dl className="md-stats">
+            <div>
+              <dt>Talked for</dt>
+              <dd>
+                {spokenMin} <small>{spokenMin === 1 ? "min" : "mins"}</small>
+              </dd>
+            </div>
+            <div>
+              <dt>Speakers</dt>
+              <dd>{talk.length}</dd>
+            </div>
+            <div>
+              <dt>Words</dt>
+              <dd>{words.toLocaleString("en-US")}</dd>
+            </div>
+            <div>
+              <dt>Lines</dt>
+              <dd>{chunks.length.toLocaleString("en-US")}</dd>
+            </div>
+          </dl>
           {talk.length > 0 && (
-            <div className="panel-body">
-              <div className="detail-section" style={{ marginTop: 0 }}>
-                Talk time
-              </div>
-              {talk.map((s) => (
-                <div className="speaker-row" key={s.id}>
-                  <span className="speaker-name" title={s.name}>
-                    {s.name}
+            <div className="md-talk">
+              <h3 className="md-sub">Talk time</h3>
+              {talk.map((t) => (
+                <div className="md-talk-row" key={t.id}>
+                  <span className="md-talk-name" title={t.name}>
+                    {t.name}
                   </span>
-                  <span className="meter" role="img" aria-label={`${s.name} spoke ${s.share} percent of the words`}>
-                    <i style={{ width: `${s.share}%` }}></i>
+                  <span className="md-bar" role="img" aria-label={`${t.name} spoke ${t.share} percent of the words`}>
+                    <i style={{ width: `${t.share}%` }}></i>
                   </span>
-                  <span className="speaker-share">{s.share}%</span>
+                  <span className="md-talk-pct">{t.share}%</span>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </section>
 
-        <PeoplePanel list={list} title="Took part" delay=".12s" />
+        <section className="mx-card mx-card-pad" aria-labelledby="md-thread-h">
+          <div className="mx-card-head">
+            <h2 className="mx-card-title" id="md-thread-h">
+              From this meeting
+            </h2>
+          </div>
+          <p className="mx-help">What was said, and what was kept from it. Nothing reaches decisions or tasks until someone confirms it.</p>
+          <ol className="md-thread">
+            {thread.map((t) => (
+              <li key={t.title}>
+                <Link href={t.href} className="md-thread-row tap">
+                  <span className="md-thread-bead" aria-hidden="true" />
+                  <span className="md-plan-ico" aria-hidden="true">
+                    <t.icon size={17} />
+                  </span>
+                  <span className="md-linkcard-text">
+                    <strong>{t.title}</strong>
+                    <span>{t.desc}</span>
+                  </span>
+                  <ArrowRight size={16} weight="bold" aria-hidden="true" />
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </section>
       </div>
 
-      <div className="rail-stack">
-        <div className="panel reveal" style={{ animationDelay: ".1s" }}>
-          <div className="panel-head">
-            <h2>From this meeting</h2>
-          </div>
-          {[
-            {
-              kicker: "Transcript",
-              desc: `${plural(chunks.length, "line", "lines")}, searchable, with speakers`,
-              href: `/meetings/${meeting.id}/transcript`,
-              tone: "is-brown",
-            },
-            { kicker: "Decisions", desc: "Decisions you have confirmed", href: "/decisions", tone: "is-green" },
-            { kicker: "Tasks", desc: "Action items, wherever they were captured", href: "/tasks", tone: "is-orange" },
-            {
-              kicker: "Agent collaboration",
-              desc: "When agents asked each other for context, and what policy allowed",
-              href: `/meetings/${meeting.id}/collaborations`,
-              tone: "is-brown",
-            },
-          ].map((a) => (
-            <Link href={a.href} className="panel-row related-row tap" key={a.kicker} style={{ margin: 0 }}>
-              <span className="row-body">
-                <span className={`row-kicker ${a.tone}`}>{a.kicker}</span>
-                <span className="related-label">{a.desc}</span>
-              </span>
-              <ArrowRight size={14} weight="bold" aria-hidden="true" style={{ color: "var(--mutedIcon)" }} />
-            </Link>
-          ))}
-        </div>
+      <div className="md-col">
+        <PeopleCard list={list} title="Took part" />
       </div>
     </div>
   );
@@ -342,48 +398,95 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
   const chunks = (transcript?.chunks ?? []).filter((c) => c.text.trim().length > 0);
   const names = new Map((members ?? []).map((m) => [m.id, m.name]));
   const list = people(meeting, members);
-  const invitable =
+  const invitable: PickableMember[] | null =
     members
       ?.filter((m) => !m.isYou && !meeting.participantIds.includes(m.id))
       .map(({ id, name, email }) => ({ id, name, email })) ?? null;
   const ended = meeting.status === "past";
+  const live = meeting.status === "live";
   const start = new Date(meeting.startTime);
+  const end = new Date(start.getTime() + meeting.durationMinutes * 60000);
+  const shown = list.slice(0, 4);
 
   return (
-    <div className="page-inner mh-page" style={{ maxWidth: 1160 }} id="page-meeting-detail">
-      <div className="screen-head reveal mh-detail-head">
-        <div className="head-text">
-          <Link href="/meetings" className="foot-link mh-back tap">
-            <ArrowLeft size={12} weight="bold" aria-hidden="true" />
-            All meetings
-          </Link>
-          <div className="mh-title-row">
-            <h1>{meeting.title}</h1>
+    <div className="mx-page md" id="page-meeting-detail">
+      <Link href="/meetings" className="mx-back">
+        <ArrowLeft size={16} weight="bold" aria-hidden="true" />
+        All meetings
+      </Link>
+
+      <header className="mx-head">
+        <div className="mx-head-main">
+          <div className="md-chips">
             {ended ? (
-              <Tag variant="neutral">{meeting.missed ? "Didn't happen" : "Ended"}</Tag>
+              meeting.missed ? (
+                <Chip>Did not happen</Chip>
+              ) : (
+                <Chip tone="ok">Ended</Chip>
+              )
+            ) : live ? (
+              <Chip tone="high">
+                <span className="mx-live-dot" aria-hidden="true" />
+                Live now
+              </Chip>
             ) : (
-              <Tag variant="green" dot>
-                {meeting.status === "live" ? "Live now" : "Scheduled"}
-              </Tag>
+              <Chip tone="low">Scheduled</Chip>
             )}
+            {ended && chunks.length > 0 ? (
+              <Chip>
+                <Article size={14} aria-hidden="true" />
+                Transcript ready
+              </Chip>
+            ) : null}
           </div>
-          <p className="mh-meta">
+          <h1 className="mx-title">{meeting.title}</h1>
+          <div className="md-meta">
             <span>
-              {dayFormatter.format(start)}, {timeFormatter.format(start)}
+              <CalendarBlank size={18} aria-hidden="true" />
+              {dayFormatter.format(start)}
             </span>
-            <span>{meeting.durationMinutes} min</span>
             <span>
-              <UsersThree size={13} aria-hidden="true" />
+              <Clock size={18} aria-hidden="true" />
+              {timeFormatter.format(start)} to {timeFormatter.format(end)}, {meeting.durationMinutes} min
+            </span>
+            <span>
+              {shown.length > 0 ? (
+                <span className="mx-avs">
+                  {shown.map((p) => (
+                    <Face person={p} size="sm" key={p.id} />
+                  ))}
+                </span>
+              ) : (
+                <UsersThree size={18} aria-hidden="true" />
+              )}
               {plural(meeting.invited, "person", "people")}
             </span>
-          </p>
+          </div>
         </div>
-      </div>
+        <div className="mx-actions">
+          {ended ? (
+            chunks.length > 0 ? (
+              <LinkButton href={`/meetings/${meeting.id}/transcript`}>
+                <Article size={18} weight="bold" aria-hidden="true" />
+                Open transcript
+              </LinkButton>
+            ) : null
+          ) : (
+            <>
+              <InviteToMeeting meetingId={meeting.id} members={invitable} />
+              <LinkButton href={`/meetings/${meeting.id}/join`}>
+                <VideoCamera size={18} weight="bold" aria-hidden="true" />
+                {live ? "Join the call" : "Join meeting"}
+              </LinkButton>
+            </>
+          )}
+        </div>
+      </header>
 
       {ended ? (
         <EndedDetail meeting={meeting} list={list} chunks={chunks} names={names} />
       ) : (
-        <UpcomingDetail meeting={meeting} list={list} hasTranscript={chunks.length > 0} invitable={invitable} />
+        <UpcomingDetail meeting={meeting} list={list} hasTranscript={chunks.length > 0} />
       )}
     </div>
   );

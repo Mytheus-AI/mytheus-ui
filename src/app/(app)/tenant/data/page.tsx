@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { DownloadSimple } from "@phosphor-icons/react/dist/ssr";
+import { DownloadSimple } from "@phosphor-icons/react/ssr";
 import { Badge } from "@/components/ui/Badge";
-import { InlineRow, Note, PageHeader, SectionCard } from "@/components/settings/primitives";
-import { thClass } from "@/components/admin/StatCard";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { InlineRow, Note, PageHeader, SectionCard, focusPill } from "@/components/settings/primitives";
+import { theadRowClass, thClass } from "@/components/admin/StatCard";
 import { ActionForm } from "@/components/admin/ActionForm";
 import { FormSubmit } from "@/components/admin/FormSubmit";
 import { startDataExport } from "@/app/actions/tenant-admin";
@@ -27,7 +28,7 @@ export default async function DataExportPage() {
   const pending = rows.some((r) => r.status === "pending");
 
   return (
-    <div className="flex flex-col gap-6 motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="Data export"
         description="An archive of the workspace's meetings, transcripts, confirmed decisions and action items. Each request is written to the audit log."
@@ -39,13 +40,13 @@ export default async function DataExportPage() {
         <Note tone="warning">Data export is not available from the server just now. Try again in a moment.</Note>
       ) : (
         <>
-          <SectionCard>
+          <SectionCard title="Request an archive" headingLevel={2} headingId="request-heading">
             <InlineRow
               label="Export workspace data"
               help={pending ? "An export is already being prepared. You can request another once it is ready." : "The archive is prepared in the background and expires a few days after it is ready."}
             >
-              <ActionForm action={startDataExport} className="flex flex-col items-end gap-1.5">
-                <FormSubmit variant="outline" pendingLabel="Requesting..." disabled={pending}>
+              <ActionForm action={startDataExport} className="flex flex-col items-start gap-2 sm:items-end">
+                <FormSubmit variant="primary" pendingLabel="Requesting export" disabled={pending}>
                   <DownloadSimple size={16} aria-hidden />
                   Request export
                 </FormSubmit>
@@ -53,22 +54,27 @@ export default async function DataExportPage() {
             </InlineRow>
           </SectionCard>
 
-          <section aria-labelledby="exports-heading" className="overflow-hidden rounded-card border border-line bg-surface shadow-sm">
-            <div className="px-4 pb-3 pt-4 sm:px-[22px] sm:pt-[18px]">
-              <h2 id="exports-heading" className="text-[16px] font-semibold text-ink">
-                Requests
-              </h2>
-            </div>
+          <SectionCard
+            title="Requests"
+            headingLevel={2}
+            headingId="exports-heading"
+            description="Newest first. A download link appears once an archive is ready."
+          >
             {rows.length === 0 ? (
-              <p className="border-t border-line px-4 py-4 text-[13.5px] text-ink-3 sm:px-[22px]">No exports requested yet.</p>
+              <EmptyState
+                className="!rounded-none !border-0 !bg-transparent !py-10"
+                title="No exports yet"
+                description="Requested archives are listed here with their status."
+              />
             ) : (
-              <div className="overflow-x-auto border-t border-line">
-                <table className="w-full border-collapse text-left text-[14px]">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-left text-[14.5px]">
+                  <caption className="sr-only">Data export requests</caption>
                   <thead>
-                    <tr className="bg-bg">
-                      <th scope="col" className={thClass}>Requested</th>
+                    <tr className={theadRowClass}>
+                      <th scope="col" className={`${thClass} !pl-[22px]`}>Requested</th>
                       <th scope="col" className={thClass}>Status</th>
-                      <th scope="col" className={thClass}>
+                      <th scope="col" className={`${thClass} !pr-[22px]`}>
                         <span className="sr-only">Download</span>
                       </th>
                     </tr>
@@ -77,16 +83,22 @@ export default async function DataExportPage() {
                     {rows.map((r) => {
                       const link = r.status === "completed" ? safeHttpsUrl(r.manifest_url) : null;
                       return (
-                        <tr key={r.id}>
-                          <td className="whitespace-nowrap px-5 py-3 tabular-nums text-ink-2">{fmt(r.requested_at)}</td>
+                        <tr key={r.id} className="transition-colors duration-150 hover:bg-surface-2">
+                          <td className="whitespace-nowrap py-3 pl-[22px] pr-5 tabular-nums text-ink-2">{fmt(r.requested_at)}</td>
                           <td className="px-5 py-3">
-                            <Badge tone={r.status === "completed" ? "success" : "default"}>
+                            <Badge tone={r.status === "completed" ? "success" : r.status === "pending" ? "medium" : "default"}>
                               {r.status === "completed" ? "Ready" : r.status === "pending" ? "Pending" : r.status}
                             </Badge>
                           </td>
-                          <td className="px-5 py-3 text-right">
+                          <td className="py-3 pl-5 pr-[22px] text-right">
                             {link ? (
-                              <a href={link} rel="noopener noreferrer" className="text-[13.5px] font-semibold text-signal-deep hover:underline">
+                              <a
+                                href={link}
+                                rel="noopener noreferrer"
+                                aria-label={`Download the export requested ${fmt(r.requested_at)}`}
+                                className={`inline-flex h-9 items-center gap-1.5 rounded-ctl border border-line-2 bg-surface px-3 text-[14px] font-semibold text-ink transition-colors duration-150 hover:bg-surface-2 ${focusPill}`}
+                              >
+                                <DownloadSimple size={16} aria-hidden />
                                 Download
                               </a>
                             ) : null}
@@ -98,10 +110,8 @@ export default async function DataExportPage() {
                 </table>
               </div>
             )}
-          </section>
-          <p className="max-w-[70ch] text-[13px] text-ink-3">
-            Erasing one person&apos;s data is a separate request that is not available from this console yet.
-          </p>
+          </SectionCard>
+          <Note>Erasing one person&apos;s data is a separate request that is not available from this console yet.</Note>
         </>
       )}
     </div>

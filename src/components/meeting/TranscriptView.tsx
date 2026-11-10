@@ -12,7 +12,7 @@ import {
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { CaretDown, CaretUp, MagnifyingGlass } from "@phosphor-icons/react";
 import { TranscriptHead } from "@/components/transcript/TranscriptHead";
-import { speakerTones } from "@/components/transcript/speaker-tone";
+import { initials, toneOf } from "@/components/room/tone";
 import {
   formatOffset,
   resolveSpeaker,
@@ -20,9 +20,11 @@ import {
 } from "@/components/meetings/transcript-utils";
 import type { TranscriptChunk, MeetingSpeaker } from "@/lib/api/transcript";
 
-/* The transcript screen, in the meeting design (screen head with search, a rail of panels on the
-   left, the transcript panel on the right). Plan 3-4 §3.8 step 2: ordered finals, virtualized,
-   timestamp jump.
+/* The transcript screen: a title row, the transcript card (search with match stepping, the
+   speaker notice, then the lines) and a rail of cards on the right (speakers, talk time). Plan 3-4
+   §3.8 step 2: ordered finals, virtualized, timestamp jump. A linked moment (a `#t=` deep link
+   from the meeting page, or a timestamp you click) is marked with the coral line: the line the
+   rest of the product carried forward from.
 
    VIRTUALIZED, because the plan says "never render un-virtualized" and means it: the capacity
    model puts a meeting at roughly 360 finals, and an un-virtualized list of that many rows with
@@ -123,10 +125,7 @@ export function TranscriptView({
   const currentMatch = Math.min(current, Math.max(total - 1, 0));
 
   const words = useMemo(() => chunks.reduce((n, c) => n + wordCount(c.text), 0), [chunks]);
-  const tones = useMemo(
-    () => speakerTones(chunks, speakers, speakerNames, speakerLabels),
-    [chunks, speakers, speakerNames, speakerLabels],
-  );
+  const interims = useMemo(() => chunks.filter((c) => !c.is_final).length, [chunks]);
 
   const virtualizer = useVirtualizer({
     count: chunks.length,
@@ -203,142 +202,155 @@ export function TranscriptView({
   };
 
   return (
-    <section className="page" id="page-transcript">
-      <div className="page-inner tx-inner">
-        <TranscriptHead title={title} meta={meta} backHref={backHref}>
-          <div className="tool-search tx-search" role="search">
-            <MagnifyingGlass size={14} aria-hidden />
-            <input
-              ref={searchRef}
-              type="search"
-              placeholder="Search this transcript"
-              aria-label="Search this transcript"
-              autoComplete="off"
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setCurrent(0);
-              }}
-              onKeyDown={onSearchKey}
-            />
-            {q && (
-              <span className="tx-step">
-                <span className="tx-step-count" aria-live="polite">
-                  {total ? `${currentMatch + 1} of ${total}` : "0 results"}
+    <div className="mx-page tx" id="page-transcript">
+      <TranscriptHead title={title} meta={meta} backHref={backHref} />
+
+      <div className="tx-layout">
+        <section className="mx-card tx-main" aria-label="Transcript">
+          <div className="tx-bar">
+            <div className="mt-search tx-search" role="search">
+              <MagnifyingGlass size={18} aria-hidden />
+              <input
+                ref={searchRef}
+                type="search"
+                placeholder="Search this transcript"
+                aria-label="Search this transcript"
+                aria-keyshortcuts="/"
+                autoComplete="off"
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setCurrent(0);
+                }}
+                onKeyDown={onSearchKey}
+              />
+              {q && (
+                <span className="tx-step">
+                  <span className="tx-step-count" aria-live="polite">
+                    {total ? `${currentMatch + 1} of ${total}` : "No matches"}
+                  </span>
+                  <button
+                    type="button"
+                    className="cx-icon-btn sm tap"
+                    aria-label="Previous match"
+                    disabled={total === 0}
+                    onClick={() => step(-1)}
+                  >
+                    <CaretUp size={16} weight="bold" aria-hidden />
+                  </button>
+                  <button
+                    type="button"
+                    className="cx-icon-btn sm tap"
+                    aria-label="Next match"
+                    disabled={total === 0}
+                    onClick={() => step(1)}
+                  >
+                    <CaretDown size={16} weight="bold" aria-hidden />
+                  </button>
                 </span>
-                <button
-                  type="button"
-                  className="tx-step-btn tap"
-                  aria-label="Previous match"
-                  disabled={total === 0}
-                  onClick={() => step(-1)}
-                >
-                  <CaretUp size={13} weight="bold" aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  className="tx-step-btn tap"
-                  aria-label="Next match"
-                  disabled={total === 0}
-                  onClick={() => step(1)}
-                >
-                  <CaretDown size={13} weight="bold" aria-hidden />
-                </button>
-              </span>
-            )}
-          </div>
-        </TranscriptHead>
-
-        <div className="canvas cols-2r is-fill">
-          <div className="rail-stack">{rail}</div>
-
-          <section className="panel reveal" style={{ animationDelay: ".14s" }} aria-label="Transcript">
-            <div className="panel-head">
-              <h2>Transcript</h2>
-              <span className="count-chip">{chunks.length}</span>
-              <span className="tx-head-note">{words.toLocaleString("en-US")} words</span>
+              )}
             </div>
+          </div>
 
-            {notice}
+          {notice}
 
-            {q && total === 0 ? (
-              <div className="tx-empty" role="status">
-                <span className="tx-empty-icon" aria-hidden>
-                  <MagnifyingGlass size={28} />
+          <div className="tx-legend">
+            <span>
+              {chunks.length.toLocaleString("en-US")} {chunks.length === 1 ? "line" : "lines"}, {words.toLocaleString("en-US")} words
+            </span>
+            {interims > 0 ? (
+              <>
+                <span className="tx-legend-key">
+                  <i className="tx-sw" aria-hidden="true" />
+                  Final
                 </span>
-                <h3>No lines match &ldquo;{q}&rdquo;</h3>
-                <p>Check the spelling or try a shorter word.</p>
-                <button type="button" className="btn-ghost-sm tap" onClick={clear}>
-                  Clear search
-                </button>
-              </div>
-            ) : (
-              <div
-                ref={scrollRef}
-                tabIndex={0}
-                role="region"
-                aria-label="Transcript lines"
-                className="tx-scroll"
-              >
-                <ol className="tr-list tx-list" style={{ height: `${virtualizer.getTotalSize()}px` }}>
-                  {virtualizer.getVirtualItems().map((row) => {
-                    const c = chunks[row.index];
-                    const who = resolveSpeaker(c.speaker_id, speakers, speakerNames, speakerLabels);
-                    const isActive = activeId === c.id;
-                    const dim = Boolean(q) && search.counts[row.index] === 0;
-                    const stamp = formatOffset(c.start_ms);
-                    return (
-                      <li
-                        key={c.id}
-                        data-index={row.index}
-                        ref={virtualizer.measureElement}
-                        className="tx-item"
-                        style={{ transform: `translateY(${row.start}px)` }}
-                      >
-                        <div
-                          className={`tr-row${dim ? " is-dim" : ""}${isActive ? " is-active" : ""}`}
-                        >
+                <span className="tx-legend-key">
+                  <i className="tx-sw is-interim" aria-hidden="true" />
+                  Interim, still being refined
+                </span>
+              </>
+            ) : null}
+          </div>
+
+          {q && total === 0 ? (
+            <div className="tx-none" role="status">
+              <MagnifyingGlass size={30} aria-hidden className="tx-none-ico" />
+              <h3>No lines match &ldquo;{q}&rdquo;</h3>
+              <p>Check the spelling or try a shorter word.</p>
+              <button type="button" className="mx-btn is-outline is-sm tap" onClick={clear}>
+                Clear search
+              </button>
+            </div>
+          ) : (
+            <div ref={scrollRef} tabIndex={0} role="region" aria-label="Transcript lines" className="tx-scroll">
+              <ol className="tx-list" style={{ height: `${virtualizer.getTotalSize()}px` }}>
+                {virtualizer.getVirtualItems().map((row) => {
+                  const c = chunks[row.index];
+                  const who = resolveSpeaker(c.speaker_id, speakers, speakerNames, speakerLabels);
+                  const isActive = activeId === c.id;
+                  const dim = Boolean(q) && search.counts[row.index] === 0;
+                  const stamp = formatOffset(c.start_ms);
+                  return (
+                    <li
+                      key={c.id}
+                      data-index={row.index}
+                      ref={virtualizer.measureElement}
+                      className="tx-item"
+                      style={{ transform: `translateY(${row.start}px)` }}
+                    >
+                      <div className={`tr-row${dim ? " is-dim" : ""}${isActive ? " is-active" : ""}`}>
+                        <span className="tr-when">
                           <button
                             type="button"
                             className="tr-time tap"
                             onClick={() => toggleActive(c)}
                             aria-pressed={isActive}
-                            aria-label={`Highlight line at ${stamp}`}
+                            aria-label={`Link to the moment at ${stamp}`}
                           >
                             {stamp}
                           </button>
-                          <span
-                            className={`tr-speaker ${tones[c.speaker_id] ?? "sp-unknown"}`}
-                            title={who.label}
-                          >
-                            {who.label}
+                          {isActive ? (
+                            <svg className="tr-thread" viewBox="0 0 44 14" aria-hidden="true">
+                              <path className="mx-line" d="M2 7 H32" />
+                              <circle className="mx-bead" cx="37" cy="7" r="4" />
+                            </svg>
+                          ) : null}
+                        </span>
+                        <span className={`tr-who${who.named ? "" : " is-unk"}`} title={who.label}>
+                          <span className={`mx-av sm ${who.named ? toneOf(c.speaker_id) : ""}`} aria-hidden="true">
+                            {who.named ? initials(who.label) : "?"}
                           </span>
+                          <b>{who.label}</b>
+                        </span>
+                        <div className="tr-body">
                           <p className={`tr-text${c.is_final ? "" : " is-interim"}`}>
                             {highlight(c.text, q, search.starts[row.index], currentMatch)}
                             {!c.is_final && (
-                              <span className="tag tag-neutral tx-flag" title="Still being refined">
-                                interim
+                              <span className="tx-flag" title="Still being refined">
+                                Interim
                               </span>
                             )}
                             {c.redacted && (
-                              <span
-                                className="tag tag-neutral tx-flag"
-                                title="Personal data in this line was replaced before it was stored"
-                              >
+                              <span className="tx-flag" title="Personal data in this line was replaced before it was stored">
                                 Redacted
                               </span>
                             )}
                           </p>
+                          {isActive ? <p className="tr-linked">Linked moment. The address bar now points here, ready to share.</p> : null}
                         </div>
-                      </li>
-                    );
-                  })}
-                </ol>
-              </div>
-            )}
-          </section>
-        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          )}
+        </section>
+
+        <aside className="tx-rail" aria-label="Speakers and talk time">
+          {rail}
+        </aside>
       </div>
-    </section>
+    </div>
   );
 }

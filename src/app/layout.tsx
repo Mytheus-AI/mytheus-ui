@@ -1,39 +1,17 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
 import { ClerkProvider } from "@clerk/nextjs";
+import { hanken, newsreader } from "@/lib/fonts";
 import "./globals.css";
 
-// Geist — the clean, tight grotesk that carries the whole "Playex-style" look:
-// huge display headings, nav, and body all in one engineered voice.
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-sans",
-  weight: "100 900",
-  display: "swap",
-});
-
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-mono",
-  weight: "100 900",
-  display: "swap",
-});
-
-// Refinity — a bold geometric display face used only for the Mytheus wordmark.
-// Single weight (Regular reads heavy by design); never used for numerals.
-const refinity = localFont({
-  src: "./fonts/Refinity-Regular.woff",
-  variable: "--font-wordmark",
-  weight: "400",
-  display: "swap",
-});
+// One type pair for every surface: Hanken Grotesk carries the interface and body copy,
+// Newsreader is for display titles (the `.display` class) and the wordmark.
 
 export const metadata: Metadata = {
-  title: "Mytheus — Every meeting, on repeat.",
+  title: "Mytheus: every meeting, on repeat",
   description:
     "Mytheus gives every participant a personal AI agent that captures role-relevant notes, suggests questions in real time, detects conflicts, and manages follow-ups. Agents that collaborate across meetings.",
   openGraph: {
-    title: "Mytheus — Every meeting, on repeat.",
+    title: "Mytheus: every meeting, on repeat",
     description:
       "A personal AI agent for every participant. Real-time intelligence that collaborates across meetings.",
     type: "website",
@@ -55,9 +33,14 @@ export default function RootLayout({
       // Session tasks render on our own pages instead of Clerk's hosted UI.
       taskUrls={{ "choose-organization": "/onboarding/organization" }}
     >
-      <html lang="en">
+      {/* `js` on <html> before paint: drawn lines and timed reveals start hidden only when a
+          script will reveal them, so the page is complete without JavaScript. */}
+      <html lang="en" suppressHydrationWarning>
+        <head>
+          <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
+        </head>
         <body
-          className={`${geistSans.variable} ${geistMono.variable} ${refinity.variable} antialiased`}
+          className={`${hanken.variable} ${newsreader.variable} antialiased`}
         >
           {children}
         </body>

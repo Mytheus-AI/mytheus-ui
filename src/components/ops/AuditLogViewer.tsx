@@ -3,8 +3,9 @@
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
-import { Note } from "@/components/settings/primitives";
-import { thClass } from "@/components/admin/StatCard";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Note, focusPill } from "@/components/settings/primitives";
+import { theadRowClass, thClass } from "@/components/admin/StatCard";
 import { searchAuditLog } from "@/app/actions/ops";
 import type { AuditEntry } from "@/lib/ops";
 
@@ -61,7 +62,7 @@ export function AuditLogViewer({ tenants }: { tenants: { org_id: string; name: s
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        <span aria-hidden="true" className="text-[13px] font-semibold text-ink-3">
+        <span aria-hidden="true" className="text-[14px] font-semibold text-ink">
           Tenant
         </span>
         <Select
@@ -72,58 +73,87 @@ export function AuditLogViewer({ tenants }: { tenants: { org_id: string; name: s
           }}
           options={[{ value: NONE, label: "Pick a tenant" }, ...tenants.map((t) => ({ value: t.org_id, label: t.name }))]}
           label="Filter by tenant"
-          className="w-[260px]"
+          className="w-full max-w-[300px] sm:w-[280px]"
         />
-        {pending ? (
-          <span role="status" className="text-[13px] text-ink-3">
-            Loading...
-          </span>
-        ) : null}
+        <span role="status" className="text-[14px] text-ink-3">
+          {pending ? "Loading entries..." : ""}
+        </span>
       </div>
 
       {error ? <Note tone="error">{error}</Note> : null}
 
-      <section aria-label="Audit log" className="overflow-hidden rounded-card border border-line bg-surface shadow-sm">
+      <section aria-label="Audit log" aria-busy={pending} className="overflow-hidden rounded-card border border-line bg-surface shadow-warm-1">
         {items.length === 0 ? (
-          <p className="px-4 py-4 text-[13.5px] text-ink-3 sm:px-[22px]">
-            {org === NONE
-              ? tenants.length === 0
-                ? "There are no tenants to show an audit log for."
-                : "Pick a tenant to see its audit log."
-              : pending
-                ? "Loading..."
-                : error
-                  ? "Nothing to show."
-                  : "No audit entries for this tenant."}
-          </p>
+          org !== NONE && pending ? (
+            <div className="divide-y divide-line motion-safe:animate-pulse" aria-hidden="true">
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-6 px-4 py-4 sm:px-[22px]">
+                  <div className="h-3.5 w-24 rounded-full bg-bg-2" />
+                  <div className="h-3.5 w-32 rounded-full bg-bg-2" />
+                  <div className="hidden h-3.5 flex-1 rounded-full bg-bg-2 sm:block" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              className="!rounded-none !border-0 !bg-transparent !py-10"
+              title={
+                org === NONE
+                  ? tenants.length === 0
+                    ? "No tenants yet"
+                    : "Pick a tenant"
+                  : error
+                    ? "Nothing to show"
+                    : "No audit entries"
+              }
+              description={
+                org === NONE
+                  ? tenants.length === 0
+                    ? "There are no tenants to show an audit log for."
+                    : "Nothing is read until you pick one, and each search is recorded."
+                  : error
+                    ? "The entries could not be read. Pick the tenant again to retry."
+                    : "This tenant has no audit entries yet."
+              }
+            />
+          )
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left text-[13.5px]">
+            <table className="w-full min-w-[760px] border-collapse text-left text-[14px]">
+              <caption className="sr-only">Audit log entries, newest first</caption>
               <thead>
-                <tr className="bg-bg">
-                  <th scope="col" className={thClass}>When</th>
+                <tr className={theadRowClass}>
+                  <th scope="col" className={`${thClass} !pl-[22px]`}>When</th>
                   <th scope="col" className={thClass}>Actor</th>
                   <th scope="col" className={thClass}>Action</th>
                   <th scope="col" className={thClass}>Target</th>
-                  <th scope="col" className={thClass}>Details</th>
+                  <th scope="col" className={`${thClass} !pr-[22px]`}>Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
                 {items.map((e) => (
-                  <tr key={e.id} className="align-top">
-                    <td className="whitespace-nowrap px-5 py-3 tabular-nums text-ink-3">
+                  <tr key={e.id} className="align-top transition-colors duration-150 hover:bg-surface-2">
+                    <td className="whitespace-nowrap py-3 pl-[22px] pr-5 tabular-nums text-ink-3">
                       {Number.isNaN(Date.parse(e.occurred_at)) ? "" : dateTime.format(new Date(e.occurred_at))}
                     </td>
                     <td className="max-w-[200px] px-5 py-3 text-ink-2">
                       <span className="block capitalize">{e.actor_type}</span>
-                      {e.actor_id ? <span className="block truncate font-mono text-[11.5px] text-ink-3">{e.actor_id}</span> : null}
+                      {e.actor_id ? (
+                        <span className="block truncate font-mono text-[12.5px] text-ink-3" title={e.actor_id}>
+                          {e.actor_id}
+                        </span>
+                      ) : null}
                     </td>
                     <td className="px-5 py-3 font-mono text-[12.5px] text-ink">{e.action}</td>
                     <td className="max-w-[200px] px-5 py-3 text-ink-2">
                       {e.target_type ? <span className="block">{e.target_type}</span> : null}
-                      {e.target_id ? <span className="block truncate font-mono text-[11.5px] text-ink-3">{e.target_id}</span> : null}
+                      {e.target_id ? (
+                        <span className="block truncate font-mono text-[12.5px] text-ink-3" title={e.target_id}>
+                          {e.target_id}
+                        </span>
+                      ) : null}
                     </td>
-                    <td className="max-w-[320px] break-words px-5 py-3 font-mono text-[11.5px] text-ink-3">{metaText(e.metadata)}</td>
+                    <td className="max-w-[320px] break-words py-3 pl-5 pr-[22px] font-mono text-[12.5px] text-ink-3">{metaText(e.metadata)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -134,8 +164,8 @@ export function AuditLogViewer({ tenants }: { tenants: { org_id: string; name: s
 
       {cursor ? (
         <div>
-          <Button variant="outline" size="sm" disabled={pending} onClick={() => fetchPage(org, cursor)}>
-            {pending ? "Loading..." : "Load more"}
+          <Button variant="outline" size="sm" className={focusPill} disabled={pending} onClick={() => fetchPage(org, cursor)}>
+            {pending ? "Loading more" : "Load more"}
           </Button>
         </div>
       ) : null}

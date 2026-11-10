@@ -5,8 +5,8 @@ import { useFormState } from "react-dom";
 import { saveTenantSettings } from "@/app/actions/tenant-admin";
 import { FormSubmit } from "@/components/admin/FormSubmit";
 import { Toggle } from "@/components/settings/Toggle";
-import { InlineRow, SectionCard, SettingsRow, TextInput, fieldClass } from "@/components/settings/primitives";
-import { thClass } from "@/components/admin/StatCard";
+import { InlineRow, SaveStatus, SectionCard, SettingsRow, TextInput, fieldClass } from "@/components/settings/primitives";
+import { theadRowClass, thClass } from "@/components/admin/StatCard";
 import {
   CONFIDENCE_AGENTS,
   DEFAULT_SILENT,
@@ -25,7 +25,7 @@ export function TenantSettingsForm({ initial }: { initial: SettingsFormInput }) 
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
-      <SectionCard title="Retention" description="How long transcripts and notes are kept before they are deleted for good. Blank keeps them until someone deletes them.">
+      <SectionCard title="Retention" headingLevel={2} headingId="retention-heading" description="How long transcripts and notes are kept before they are deleted for good. Blank keeps them until someone deletes them.">
         <SettingsRow label="Transcripts" help={`Days, ${RETENTION_MIN} to ${RETENTION_MAX}.`} htmlFor="retention_days_transcripts">
           <TextInput
             id="retention_days_transcripts"
@@ -46,7 +46,7 @@ export function TenantSettingsForm({ initial }: { initial: SettingsFormInput }) 
         </SettingsRow>
       </SectionCard>
 
-      <SectionCard title="Privacy">
+      <SectionCard title="Privacy" headingLevel={2} headingId="privacy-heading">
         <InlineRow
           label="Redact personal data"
           labelId="pii-label"
@@ -59,21 +59,24 @@ export function TenantSettingsForm({ initial }: { initial: SettingsFormInput }) 
 
       <SectionCard
         title="Agent confidence"
+        headingLevel={2}
+        headingId="confidence-heading"
         description={`Above the show threshold an agent's suggestion appears in the meeting; between the two it is only logged; below the log threshold it is dropped. Defaults are ${DEFAULT_SURFACE} and ${DEFAULT_SILENT}.`}
       >
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left text-[14px]">
+          <table className="w-full min-w-[420px] border-collapse text-left text-[14.5px]">
+            <caption className="sr-only">Confidence thresholds per agent. Blank uses the default.</caption>
             <thead>
-              <tr className="bg-bg">
-                <th scope="col" className={thClass}>Agent</th>
+              <tr className={theadRowClass}>
+                <th scope="col" className={`${thClass} !pl-[22px]`}>Agent</th>
                 <th scope="col" className={thClass}>Show above</th>
-                <th scope="col" className={thClass}>Log from</th>
+                <th scope="col" className={`${thClass} !pr-[22px]`}>Log from</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
               {CONFIDENCE_AGENTS.map(({ key, label }) => (
                 <tr key={key}>
-                  <th scope="row" className="px-5 py-3 font-semibold text-ink">
+                  <th scope="row" className="py-3 pl-[22px] pr-5 font-semibold text-ink">
                     {label}
                   </th>
                   <td className="px-5 py-3">
@@ -86,7 +89,7 @@ export function TenantSettingsForm({ initial }: { initial: SettingsFormInput }) 
                       className={`${fieldClass} max-w-[120px]`}
                     />
                   </td>
-                  <td className="px-5 py-3">
+                  <td className="py-3 pl-5 pr-[22px]">
                     <input
                       name={`silent_${key}`}
                       aria-label={`${label}: log from`}
@@ -103,15 +106,17 @@ export function TenantSettingsForm({ initial }: { initial: SettingsFormInput }) 
         </div>
       </SectionCard>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <FormSubmit variant="primary" size="md" pendingLabel="Saving...">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-card border border-line bg-surface px-4 py-3.5 shadow-warm-1 sm:px-[22px]">
+        <FormSubmit variant="primary" size="md" pendingLabel="Saving settings">
           Save settings
         </FormSubmit>
-        {state ? (
-          <span role={state.ok ? "status" : "alert"} className={`text-[13px] ${state.ok ? "text-ink-3" : "text-priority-high"}`}>
+        {state && !state.ok ? (
+          <span role="alert" className="text-[14px] font-medium text-priority-high">
             {state.message}
           </span>
-        ) : null}
+        ) : (
+          <SaveStatus tone={state?.ok ? "ok" : undefined}>{state?.ok ? state.message : ""}</SaveStatus>
+        )}
       </div>
     </form>
   );

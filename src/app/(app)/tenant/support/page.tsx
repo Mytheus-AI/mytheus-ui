@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Badge } from "@/components/ui/Badge";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Note, PageHeader, SectionCard, SettingsRow, TextInput } from "@/components/settings/primitives";
-import { thClass } from "@/components/admin/StatCard";
+import { theadRowClass, thClass } from "@/components/admin/StatCard";
 import { ActionForm } from "@/components/admin/ActionForm";
 import { FormSelect } from "@/components/admin/FormSelect";
 import { FormSubmit } from "@/components/admin/FormSubmit";
@@ -33,7 +34,7 @@ export default async function SupportAccessPage() {
   const grants = res.kind === "live" ? [...res.data].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)) : [];
 
   return (
-    <div className="flex flex-col gap-6 motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="Support access"
         description="Mytheus staff cannot see your workspace unless you let them. Access is for one person, for a fixed time, and you can end it early."
@@ -45,15 +46,23 @@ export default async function SupportAccessPage() {
         <Note tone="warning">Support access could not be loaded from the server just now. Try again in a moment.</Note>
       ) : (
         <>
-          <SectionCard title="Grant access" description="Use the staff ID from your support conversation. Nobody else can use the grant.">
+          <SectionCard title="Grant access" headingLevel={2} headingId="grant-heading" description="Use the staff ID from your support conversation. Nobody else can use the grant.">
             <ActionForm action={grantSupportAccess} className="flex flex-col" messageClassName="px-4 pb-4 sm:px-[22px]">
-              <SettingsRow label="Staff ID" htmlFor="staff_user_id">
-                <TextInput id="staff_user_id" name="staff_user_id" required autoComplete="off" spellCheck={false} placeholder="00000000-0000-0000-0000-000000000000" />
+              <SettingsRow label="Staff ID" htmlFor="staff_user_id" help="The ID support gave you, pasted exactly.">
+                <TextInput
+                  id="staff_user_id"
+                  name="staff_user_id"
+                  required
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="00000000-0000-0000-0000-000000000000"
+                  className="font-mono"
+                />
               </SettingsRow>
               <SettingsRow label="What support may do" help={GRANT_SCOPES.map((s) => `${s.label}: ${s.help}`).join(" ")}>
                 <FormSelect name="scope" defaultValue="read_only" options={GRANT_SCOPES.map((s) => ({ value: s.value, label: s.label }))} label="What support may do" size="md" />
               </SettingsRow>
-              <SettingsRow label="Ends after">
+              <SettingsRow label="Ends after" help="Access ends on its own. You can revoke it sooner.">
                 <FormSelect
                   name="hours"
                   defaultValue="24"
@@ -62,36 +71,38 @@ export default async function SupportAccessPage() {
                   size="md"
                 />
               </SettingsRow>
-              <div className="px-4 pb-4 pt-1 sm:px-[22px]">
-                <FormSubmit variant="primary" pendingLabel="Granting...">
+              <div className="border-t border-line bg-surface-2 px-4 py-3.5 sm:px-[22px]">
+                <FormSubmit variant="primary" size="md" pendingLabel="Granting access">
                   Grant access
                 </FormSubmit>
               </div>
             </ActionForm>
           </SectionCard>
 
-          <section aria-labelledby="grants-heading" className="overflow-hidden rounded-card border border-line bg-surface shadow-sm">
-            <div className="px-4 pb-3 pt-4 sm:px-[22px] sm:pt-[18px]">
-              <h2 id="grants-heading" className="text-[16px] font-semibold text-ink">
-                Grants
-              </h2>
-              <p className="mt-0.5 text-[13.5px] text-ink-3">Current and past grants for this workspace.</p>
-            </div>
+          <SectionCard
+            title="Grants"
+            headingLevel={2}
+            headingId="grants-heading"
+            description="Current and past grants for this workspace."
+          >
             {grants.length === 0 ? (
-              <p className="border-t border-line px-4 py-4 text-[13.5px] text-ink-3 sm:px-[22px]">
-                No grants yet. Mytheus staff have no access to this workspace.
-              </p>
+              <EmptyState
+                className="!rounded-none !border-0 !bg-transparent !py-10"
+                title="No grants yet"
+                description="Mytheus staff have no access to this workspace."
+              />
             ) : (
-              <div className="overflow-x-auto border-t border-line">
-                <table className="w-full border-collapse text-left text-[14px]">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[720px] border-collapse text-left text-[14.5px]">
+                  <caption className="sr-only">Support access grants</caption>
                   <thead>
-                    <tr className="bg-bg">
-                      <th scope="col" className={thClass}>Staff ID</th>
+                    <tr className={theadRowClass}>
+                      <th scope="col" className={`${thClass} !pl-[22px]`}>Staff ID</th>
                       <th scope="col" className={thClass}>Access</th>
                       <th scope="col" className={thClass}>Granted by</th>
                       <th scope="col" className={thClass}>Ends</th>
                       <th scope="col" className={thClass}>Status</th>
-                      <th scope="col" className={thClass}>
+                      <th scope="col" className={`${thClass} !pr-[22px]`}>
                         <span className="sr-only">Revoke</span>
                       </th>
                     </tr>
@@ -100,8 +111,8 @@ export default async function SupportAccessPage() {
                     {grants.map((g) => {
                       const state = grantState(g, now);
                       return (
-                        <tr key={g.id}>
-                          <td className="max-w-[180px] truncate px-5 py-3 font-mono text-[12.5px] text-ink-2" title={g.staff_user_id}>
+                        <tr key={g.id} className="transition-colors duration-150 hover:bg-surface-2">
+                          <td className="max-w-[200px] truncate py-3 pl-[22px] pr-5 font-mono text-[13.5px] text-ink" title={g.staff_user_id}>
                             {g.staff_user_id}
                           </td>
                           <td className="px-5 py-3 text-ink-2">{scopeLabel(g.scope)}</td>
@@ -110,11 +121,16 @@ export default async function SupportAccessPage() {
                           <td className="px-5 py-3">
                             <Badge tone={STATE_BADGE[state].tone}>{STATE_BADGE[state].label}</Badge>
                           </td>
-                          <td className="px-5 py-3 text-right">
+                          <td className="py-3 pl-5 pr-[22px] text-right">
                             {state === "active" ? (
                               <ActionForm action={revokeSupportAccess} className="flex flex-wrap items-center justify-end gap-2">
                                 <input type="hidden" name="grant_id" value={g.id} />
-                                <FormSubmit confirmLabel="Confirm revoke" pendingLabel="Revoking..." ariaLabel={`Revoke access for ${g.staff_user_id}`}>
+                                <FormSubmit
+                                  destructive
+                                  confirmLabel="Confirm revoke"
+                                  pendingLabel="Revoking"
+                                  ariaLabel={`Revoke access for ${g.staff_user_id}`}
+                                >
                                   Revoke
                                 </FormSubmit>
                               </ActionForm>
@@ -127,7 +143,7 @@ export default async function SupportAccessPage() {
                 </table>
               </div>
             )}
-          </section>
+          </SectionCard>
         </>
       )}
     </div>

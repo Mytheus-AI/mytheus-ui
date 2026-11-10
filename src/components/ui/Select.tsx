@@ -129,7 +129,7 @@ export function Select<T extends string>({
           role="listbox"
           aria-label={label}
           tabIndex={-1}
-          className={`absolute top-[calc(100%+6px)] z-50 max-h-72 min-w-full overflow-y-auto rounded-[18px] border border-line bg-surface p-1.5 shadow-[0_22px_48px_-20px_rgba(20,15,10,0.45)] motion-safe:animate-[fadeUp_0.14s_var(--ease-out)_both] ${
+          className={`absolute top-[calc(100%+6px)] z-50 max-h-72 min-w-full max-w-[calc(100vw-32px)] overflow-y-auto rounded-card border border-line bg-surface p-1.5 shadow-warm-3 motion-safe:animate-[fadeUp_0.14s_var(--ease-out)_both] ${
             align === "right" ? "right-0" : "left-0"
           }`}
         >

@@ -18,6 +18,7 @@
 
 import { useState, useTransition } from "react";
 import { CaretDown } from "@phosphor-icons/react";
+import { Chip } from "@/components/meetings/Chip";
 import { assignSpeaker } from "@/app/(app)/meetings/[meetingId]/transcript/actions";
 import type { MeetingSpeaker } from "@/lib/api/transcript";
 
@@ -67,49 +68,46 @@ export function SpeakerMapping({
   };
 
   return (
-    <section
-      id="speakers"
-      aria-labelledby="speaker-mapping-heading"
-      className="panel reveal tx-spk"
-      style={{ animationDelay: ".14s" }}
-    >
-      <div className="panel-head">
-        <h2 id="speaker-mapping-heading">Speakers</h2>
-        <span className="count-chip">{speakers.length}</span>
-        <span className="tx-head-note">{open > 0 ? `${open} unassigned` : "All matched"}</span>
+    <section id="speakers" aria-labelledby="speaker-mapping-heading" className="mx-card mx-card-pad tx-spk">
+      <div className="mx-card-head">
+        <h2 className="mx-card-title" id="speaker-mapping-heading">
+          Speakers
+        </h2>
+        <span className="mx-card-note">{open > 0 ? `${open} not matched` : "All matched"}</span>
       </div>
-      <div className="panel-body">
-        <p className="row-sum" style={{ marginTop: 0 }}>
-          Transcription labels each voice it hears. Assign them to people so the transcript reads
-          by name.
-        </p>
-      </div>
+      <p className="mx-help">
+        Transcription labels each voice it hears. Match each one to a teammate and the transcript reads by name.
+      </p>
 
       <ul className="tx-spk-list">
         {speakers.map((s) => {
           const lines = lineCounts[s.speaker_id];
           const value = draft[s.speaker_id] ?? "";
           const saving = pending && savingId === s.speaker_id;
+          const unmatched = !s.user_id;
           return (
-            <li key={s.speaker_id} className="panel-row tx-spk-row">
+            <li key={s.speaker_id} className={`tx-spk-row${unmatched ? " is-unk" : ""}`}>
               <div className="tx-spk-top">
+                <span className="mx-av sm tx-spk-av" aria-hidden="true">
+                  {s.speaker_id}
+                </span>
                 <strong>Speaker {s.speaker_id}</strong>
-                {s.assignment === "manual" && s.user_id ? (
-                  <span className="tag tag-green">Assigned</span>
-                ) : s.user_id ? (
-                  /* Advisory: stated as a guess, with its confidence, and never pre-filled into
-                     the control below. */
-                  <span className="tag tag-neutral">
-                    Suggested
-                    {typeof s.confidence === "number" ? `, ${Math.round(s.confidence * 100)}%` : ""}
-                  </span>
-                ) : (
-                  <span className="tag tag-brown">Unassigned</span>
-                )}
                 {typeof lines === "number" && (
                   <small>
                     {lines} {lines === 1 ? "line" : "lines"}
                   </small>
+                )}
+                {s.assignment === "manual" && s.user_id ? (
+                  <Chip tone="ok">Matched</Chip>
+                ) : s.user_id ? (
+                  /* Advisory: stated as a guess, with its confidence, and never pre-filled into
+                     the control below. */
+                  <Chip>
+                    Suggested
+                    {typeof s.confidence === "number" ? `, ${Math.round(s.confidence * 100)}%` : ""}
+                  </Chip>
+                ) : (
+                  <Chip tone="medium">Not matched</Chip>
                 )}
               </div>
 
@@ -132,7 +130,7 @@ export function SpeakerMapping({
                         </option>
                       ))}
                     </select>
-                    <CaretDown size={13} weight="bold" aria-hidden className="tx-field-chev" />
+                    <CaretDown size={16} weight="bold" aria-hidden className="tx-field-chev" />
                   </span>
                 ) : (
                   <span className="tx-field-wrap">
@@ -156,7 +154,7 @@ export function SpeakerMapping({
                   type="button"
                   onClick={() => submit(s.speaker_id)}
                   disabled={pending || !value.trim()}
-                  className="assign-btn tap"
+                  className="mx-btn is-sm tap"
                 >
                   {saving ? "Saving..." : "Assign"}
                 </button>

@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Sidebar } from "@/components/app/Sidebar";
+import { Sidebar, type LiveCall } from "@/components/app/Sidebar";
 import { Topbar } from "@/components/app/Topbar";
 import { CommandPalette } from "@/components/app/CommandPalette";
 import { DoodleImageSync } from "@/components/app/DoodleImageSync";
@@ -12,18 +12,27 @@ import { THEME_INIT } from "@/components/app/theme-init";
 
 /* The authenticated shell. On desktop the nav is an icon rail or a labelled column (the user's
    choice, remembered); below lg it becomes an overlay drawer opened from the Topbar. Route
-   changes, Escape, overlay click and nav clicks close the drawer. Cmd/Ctrl+K opens the palette.
-   The `.mx-app` root scopes the redesigned theme (see styles/app-theme.css); the inline script
-   sets light/dark before first paint so there is no flash.
+   changes, Escape, the scrim, the drawer's close button and nav clicks close the drawer; focus
+   moves into it on open, stays inside while it is open, and returns to the menu button on close.
+   Cmd/Ctrl+K opens the palette. The `.mx-app` root scopes the redesigned theme (see
+   styles/app-theme.css); the inline script sets light/dark before first paint so there is no
+   flash.
 
    h-dvh (not min-h-dvh) so <main> is the scroll container: the Topbar stays reachable on long
-   pages and the nav column stays fixed. MeetingRoom's h-[calc(100dvh-4rem)] relies on main being
-   exactly viewport minus the h-16 Topbar. */
+   pages and the nav column stays fixed. */
 
-const EASE_OUT: [number, number, number, number] = [0.2, 0.7, 0.2, 1];
+const EASE_OUT: [number, number, number, number] = [0.215, 0.61, 0.355, 1];
 const SB_KEY = "mx-sb";
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  liveCall = null,
+}: {
+  children: React.ReactNode;
+  /** A meeting the signed-in person is in, for the sidebar's in-call card. None is wired yet. */
+  liveCall?: LiveCall | null;
+}) {
   const [navOpen, setNavOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [rail, setRail] = useState(false);
@@ -32,7 +41,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [sbSynced, setSbSynced] = useState(false);
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
-  const drawerTransition = { duration: reduceMotion ? 0 : 0.15, ease: EASE_OUT };
+  const drawerTransition = { duration: reduceMotion ? 0 : 0.2, ease: EASE_OUT };
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const drawerOpener = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     try {
@@ -74,26 +85,55 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  /* lock the page scroll behind the drawer */
+  /* lock the page scroll behind the drawer, move focus in, and hand it back on close */
   useEffect(() => {
     if (!navOpen) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const el = document.activeElement;
+    drawerOpener.current = el instanceof HTMLElement && el !== document.body ? el : null;
+    const t = window.setTimeout(() => {
+      drawerRef.current?.querySelector<HTMLElement>(FOCUSABLE)?.focus({ preventScroll: true });
+    }, 30);
     return () => {
+      window.clearTimeout(t);
       document.body.style.overflow = prev;
+      if (drawerOpener.current?.isConnected) drawerOpener.current.focus({ preventScroll: true });
+      drawerOpener.current = null;
     };
   }, [navOpen]);
+
+  const trapDrawer = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "Tab" || !drawerRef.current) return;
+    const items = Array.from(drawerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE));
+    if (items.length === 0) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
 
   return (
     <div suppressHydrationWarning className={`mx-app ${appFontClass} flex h-dvh bg-bg ${sbSynced ? "" : "sb-instant"}`}>
       <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
+      <a
+        href="#main"
+        className="sr-only z-[90] rounded-ctl bg-pill px-4 py-2.5 text-[14px] font-semibold text-pill-on focus:not-sr-only focus:fixed focus:left-3 focus:top-3"
+      >
+        Skip to content
+      </a>
 
       <div
-        // z-40: the open rail overlays the page, so it must sit above positioned page content
-        // (the meeting room stage painted over it). Below the drawer (z-50) and palette (z-80).
+        // z-40: the open rail overlays the page, so it must sit above positioned page content.
+        // Below the drawer (z-50) and palette (z-80).
         className={`sb-slot relative z-40 hidden shrink-0 lg:block ${rail ? "w-[76px]" : "w-[252px]"}`}
       >
-        <Sidebar rail={rail} onToggleRail={toggleRail} />
+        <Sidebar rail={rail} onToggleRail={toggleRail} liveCall={liveCall} />
       </div>
 
       <AnimatePresence>
@@ -103,25 +143,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             role="dialog"
             aria-modal="true"
             aria-label="Navigation"
+            onKeyDown={trapDrawer}
           >
             <motion.button
               type="button"
+              tabIndex={-1}
               aria-label="Close navigation"
               onClick={() => setNavOpen(false)}
-              className="absolute inset-0 bg-black/30"
+              className="absolute inset-0 bg-[rgba(26,22,18,0.45)] backdrop-blur-[2px]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={drawerTransition}
             />
             <motion.div
-              className="relative z-10 h-full w-[252px]"
-              initial={{ opacity: 0, x: reduceMotion ? 0 : -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: reduceMotion ? 0 : -20 }}
+              ref={drawerRef}
+              className="relative z-10 h-full w-[252px] max-w-[calc(100vw-48px)]"
+              initial={{ x: reduceMotion ? 0 : -260, opacity: reduceMotion ? 0 : 1 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: reduceMotion ? 0 : -260, opacity: reduceMotion ? 0 : 1 }}
               transition={drawerTransition}
             >
-              <Sidebar drawer onNavigate={() => setNavOpen(false)} />
+              <Sidebar drawer liveCall={liveCall} onNavigate={() => setNavOpen(false)} onClose={() => setNavOpen(false)} />
             </motion.div>
           </div>
         )}
@@ -129,7 +172,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar onMenuClick={() => setNavOpen(true)} onSearchClick={() => setPaletteOpen(true)} />
-        <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
+        <main id="main" tabIndex={-1} className="flex-1 focus:outline-none overflow-y-auto overflow-x-hidden px-4 pb-12 pt-1 sm:px-6 lg:px-8">
+          {children}
+        </main>
       </div>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />

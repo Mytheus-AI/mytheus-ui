@@ -11,7 +11,7 @@ export function Card({
 } & HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={`relative overflow-hidden rounded-card border border-line bg-surface p-5 ${className}`}
+      className={`relative overflow-hidden rounded-card border border-line bg-surface p-5 shadow-warm-1 ${className}`}
       {...rest}
     >
       {children}

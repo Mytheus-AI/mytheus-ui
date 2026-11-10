@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CaretDown, Check } from "@phosphor-icons/react";
 
-/* The design's custom dropdown. Options carry a value (a device id) and a label. With a single
+/* The call's device dropdown (styled in meeting-call.css). Options carry a value (a device id) and a label. With a single
    option or `disabled` it renders as a read-only field rather than an empty menu. */
 
 export type SelectOption = { value: string; label: string };
@@ -57,7 +57,7 @@ export function Select({
         onClick={() => setOpen((v) => !v)}
       >
         <span>{selected?.label ?? "None"}</span>
-        {inert ? null : <CaretDown size={15} className="select-chev" aria-hidden />}
+        {inert ? null : <CaretDown size={16} className="select-chev" aria-hidden />}
       </button>
       {open && !inert ? (
         <div className={`select-pop${openUp ? " is-up" : ""}`} role="listbox" aria-label={label}>
@@ -76,7 +76,7 @@ export function Select({
                 }}
               >
                 {option.label}
-                {isSel ? <Check size={12} weight="bold" aria-hidden /> : null}
+                {isSel ? <Check size={14} weight="bold" aria-hidden /> : null}
               </button>
             );
           })}

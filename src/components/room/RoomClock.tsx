@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Waveform } from "@phosphor-icons/react";
+import { Clock } from "@phosphor-icons/react";
 
-/* The design's timer pill: time since you opened the room. Lives in its own component so the
+/* The clock pill on the stage: time since you opened the room. Lives in its own component so the
    once-a-second tick re-renders only this label, never the video stage. Starts at zero on both
    server and client so hydration matches. */
 
@@ -24,8 +24,8 @@ export function RoomClock() {
   const m = Math.floor(seconds / 60) % 60;
   const s = seconds % 60;
   return (
-    <div className="timer-pill scrim-pill">
-      <Waveform size={15} weight="bold" aria-hidden />
+    <div className="timer-pill">
+      <Clock size={16} aria-hidden />
       <span role="timer" aria-label="Time in the room">
         {pad(h)}:{pad(m)}:{pad(s)}
       </span>

@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * The live-caption strip, in the meeting design's shape: a dark scrim floating over the video
- * with the last settled line and, under it, the line still being spoken. Plan 3-4 §3.8 step 1:
+ * The live-caption strip: a light card floating over the bottom of the stage with the last
+ * settled line and, under it, the line still being spoken. Plan 3-4 §3.8 step 1:
  * "interim-then-final, no layout shift, append-only final track".
  *
  * NO LAYOUT SHIFT is what shapes this file:
@@ -23,8 +23,8 @@
 
 import { speakerColorIndex, type CaptionLine } from "@/lib/realtime/captions";
 
-/* Speaker identity colours on the always-dark scrim: cs-1..cs-3 are the design's, cs-4..cs-6 are
-   added in meeting-call.css. Six is the nominal room size from doc 10's video-grid scope. */
+/* A stable per-speaker hook (`cs-1`..`cs-6`; six is the nominal room size from doc 10's video-grid
+   scope). The light strip names every speaker in ink, so the hook carries no colour today. */
 const PALETTE = 6;
 
 function speakerClass(speakerId: string) {

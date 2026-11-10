@@ -16,14 +16,14 @@ export default async function OpsTenantsPage() {
   const suspended = tenants.filter((t) => t.status === "suspended").length;
 
   return (
-    <div className="flex flex-col gap-6 motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
+    <div className="flex flex-col gap-6">
       <PageHeader title="Tenants" description="Every workspace on the platform. Opening this list is recorded in the ops audit log." />
       {res.kind === "live" ? (
         <>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-            <StatCard label="Tenants" value={res.data.truncated ? `${tenants.length}+` : tenants.length} />
-            <StatCard label="Suspended" value={suspended} />
-            <StatCard label="Members" value={tenants.reduce((s, t) => s + (Number(t.member_count) || 0), 0)} />
+          <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 lg:grid-cols-3">
+            <StatCard label="Tenants" value={res.data.truncated ? `${tenants.length}+` : tenants.length} hint="Every workspace on the platform" />
+            <StatCard label="Suspended" value={suspended} hint={suspended ? "Members have no access" : "None suspended"} />
+            <StatCard label="Members" value={tenants.reduce((s, t) => s + (Number(t.member_count) || 0), 0)} hint="Across every tenant" />
           </div>
           {res.data.truncated ? (
             <Note tone="warning">Showing the newest {tenants.length} tenants. Older tenants are not listed here.</Note>

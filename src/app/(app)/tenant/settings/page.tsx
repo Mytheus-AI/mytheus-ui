@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function TenantSettingsPage() {
   const res = await loadTenantSettings();
   return (
-    <div className="flex flex-col gap-6 motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="Workspace settings"
         description="Data retention, privacy and how sure an agent must be before it speaks up. Every change is written to the audit log."

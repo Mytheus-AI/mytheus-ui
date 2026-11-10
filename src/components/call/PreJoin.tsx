@@ -1,17 +1,29 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import {
+  ArrowLeft,
   Check,
+  CheckSquare,
+  Clock,
+  Database,
+  Ear,
+  LockSimple,
   Microphone,
   MicrophoneSlash,
+  NotePencil,
+  Question,
   Record,
-  Sparkle,
+  Scales,
+  ShieldCheck,
+  Users,
   VideoCamera,
   VideoCameraSlash,
   WarningCircle,
+  type Icon,
 } from "@phosphor-icons/react";
+import { Button, LinkButton } from "@/components/ui/Button";
+import { initials, toneOf } from "@/components/room/tone";
 import { CallToastProvider } from "@/components/call/CallToast";
 import { CallTopBar } from "@/components/call/CallTopBar";
 import { CALL_PREFS_KEY } from "@/components/call/prefs";
@@ -19,9 +31,9 @@ import { Select, type SelectOption } from "@/components/call/Select";
 import { useOrgContext } from "@/lib/org-context";
 import type { CallMeeting } from "@/components/call/resolve-meeting";
 
-/* The pre-join "green room", ported from the meeting design: your own camera preview with mic and
-   camera toggles and a level meter, device pickers, the meeting card, what your agent will do, and
-   the recording consent that unlocks Join.
+/* The pre-join: your own camera preview on the warm stage with mic and camera toggles and a live
+   level meter, device pickers, the meeting card, what your agent will do, and the recording
+   consent that unlocks Join.
 
    The preview is real: it asks the browser for the camera and microphone, lists the devices it
    finds, and switches between them. Nothing leaves the browser. If access is denied or there is
@@ -31,22 +43,12 @@ import type { CallMeeting } from "@/components/call/resolve-meeting";
 
 type MediaStatus = "pending" | "ready" | "denied" | "missing";
 
-const AGENT_PREP = [
-  { kind: "note", text: "Takes private notes for you while you talk. Only you can see them." },
-  { kind: "decision", text: "Flags decisions as they are made and waits for your Confirm before saving one." },
-  { kind: "action", text: "Picks up action items with an owner and a due date, for you to approve." },
-  { kind: "question", text: "Suggests questions and brings in context from your earlier meetings." },
+const AGENT_PREP: { icon: Icon; text: string }[] = [
+  { icon: NotePencil, text: "Takes private notes for you while you talk. Only you can see them." },
+  { icon: Scales, text: "Flags decisions as they are made and waits for your Confirm before saving one." },
+  { icon: CheckSquare, text: "Picks up action items with an owner and a due date, for you to approve." },
+  { icon: Question, text: "Suggests questions and brings in context from your earlier meetings." },
 ];
-
-function initials(name: string) {
-  return name
-    .split(" ")
-    .map((p) => p[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
 
 function stopAll(stream: MediaStream | null) {
   stream?.getTracks().forEach((t) => t.stop());
@@ -67,7 +69,9 @@ export function PreJoin({ meeting }: { meeting: CallMeeting }) {
   const [micValue, setMicValue] = useState<string>();
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const meterRef = useRef<HTMLSpanElement>(null);
+  // The level is written as `--lvl` on the page root, so the stage bars and the devices meter
+  // both follow it without re-rendering.
+  const meterRef = useRef<HTMLDivElement>(null);
 
   // Acquire (or re-acquire, after a device switch) the camera and microphone. Camera off asks
   // for no video at all, so the camera is released and its light goes out; turning it back on
@@ -190,225 +194,277 @@ export function PreJoin({ meeting }: { meeting: CallMeeting }) {
     }
   };
 
+  const startLabel =
+    meeting.status === "live"
+      ? "Live now"
+      : meeting.status === "past"
+        ? "Ended"
+        : `Starts ${new Date(meeting.startTime).toLocaleString(undefined, {
+            weekday: "short",
+            hour: "numeric",
+            minute: "2-digit",
+          })}`;
+  const micLive = !micOff && ready && hasAudio;
+
   return (
     <CallToastProvider>
-      <div className="mx-meet cx-call">
-        <div className="app">
-          <CallTopBar />
-          <div className="app-row">
-            <main className="main">
-              <section className="page" id="page-prejoin">
-                <div className="page-scroll">
-                  <div className="page-inner" style={{ maxWidth: 1240 }}>
-                    <div className="screen-head reveal">
-                      <div className="head-text">
-                        <h1>Ready to join?</h1>
-                        <p>Check your camera and mic. Your agent joins with you and starts taking notes.</p>
-                      </div>
-                    </div>
+      <div className="mx-meet cx-call" ref={meterRef}>
+        <CallTopBar
+          end={
+            <LinkButton href={`/meetings/${meeting.id}`} variant="outline" size="sm">
+              <ArrowLeft size={16} weight="bold" aria-hidden />
+              Back to meeting
+            </LinkButton>
+          }
+        />
+        <main className="pj" id="page-prejoin">
+          <header className="pj-head">
+            <h1>Ready to join?</h1>
+            <p>Check your camera and microphone. Your agent joins with you and takes notes that only you review.</p>
+          </header>
 
-                    <div className="canvas is-fill cx-prejoin-canvas">
-                      <div className="pv-left">
-                        <div
-                          className={`pv-stage reveal${showVideo ? "" : " is-cam-off"}`}
-                          style={{ animationDelay: ".07s" }}
-                          role="group"
-                          aria-label="Your camera preview"
-                        >
-                          <video ref={videoRef} className="pv-video" autoPlay playsInline muted hidden={!showVideo} />
-                          {showVideo ? null : (
-                            <span className="pv-initials" aria-hidden="true">
-                              {initials(user.name)}
-                            </span>
-                          )}
-                          {status !== "ready" ? (
-                            <span className="pv-status scrim-pill" role="status">
-                              {status === "pending" ? null : <WarningCircle size={15} weight="fill" aria-hidden />}
-                              {status === "pending"
-                                ? "Asking for your camera and microphone"
-                                : status === "denied"
-                                  ? "Camera and mic are blocked. Allow them in your browser's site settings, then reload."
-                                  : "No camera or microphone found. You can still join."}
-                            </span>
-                          ) : null}
-                          <span className="preview-name scrim-pill">
-                            {!micOff && ready ? (
-                              <span className="wave" aria-hidden="true">
-                                <i></i>
-                                <i></i>
-                                <i></i>
-                                <i></i>
-                              </span>
-                            ) : null}
-                            {firstName} · camera is {showVideo ? "on" : "off"}
-                          </span>
-                          {!micOff && ready && hasAudio ? (
-                            <span ref={meterRef} className="mic-meter scrim-pill is-live" role="img" aria-label="Microphone level">
-                              <i></i>
-                              <i></i>
-                              <i></i>
-                              <i></i>
-                              <i></i>
-                            </span>
-                          ) : null}
-                          <div className="controls" role="toolbar" aria-label="Preview controls">
-                            <button
-                              type="button"
-                              className={`ctl tap${micOff ? " is-off" : ""}`}
-                              data-tip={micOff ? "Unmute" : "Mute"}
-                              aria-label="Microphone"
-                              aria-pressed={!micOff}
-                              onClick={() => setMicOff((v) => !v)}
-                            >
-                              {micOff ? <MicrophoneSlash size={17} aria-hidden /> : <Microphone size={17} aria-hidden />}
-                            </button>
-                            <button
-                              type="button"
-                              className={`ctl tap${camOff ? " is-off" : ""}`}
-                              data-tip={camOff ? "Camera on" : "Camera off"}
-                              aria-label="Camera"
-                              aria-pressed={!camOff}
-                              onClick={() => setCamOff((v) => !v)}
-                            >
-                              {camOff ? <VideoCameraSlash size={18} aria-hidden /> : <VideoCamera size={18} aria-hidden />}
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="panel reveal" style={{ animationDelay: ".18s" }}>
-                          <div className="panel-body pv-devices">
-                            <Select
-                              label="Camera"
-                              options={ready && cams.length ? cams : placeholder("camera")}
-                              value={camValue}
-                              disabled={!ready}
-                              openUp
-                              onChange={(id) => setRequest((r) => ({ ...r, cam: id }))}
-                            />
-                            <Select
-                              label="Microphone"
-                              options={ready && mics.length ? mics : placeholder("microphone")}
-                              value={micValue}
-                              disabled={!ready}
-                              openUp
-                              onChange={(id) => setRequest((r) => ({ ...r, mic: id }))}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="rail-stack">
-                        <div className="panel reveal" style={{ animationDelay: ".12s" }}>
-                          <div className="panel-head">
-                            <h2>Meeting</h2>
-                            <span className="live-chip" style={{ marginLeft: "auto" }} suppressHydrationWarning>
-                              {meeting.status === "live" ? <span className="live-dot" aria-hidden="true"></span> : null}
-                              {meeting.status === "live"
-                                ? "Live now"
-                                : meeting.status === "past"
-                                  ? "Ended"
-                                  : `Starts ${new Date(meeting.startTime).toLocaleString(undefined, {
-                                      weekday: "short",
-                                      hour: "numeric",
-                                      minute: "2-digit",
-                                    })}`}
-                            </span>
-                          </div>
-                          <div className="panel-body">
-                            <h3 className="detail-title" style={{ fontSize: 19 }}>
-                              {meeting.title}
-                            </h3>
-                            <p className="detail-by">
-                              {meeting.durationMinutes} min · {meeting.invited}{" "}
-                              {meeting.invited === 1 ? "person" : "people"} invited
-                            </p>
-                            <div className="pv-lobby">
-                              <span className="av-stack" style={{ marginTop: 0 }} aria-hidden="true">
-                                <i className="cx-av">{initials(user.name)}</i>
-                                {others > 0 ? <span className="av-more">+{others}</span> : null}
-                              </span>
-                              <span className="pv-lobby-note">{invitedNote}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="panel reveal" style={{ flex: 1, animationDelay: ".17s" }}>
-                          <div className="panel-head">
-                            <h2>Your agent is ready</h2>
-                            <Sparkle size={12} weight="fill" className="text-[var(--accent)]" aria-hidden />
-                          </div>
-                          {AGENT_PREP.map((p) => (
-                            <div className="panel-row is-top" key={p.text}>
-                              <span className={`moment-dot is-${p.kind}`} style={{ marginTop: 5 }} aria-hidden="true"></span>
-                              <span className="row-body">
-                                <p className="row-sum" style={{ marginTop: 0 }}>
-                                  {p.text}
-                                </p>
-                              </span>
-                            </div>
-                          ))}
-                          <div className="panel-foot agent-foot">
-                            <Sparkle size={13} weight="fill" aria-hidden />
-                            Nothing is saved to your workspace until you confirm it.
-                          </div>
-                        </div>
-
-                        <div className="consent-card reveal" style={{ animationDelay: ".21s" }}>
-                          <div className="consent-row">
-                            <span className="consent-ic" aria-hidden="true">
-                              <Record size={15} weight="duotone" />
-                            </span>
-                            <span className="consent-body">
-                              <strong>This meeting is recorded and transcribed</strong>
-                              <small>
-                                Your agent listens to take notes. The recording and transcript stay in your workspace and
-                                follow its retention rules.
-                              </small>
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            className="consent-check tap"
-                            role="checkbox"
-                            aria-checked={agreed}
-                            onClick={() => setAgreed((v) => !v)}
-                          >
-                            <span className={`task-check${agreed ? " is-checked" : ""}`} aria-hidden="true">
-                              <Check size={11} weight="bold" />
-                            </span>
-                            I understand, join with recording on
-                          </button>
-                        </div>
-
-                        <div className="pv-actions reveal" style={{ animationDelay: ".24s" }}>
-                          <Link href={`/meetings/${meeting.id}`} className="btn-ghost tap">
-                            Cancel
-                          </Link>
-                          {agreed ? (
-                            <Link href={`/meetings/${meeting.id}/room`} className="join-btn tap" onClick={remember}>
-                              <VideoCamera size={16} weight="fill" aria-hidden />
-                              Join meeting
-                            </Link>
-                          ) : (
-                            <button
-                              type="button"
-                              className="join-btn is-locked"
-                              aria-disabled="true"
-                              data-tip="Acknowledge recording to join"
-                            >
-                              <VideoCamera size={16} weight="fill" aria-hidden />
-                              Join meeting
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+          <div className="pj-grid">
+            <div className="pj-left">
+              <section
+                className={`pv-stage ${toneOf(user.id)}${showVideo ? " has-video" : ""}`}
+                aria-label="Your camera preview"
+              >
+                <video ref={videoRef} className="pv-video" autoPlay playsInline muted hidden={!showVideo} />
+                {showVideo ? null : (
+                  <span className="pv-initials" aria-hidden="true">
+                    {initials(user.name)}
+                  </span>
+                )}
+                {status !== "ready" ? (
+                  <span className="pj-tag pv-status" role="status">
+                    {status === "pending" ? null : <WarningCircle size={16} weight="fill" aria-hidden />}
+                    {status === "pending"
+                      ? "Asking for your camera and microphone"
+                      : status === "denied"
+                        ? "Camera and mic are blocked. Allow them in your browser's site settings, then reload."
+                        : "No camera or microphone found. You can still join."}
+                  </span>
+                ) : null}
+                {ready && hasAudio ? (
+                  <span className="pj-tag pj-tag-mic" role="img" aria-label={micOff ? "Microphone muted" : "Microphone level"}>
+                    <span className={`pj-wave${micOff ? " is-off" : ""}`} aria-hidden="true">
+                      <i></i>
+                      <i></i>
+                      <i></i>
+                      <i></i>
+                      <i></i>
+                    </span>
+                    <small>{micOff ? "Mic off" : "Mic on"}</small>
+                  </span>
+                ) : null}
+                <span className="pj-tag pj-tag-name">
+                  {firstName}
+                  <small>{showVideo ? "Camera on" : "Camera off"}</small>
+                </span>
+                <div className="controls" role="toolbar" aria-label="Preview controls">
+                  <button
+                    type="button"
+                    className={`ctl tap${micOff ? " is-off" : ""}`}
+                    data-tip={micOff ? "Unmute" : "Mute"}
+                    aria-label="Microphone"
+                    aria-pressed={!micOff}
+                    onClick={() => setMicOff((v) => !v)}
+                  >
+                    {micOff ? <MicrophoneSlash size={20} aria-hidden /> : <Microphone size={20} aria-hidden />}
+                  </button>
+                  <button
+                    type="button"
+                    className={`ctl tap${camOff ? " is-off" : ""}`}
+                    data-tip={camOff ? "Turn camera on" : "Turn camera off"}
+                    aria-label="Camera"
+                    aria-pressed={!camOff}
+                    onClick={() => setCamOff((v) => !v)}
+                  >
+                    {camOff ? <VideoCameraSlash size={20} aria-hidden /> : <VideoCamera size={20} aria-hidden />}
+                  </button>
                 </div>
               </section>
-            </main>
+
+              <section className="pj-card pj-devices" aria-labelledby="pj-dev-h">
+                <div className="pj-card-head">
+                  <h2 id="pj-dev-h">Devices</h2>
+                  {ready ? (
+                    <span className={`mx-chip ${hasAudio ? "is-ok" : "is-medium"}`}>
+                      {hasAudio ? <Check size={14} weight="bold" aria-hidden /> : <WarningCircle size={14} weight="fill" aria-hidden />}
+                      {hasAudio ? "Microphone working" : "No microphone"}
+                    </span>
+                  ) : status === "pending" ? null : (
+                    <span className="mx-chip is-high">
+                      <WarningCircle size={14} weight="fill" aria-hidden />
+                      {status === "denied" ? "Access blocked" : "Nothing found"}
+                    </span>
+                  )}
+                </div>
+                <div className="pj-dev">
+                  <Select
+                    label="Camera"
+                    options={ready && cams.length ? cams : placeholder("camera")}
+                    value={camValue}
+                    disabled={!ready}
+                    onChange={(id) => setRequest((r) => ({ ...r, cam: id }))}
+                  />
+                  <Select
+                    label="Microphone"
+                    options={ready && mics.length ? mics : placeholder("microphone")}
+                    value={micValue}
+                    disabled={!ready}
+                    onChange={(id) => setRequest((r) => ({ ...r, mic: id }))}
+                  />
+                  {ready && hasAudio ? (
+                    <div className="pj-level">
+                      <span className="pj-level-label" id="pj-lvl-l">
+                        Input level
+                      </span>
+                      <div className="pj-meter-row">
+                        <span className={`pj-meter${micLive ? "" : " is-off"}`} role="img" aria-labelledby="pj-lvl-l">
+                          <span className="pj-meter-fill" />
+                        </span>
+                        <span className="pj-meter-state">{micOff ? "Muted" : "Live"}</span>
+                      </div>
+                      <p className="pj-help">Say a few words. The bar should move past the middle when you speak.</p>
+                    </div>
+                  ) : null}
+                </div>
+              </section>
+            </div>
+
+            <div className="pj-right">
+              <section className="pj-card pj-meet" aria-labelledby="pj-meet-h">
+                <span className={`mx-chip ${meeting.status === "live" ? "is-high" : meeting.status === "past" ? "" : "is-low"}`} suppressHydrationWarning>
+                  {meeting.status === "live" ? <span className="mx-live-dot" aria-hidden="true"></span> : null}
+                  {startLabel}
+                </span>
+                <h2 id="pj-meet-h">{meeting.title}</h2>
+                <ul className="pj-list">
+                  <li>
+                    <Clock size={19} aria-hidden />
+                    {meeting.durationMinutes} min
+                  </li>
+                  <li>
+                    <Users size={19} aria-hidden />
+                    {meeting.invited} {meeting.invited === 1 ? "person" : "people"} invited
+                  </li>
+                  <li>
+                    <VideoCamera size={19} aria-hidden />
+                    Mytheus room
+                  </li>
+                </ul>
+                <div className="pj-in">
+                  <span className="mx-avs" aria-hidden="true">
+                    <span className={`mx-av ${toneOf(user.id)}`}>{initials(user.name)}</span>
+                    {others > 0 ? <span className="mx-av">+{others}</span> : null}
+                  </span>
+                  {invitedNote}
+                </div>
+              </section>
+
+              <section className="pj-card pj-agent" aria-labelledby="pj-agent-h">
+                <div className="pj-card-head">
+                  <h2 id="pj-agent-h">Your agent is ready</h2>
+                </div>
+                <ul className="pj-agent-list">
+                  {AGENT_PREP.map((p) => (
+                    <li key={p.text}>
+                      <span className="pj-agent-ico" aria-hidden="true">
+                        <p.icon size={17} />
+                      </span>
+                      <p>{p.text}</p>
+                    </li>
+                  ))}
+                </ul>
+                <p className="pj-foot">
+                  <ShieldCheck size={16} weight="fill" aria-hidden />
+                  Nothing is saved to your workspace until you confirm it.
+                </p>
+              </section>
+
+              <section className="pj-card pj-consent" aria-labelledby="pj-consent-h">
+                <div className="pj-consent-head">
+                  <span className="pj-consent-ico" aria-hidden="true">
+                    <Record size={22} weight="fill" />
+                  </span>
+                  <div>
+                    <h2 id="pj-consent-h">This meeting is recorded and transcribed</h2>
+                    <p>Read this before you join. You need to agree to enter.</p>
+                  </div>
+                </div>
+                <ul className="pj-terms">
+                  <li>
+                    <Ear size={18} aria-hidden />
+                    <div>
+                      <strong>Your agent listens</strong>
+                      <span>It listens to take notes for you. Its notes are yours only.</span>
+                    </div>
+                  </li>
+                  <li>
+                    <Database size={18} aria-hidden />
+                    <div>
+                      <strong>Where it is kept</strong>
+                      <span>The recording and transcript stay in your workspace and follow its retention rules.</span>
+                    </div>
+                  </li>
+                  <li>
+                    <LockSimple size={18} aria-hidden />
+                    <div>
+                      <strong>Nothing saved without you</strong>
+                      <span>Decisions and action items wait for your Confirm before they are saved.</span>
+                    </div>
+                  </li>
+                </ul>
+                <label className="pj-check">
+                  <input
+                    type="checkbox"
+                    checked={agreed}
+                    onChange={(e) => setAgreed(e.target.checked)}
+                    aria-describedby="pj-gate"
+                  />
+                  <span className="pj-box" aria-hidden="true">
+                    <Check size={14} weight="bold" />
+                  </span>
+                  <span className="pj-check-text">I understand, join with recording on</span>
+                </label>
+                <div className="pj-join">
+                  <LinkButton href={`/meetings/${meeting.id}`} variant="outline" size="lg">
+                    Cancel
+                  </LinkButton>
+                  {agreed ? (
+                    // The wrapper takes no box (display: contents) but still hears the link's click,
+                    // so the device choices are saved however Join is activated.
+                    <div className="contents" onClick={remember}>
+                      <LinkButton href={`/meetings/${meeting.id}/room`} size="lg" className="w-full">
+                        <VideoCamera size={18} weight="fill" aria-hidden />
+                        Join meeting
+                      </LinkButton>
+                    </div>
+                  ) : (
+                    <Button type="button" size="lg" className="w-full" disabled aria-describedby="pj-gate">
+                      <VideoCamera size={18} weight="fill" aria-hidden />
+                      Join meeting
+                    </Button>
+                  )}
+                </div>
+                <p className="pj-gate" id="pj-gate" aria-live="polite">
+                  {agreed ? (
+                    <>
+                      <Check size={14} weight="bold" aria-hidden />
+                      Ready. Your mic and camera choices come with you.
+                    </>
+                  ) : (
+                    <>
+                      <LockSimple size={14} aria-hidden />
+                      Tick the box above to enable Join.
+                    </>
+                  )}
+                </p>
+              </section>
+            </div>
           </div>
-        </div>
+        </main>
       </div>
     </CallToastProvider>
   );

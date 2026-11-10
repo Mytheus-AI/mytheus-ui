@@ -1,12 +1,14 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { LinkSimple, Notebook, SidebarSimple, Users, VideoCamera } from "@phosphor-icons/react";
-import { LogoMark } from "@/components/Logo";
+import { Wordmark } from "@/components/site/Wordmark";
 import { useCallToast } from "@/components/call/CallToast";
 
-/* The call window's app bar. On the pre-join it is just the brand; in the room it adds the meeting
-   title with who is here under it (one quiet line instead of two count chips), Share link and
-   the panel toggle. */
+/* The call window's top bar. On the pre-join it is the wordmark and, at the end, whatever the
+   page passes (a way back). In the room it adds the meeting title in the display serif with who
+   is here under it, the Call / Notes switch, Share link and the panel toggle. The wordmark is not
+   a link in the room: a stray click must never drop you out of a call. */
 
 export type CallTopBarRoom = {
   title: string;
@@ -20,62 +22,56 @@ export type CallTopBarRoom = {
   onMode?: (mode: "call" | "notes") => void;
 };
 
-export function CallTopBar({ room }: { room?: CallTopBarRoom }) {
+export function CallTopBar({ room, end }: { room?: CallTopBarRoom; end?: ReactNode }) {
   const toast = useCallToast();
 
   return (
-    <header className="appbar">
-      <span className="brand" aria-label="Mytheus">
-        <span className="brand-mark">
-          <LogoMark size={20} />
-        </span>
-        <span className="brand-name">Mytheus</span>
+    <header className="cx-top">
+      <span className="cx-brand">
+        <Wordmark size={22} textClassName="text-[20px]" />
       </span>
 
       {room ? (
         <>
-          <span className="cx-bar-sep meeting-only" aria-hidden="true" />
-          <div className="cx-bar-title meeting-only">
+          <span className="cx-top-sep" aria-hidden="true" />
+          <div className="cx-top-title">
             <h1 title={room.title}>{room.title}</h1>
             <p>
-              <Users size={13} aria-hidden />
+              <Users size={14} aria-hidden />
               {room.inCall} in call
-              {room.invited > room.inCall ? <span> · {room.invited} invited</span> : null}
+              {room.invited > room.inCall ? <span className="cx-invited">, {room.invited} invited</span> : null}
             </p>
           </div>
 
           {room.mode && room.onMode ? (
-            <div className={`cx-modes meeting-only${room.mode === "notes" ? " is-notes" : ""}`} role="tablist" aria-label="Room view">
-              <span className="cx-modes-thumb" aria-hidden="true" />
+            <div className="cx-modes" role="group" aria-label="Room view">
               <button
                 type="button"
-                role="tab"
-                aria-selected={room.mode === "call"}
-                className={`tap${room.mode === "call" ? " is-on" : ""}`}
+                aria-pressed={room.mode === "call"}
+                className="tap tip-below"
                 onClick={() => room.onMode?.("call")}
                 data-tip="Call view (1)"
               >
-                <VideoCamera size={15} aria-hidden />
+                <VideoCamera size={16} aria-hidden />
                 <span>Call</span>
               </button>
               <button
                 type="button"
-                role="tab"
-                aria-selected={room.mode === "notes"}
-                className={`tap${room.mode === "notes" ? " is-on" : ""}`}
+                aria-pressed={room.mode === "notes"}
+                className="tap tip-below"
                 onClick={() => room.onMode?.("notes")}
                 data-tip="Notes view (2)"
               >
-                <Notebook size={15} aria-hidden />
+                <Notebook size={16} aria-hidden />
                 <span>Notes</span>
               </button>
             </div>
           ) : null}
 
-          <div className="appbar-right">
+          <div className="cx-top-end">
             <button
               type="button"
-              className="chip chip-btn tap meeting-only"
+              className="cx-pill-btn tap tip-below"
               data-tip="Copy meeting link"
               aria-label="Copy meeting link"
               onClick={() => {
@@ -85,21 +81,25 @@ export function CallTopBar({ room }: { room?: CallTopBarRoom }) {
                   .catch(() => toast("Could not copy the link"));
               }}
             >
-              <LinkSimple size={14} weight="bold" aria-hidden />
-              <span className="chip-label">Share link</span>
+              <LinkSimple size={16} weight="bold" aria-hidden />
+              <span className="cx-pill-label">Share link</span>
             </button>
-            <button
-              type="button"
-              className={`icon-shell tap meeting-only${room.sideVisible ? " is-on" : ""}${room.mode === "notes" ? " cx-hide" : ""}`}
-              onClick={room.onToggleSide}
-              data-tip={room.sideVisible ? "Collapse panel" : "Expand panel"}
-              aria-label="Toggle side panel"
-              aria-pressed={room.sideVisible}
-            >
-              <SidebarSimple size={16} mirrored aria-hidden />
-            </button>
+            {room.mode === "notes" ? null : (
+              <button
+                type="button"
+                className={`cx-icon-btn tap tip-below tip-end${room.sideVisible ? " is-on" : ""}`}
+                onClick={room.onToggleSide}
+                data-tip={room.sideVisible ? "Hide panel" : "Show panel"}
+                aria-label="Side panel"
+                aria-pressed={room.sideVisible}
+              >
+                <SidebarSimple size={18} mirrored aria-hidden />
+              </button>
+            )}
           </div>
         </>
+      ) : end ? (
+        <div className="cx-top-end">{end}</div>
       ) : null}
     </header>
   );

@@ -7,13 +7,14 @@ import {
   CheckSquare,
   Microphone,
   MicrophoneSlash,
-  PhoneX,
+  PhoneDisconnect,
   Scales,
   Sparkle,
   VideoCamera,
   VideoCameraSlash,
 } from "@phosphor-icons/react";
 import type { RoomTile } from "@/components/room/RoomGrid";
+import { initials, toneOf } from "@/components/room/tone";
 import type { CaptionLine } from "@/lib/realtime/captions";
 import type { LiveNote } from "@/lib/realtime/notes";
 
@@ -26,15 +27,6 @@ import type { LiveNote } from "@/lib/realtime/notes";
    Decisions and action items are shown as sections with an honest empty state: the agents that
    produce them (DecisionAgent, ActionAgent) are not running yet, and nothing here invents them. */
 
-function initials(name: string) {
-  return name
-    .split(" ")
-    .map((p) => p[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
 
 function words(text: string): number {
   return text.trim() ? text.trim().split(/\s+/).length : 0;
@@ -64,11 +56,24 @@ function offset(ms: number): string {
   return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`;
 }
 
+/* The line at rest: nothing has been carried forward here yet. */
+function EmptyLine() {
+  return (
+    <svg className="nv-empty-line" viewBox="0 0 120 36" aria-hidden="true">
+      <path className="mx-line" d="M4 26 C24 26 30 26 44 26 C62 26 72 4 60 4 C48 4 50 26 70 26 C86 26 96 26 116 26" />
+    </svg>
+  );
+}
+
 function MiniTile({ tile }: { tile: RoomTile }) {
   const speaking = Boolean(tile.speaking) && tile.micOn && tile.kind !== "screen";
   const showMedia = Boolean(tile.media) && tile.camOn;
   return (
-    <div className={`nv-tile${speaking ? " is-speaking" : ""}`} role="group" aria-label={tile.name}>
+    <div
+      className={`nv-tile ${toneOf(tile.id.split(":")[0] ?? tile.id)}${showMedia ? " has-media" : ""}${speaking ? " is-speaking" : ""}`}
+      role="group"
+      aria-label={tile.name}
+    >
       {showMedia ? (
         tile.media
       ) : (
@@ -83,7 +88,7 @@ function MiniTile({ tile }: { tile: RoomTile }) {
       )}
       <span className="nv-name">
         {!tile.micOn && tile.kind !== "screen" ? (
-          <MicrophoneSlash size={11} weight="fill" className="nv-muted" aria-label="Muted" role="img" />
+          <MicrophoneSlash size={13} weight="fill" className="nv-muted" aria-label="Muted" role="img" />
         ) : null}
         {tile.isLocal ? "You" : tile.name.split(" ")[0]}
       </span>
@@ -107,7 +112,7 @@ export function NotesView({
   chat,
 }: {
   title: string;
-  /** A short date line, e.g. "Sun, Nov 9 · 3 in call". */
+  /** A short date line, e.g. "Sun, Nov 9, 3 in call". */
   when: string;
   tiles: RoomTile[];
   notes: LiveNote[];
@@ -170,31 +175,53 @@ export function NotesView({
           </>
         ) : null}
 
-        {chat ? <div className="nv-chat">{chat}</div> : <div className="nv-fill" />}
+        {chat ? (
+          <>
+            <span className="nv-label nv-chat-label">Chat</span>
+            <div className="nv-chat">{chat}</div>
+          </>
+        ) : (
+          <div className="nv-fill" />
+        )}
 
-        <div className="nv-ctls" role="toolbar" aria-label="Call controls">
-          <button type="button" className={`nv-ctl tap${micOn ? "" : " is-off"}`} onClick={onMic} aria-pressed={!micOn} aria-label={micOn ? "Mute" : "Unmute"}>
-            {micOn ? <Microphone size={18} /> : <MicrophoneSlash size={18} />}
+        <div className="controls nv-ctls" role="toolbar" aria-label="Call controls">
+          <button
+            type="button"
+            className={`ctl tap${micOn ? "" : " is-off"}`}
+            onClick={onMic}
+            aria-pressed={micOn}
+            aria-label="Microphone"
+            data-tip={micOn ? "Mute (M)" : "Unmute (M)"}
+          >
+            {micOn ? <Microphone size={20} aria-hidden /> : <MicrophoneSlash size={20} aria-hidden />}
           </button>
-          <button type="button" className={`nv-ctl tap${camOn ? "" : " is-off"}`} onClick={onCam} aria-pressed={!camOn} aria-label={camOn ? "Turn camera off" : "Turn camera on"}>
-            {camOn ? <VideoCamera size={18} /> : <VideoCameraSlash size={18} />}
+          <button
+            type="button"
+            className={`ctl tap${camOn ? "" : " is-off"}`}
+            onClick={onCam}
+            aria-pressed={camOn}
+            aria-label="Camera"
+            data-tip={camOn ? "Turn camera off (V)" : "Turn camera on (V)"}
+          >
+            {camOn ? <VideoCamera size={20} aria-hidden /> : <VideoCameraSlash size={20} aria-hidden />}
           </button>
-          <button type="button" className="nv-ctl tap" onClick={onBackToCall} aria-label="Back to the call view" data-tip="Back to the call">
-            <ArrowsOutSimple size={18} />
+          <button type="button" className="ctl tap" onClick={onBackToCall} aria-label="Back to the call view" data-tip="Back to the call (1)">
+            <ArrowsOutSimple size={20} aria-hidden />
           </button>
+          <span className="ctl-sep" aria-hidden="true"></span>
+          <Link href={leaveHref} className="ctl-leave tap" aria-label="Leave meeting">
+            <PhoneDisconnect size={19} weight="fill" aria-hidden />
+            <span className="ctl-leave-label">Leave</span>
+          </Link>
         </div>
-        <Link href={leaveHref} className="nv-leave tap">
-          <PhoneX size={17} weight="bold" aria-hidden />
-          Leave call
-        </Link>
       </aside>
 
       <div className="nv-doc">
         <h2 className="nv-title">{title}</h2>
         <p className="nv-sub">
           {when}
-          <span className="nv-agent">
-            <i aria-hidden="true" />
+          <span className="mx-chip is-accent">
+            <Sparkle size={14} weight="fill" aria-hidden />
             Your agent is taking notes
           </span>
         </p>
@@ -202,7 +229,7 @@ export function NotesView({
         <section className="nv-card" aria-labelledby="nv-notes-h">
           <h3 id="nv-notes-h">
             <Sparkle size={14} aria-hidden />
-            My notes <span className="nv-count">{notes.length}</span>
+            My notes <span className="mx-count">{notes.length}</span>
             <small>Only you can see these</small>
           </h3>
           {notes.length === 0 ? (
@@ -224,6 +251,7 @@ export function NotesView({
               <Scales size={14} aria-hidden />
               Decisions
             </h3>
+            <EmptyLine />
             <p className="nv-empty">Decisions will appear here for you to confirm once the decision agent is switched on.</p>
           </section>
           <section className="nv-card" aria-labelledby="nv-act-h">
@@ -231,12 +259,13 @@ export function NotesView({
               <CheckSquare size={14} aria-hidden />
               Action items
             </h3>
+            <EmptyLine />
             <p className="nv-empty">Owners and due dates will be picked up from the conversation once the action agent is on.</p>
           </section>
         </div>
 
         <p className="nv-label nv-tx-label">
-          Transcript <span className="nv-count">{finals.length}</span>
+          Transcript <span className="mx-count">{finals.length}</span>
         </p>
         {transcript.length === 0 ? (
           <p className="nv-empty">The transcript fills in as people speak.</p>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Question } from "@phosphor-icons/react";
 import { askSuggestion, dismissSuggestion, saveSuggestion } from "@/app/actions/suggestions";
 import { citationLink, type Suggestion } from "@/lib/realtime/suggestions";
 
@@ -10,7 +11,8 @@ import { citationLink, type Suggestion } from "@/lib/realtime/suggestions";
    asked; Save keeps it for the next meeting; Dismiss throws it away. None of them commits or
    tells anyone anything. A saved card (in Saved for later) offers Ask and Dismiss only. */
 
-const PRIORITY_LABEL: Record<Suggestion["priority"], string> = { 1: "act now", 2: "attention", 3: "info" };
+const PRIORITY_LABEL: Record<Suggestion["priority"], string> = { 1: "Act now", 2: "Attention", 3: "Info" };
+const PRIORITY_TONE: Record<Suggestion["priority"], string> = { 1: "is-high", 2: "is-medium", 3: "is-low" };
 
 export type SuggestionOutcome = "asked" | "dismissed" | "saved" | "gone";
 
@@ -51,7 +53,8 @@ export function SuggestionCard({
     if (res.gone) onResolved("gone");
   };
 
-  const meta = saved ? (fromEarlier ? "saved, earlier meeting" : "saved") : PRIORITY_LABEL[suggestion.priority];
+  const meta = saved ? (fromEarlier ? "Saved, earlier meeting" : "Saved") : PRIORITY_LABEL[suggestion.priority];
+  const tone = saved ? "" : PRIORITY_TONE[suggestion.priority];
   const sourceMeeting = suggestion.meetingId ?? currentMeetingId;
 
   return (
@@ -60,12 +63,14 @@ export function SuggestionCard({
       role={!saved && suggestion.priority === 1 ? "alert" : undefined}
     >
       <div className="nfy-kind">
-        Suggested question <span className="nfy-meta">{meta}</span>
+        <Question size={16} weight="bold" aria-hidden />
+        Suggested question
+        <span className={`nfy-meta ${tone}`}>{meta}</span>
       </div>
       <p className="nfy-text">{suggestion.question}</p>
       {suggestion.rationale ? <p className="nfy-sub">{suggestion.rationale}</p> : null}
       {suggestion.citations.length > 0 ? (
-        <div className="nfy-cites">
+        <div className="nfy-cites" aria-label="Sources">
           {suggestion.citations.map((c, i) => {
             const { label, href } = citationLink(c, sourceMeeting);
             return href ? (

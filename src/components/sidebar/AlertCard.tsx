@@ -22,7 +22,7 @@ const ICON: Record<AlertType, Icon> = {
   missing_stakeholder: UserPlus,
 };
 
-const PRIORITY_META: Record<Alert["priority"], string> = { 1: "act now", 2: "attention", 3: "info" };
+const PRIORITY_META: Record<Alert["priority"], string> = { 1: "Act now", 2: "Attention", 3: "Info" };
 
 function useAlertActions(alert: Alert, onResolved: (o: AlertOutcome) => void, onError: (m: string) => void) {
   const [busy, setBusy] = useState<null | "read" | "dismissed">(null);
@@ -54,7 +54,7 @@ function AlertDetails({ alert }: { alert: Alert }) {
             onClick={() => setOpen((o) => !o)}
           >
             Why am I seeing this
-            <CaretDown size={10} weight="bold" aria-hidden className={open ? "is-open" : undefined} />
+            <CaretDown size={12} weight="bold" aria-hidden className={open ? "is-open" : undefined} />
           </button>
           <p id={whyId} className="alert-why-text" hidden={!open}>
             {alert.rationale}
@@ -62,7 +62,7 @@ function AlertDetails({ alert }: { alert: Alert }) {
         </div>
       ) : null}
       {alert.related.length > 0 || href ? (
-        <div className="nfy-cites">
+        <div className="nfy-cites is-plain" aria-label="Related">
           {alert.related.map((r) => {
             const { label, href: to } = relatedLink(r, alert);
             return (
@@ -126,11 +126,11 @@ export function AlertBanner({
       data-alert-id={alert.id}
     >
       <div className="cbn-kind">
-        <Warning size={12} weight="bold" aria-hidden />
+        <Warning size={16} weight="bold" aria-hidden />
         {ALERT_LABEL[alert.alertType]}
         <span className="cbn-meta">
-          <PushPin size={11} weight="fill" aria-hidden />
-          {read ? "read" : "pinned"}
+          <PushPin size={13} weight="fill" aria-hidden />
+          {read ? "Read" : "Pinned"}
         </span>
       </div>
       <p className="cbn-text alert-title">{alert.title}</p>
@@ -161,8 +161,9 @@ export function AlertCard({
       data-alert-id={alert.id}
     >
       <div className="nfy-kind">
-        <KindIcon size={12} weight="bold" aria-hidden />
-        {ALERT_LABEL[alert.alertType]} <span className="nfy-meta">{read ? "read" : PRIORITY_META[alert.priority]}</span>
+        <KindIcon size={16} weight="bold" aria-hidden />
+        {ALERT_LABEL[alert.alertType]}
+        <span className="nfy-meta">{read ? "Read" : PRIORITY_META[alert.priority]}</span>
       </div>
       <p className="nfy-text alert-title">{alert.title}</p>
       <AlertDetails alert={alert} />

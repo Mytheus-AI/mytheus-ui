@@ -6,8 +6,9 @@ import { MagnifyingGlass } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { Note, fieldClass } from "@/components/settings/primitives";
-import { thClass } from "@/components/admin/StatCard";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Note, dangerGhost, dangerSolid, fieldClass, focusPill, textareaClass } from "@/components/settings/primitives";
+import { theadRowClass, thClass } from "@/components/admin/StatCard";
 import { setTenantSuspended } from "@/app/actions/ops";
 import { REASON_MIN, canSubmitSuspend, suspendReducer, type OpsTenant } from "@/lib/ops";
 
@@ -46,38 +47,39 @@ export function TenantDirectory({ tenants }: { tenants: OpsTenant[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {state.step === "done" ? (
-        <Note>
-          <span role="status">{state.message}</span>
-        </Note>
-      ) : null}
+      <div aria-live="polite">{state.step === "done" ? <Note tone="success">{state.message}</Note> : null}</div>
 
       <label className="relative block max-w-sm">
         <span className="sr-only">Filter tenants</span>
-        <MagnifyingGlass size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-3" aria-hidden />
+        <MagnifyingGlass size={17} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-3" aria-hidden />
         <input
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Filter by name or id"
-          className={`${fieldClass} pl-9`}
+          className={`${fieldClass} pl-10`}
         />
       </label>
 
-      <section aria-label="Tenants" className="overflow-hidden rounded-card border border-line bg-surface shadow-sm">
+      <section aria-label="Tenants" className="overflow-hidden rounded-card border border-line bg-surface shadow-warm-1">
         {rows.length === 0 ? (
-          <p className="px-4 py-4 text-[13.5px] text-ink-3 sm:px-[22px]">{tenants.length === 0 ? "No tenants yet." : "No tenant matches that filter."}</p>
+          <EmptyState
+            className="!rounded-none !border-0 !bg-transparent !py-10"
+            title={tenants.length === 0 ? "No tenants yet" : "No tenant matches that filter"}
+            description={tenants.length === 0 ? "Workspaces appear here as soon as someone signs up." : "Try part of the name, or paste the full id."}
+          />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left text-[14px]">
+            <table className="w-full min-w-[720px] border-collapse text-left text-[14.5px]">
+              <caption className="sr-only">Tenants with plan, members, created date and status</caption>
               <thead>
-                <tr className="bg-bg">
-                  <th scope="col" className={thClass}>Tenant</th>
+                <tr className={theadRowClass}>
+                  <th scope="col" className={`${thClass} !pl-[22px]`}>Tenant</th>
                   <th scope="col" className={thClass}>Plan</th>
                   <th scope="col" className={thClass}>Members</th>
                   <th scope="col" className={thClass}>Created</th>
                   <th scope="col" className={thClass}>Status</th>
-                  <th scope="col" className={thClass}>
+                  <th scope="col" className={`${thClass} !pr-[22px]`}>
                     <span className="sr-only">Actions</span>
                   </th>
                 </tr>
@@ -86,10 +88,12 @@ export function TenantDirectory({ tenants }: { tenants: OpsTenant[] }) {
                 {rows.map((t) => {
                   const suspended = t.status === "suspended";
                   return (
-                    <tr key={t.org_id}>
-                      <td className="max-w-[300px] px-5 py-3">
+                    <tr key={t.org_id} className="transition-colors duration-150 hover:bg-surface-2">
+                      <td className="max-w-[300px] py-3 pl-[22px] pr-5">
                         <span className="block truncate font-semibold text-ink">{t.name}</span>
-                        <span className="block truncate font-mono text-[11.5px] text-ink-3">{t.org_id}</span>
+                        <span className="block truncate font-mono text-[12.5px] text-ink-3" title={t.org_id}>
+                          {t.org_id}
+                        </span>
                       </td>
                       <td className="px-5 py-3 capitalize text-ink-2">{t.plan ?? "None"}</td>
                       <td className="px-5 py-3 tabular-nums text-ink-2">{t.member_count}</td>
@@ -101,10 +105,11 @@ export function TenantDirectory({ tenants }: { tenants: OpsTenant[] }) {
                           {t.status}
                         </Badge>
                       </td>
-                      <td className="px-5 py-3 text-right">
+                      <td className="py-3 pl-5 pr-[22px] text-right">
                         <Button
-                          variant={suspended ? "outline" : "ghost"}
+                          variant="outline"
                           size="sm"
+                          className={suspended ? focusPill : dangerGhost}
                           disabled={state.step === "submitting"}
                           onClick={() => dispatch({ type: "ask", orgId: t.org_id, name: t.name, verb: suspended ? "reinstate" : "suspend" })}
                         >
@@ -133,14 +138,15 @@ export function TenantDirectory({ tenants }: { tenants: OpsTenant[] }) {
               submit();
             }}
           >
-            <p className="text-[13.5px] text-ink-2">
+            <p className="text-[15px] leading-relaxed text-ink-2">
               {state.verb === "suspend"
                 ? "Every member loses access until the tenant is reinstated. Their data is kept. This is recorded in the ops audit log."
                 : "Members get their access back. This is recorded in the ops audit log."}
             </p>
             {state.verb === "suspend" ? (
               <label className="flex flex-col gap-1.5">
-                <span className="text-[13px] font-semibold text-ink">Reason</span>
+                <span className="text-[14px] font-semibold text-ink">Reason</span>
+                <span className="text-[13.5px] text-ink-3">At least {REASON_MIN} characters. Stored with the audit record.</span>
                 <textarea
                   required
                   minLength={REASON_MIN}
@@ -148,18 +154,35 @@ export function TenantDirectory({ tenants }: { tenants: OpsTenant[] }) {
                   rows={3}
                   value={state.reason}
                   onChange={(e) => dispatch({ type: "reason", reason: e.target.value })}
-                  className="w-full rounded-[14px] border border-line-2 bg-surface px-3.5 py-2.5 text-[14px] text-ink focus-visible:border-signal"
+                  className={textareaClass}
                   placeholder="Why this tenant is being suspended"
                 />
               </label>
             ) : null}
             {state.step === "error" ? <Note tone="error">{state.message}</Note> : null}
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button type="button" variant="ghost" size="sm" onClick={() => dispatch({ type: "cancel" })} disabled={state.step === "submitting"}>
+            <div className="mt-1 flex flex-wrap justify-end gap-2 border-t border-line pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                className={focusPill}
+                onClick={() => dispatch({ type: "cancel" })}
+                disabled={state.step === "submitting"}
+              >
                 Cancel
               </Button>
-              <Button type="submit" variant={state.verb === "suspend" ? "danger" : "primary"} size="sm" disabled={!canSubmitSuspend(state)}>
-                {state.step === "submitting" ? "Working..." : state.verb === "suspend" ? "Suspend tenant" : "Reinstate tenant"}
+              <Button
+                type="submit"
+                variant={state.verb === "suspend" ? "danger" : "primary"}
+                className={state.verb === "suspend" ? dangerSolid : focusPill}
+                disabled={!canSubmitSuspend(state)}
+              >
+                {state.step === "submitting"
+                  ? state.verb === "suspend"
+                    ? "Suspending tenant"
+                    : "Reinstating tenant"
+                  : state.verb === "suspend"
+                    ? "Suspend tenant"
+                    : "Reinstate tenant"}
               </Button>
             </div>
           </form>

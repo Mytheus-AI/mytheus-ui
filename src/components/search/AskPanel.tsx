@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, ArrowBendDownRight, Sparkle } from "@phosphor-icons/react";
+import { ArrowClockwise, ArrowUpRight, ArrowBendDownRight, ShieldCheck, Sparkle } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Bone } from "@/components/app/PageHead";
 import {
   KIND_LABEL,
   citationHref,
@@ -44,50 +47,46 @@ export function AskPanel({ state, onAsk }: { state: AskState; onAsk: (q: string)
   if (state.status === "idle") {
     return (
       <div className="flex flex-col gap-6">
-        <div className="rounded-card border border-line bg-surface px-6 py-12 text-center shadow-sm">
-          <span className="mx-auto grid h-14 w-14 place-items-center rounded-[18px] bg-bg-2 text-signal-deep">
-            <Sparkle size={26} weight="fill" aria-hidden="true" />
-          </span>
-          <h2 className="display mt-4 text-[24px] text-ink-display">Ask about anything your meetings covered</h2>
-          <p className="mx-auto mt-1.5 max-w-[48ch] text-[14px] text-ink-3">
-            Mytheus searches the meetings you were in, your team&apos;s documents and confirmed
-            decisions, then answers with numbered sources you can open.
-          </p>
-        </div>
-        <div>
-          <h3 className="mb-3 text-[12px] font-bold uppercase tracking-[0.06em] text-ink-3">Try asking</h3>
+        <EmptyState
+          title="Ask about anything your meetings covered"
+          description="Mytheus searches the meetings you were in, your team's documents and confirmed decisions, then answers with numbered sources you can open."
+        />
+        <section aria-labelledby="ask-try-heading">
+          <h2 id="ask-try-heading" className="kicker mb-3">
+            Try asking
+          </h2>
           <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr))]">
             {SUGGESTIONS.map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => onAsk(s)}
-                className="flex items-start gap-3 rounded-card border border-line bg-surface p-4 text-left text-[14px] font-semibold text-ink shadow-sm transition-colors hover:border-line-2 active:bg-bg focus-visible:!rounded-card"
+                className="flex min-h-[52px] items-start gap-3 rounded-card border border-line bg-surface p-4 text-left text-[14.5px] font-semibold text-ink shadow-warm-1 transition-[border-color,box-shadow] duration-150 hover:border-line-2 hover:shadow-warm-2 active:bg-surface-2"
               >
-                <ArrowBendDownRight size={17} className="mt-0.5 shrink-0 text-signal-deep" aria-hidden="true" />
+                <ArrowBendDownRight size={17} className="mt-0.5 shrink-0 text-signal" aria-hidden="true" />
                 <span>{s}</span>
               </button>
             ))}
           </div>
-        </div>
+        </section>
       </div>
     );
   }
 
   const heading = (
-    <h2 className="display text-[clamp(1.4rem,2.4vw,1.75rem)] text-ink-display">{state.question}</h2>
+    <h2 className="display text-[clamp(22px,2.4vw,28px)] text-ink-display">{state.question}</h2>
   );
 
   if (state.status === "loading") {
     return (
       <div className="flex flex-col gap-4">
         {heading}
-        <div className="rounded-card border border-line bg-surface p-5 shadow-sm sm:p-6" aria-busy="true">
+        <div className={answerCard} aria-busy="true">
           <AnswerHead state="Searching your meetings" />
           <div className="flex flex-col gap-2.5">
-            <span className="h-3.5 w-[92%] animate-pulse rounded-full bg-bg-2" />
-            <span className="h-3.5 w-[78%] animate-pulse rounded-full bg-bg-2" />
-            <span className="h-3.5 w-[64%] animate-pulse rounded-full bg-bg-2" />
+            <Bone className="h-3.5 w-[92%] !rounded-full" />
+            <Bone className="h-3.5 w-[78%] !rounded-full" />
+            <Bone className="h-3.5 w-[64%] !rounded-full" />
           </div>
         </div>
       </div>
@@ -98,11 +97,15 @@ export function AskPanel({ state, onAsk }: { state: AskState; onAsk: (q: string)
     return (
       <div className="flex flex-col gap-4">
         {heading}
-        <div className="rounded-card border border-line bg-surface p-5 shadow-sm sm:p-6">
+        <div className={answerCard}>
           <AnswerHead state="Not available" />
-          <p role="alert" className="text-[15px] text-ink-2">
+          <p role="alert" className="max-w-[60ch] text-[15.5px] leading-relaxed text-ink-2">
             {state.message}
           </p>
+          <Button variant="outline" size="sm" className="mt-4" onClick={() => onAsk(state.question)}>
+            <ArrowClockwise size={15} weight="bold" aria-hidden />
+            Ask again
+          </Button>
         </div>
       </div>
     );
@@ -123,8 +126,8 @@ export function AskPanel({ state, onAsk }: { state: AskState; onAsk: (q: string)
       aria-expanded={openCite === n}
       aria-label={`Source ${n}`}
       onClick={() => setOpenCite(openCite === n ? null : n)}
-      className={`mx-0.5 inline-grid h-[22px] min-w-[22px] place-items-center rounded-full px-1.5 align-[2px] text-[11.5px] font-bold leading-none tabular-nums transition-colors focus-visible:!rounded-full active:opacity-80 ${
-        openCite === n ? "bg-pill text-white" : "bg-signal-soft text-signal-deep hover:brightness-95"
+      className={`mx-0.5 inline-grid h-[22px] min-w-[22px] place-items-center rounded-full px-1.5 align-[2px] text-[12.5px] font-bold leading-none tabular-nums transition-colors active:opacity-80 ${
+        openCite === n ? "bg-pill text-pill-on" : "bg-signal-soft text-signal-ink hover:bg-pill hover:text-pill-on"
       }`}
     >
       {n}
@@ -134,11 +137,11 @@ export function AskPanel({ state, onAsk }: { state: AskState; onAsk: (q: string)
   return (
     <div className="flex flex-col gap-4">
       {heading}
-      <div className="rounded-card border border-line bg-surface p-5 shadow-sm sm:p-6">
+      <div className={answerCard}>
         <AnswerHead state={headState} />
 
         {answer && !answer.abstained ? (
-          <p className="max-w-[68ch] text-[16px] leading-[1.75] text-ink">
+          <p className="max-w-[68ch] text-[16.5px] leading-[1.7] text-ink">
             {segmentAnswer(answer.text, passages.length).map((seg, i) =>
               seg.kind === "cite" ? cite(seg.n, `c${i}`) : <span key={`t${i}`}>{seg.text}</span>,
             )}
@@ -160,7 +163,7 @@ export function AskPanel({ state, onAsk }: { state: AskState; onAsk: (q: string)
 
         {passages.length > 0 ? (
           <div className="mt-5 border-t border-line pt-4">
-            <h3 className="text-[12px] font-bold uppercase tracking-[0.06em] text-ink-3">Sources</h3>
+            <h3 className="kicker">Sources</h3>
             <ol className="mt-2">
               {passages.map((p) => (
                 <li key={p.n}>
@@ -168,9 +171,9 @@ export function AskPanel({ state, onAsk }: { state: AskState; onAsk: (q: string)
                     type="button"
                     onClick={() => setOpenCite(openCite === p.n ? null : p.n)}
                     aria-expanded={openCite === p.n}
-                    className="-mx-2.5 flex w-full items-start gap-3 rounded-pill px-2.5 py-2 text-left transition-colors hover:bg-bg active:bg-bg-2 focus-visible:!rounded-pill"
+                    className="-mx-2.5 flex w-[calc(100%+20px)] items-start gap-3 rounded-ctl px-2.5 py-2 text-left transition-colors hover:bg-surface-2 active:bg-bg-2"
                   >
-                    <span className="mt-0.5 grid h-[22px] min-w-[22px] shrink-0 place-items-center rounded-full bg-signal-soft px-1.5 text-[11.5px] font-bold tabular-nums text-signal-deep">
+                    <span className="mt-0.5 grid h-[22px] min-w-[22px] shrink-0 place-items-center rounded-full bg-signal-soft px-1.5 text-[12.5px] font-bold tabular-nums text-signal-ink">
                       {p.n}
                     </span>
                     <span className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -187,8 +190,8 @@ export function AskPanel({ state, onAsk }: { state: AskState; onAsk: (q: string)
           </div>
         ) : null}
 
-        <p className="mt-4 flex items-start gap-2 text-[12.5px] text-ink-3">
-          <Sparkle size={15} className="mt-px shrink-0" aria-hidden="true" />
+        <p className="mt-5 flex items-start gap-2 border-t border-line pt-4 text-[13px] text-ink-3">
+          <ShieldCheck size={16} className="mt-px shrink-0" aria-hidden="true" />
           Answers come only from meetings you were in, your team&apos;s documents and confirmed
           decisions. Open a source before you rely on it.
         </p>
@@ -201,7 +204,7 @@ function SourcePreview({ p }: { p: RagPassage }) {
   const href = citationHref(p.citation);
   return (
     <div
-      className="mt-4 rounded-card bg-bg p-4 motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]"
+      className="mx-pop mt-4 rounded-ctl border border-line bg-surface-2 p-4"
       role="region"
       aria-label={`Source ${p.n}`}
     >
@@ -217,7 +220,7 @@ function SourcePreview({ p }: { p: RagPassage }) {
       {href ? (
         <Link
           href={href}
-          className="mt-3 inline-flex items-center gap-1.5 text-[13px] font-semibold text-signal-deep hover:underline hover:underline-offset-4 active:opacity-70"
+          className="mt-3 inline-flex min-h-[40px] items-center gap-1.5 rounded-ctl text-[13.5px] font-semibold text-signal-ink underline-offset-4 hover:underline active:opacity-70"
         >
           {p.citation.kind === "transcript"
             ? "Open in transcript"
@@ -231,10 +234,12 @@ function SourcePreview({ p }: { p: RagPassage }) {
   );
 }
 
+const answerCard = "rounded-card border border-line bg-surface p-5 shadow-warm-1 sm:px-6 sm:py-6";
+
 function AnswerHead({ state }: { state: string }) {
   return (
     <div className="mb-3 flex items-center gap-2.5 font-semibold text-ink">
-      <span className="grid h-7 w-7 place-items-center rounded-[9px] bg-pill text-white">
+      <span className="grid h-7 w-7 place-items-center rounded-full bg-pill text-pill-on">
         <Sparkle size={15} weight="fill" aria-hidden="true" />
       </span>
       Mytheus

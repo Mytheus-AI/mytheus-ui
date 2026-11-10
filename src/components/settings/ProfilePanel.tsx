@@ -13,7 +13,8 @@ import { useOrgContext } from "@/lib/org-context";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { FormFooter, SectionCard, SettingsRow, TextInput, focusPill } from "./primitives";
+import { Input } from "@/components/ui/Input";
+import { FormFooter, Note, SaveStatus, SectionCard, SettingsRow, focusPill, inputClass } from "./primitives";
 
 /* Profile: who you are and the role and focus that tune what your PersonalListener captures.
    The name is your Clerk account's (saved there, then the cached profile is dropped); role and
@@ -74,47 +75,40 @@ export function ProfilePanel({ agent }: { agent: AgentProfile | null }) {
 
   return (
     <>
-      <SectionCard>
-        <div className="flex items-center gap-4 px-4 py-4 sm:px-[22px] sm:py-5">
+      <SectionCard title="Your account" description="How you appear to teammates in meetings, transcripts and tasks.">
+        <div className="flex flex-wrap items-center gap-4 px-4 py-4 sm:px-[22px] md:py-5">
           <Avatar name={name || user.name} id={user.email} seed={user.avatarSeed} src={user.imageUrl} size="lg" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[16px] font-semibold text-ink">{name || user.name}</p>
-            <p className="truncate text-[13px] text-ink-3">{user.email}</p>
+            <p className="truncate text-[17px] font-semibold text-ink">{name || user.name}</p>
+            <p className="truncate text-[14px] text-ink-3">{user.email}</p>
           </div>
-          <Badge tone="default" className="shrink-0 capitalize">
+          <Badge className="shrink-0 capitalize">
             {user.role}
           </Badge>
         </div>
-        <SettingsRow
-          label="Full name"
-          htmlFor="name"
-          help="Used in transcripts and when your agent speaks for you."
-        >
-          <TextInput
+        <SettingsRow label="Full name" htmlFor="name" help="Used in transcripts and when your agent speaks for you.">
+          <Input
             id="name"
             name="name"
             autoComplete="name"
             value={name}
+            className={inputClass}
             onChange={(e) => {
               setName(e.target.value);
               setNameState("idle");
             }}
           />
         </SettingsRow>
-        <SettingsRow
-          label="Email"
-          htmlFor="email"
-          help="Comes from your sign-in, so it cannot be edited here."
-        >
+        <SettingsRow label="Email" htmlFor="email" help="Comes from your sign-in, so it cannot be edited here.">
           <div className="relative">
-            <TextInput
+            <Input
               id="email"
               name="email"
               type="email"
               value={user.email}
               readOnly
               aria-readonly="true"
-              className="pr-10"
+              className={`pr-10 ${inputClass}`}
             />
             <LockSimple
               size={16}
@@ -125,16 +119,15 @@ export function ProfilePanel({ agent }: { agent: AgentProfile | null }) {
         </SettingsRow>
         <FormFooter>
           <Button
-            variant="secondary"
             disabled={!nameDirty || nameState === "saving" || !clerkUser}
-            className={`active:opacity-80 ${focusPill}`}
+            className={focusPill}
             onClick={() => void saveName()}
           >
-            {nameState === "saving" ? "Saving..." : "Save name"}
+            {nameState === "saving" ? "Saving name" : "Save name"}
           </Button>
-          <span role="status" className="text-[13px] text-ink-3">
-            {nameState === "saved" ? "Saved." : nameState === "error" ? "Could not save. Try again." : ""}
-          </span>
+          <SaveStatus tone={nameState === "saved" ? "ok" : nameState === "error" ? "error" : undefined}>
+            {nameState === "saved" ? "Name saved." : nameState === "error" ? "Name not saved. Try again." : ""}
+          </SaveStatus>
         </FormFooter>
       </SectionCard>
 
@@ -145,48 +138,49 @@ export function ProfilePanel({ agent }: { agent: AgentProfile | null }) {
         description="Your role and focus areas tune what your agent captures. An engineer and a PM leave the same meeting with different notes."
       >
         {agent === null ? (
-          <p className="px-4 py-5 text-[13.5px] text-ink-3 sm:px-[22px]">
-            Your role and focus areas could not be loaded just now. Reload the page to try again.
-          </p>
+          <div className="px-4 py-4 sm:px-[22px]">
+            <Note tone="warning">Your role and focus areas could not be loaded just now. Reload the page to try again.</Note>
+          </div>
         ) : (
           <>
-            <SettingsRow label="Role title" htmlFor="title">
-              <TextInput
+            <SettingsRow label="Role title" htmlFor="title" help="What you do, in your own words.">
+              <Input
                 id="title"
                 name="title"
                 value={title}
                 maxLength={200}
-                placeholder="e.g. Product manager"
+                placeholder="Product manager"
+                className={inputClass}
                 onChange={(e) => {
                   setTitle(e.target.value);
                   setAgentState("idle");
                 }}
               />
             </SettingsRow>
-            <SettingsRow label="Focus areas" htmlFor="focus" help="Separate topics with commas.">
-              <TextInput
+            <SettingsRow label="Focus areas" htmlFor="focus" help="Topics your agent should listen for. Separate them with commas.">
+              <Input
                 id="focus"
                 name="focus"
                 value={focus}
+                className={inputClass}
                 onChange={(e) => {
                   setFocus(e.target.value);
                   setAgentState("idle");
                 }}
-                placeholder="e.g. Billing, infrastructure, hiring"
+                placeholder="Billing, infrastructure, hiring"
               />
             </SettingsRow>
             <FormFooter>
               <Button
-                variant="secondary"
                 disabled={!agentDirty || agentState === "saving"}
-                className={`active:opacity-80 ${focusPill}`}
+                className={focusPill}
                 onClick={() => void saveAgent()}
               >
-                {agentState === "saving" ? "Saving..." : "Save changes"}
+                {agentState === "saving" ? "Saving changes" : "Save changes"}
               </Button>
-              <span role="status" className={`text-[13px] ${agentError ? "text-priority-high" : "text-ink-3"}`}>
-                {agentError ?? (agentState === "saved" ? "Saved. Your agent uses this from now on." : "")}
-              </span>
+              <SaveStatus tone={agentError ? "error" : agentState === "saved" ? "ok" : undefined}>
+                {agentError ?? (agentState === "saved" ? "Changes saved. Your agent uses them from now on." : "")}
+              </SaveStatus>
             </FormFooter>
           </>
         )}
@@ -234,16 +228,19 @@ function DoodleCard() {
       </div>
       <FormFooter>
         <Button
-          variant="secondary"
           disabled={seed === current || state === "saving" || !isDoodleSeed(seed)}
-          className={`active:opacity-80 ${focusPill}`}
+          className={focusPill}
           onClick={() => void save()}
         >
-          {state === "saving" ? "Saving..." : "Use this doodle"}
+          {state === "saving" ? "Saving doodle" : "Use this doodle"}
         </Button>
-        <span role="status" className="text-[13px] text-ink-3">
-          {state === "saved" ? "Saved. Your teammates will see it too." : state === "error" ? "Could not save. Try again." : ""}
-        </span>
+        <SaveStatus tone={state === "saved" ? "ok" : state === "error" ? "error" : undefined}>
+          {state === "saved"
+            ? "Now using this doodle. Your teammates see it too."
+            : state === "error"
+              ? "Doodle not used. Try again."
+              : ""}
+        </SaveStatus>
       </FormFooter>
     </SectionCard>
   );

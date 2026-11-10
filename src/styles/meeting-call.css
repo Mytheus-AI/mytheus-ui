@@ -1,794 +1,610 @@
-/* The call surfaces (pre-join and the live room), on top of meeting.css.
+/* The call surfaces, full screen in the (call) layout: the top bar, the live room's layout and
+   its phone sheet, the Notes view, the pre-join, and the connection pill. On top of meeting.css
+   (the stage, control bar, side panel and agent sidebar live there) and on the global tokens
+   only, so dark mode comes from `.mx-app[data-theme="dark"]` with no overrides here.
 
-   Everything here is scoped under `.mx-meet .cx-call` so it only touches these two screens, even
-   after a client-side navigation has left this stylesheet loaded.
+   Scoped under `.mx-meet .cx-call`, which only the two call screens render, so a client-side
+   navigation that leaves this stylesheet loaded cannot reach any other screen. */
 
-   Why an inner `.mx-meet`: the (call) layout puts `mx-app` and `mx-meet` on the same element, and
-   meeting-dark.css is written as `.mx-app[data-theme="dark"] .mx-meet` (a descendant). The call
-   pages therefore render their own `.mx-meet cx-call` root, which picks up the dark tokens. */
+.mx-meet .cx-call { min-height: 100dvh; background: var(--bg); color: var(--ink-2); }
 
-/* ---------------------------------------------------------------- shell */
+/* ---------------------------------------------------------------- top bar */
 
-.mx-meet .cx-call { min-height: 100dvh; background: var(--bgApp); color: var(--ink); }
-
-/* The design pins the app to 1024px minimum; the call has to work down to 360px. */
-.mx-meet .cx-call .app { min-width: 0; min-height: 0; }
-
-.mx-meet .cx-call .brand-mark { display: inline-flex; }
-
-/* A long meeting title truncates instead of running under the count chips. */
-.mx-meet .cx-call .appbar-title { max-width: 40%; overflow: hidden; text-overflow: ellipsis; }
-
-/* No coloured left-edge bars on cards or banners (owner's rule). Priority is carried by the kind
-   dot, the label colour and the meta text instead; the act-now card also gets a soft tint. */
-.mx-meet .cx-call .nfy-card::before,
-.mx-meet .cx-call .conflict-banner::before { content: none; }
-.mx-meet .cx-call .nfy-card.is-p1 { background: var(--prioHighBg); }
-
-/* The conflict stays pinned to the top of the panel while it scrolls. */
-.mx-meet .cx-call .conflict-banner { position: sticky; top: 0; z-index: 3; }
-.mx-meet .cx-call .cbn-meta { display: inline-flex; align-items: center; gap: 4px; }
-
-/* Initials avatars: the design uses stock photos, the app shows people's initials. */
-.mx-meet .cx-call .cx-av {
-  display: grid;
-  place-items: center;
-  background: var(--avatarBg);
-  color: var(--avatarText);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.2px;
-}
-.mx-meet .cx-call .av-stack i.cx-av { font-style: normal; font-size: 8px; }
-
-.mx-meet .cx-call .nfy-acts { flex-wrap: wrap; row-gap: 6px; }
-.mx-meet .cx-call .nfy-sub { font-size: 10.5px; font-weight: 600; color: var(--mutedAlt); margin: -3px 0 7px; }
-.mx-meet .cx-call .nfy-act.is-on { background: var(--chipOrangeBg); color: var(--accentDeep); }
-.mx-meet .cx-call .saved-empty { font-size: 11.5px; line-height: 1.45; font-weight: 500; color: var(--mutedAlt); padding: 4px 2px 2px; }
-.mx-meet .cx-call .afeed-item .nfy-acts { margin-top: 6px; }
-
-/* ---------------------------------------------------------------- stage */
-
-/* The stage frame drops the design's stock photo: what fills it is the participant tile. */
-.mx-meet .cx-call .main-video { background-image: none; background: var(--chipNeutralBg); }
-.mx-meet .cx-call .thumb { background-image: none; }
-
-/* A participant surface: live video, or a lit room (camera on, mock) or a dark room (camera off). */
-.mx-meet .cx-call .cx-tile-bg { position: absolute; inset: 0; }
-.mx-meet .cx-call .cx-tile-bg.is-lit { background: linear-gradient(157deg, #e6b398, #eac4ac 27%, #f0dbc9 54%, #f6efe4); }
-.mx-meet .cx-call .cx-tile-bg.is-dark { background: linear-gradient(160deg, #34312d, #262625); }
-.mx-meet .cx-call .cx-tile-bg.is-media { background: #000; }
-
-.mx-meet .cx-call .cx-initials {
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  width: 108px;
-  height: 108px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-family: var(--serif);
-  font-size: 38px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  background: rgba(38, 38, 37, 0.78);
-  color: rgba(255, 255, 255, 0.9);
-}
-.mx-meet .cx-call .cx-initials.is-sm { width: 52px; height: 52px; font-size: 19px; }
-.mx-meet .cx-call .cx-initials.is-md { width: 72px; height: 72px; font-size: 26px; }
-
-.mx-meet .cx-call .name-pill .cx-muted,
-.mx-meet .cx-call .thumb-name .cx-muted { color: #f2a184; }
-
-/* Thumbs never stretch into tall slivers when only one or two others are in the call. */
-.mx-meet .cx-call .thumbs .thumb { max-height: 260px; }
-.mx-meet .cx-call .thumb-pin.is-always { opacity: 1; }
-
-/* Grid layout: every tile inside the frame, clear of the timer above and the controls below. */
-.mx-meet .cx-call .cx-grid {
-  position: absolute;
-  inset: 64px 14px 84px;
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr));
-  grid-auto-rows: minmax(0, 1fr);
-}
-.mx-meet .cx-call .cx-grid .thumb { flex: none; max-height: none; min-height: 0; }
-
-.mx-meet .cx-call .cx-waiting {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--mutedDeep);
-}
-
-/* Captions: one settled line and the line being spoken, clamped so a long sentence never grows
-   the strip past two lines. The strip floats over the video, so it never reflows the grid. */
-.mx-meet .cx-call .cap-line { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.mx-meet .cx-call .cap-interim { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.mx-meet .cx-call .cap-line .cs-4 { color: #8fc4de; }
-.mx-meet .cx-call .cap-line .cs-5 { color: #b0d09c; }
-.mx-meet .cx-call .cap-line .cs-6 { color: #e3b4d6; }
-.mx-meet .cx-call .cap-interim b { font-style: normal; font-weight: 800; margin-right: 6px; color: rgba(255, 255, 255, 0.72); }
-
-/* ---------------------------------------------------------------- side panel */
-
-.mx-meet .cx-call .side-inner { scroll-behavior: smooth; }
-.mx-meet .cx-call .chat-card { min-height: 260px; }
-.mx-meet .cx-call .chat-empty { margin: auto; font-size: 11.5px; font-weight: 600; color: var(--mutedAlt); }
-
-/* ---------------------------------------------------------------- pre-join */
-
-.mx-meet .cx-call .cx-prejoin-canvas { grid-template-columns: minmax(0, 1fr) 380px; }
-
-/* The preview is the person's own camera, not the design's photo. */
-.mx-meet .cx-call .pv-stage { background-image: linear-gradient(160deg, #34312d, #262625); }
-.mx-meet .cx-call .pv-video {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: scaleX(-1);
-}
-.mx-meet .cx-call .pv-video[hidden] { display: none; }
-
-.mx-meet .cx-call .pv-status {
-  position: absolute;
-  left: 50%;
-  top: calc(50% + 74px);
-  transform: translateX(-50%);
-  width: max-content;
-  max-width: calc(100% - 32px);
+.mx-meet .cx-call .cx-top {
+  position: relative;
+  z-index: 10;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 13px;
-  border-radius: var(--r-chip);
-  font-size: 12px;
+  gap: 12px;
+  height: 68px;
+  padding: 0 20px;
+}
+.mx-meet .cx-call .cx-brand { display: inline-flex; align-items: center; flex-shrink: 0; color: var(--ink); }
+.mx-meet .cx-call .cx-top-sep { width: 1px; height: 26px; margin: 0 4px; flex-shrink: 0; background: var(--line-2); }
+.mx-meet .cx-call .cx-top-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mx-meet .cx-call .cx-top-title h1 {
+  color: var(--ink-display);
+  font-family: var(--font-display);
+  font-size: 21px;
   font-weight: 600;
-  line-height: 1.35;
-  text-align: center;
-}
-.mx-meet .cx-call .pv-status svg { color: #f2a184; }
-
-/* A live level meter: bars scale with the microphone's actual input. */
-.mx-meet .cx-call .mic-meter.is-live i {
-  animation: none;
-  transform-origin: bottom;
-  transform: scaleY(var(--lvl, 0.15));
-  transition: transform 0.08s linear;
-}
-
-.mx-meet .cx-call .pv-devices { padding: 14px 18px 16px; display: flex; gap: 14px; }
-.mx-meet .cx-call .select-btn:disabled { cursor: default; color: var(--mutedDeep); }
-.mx-meet .cx-call .select-btn:disabled:hover { background: var(--chipNeutralBg); }
-.mx-meet .cx-call .select-btn span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-.mx-meet .cx-call .detail-title { overflow-wrap: anywhere; }
-.mx-meet .cx-call .pv-actions .btn-ghost { justify-content: center; }
-
-/* ---------------------------------------------------------------- tablet and down */
-
-@media (max-width: 1179px) {
-  .mx-meet .cx-call .appbar .chip.meeting-only:not(.chip-btn) + .chip.meeting-only:not(.chip-btn) { display: none; }
-  .mx-meet .cx-call .appbar-title { max-width: 34%; }
-}
-
-@media (max-width: 1099px) {
-  .mx-meet .cx-call .cx-prejoin-canvas { grid-template-columns: minmax(0, 1fr) 330px; }
-}
-
-@media (max-width: 959px) {
-  /* App bar: the title moves inline and truncates; the count chips give way. */
-  .mx-meet .cx-call .appbar { height: 56px; padding: 0 12px; gap: 8px; }
-  .mx-meet .cx-call .brand { margin-right: 0; }
-  .mx-meet .cx-call .appbar .chip.meeting-only:not(.chip-btn) { display: none; }
-  .mx-meet .cx-call .appbar-title {
-    position: static;
-    transform: none;
-    flex: 1;
-    min-width: 0;
-    max-width: none;
-    font-size: 16px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .mx-meet .cx-call .appbar-right { margin-left: 0; }
-  .mx-meet .cx-call .chip-btn .chip-label { display: none; }
-  .mx-meet .cx-call .chip-btn { padding: 0 10px; }
-
-  .mx-meet .cx-call .app-row { padding: 0 8px 8px; }
-
-  /* Room: one column, the stage on top and the panel as a bottom sheet. */
-  .mx-meet .cx-call .meeting-page { flex-direction: column; gap: 8px; }
-  .mx-meet .cx-call .stage { flex-direction: column; gap: 8px; }
-  .mx-meet .cx-call .main-video { min-height: 220px; border-radius: var(--r-card); }
-  .mx-meet .cx-call .thumbs { width: auto; height: 84px; flex-direction: row; gap: 8px; }
-  .mx-meet .cx-call .thumbs .thumb { flex: 1 1 0; min-width: 0; max-height: none; }
-  .mx-meet .cx-call .thumb-pin { opacity: 1; }
-  .mx-meet .cx-call .thumb-name { left: 6px; bottom: 6px; max-width: calc(100% - 38px); overflow: hidden; }
-  .mx-meet .cx-call .thumb-mic { right: 6px; bottom: 6px; }
-  .mx-meet .cx-call .more-pill { height: auto; padding: 0 12px 0 8px; }
-
-  .mx-meet .cx-call .timer-pill { top: 10px; left: 10px; height: 32px; }
-  .mx-meet .cx-call .main-video > .name-pill { top: 10px; right: 10px; left: auto; bottom: auto; height: 32px; max-width: calc(100% - 150px); overflow: hidden; white-space: nowrap; }
-  .mx-meet .cx-call .controls { bottom: 10px; gap: 5px; padding: 7px; max-width: calc(100% - 16px); }
-  .mx-meet .cx-call .ctl { width: 40px; height: 40px; }
-  .mx-meet .cx-call .ctl-leave { height: 40px; padding: 0 13px; }
-  .mx-meet .cx-call .ctl-leave .ctl-leave-label { display: none; }
-  .mx-meet .cx-call .captions { width: calc(100% - 20px); bottom: 66px; padding: 8px 12px 9px; }
-  .mx-meet .cx-call .cx-initials { width: 84px; height: 84px; font-size: 30px; }
-  .mx-meet .cx-call .cx-initials.is-sm { width: 40px; height: 40px; font-size: 15px; }
-  .mx-meet .cx-call .cx-initials.is-md { width: 56px; height: 56px; font-size: 20px; }
-  .mx-meet .cx-call .cx-grid { inset: 52px 8px 66px; gap: 8px; }
-
-  .mx-meet .cx-call .side { width: 100%; height: 42dvh; min-height: 220px; flex-shrink: 0; }
-  .mx-meet .cx-call .side-inner { width: 100%; padding-right: 0; }
-  .mx-meet .cx-call .meeting-page.side-collapsed .side { width: 100%; height: 50px; min-height: 0; }
-  .mx-meet .cx-call .side-mini { width: 100%; height: 50px; flex-direction: row; justify-content: center; padding: 0 10px; gap: 10px; }
-  .mx-meet .cx-call .mini-sep { width: 1px; height: 20px; margin: 0 3px; }
-
-  /* Pre-join: a single column. */
-  .mx-meet .cx-call .page-inner { padding: 8px 16px 24px; }
-  .mx-meet .cx-call .cx-prejoin-canvas { grid-template-columns: minmax(0, 1fr); }
-  .mx-meet .cx-call .pv-stage { min-height: 0; aspect-ratio: 4 / 3; flex: none; }
-  .mx-meet .cx-call .screen-head { margin: 4px 2px 14px; }
-}
-
-@media (max-width: 520px) {
-  .mx-meet .cx-call .pv-devices { flex-direction: column; gap: 12px; }
-  .mx-meet .cx-call .pv-stage { aspect-ratio: 3 / 4; max-height: 62dvh; width: 100%; }
-  .mx-meet .cx-call .cx-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .mx-meet .cx-call .cx-grid.is-solo { grid-template-columns: minmax(0, 1fr); }
-  .mx-meet .cx-call .preview-name { top: 12px; bottom: auto; max-width: calc(100% - 24px); overflow: hidden; white-space: nowrap; }
-}
-
-/* Autoplay unblock. LiveKit renders it only while the browser refuses to play the call's
-   audio; it hides itself once a click starts playback. */
-.mx-meet .call-start-audio {
-  position: fixed;
-  left: 50%;
-  bottom: 112px;
-  z-index: 40;
-  transform: translateX(-50%);
-  display: inline-flex;
-  align-items: center;
-  height: 40px;
-  padding: 0 18px;
-  border-radius: 999px;
-  background: var(--accent);
-  color: #fff;
-  font-size: 13.5px;
-  font-weight: 700;
-  box-shadow: 0 10px 30px -10px rgba(40, 34, 28, 0.45);
-}
-.mx-meet .call-start-audio:hover { background: var(--accentDeep); }
-
-/* ================================================================ room redesign (2026-11-09)
-   From a real 3-person call: a cluttered top bar, one person blown up on a near-empty dark frame
-   with a giant serif initial, an off-centre caption box, mismatched control colours and a dark
-   chat composer inside a light card. Calmer, more even, and still the meeting design's tokens. */
-
-/* ---- top bar: brand | title with who is here under it | share, panel */
-.mx-meet .cx-call .cx-bar-sep { width: 1px; height: 22px; background: var(--navBorder); margin: 0 4px; flex-shrink: 0; }
-/* The title takes the free space, which is what pushes Share and the panel toggle to the right
-   edge (an older narrow-screen rule zeroes .appbar-right's auto margin). */
-.mx-meet .cx-call .cx-bar-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.mx-meet .cx-call .cx-bar-title h1 {
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--ink);
+  letter-spacing: -0.015em;
+  line-height: 1.15;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.mx-meet .cx-call .cx-bar-title p {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--mutedTime);
-  white-space: nowrap;
-}
-@media (max-width: 719px) {
-  /* Phones: the logo mark alone, so the meeting title has room. */
-  .mx-meet .cx-call .appbar .brand-name { display: none; }
-  .mx-meet .cx-call .cx-bar-sep { display: none; }
-  .mx-meet .cx-call .cx-bar-title p span { display: none; }
-}
+.mx-meet .cx-call .cx-top-title p { display: flex; align-items: center; gap: 6px; color: var(--ink-3); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mx-meet .cx-call .cx-top-title p svg { flex-shrink: 0; }
+.mx-meet .cx-call .cx-top-end { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
-/* ---- stage frame: a quiet dark surface, so tiles read as tiles */
-.mx-meet .cx-call .main-video { background: #1f1e1c; }
-
-/* ---- grid: equal tiles that fill the frame, last row centred (no empty quarter for 3 people) */
-.mx-meet .cx-call .cx-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-content: center;
-  gap: 10px;
-  inset: 62px 14px 82px;
-}
-.mx-meet .cx-call .cx-grid .thumb {
-  flex: 0 0 calc((100% - (var(--cols, 2) - 1) * 10px) / var(--cols, 2));
-  height: calc((100% - (var(--rows, 1) - 1) * 10px) / var(--rows, 1));
-  border-radius: 16px;
-  box-shadow: none;
-}
-.mx-meet .cx-call .cx-grid.is-solo .thumb { flex-basis: 100%; height: 100%; }
-
-/* ---- camera-off tiles: a warm dark surface and an avatar sized to the tile */
-.mx-meet .cx-call .thumb,
-.mx-meet .cx-call .main-video { container-type: size; }
-.mx-meet .cx-call .cx-tile-bg.is-dark { background: radial-gradient(120% 90% at 50% 35%, #3a3632, #2a2826 70%); }
-.mx-meet .cx-call .cx-initials,
-.mx-meet .cx-call .cx-initials.is-sm,
-.mx-meet .cx-call .cx-initials.is-md {
-  width: clamp(44px, 34cqmin, 132px);
-  height: clamp(44px, 34cqmin, 132px);
-  font-family: inherit;
-  font-size: clamp(15px, 12cqmin, 44px);
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  background: #4a4540;
-  color: #f4ede6;
-  overflow: hidden;
-  transition: box-shadow 0.2s ease;
-}
-.mx-meet .cx-call .cx-initials img { width: 100%; height: 100%; object-fit: cover; }
-/* Speaking: the avatar gets the ring, and the tile a soft outline, never a loud fill. */
-.mx-meet .cx-call .thumb.is-speaking { box-shadow: inset 0 0 0 2px var(--accent); }
-.mx-meet .cx-call .thumb.is-speaking .cx-initials { box-shadow: 0 0 0 3px #1f1e1c, 0 0 0 6px var(--accent); }
-@media (prefers-reduced-motion: reduce) {
-  .mx-meet .cx-call .cx-initials { transition: none; }
-}
-
-/* ---- name pills: smaller and calmer on tiles */
-.mx-meet .cx-call .thumb-name { height: 26px; padding: 0 10px; font-size: 12px; background: rgba(20, 19, 18, 0.62); color: #f4ede6; }
-
-/* ---- captions: centred above the controls. Centred with margins, not translateX, because the
-   entrance animation sets `transform` and was overriding the centring. */
-.mx-meet .cx-call .captions {
-  left: 0;
-  right: 0;
-  margin-inline: auto;
-  transform: none;
-  bottom: 86px;
-  width: min(720px, calc(100% - 32px));
-  padding: 10px 16px;
-  border-radius: 14px;
-  background: rgba(16, 15, 14, 0.78);
-  font-size: 15px;
-  line-height: 1.45;
-  text-align: center;
-}
-.mx-meet .cx-call .captions b { margin-right: 6px; }
-
-/* ---- controls: one quiet family. Off (mic or camera muted) is red, on (captions, grid) is
-   light, Leave is the one strong button. */
-.mx-meet .cx-call .controls { gap: 8px; padding: 8px 10px; border-radius: 999px; background: rgba(28, 27, 25, 0.92); }
-.mx-meet .cx-call .ctl { width: 44px; height: 44px; border-radius: 999px; background: rgba(255, 255, 255, 0.09); color: #f4ede6; }
-.mx-meet .cx-call .ctl:hover { background: rgba(255, 255, 255, 0.16); }
-.mx-meet .cx-call .ctl.is-off { background: #c2412e; color: #fff; }
-.mx-meet .cx-call .ctl.is-off:hover { background: #a93626; }
-.mx-meet .cx-call .ctl.is-active { background: #f4ede6; color: #1f1e1c; }
-.mx-meet .cx-call .ctl.is-active:hover { background: #fff; }
-.mx-meet .cx-call .ctl-sep { background: rgba(255, 255, 255, 0.14); }
-.mx-meet .cx-call .ctl-leave { height: 44px; border-radius: 999px; padding: 0 20px; background: #c2412e; }
-.mx-meet .cx-call .ctl-leave:hover { background: #a93626; }
-
-/* ---- chat: a light composer that belongs to its card */
-.mx-meet .cx-call .composer {
-  background: var(--surfaceAlt);
-  border: 1px solid var(--navBorder);
-  box-shadow: none;
-  border-radius: 14px;
-  padding: 6px 6px 6px 4px;
-}
-.mx-meet .cx-call .composer input { color: var(--ink); }
-.mx-meet .cx-call .composer input::placeholder { color: var(--mutedAlt); }
-/* While captions show, the grid makes room for them instead of hiding the bottom tiles' names. */
-.mx-meet .cx-call .main-video:has(.captions) .cx-grid { bottom: 158px; }
-
-/* Phones: compact captions (one line each) so they never cover half the tiles. */
-@media (max-width: 719px) {
-  .mx-meet .cx-call .captions { bottom: 72px; font-size: 12.5px; line-height: 1.35; padding: 6px 10px; width: calc(100% - 20px); gap: 1px; }
-  .mx-meet .cx-call .cap-line,
-  .mx-meet .cx-call .cap-interim { -webkit-line-clamp: 1; }
-  .mx-meet .cx-call .main-video:has(.captions) .cx-grid { bottom: 124px; }
-  .mx-meet .cx-call .cx-grid { inset: 58px 10px 72px; gap: 8px; }
-  .mx-meet .cx-call .cx-grid .thumb {
-    flex-basis: calc((100% - (var(--cols, 2) - 1) * 8px) / var(--cols, 2));
-    height: calc((100% - (var(--rows, 1) - 1) * 8px) / var(--rows, 1));
-  }
-}
-
-/* ================================================================ room modes (Call / Notes)
-   One live meeting, two views. Call is the video room; Notes is the same meeting as a living
-   document, with the people kept live in a narrow column. */
-
-/* ---- the switch in the top bar */
-.mx-meet .cx-call .cx-modes {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  padding: 3px;
-  border-radius: 999px;
-  background: var(--tabTrack);
-  flex-shrink: 0;
-}
+/* Call / Notes: one segmented control. */
+.mx-meet .cx-call .cx-modes { display: inline-flex; gap: 2px; padding: 4px; border-radius: var(--mx-r-ctl); background: var(--bg-2); flex-shrink: 0; }
 .mx-meet .cx-call .cx-modes button {
   position: relative;
-  z-index: 1;
-  height: 32px;
-  padding: 0 14px;
-  border-radius: 999px;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--mutedDeep);
-  transition: color 0.2s ease;
-}
-.mx-meet .cx-call .cx-modes button.is-on { color: var(--ink); }
-.mx-meet .cx-call .cx-modes-thumb {
-  position: absolute;
-  top: 3px;
-  bottom: 3px;
-  left: 3px;
-  width: calc(50% - 3px);
-  border-radius: 999px;
-  background: var(--surface);
-  box-shadow: 0 1px 2px rgba(40, 34, 28, 0.12);
-  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.mx-meet .cx-call .cx-modes.is-notes .cx-modes-thumb { transform: translateX(100%); }
-.mx-meet .cx-call .cx-hide { display: none; }
-@media (max-width: 719px) {
-  .mx-meet .cx-call .cx-modes button { padding: 0 10px; }
-  .mx-meet .cx-call .cx-modes button span { display: none; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .mx-meet .cx-call .cx-modes-thumb { transition: none; }
-}
-
-/* ---- Notes view layout */
-.mx-meet .cx-call .meeting-page.is-notes { display: block; }
-.mx-meet .cx-call .nv {
-  height: 100%;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
-  gap: 14px;
-}
-.mx-meet .cx-call .nv-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--mutedLabel);
-}
-
-/* left column: people, speaking now, talk time, chat, controls */
-.mx-meet .cx-call .nv-side { display: flex; flex-direction: column; gap: 10px; min-height: 0; padding: 2px; }
-.mx-meet .cx-call .nv-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.mx-meet .cx-call .nv-tile {
-  position: relative;
-  aspect-ratio: 4 / 3;
-  border-radius: 14px;
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-  background: radial-gradient(120% 90% at 50% 30%, #3a3632, #2a2826 70%);
-  transition: box-shadow 0.2s ease;
-}
-.mx-meet .cx-call .nv-tile.is-speaking { box-shadow: 0 0 0 2px var(--accent); }
-.mx-meet .cx-call .nv-av {
-  width: 42%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-  background: #4a4540;
-  color: #f4ede6;
-  font-size: 14px;
-  font-weight: 700;
-}
-.mx-meet .cx-call .nv-av img { width: 100%; height: 100%; object-fit: cover; }
-.mx-meet .cx-call .nv-name {
-  position: absolute;
-  left: 6px;
-  bottom: 6px;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 7px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #f4ede6;
-  background: rgba(20, 19, 18, 0.6);
-}
-.mx-meet .cx-call .nv-muted { color: #f2a184; }
-.mx-meet .cx-call .nv-now {
-  padding: 11px 12px;
-  border-radius: 14px;
-  background: var(--surface);
-  border: 1px solid var(--navBorder);
-  font-size: 13px;
-  line-height: 1.45;
-  color: var(--body);
-  min-height: 64px;
-  max-height: 120px;
-  overflow: hidden;
-}
-.mx-meet .cx-call .nv-now b { display: block; font-size: 11.5px; color: var(--accentDeep); margin-bottom: 2px; }
-.mx-meet .cx-call .nv-quiet { color: var(--mutedAlt); }
-.mx-meet .cx-call .nv-talk { display: flex; flex-direction: column; gap: 7px; }
-.mx-meet .cx-call .nv-talk li { display: grid; grid-template-columns: 78px 1fr 34px; align-items: center; gap: 8px; font-size: 12px; }
-.mx-meet .cx-call .nv-talk-name { font-weight: 600; color: var(--body); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mx-meet .cx-call .nv-talk-bar { height: 6px; border-radius: 999px; background: var(--chipNeutralBg); overflow: hidden; }
-.mx-meet .cx-call .nv-talk-bar i { display: block; height: 100%; border-radius: 999px; background: var(--accent); transition: width 0.4s ease; }
-.mx-meet .cx-call .nv-talk-pct { text-align: right; color: var(--mutedTime); font-variant-numeric: tabular-nums; }
-.mx-meet .cx-call .nv-chat { flex: 1; min-height: 140px; display: flex; flex-direction: column; }
-.mx-meet .cx-call .nv-chat .livechat { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.mx-meet .cx-call .nv-chat .chat-card { flex: 1; min-height: 0; }
-.mx-meet .cx-call .nv-fill { flex: 1; }
-.mx-meet .cx-call .nv-ctls { display: flex; gap: 6px; }
-.mx-meet .cx-call .nv-ctl {
-  flex: 1;
-  height: 42px;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  background: var(--surface);
-  border: 1px solid var(--navBorder);
-  color: var(--ink);
-}
-.mx-meet .cx-call .nv-ctl:hover { background: var(--surfaceAlt); }
-.mx-meet .cx-call .nv-ctl.is-off { background: #c2412e; border-color: #c2412e; color: #fff; }
-.mx-meet .cx-call .nv-leave {
-  height: 42px;
-  border-radius: 12px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: #c2412e;
-  color: #fff;
+  gap: 7px;
+  height: 34px;
+  padding: 0 13px;
+  border-radius: 9px;
+  color: var(--ink-3);
   font-size: 13.5px;
-  font-weight: 700;
+  font-weight: 600;
 }
-.mx-meet .cx-call .nv-leave:hover { background: #a93626; }
+.mx-meet .cx-call .cx-modes button:hover { color: var(--ink); }
+.mx-meet .cx-call .cx-modes button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--sh-1); }
 
-/* main column: the living document */
-.mx-meet .cx-call .nv-doc {
-  min-height: 0;
-  overflow-y: auto;
-  padding: 22px clamp(18px, 4vw, 52px) 40px;
-  border-radius: 22px;
+/* An outline button with an icon, for Share link. */
+.mx-meet .cx-call .cx-pill-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: var(--mx-r-ctl);
+  border: 1px solid var(--line-2);
   background: var(--surface);
-  border: 1px solid var(--navBorder);
-  box-shadow: var(--shadow-card);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
 }
-.mx-meet .cx-call .nv-title { font-family: var(--serif); font-size: clamp(24px, 2.6vw, 32px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.12; color: var(--inkDeep); }
-.mx-meet .cx-call .nv-sub { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 8px 0 20px; font-size: 13px; color: var(--mutedTime); }
-.mx-meet .cx-call .nv-agent { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: var(--chipOrangeBg); color: var(--accentDeep); font-size: 12px; font-weight: 600; }
-.mx-meet .cx-call .nv-agent i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
-.mx-meet .cx-call .nv-card { border: 1px solid var(--navBorder); border-radius: 16px; padding: 16px 18px; margin-bottom: 12px; background: var(--surfaceAlt); }
-.mx-meet .cx-call .nv-card h3 { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; font-weight: 700; color: var(--ink); }
-.mx-meet .cx-call .nv-card h3 small { margin-left: auto; font-size: 11.5px; font-weight: 600; color: var(--mutedAlt); }
-.mx-meet .cx-call .nv-count { font-size: 11px; font-weight: 600; color: var(--mutedTime); padding: 0 7px; border-radius: 999px; background: var(--surface); border: 1px solid var(--navBorder); }
-.mx-meet .cx-call .nv-notes { padding-left: 18px; list-style: disc; }
-.mx-meet .cx-call .nv-notes li { font-size: 14.5px; line-height: 1.6; color: var(--body); white-space: pre-line; }
-.mx-meet .cx-call .nv-notes li.is-draft { color: var(--mutedTime); }
-.mx-meet .cx-call .nv-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.mx-meet .cx-call .nv-empty { font-size: 13px; line-height: 1.5; color: var(--mutedAlt); }
-.mx-meet .cx-call .nv-tx-label { display: flex; align-items: center; gap: 8px; margin: 22px 0 6px; }
-.mx-meet .cx-call .nv-tx li {
-  display: grid;
-  grid-template-columns: 52px 130px minmax(0, 1fr);
-  gap: 12px;
-  padding: 10px 2px;
-  border-top: 1px solid var(--navBorder);
-}
-.mx-meet .cx-call .nv-tx time { font-size: 12px; color: var(--mutedAlt); font-variant-numeric: tabular-nums; padding-top: 2px; }
-.mx-meet .cx-call .nv-tx b { font-size: 13px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mx-meet .cx-call .nv-tx p { font-size: 14.5px; line-height: 1.55; color: var(--body); }
+.mx-meet .cx-call .cx-pill-btn:hover { background: var(--surface-2); }
 
-@media (max-width: 959px) {
-  .mx-meet .cx-call .nv { grid-template-columns: 1fr; height: auto; }
-  .mx-meet .cx-call .nv-tiles { grid-template-columns: repeat(4, 1fr); }
-  /* Phones: the column stacks above the document, so chat stays in Call mode and the
-     document follows the controls directly. */
-  .mx-meet .cx-call .nv-chat,
-  .mx-meet .cx-call .nv-fill { display: none; }
-  .mx-meet .cx-call .nv-two { grid-template-columns: 1fr; }
-  .mx-meet .cx-call .nv-tx li { grid-template-columns: 44px minmax(0, 1fr); }
-  .mx-meet .cx-call .nv-tx li b,
-  .mx-meet .cx-call .nv-tx li p { grid-column: 2; }
-}
+/* ---------------------------------------------------------------- the room */
 
-/* ================================================================ connection pill
-   Replaces the full-width "Connecting to the call..." card: one small dark-glass pill centred
-   just under the top bar, over the stage, so it reads as the call's state and not as a page
-   notice. An error keeps the same shape, tinted, with a retry. */
+.mx-meet .cx-call.cx-room { height: 100dvh; overflow: hidden; }
+.mx-meet .cx-call .cx-shell { height: 100dvh; display: flex; flex-direction: column; }
+.mx-meet .cx-call .cx-body { flex: 1; min-height: 0; display: flex; gap: 14px; padding: 0 16px 16px; }
+.mx-meet .cx-call .cx-body.is-notes { display: block; }
+
+/* LiveKit's "click to hear the call" button, shown only while the browser blocks autoplay. */
+.mx-meet .call-start-audio {
+  position: fixed;
+  z-index: 40;
+  left: 50%;
+  bottom: 112px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: var(--mx-r-ctl);
+  background: var(--pill);
+  color: var(--pill-on);
+  font-size: 14.5px;
+  font-weight: 700;
+  box-shadow: var(--sh-3);
+}
+.mx-meet .call-start-audio:hover { background: var(--pill-2); }
+
+/* The connection state: one small pill under the top bar, over the stage. Waits 700ms before it
+   shows, so a quick join is not a flash; an error keeps the shape, tinted, with a retry. */
 .mx-meet .cx-conn {
   position: fixed;
-  left: 50%;
-  top: 76px;
   z-index: 50;
+  top: 76px;
+  left: 50%;
   transform: translateX(-50%);
   display: inline-flex;
   align-items: center;
   gap: 10px;
   max-width: calc(100vw - 32px);
-  min-height: 34px;
+  min-height: 40px;
   padding: 0 16px 0 14px;
   border-radius: 999px;
-  background: rgba(24, 22, 20, 0.74);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  backdrop-filter: blur(14px) saturate(140%);
-  color: #fff;
-  font-size: 12.5px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 14px;
   font-weight: 600;
-  letter-spacing: 0.005em;
-  box-shadow: 0 10px 28px -14px rgba(24, 22, 20, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-  animation: cx-conn-in 0.18s ease-out both;
+  box-shadow: var(--sh-2);
 }
-.mx-meet .cx-conn-dots { display: inline-flex; gap: 3px; }
-.mx-meet .cx-conn-dots i {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: 0.35;
-  animation: cx-conn-dot 1s ease-in-out infinite;
+.mx-meet .cx-conn-dots { display: inline-flex; gap: 3px; color: var(--signal-line); }
+.mx-meet .cx-conn-dots i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.4; }
+@media (prefers-reduced-motion: no-preference) {
+  .mx-meet .cx-conn { animation: cx-conn-in 0.18s var(--ease-out) both; }
+  .mx-meet .cx-conn-dots i { animation: cx-conn-dot 1s ease-in-out infinite; }
+  .mx-meet .cx-conn-dots i:nth-child(2) { animation-delay: 0.15s; }
+  .mx-meet .cx-conn-dots i:nth-child(3) { animation-delay: 0.3s; }
 }
-.mx-meet .cx-conn-dots i:nth-child(2) { animation-delay: 0.15s; }
-.mx-meet .cx-conn-dots i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes cx-conn-in { from { opacity: 0; transform: translate(-50%, -4px); } }
+@keyframes cx-conn-dot { 50% { opacity: 1; transform: translateY(-2px); } }
 .mx-meet .cx-conn.is-error {
-  padding: 6px 6px 6px 14px;
-  border-radius: 18px;
-  background: rgba(58, 22, 16, 0.86);
-  line-height: 1.35;
+  align-items: flex-start;
+  padding: 10px 10px 10px 14px;
+  border-radius: var(--mx-r-card);
+  background: var(--priority-high-soft);
+  border-color: color-mix(in srgb, var(--priority-high) 30%, transparent);
+  line-height: 1.45;
 }
-.mx-meet .cx-conn.is-error > svg { flex-shrink: 0; color: #ff9b85; }
+.mx-meet .cx-conn.is-error > svg { flex-shrink: 0; margin-top: 2px; color: var(--priority-high); }
+.mx-meet .cx-conn.is-error > span { padding-top: 1px; }
 .mx-meet .cx-conn-retry {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  height: 26px;
-  padding: 0 11px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 700;
-}
-.mx-meet .cx-conn-retry:hover { background: rgba(255, 255, 255, 0.22); }
-@keyframes cx-conn-in {
-  from { opacity: 0; transform: translate(-50%, -4px); }
-  to { opacity: 1; transform: translate(-50%, 0); }
-}
-@keyframes cx-conn-dot {
-  0%, 100% { opacity: 0.35; transform: translateY(0); }
-  50% { opacity: 1; transform: translateY(-2px); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .mx-meet .cx-conn { animation: none; }
-  .mx-meet .cx-conn-dots i { animation: none; opacity: 0.8; }
-}
-@media (max-width: 640px) {
-  .mx-meet .cx-conn { top: 64px; }
-}
-
-/* Decision and action candidate cards (Plan 7-9 section 3.8): the inline Edit form. */
-.mx-meet .cx-call .nfy-edit { display: flex; flex-direction: column; gap: 8px; margin: 2px 0 2px; }
-.mx-meet .cx-call .nfy-edit label { display: flex; flex-direction: column; gap: 4px; }
-.mx-meet .cx-call .nfy-edit label > span { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--mutedAlt); }
-.mx-meet .cx-call .nfy-edit textarea,
-.mx-meet .cx-call .nfy-edit input {
-  width: 100%;
-  border: 1px solid var(--navBorder);
-  border-radius: 10px;
-  background: var(--surface);
-  color: var(--ink);
-  font: inherit;
-  font-size: 13px;
-  line-height: 1.45;
-  padding: 7px 9px;
-  resize: vertical;
-}
-.mx-meet .cx-call .nfy-edit textarea:focus-visible,
-.mx-meet .cx-call .nfy-edit input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.mx-meet .cx-call .nfy-act:disabled { opacity: .55; cursor: default; }
-
-/* ---------------------------------------------------------------- P11 proactive alerts
-   ProactiveAgent alerts (plan 10-13 section 3.9) in the frozen priority language: red acts now
-   (priority 1, the pinned banner), yellow needs attention (workload, dependency), blue informs
-   (missing stakeholder). The meeting palette binds that language as --prioHigh / --prioMid /
-   --prioLow (and their dark twins in meeting-dark.css); the app-wide --priority-* tokens are the
-   fallback. Priority is carried by the label colour, the icon and the soft tint, never an edge. */
-
-/* Every pinned banner sits in one sticky stack, so two conflicts never overlap each other. */
-.mx-meet .cx-call .alert-banners {
-  position: sticky;
-  top: 0;
-  z-index: 4;
-  display: flex;
-  flex-direction: column;
   gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--mx-r-ctl);
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
 }
-.mx-meet .cx-call .alert-banners .conflict-banner { position: relative; top: auto; }
-.mx-meet .cx-call .alert-banner { min-height: 84px; }
-.mx-meet .cx-call .alert-banner .cbn-kind { color: var(--prioHigh, var(--priority-high)); }
-.mx-meet .cx-call .alert-banner.is-read { animation: none; background: var(--surface); box-shadow: var(--shadow-iconBtn); }
-.mx-meet .cx-call .alert-banner .cbn-text { margin-bottom: 2px; font-weight: 700; color: var(--ink); }
+.mx-meet .cx-conn-retry:hover { background: var(--surface-2); }
 
-/* Cards reserve their height, so a card landing above others never makes the panel jump. */
-.mx-meet .cx-call .nfy-card.is-alert { min-height: 92px; }
-.mx-meet .cx-call .nfy-card.is-alert .nfy-kind { align-items: center; }
-.mx-meet .cx-call .nfy-card.is-alert .nfy-kind::before { content: none; }
-.mx-meet .cx-call .nfy-card.is-alert.is-p2 { background: var(--prioMidBg, var(--priority-medium-soft)); }
-.mx-meet .cx-call .nfy-card.is-alert.is-p2 .nfy-kind { color: var(--prioMid, var(--priority-medium)); }
-.mx-meet .cx-call .nfy-card.is-alert.is-p3 { background: var(--prioLowBg, var(--priority-low-soft)); }
-.mx-meet .cx-call .nfy-card.is-alert.is-p3 .nfy-kind { color: var(--prioLow, var(--priority-low)); }
-.mx-meet .cx-call .nfy-card.is-alert.is-read { background: var(--surface); }
-.mx-meet .cx-call .nfy-card.is-alert.is-read .alert-title { color: var(--mutedDeep); }
-
-.mx-meet .cx-call .alert-body { font-size: 12px; line-height: 1.45; font-weight: 500; color: var(--body); margin: 2px 0 6px; }
-.mx-meet .cx-call .alert-why { margin: 0 0 7px; }
-.mx-meet .cx-call .alert-why-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10.5px;
-  font-weight: 700;
-  color: var(--mutedDeep);
-  border-radius: 5px;
-}
-.mx-meet .cx-call .alert-why-toggle:hover { color: var(--ink); }
-.mx-meet .cx-call .alert-why-toggle svg { transition: transform 0.15s ease; }
-.mx-meet .cx-call .alert-why-toggle svg.is-open { transform: rotate(180deg); }
-.mx-meet .cx-call .alert-why-text { font-size: 11px; line-height: 1.45; font-weight: 500; color: var(--mutedAlt); margin-top: 4px; }
-
-/* Streamed notes: the draft and its settled note are one node (keyed by window), and the body
-   keeps a two-line floor so neither the deltas appending nor the swap moves the panel. */
-.mx-meet .cx-call .mynote .mynote-body { min-height: 36px; }
-.mx-meet .cx-call .mynote-writing { display: inline-flex; align-items: center; }
-
-/* Reduced motion: entrances become a short opacity fade (no slide), exits fade in place, and
-   the conflict ring does not pulse. This overrides meeting.css's blanket "no animation" for the
-   sidebar only, so a card still arrives visibly instead of popping. */
-@keyframes cx-opacity-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
+/* Reduced motion: the sidebar's card entrances become a short fade, never a slide, and an exit
+   fades in place. Overrides the blanket rule in meeting.css for these elements only. */
+@keyframes cx-opacity-in { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
   .mx-meet .cx-call .nfy-card.is-new,
   .mx-meet .cx-call .mynote.is-new,
   .mx-meet .cx-call .afeed-item.is-new,
-  .mx-meet .cx-call .conflict-banner {
-    animation: cx-opacity-in 0.15s linear both !important;
-  }
+  .mx-meet .cx-call .conflict-banner:not(.is-read) { animation: cx-opacity-in 0.15s linear both !important; }
   .mx-meet .cx-call .nfy-card,
-  .mx-meet .cx-call .conflict-banner {
-    transition: opacity 0.15s linear !important;
-  }
+  .mx-meet .cx-call .conflict-banner { transition: opacity 0.15s linear !important; }
   .mx-meet .cx-call .nfy-card.is-leaving,
   .mx-meet .cx-call .conflict-banner.is-leaving { transform: none !important; }
-  .mx-meet .cx-call .stream-caret { animation: none !important; }
+}
+
+/* ---------------------------------------------------------------- Notes view
+   The same live meeting as a document: people live in a narrow column, the agent's notes and the
+   transcript in a big panel. */
+
+.mx-meet .cx-call .nv { height: 100%; min-height: 0; display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 14px; }
+.mx-meet .cx-call .nv-side { min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; padding: 2px; }
+.mx-meet .cx-call .nv-label { color: var(--ink-3); font-size: 13px; font-weight: 600; }
+.mx-meet .cx-call .nv-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mx-meet .cx-call .nv-tile {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  border-radius: var(--mx-r-ctl);
+  background: color-mix(in srgb, var(--tone, var(--tint-peach)) 46%, var(--surface));
+  container-type: size;
+  outline: 2.5px solid transparent;
+  outline-offset: 2px;
+  transition: outline-color 0.2s var(--ease-out);
+}
+.mx-meet .cx-call .nv-tile.has-media { background: var(--mx-video); }
+.mx-meet .cx-call .nv-tile.is-speaking { outline-color: var(--signal-line); }
+.mx-meet .cx-call .nv-av {
+  width: 44%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--tone, var(--tint-peach));
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: clamp(14px, 18cqmin, 22px);
+  font-weight: 500;
+}
+.mx-meet .cx-call .nv-av img { width: 100%; height: 100%; object-fit: cover; }
+.mx-meet .cx-call .nv-name {
+  position: absolute;
+  z-index: 2;
+  left: 6px;
+  bottom: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: calc(100% - 12px);
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.mx-meet .cx-call .nv-muted { color: var(--priority-high); flex-shrink: 0; }
+.mx-meet .cx-call .nv-now {
+  min-height: 72px;
+  max-height: 132px;
+  overflow: hidden;
+  padding: 12px 14px;
+  border-radius: var(--mx-r-ctl);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.mx-meet .cx-call .nv-now b { display: block; margin-bottom: 2px; color: var(--ink); font-size: 13px; }
+.mx-meet .cx-call .nv-quiet { color: var(--ink-3); }
+.mx-meet .cx-call .nv-talk { display: flex; flex-direction: column; gap: 8px; }
+.mx-meet .cx-call .nv-talk li { display: grid; grid-template-columns: 84px minmax(0, 1fr) 40px; align-items: center; gap: 10px; font-size: 13px; }
+.mx-meet .cx-call .nv-talk-name { color: var(--ink-2); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mx-meet .cx-call .nv-talk-bar { height: 8px; overflow: hidden; border-radius: 999px; background: var(--bg-2); }
+.mx-meet .cx-call .nv-talk-bar i { display: block; height: 100%; border-radius: inherit; background: var(--signal); transition: width 0.4s var(--ease-out); }
+.mx-meet .cx-call .nv-talk-pct { text-align: right; color: var(--ink-3); font-weight: 600; }
+.mx-meet .cx-call .nv-chat {
+  flex: 1;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--mx-r-card);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.mx-meet .cx-call .nv-fill { flex: 1; }
+/* The Notes view's controls: the same dark bar, in flow. */
+.mx-meet .cx-call .nv-ctls { position: static; transform: none; align-self: flex-start; }
+
+.mx-meet .cx-call .nv-doc {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 28px clamp(18px, 4vw, 56px) 44px;
+  border-radius: var(--mx-r-hero);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--sh-1);
+}
+.mx-meet .cx-call .nv-title { color: var(--ink-display); font-family: var(--font-display); font-size: clamp(26px, 2.8vw, 34px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; text-wrap: balance; }
+.mx-meet .cx-call .nv-sub { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 10px 0 24px; color: var(--ink-3); font-size: 14px; }
+.mx-meet .cx-call .nv-card { margin-bottom: 14px; padding: 18px 20px; border-radius: var(--mx-r-card); background: var(--surface-2); border: 1px solid var(--line); }
+.mx-meet .cx-call .nv-card h3 { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--ink); font-size: 15px; font-weight: 650; }
+.mx-meet .cx-call .nv-card h3 > svg { color: var(--ink-3); }
+.mx-meet .cx-call .nv-card h3 small { margin-left: auto; color: var(--ink-3); font-size: 12.5px; font-weight: 500; }
+.mx-meet .cx-call .nv-notes { padding-left: 18px; list-style: disc; }
+.mx-meet .cx-call .nv-notes li { color: var(--ink-2); font-size: 15px; line-height: 1.6; white-space: pre-line; }
+.mx-meet .cx-call .nv-notes li::marker { color: var(--ink-4); }
+.mx-meet .cx-call .nv-notes li.is-draft { color: var(--ink-3); }
+.mx-meet .cx-call .nv-two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.mx-meet .cx-call .nv-two .nv-card { margin-bottom: 0; }
+.mx-meet .cx-call .nv-empty { color: var(--ink-3); font-size: 14px; line-height: 1.5; }
+.mx-meet .cx-call .nv-empty-line { display: block; width: 88px; height: 26px; margin-bottom: 6px; }
+.mx-meet .cx-call .nv-tx-label { display: flex; align-items: center; gap: 8px; margin: 28px 0 6px; }
+.mx-meet .cx-call .nv-tx li { display: grid; grid-template-columns: 56px 140px minmax(0, 1fr); gap: 12px; padding: 11px 2px; border-top: 1px solid var(--line); }
+.mx-meet .cx-call .nv-tx time { padding-top: 2px; color: var(--ink-3); font-size: 13px; font-weight: 600; }
+.mx-meet .cx-call .nv-tx b { color: var(--ink); font-size: 14px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mx-meet .cx-call .nv-tx p { color: var(--ink-2); font-size: 15px; line-height: 1.55; }
+
+/* ---------------------------------------------------------------- pre-join */
+
+.mx-meet .cx-call .pj { max-width: 1240px; margin: 0 auto; padding: 4px 24px 48px; }
+.mx-meet .cx-call .pj-head { padding: 8px 0 24px; }
+.mx-meet .cx-call .pj-head h1 { color: var(--ink-display); font-family: var(--font-display); font-size: clamp(30px, 3.4vw, 38px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.08; }
+.mx-meet .cx-call .pj-head p { margin-top: 8px; max-width: 62ch; color: var(--ink-3); font-size: 16px; }
+.mx-meet .cx-call .pj-grid { display: grid; grid-template-columns: minmax(0, 1fr) 408px; gap: 24px; align-items: start; }
+.mx-meet .cx-call .pj-left,
+.mx-meet .cx-call .pj-right { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.mx-meet .cx-call .pj-card { padding: 22px; border-radius: var(--mx-r-card); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--sh-1); }
+.mx-meet .cx-call .pj-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.mx-meet .cx-call .pj-card-head h2 { color: var(--ink); font-size: 17px; font-weight: 650; }
+
+/* The preview: your own camera on the warm stage, or your initials on your tint. */
+.mx-meet .cx-call .pv-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  max-height: calc(100dvh - 260px);
+  min-height: 300px;
+  overflow: hidden;
+  border-radius: var(--mx-r-hero);
+  background: var(--wash);
+  border: 1px solid color-mix(in srgb, var(--signal-line) 20%, var(--line));
+  box-shadow: var(--sh-2);
+  container-type: size;
+}
+.mx-meet .cx-call .pv-stage.has-video { background: var(--mx-video); }
+.mx-meet .cx-call .pv-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.mx-meet .cx-call .pv-video[hidden] { display: none; }
+.mx-meet .cx-call .pv-initials {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: clamp(72px, 26cqmin, 132px);
+  height: clamp(72px, 26cqmin, 132px);
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--tone, var(--tint-peach));
+  box-shadow: 0 0 0 8px color-mix(in srgb, var(--surface) 40%, transparent);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: clamp(26px, 9cqmin, 46px);
+  font-weight: 500;
+}
+.mx-meet .cx-call .pj-tag {
+  position: absolute;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 28px);
+  min-height: 34px;
+  padding: 6px 13px 6px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  box-shadow: var(--sh-1);
+  backdrop-filter: blur(6px);
+}
+.mx-meet .cx-call .pj-tag small { color: var(--ink-3); font-size: 12.5px; font-weight: 500; }
+.mx-meet .cx-call .pj-tag-name { left: 14px; bottom: 14px; }
+.mx-meet .cx-call .pj-tag-mic { right: 14px; top: 14px; }
+.mx-meet .cx-call .pv-status { left: 50%; top: calc(50% + clamp(52px, 17cqmin, 86px)); transform: translateX(-50%); width: max-content; text-align: center; }
+.mx-meet .cx-call .pv-status svg { flex-shrink: 0; color: var(--priority-high); }
+/* The level bars follow the microphone's real input (`--lvl`, set by PreJoin each frame). */
+.mx-meet .cx-call .pj-wave { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
+.mx-meet .cx-call .pj-wave i { width: 3px; height: 100%; border-radius: 2px; background: var(--signal-line); transform-origin: bottom; transform: scaleY(calc(var(--lvl, 0.15) * var(--k, 1))); transition: transform 0.08s linear; }
+.mx-meet .cx-call .pj-wave i:nth-child(1) { --k: 0.55; }
+.mx-meet .cx-call .pj-wave i:nth-child(2) { --k: 0.9; }
+.mx-meet .cx-call .pj-wave i:nth-child(3) { --k: 0.7; }
+.mx-meet .cx-call .pj-wave i:nth-child(4) { --k: 1; }
+.mx-meet .cx-call .pj-wave i:nth-child(5) { --k: 0.6; }
+.mx-meet .cx-call .pj-wave.is-off i { transform: scaleY(0.18); background: var(--ink-4); }
+
+/* Devices. */
+.mx-meet .cx-call .pj-dev { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 18px; }
+.mx-meet .cx-call .pj-level { grid-column: 1 / -1; }
+.mx-meet .cx-call .pj-level-label { display: block; margin-bottom: 8px; color: var(--ink); font-size: 13.5px; font-weight: 600; }
+.mx-meet .cx-call .pj-meter-row { display: flex; align-items: center; gap: 12px; }
+.mx-meet .cx-call .pj-meter { position: relative; flex: 1; height: 10px; overflow: hidden; border-radius: 999px; background: var(--bg-2); }
+.mx-meet .cx-call .pj-meter-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--ok);
+  transform-origin: left;
+  transform: scaleX(var(--lvl, 0));
+  transition: transform 0.08s linear;
+}
+.mx-meet .cx-call .pj-meter.is-off .pj-meter-fill { transform: scaleX(0); }
+.mx-meet .cx-call .pj-meter-state { min-width: 64px; text-align: right; color: var(--ink-3); font-size: 13px; font-weight: 600; }
+.mx-meet .cx-call .pj-help { margin-top: 8px; color: var(--ink-3); font-size: 13px; line-height: 1.5; }
+
+/* The custom device dropdown (components/call/Select). */
+.mx-meet .cx-call .select { position: relative; min-width: 0; }
+.mx-meet .cx-call .select-label { display: block; margin-bottom: 8px; color: var(--ink); font-size: 13.5px; font-weight: 600; }
+.mx-meet .cx-call .select-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: var(--mx-r-ctl);
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14.5px;
+  text-align: left;
+}
+.mx-meet .cx-call .select-btn span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-meet .cx-call .select-btn:hover:not(:disabled) { border-color: var(--ink-4); }
+.mx-meet .cx-call .select.is-open .select-btn { border-color: var(--signal); box-shadow: 0 0 0 3px var(--signal-soft); }
+.mx-meet .cx-call .select-btn:disabled { background: var(--surface-2); color: var(--ink-3); cursor: default; }
+.mx-meet .cx-call .select-chev { flex-shrink: 0; color: var(--ink-3); transition: transform 0.2s var(--ease-out); }
+.mx-meet .cx-call .select.is-open .select-chev { transform: rotate(180deg); }
+.mx-meet .cx-call .select-pop {
+  position: absolute;
+  z-index: 40;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  padding: 6px;
+  border-radius: var(--mx-r-ctl);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--sh-3);
+}
+.mx-meet .cx-call .select-pop.is-up { top: auto; bottom: calc(100% + 6px); }
+.mx-meet .cx-call .select-opt {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  color: var(--ink-2);
+  font-size: 14px;
+  text-align: left;
+}
+.mx-meet .cx-call .select-opt:hover { background: var(--surface-2); color: var(--ink); }
+.mx-meet .cx-call .select-opt.is-selected { background: var(--signal-soft); color: var(--signal-ink); font-weight: 600; }
+
+/* The meeting card. */
+.mx-meet .cx-call .pj-meet h2 { margin-top: 12px; color: var(--ink-display); font-family: var(--font-display); font-size: 26px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; overflow-wrap: anywhere; }
+.mx-meet .cx-call .pj-list { display: grid; gap: 10px; margin-top: 14px; }
+.mx-meet .cx-call .pj-list li { display: flex; align-items: center; gap: 10px; color: var(--ink-2); font-size: 15px; }
+.mx-meet .cx-call .pj-list svg { flex-shrink: 0; color: var(--ink-3); }
+.mx-meet .cx-call .pj-in { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 14px; }
+
+/* What your agent will do. */
+.mx-meet .cx-call .pj-agent-list li { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; align-items: start; padding: 10px 0; }
+.mx-meet .cx-call .pj-agent-list li + li { border-top: 1px solid var(--line); }
+.mx-meet .cx-call .pj-agent-ico { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; background: var(--bg-2); color: var(--ink-2); }
+.mx-meet .cx-call .pj-agent-list p { color: var(--ink-2); font-size: 14.5px; line-height: 1.5; padding-top: 5px; }
+.mx-meet .cx-call .pj-foot { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 13.5px; line-height: 1.5; }
+.mx-meet .cx-call .pj-foot svg { flex-shrink: 0; margin-top: 2px; color: var(--signal-ink); }
+
+/* Consent: read it, tick it, then Join unlocks. */
+.mx-meet .cx-call .pj-consent-head { display: flex; gap: 12px; align-items: flex-start; }
+.mx-meet .cx-call .pj-consent-ico { width: 40px; height: 40px; flex-shrink: 0; display: grid; place-items: center; border-radius: var(--mx-r-ctl); background: var(--signal-soft); color: var(--signal-ink); }
+.mx-meet .cx-call .pj-consent-head h2 { color: var(--ink); font-size: 17px; font-weight: 650; line-height: 1.3; }
+.mx-meet .cx-call .pj-consent-head p { margin-top: 3px; color: var(--ink-3); font-size: 14px; }
+.mx-meet .cx-call .pj-terms { margin-top: 16px; overflow: hidden; border-radius: var(--mx-r-ctl); border: 1px solid var(--line); }
+.mx-meet .cx-call .pj-terms li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; padding: 12px 14px; }
+.mx-meet .cx-call .pj-terms li + li { border-top: 1px solid var(--line); }
+.mx-meet .cx-call .pj-terms svg { margin-top: 2px; color: var(--signal-ink); }
+.mx-meet .cx-call .pj-terms strong { display: block; color: var(--ink); font-size: 14px; font-weight: 650; }
+.mx-meet .cx-call .pj-terms span { display: block; margin-top: 2px; color: var(--ink-3); font-size: 14px; line-height: 1.5; }
+.mx-meet .cx-call .pj-check {
+  position: relative;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: var(--mx-r-ctl);
+  background: var(--bg-2);
+  cursor: pointer;
+}
+.mx-meet .cx-call .pj-check:hover { background: color-mix(in srgb, var(--bg-2) 70%, var(--line-2)); }
+.mx-meet .cx-call .pj-check input { position: absolute; left: 14px; top: 14px; width: 22px; height: 22px; margin: 0; opacity: 0; cursor: pointer; }
+.mx-meet .cx-call .pj-box {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  border: 2px solid var(--ink-4);
+  background: var(--surface);
+  color: transparent;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+.mx-meet .cx-call .pj-check input:checked + .pj-box { background: var(--pill); border-color: var(--pill); color: var(--pill-on); }
+.mx-meet .cx-call .pj-check input:focus-visible + .pj-box { outline: 2px solid var(--signal); outline-offset: 2px; }
+.mx-meet .cx-call .pj-check-text { color: var(--ink); font-size: 14.5px; font-weight: 550; line-height: 1.45; }
+.mx-meet .cx-call .pj-join { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; margin-top: 16px; }
+.mx-meet .cx-call .pj-gate { display: flex; align-items: center; gap: 6px; min-height: 20px; margin-top: 10px; color: var(--ink-3); font-size: 13px; }
+
+/* ================================================================ responsive */
+
+@media (max-width: 1240px) {
+  .mx-meet .side { width: 352px; }
+}
+
+@media (max-width: 1100px) {
+  .mx-meet .cx-call .pj-grid { grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; }
+  .mx-meet .thumbs { width: 168px; }
+}
+
+@media (max-width: 959px) {
+  /* Top bar: the title takes the free space; Share keeps its icon. */
+  .mx-meet .cx-call .cx-top { height: 60px; gap: 8px; padding: 0 12px; }
+  .mx-meet .cx-call .cx-top-sep { display: none; }
+  .mx-meet .cx-call .cx-top-title h1 { font-size: 17px; }
+  .mx-meet .cx-call .cx-pill-btn { width: 40px; padding: 0; justify-content: center; }
+  .mx-meet .cx-call .cx-pill-label { display: none; }
+
+  /* Room: one column. The stage on top, the panel as a sheet under it. */
+  .mx-meet .cx-call .cx-body { flex-direction: column; gap: 8px; padding: 0 8px 8px; }
+  .mx-meet .cx-call .stage { flex-direction: column; gap: 8px; min-height: 260px; }
+  .mx-meet .main-video { min-height: 220px; border-radius: var(--mx-r-card); }
+  .mx-meet .thumbs { width: auto; height: 88px; flex-direction: row; gap: 8px; }
+  .mx-meet .thumbs .thumb { flex: 1 1 0; min-width: 0; max-height: none; border-radius: var(--mx-r-ctl); }
+  .mx-meet .thumbs .more-pill { height: auto; padding: 0 12px; }
+  .mx-meet .thumb-name { left: 6px; bottom: 6px; height: 24px; padding: 0 8px; max-width: calc(100% - 40px); }
+  .mx-meet .thumb-mic { right: 6px; bottom: 6px; width: 24px; height: 24px; }
+  .mx-meet .thumb-pin { top: 6px; right: 6px; }
+  .mx-meet .name-pill { top: 10px; left: 10px; height: 32px; max-width: calc(100% - 150px); }
+  .mx-meet .timer-pill { top: 10px; left: 10px; height: 32px; }
+  .mx-meet .main-video:has(> .name-pill) .timer-pill { right: 10px; }
+  .mx-meet .controls { bottom: 10px; gap: 4px; padding: 7px; max-width: calc(100% - 16px); }
+  .mx-meet .ctl { width: 40px; height: 40px; }
+  .mx-meet .ctl-sep { margin: 0 1px; height: 22px; }
+  .mx-meet .ctl-leave { height: 40px; width: 40px; padding: 0; justify-content: center; }
+  .mx-meet .ctl-leave-label { display: none; }
+  .mx-meet .captions { bottom: 66px; width: calc(100% - 20px); padding: 8px 12px; font-size: 14px; }
+  .mx-meet .cx-grid { inset: 52px 8px 66px; gap: 8px; }
+  .mx-meet .cx-grid .thumb {
+    flex-basis: calc((100% - (var(--cols, 2) - 1) * 8px) / var(--cols, 2));
+    height: calc((100% - (var(--rows, 1) - 1) * 8px) / var(--rows, 1));
+    border-radius: var(--mx-r-ctl);
+  }
+  .mx-meet .main-video:has(.captions) .cx-grid { bottom: 140px; }
+
+  .mx-meet .side { width: 100%; height: 46dvh; min-height: 240px; flex-shrink: 0; }
+  .mx-meet .side-collapsed .side { width: 100%; height: 60px; min-height: 0; }
+  .mx-meet .side-inner { border-radius: var(--mx-r-hero) var(--mx-r-hero) var(--mx-r-card) var(--mx-r-card); }
+  .mx-meet .side-mini { width: 100%; height: 60px; flex-direction: row; justify-content: center; gap: 10px; padding: 0 10px; }
+  .mx-meet .mini-sep { width: 1px; height: 22px; margin: 0 2px; }
+
+  /* Notes view: the column stacks above the document; chat stays in Call mode. */
+  .mx-meet .cx-call .cx-body.is-notes { overflow-y: auto; }
+  .mx-meet .cx-call .nv { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .mx-meet .cx-call .nv-side { overflow: visible; }
+  .mx-meet .cx-call .nv-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .mx-meet .cx-call .nv-chat,
+  .mx-meet .cx-call .nv-fill { display: none; }
+  .mx-meet .cx-call .nv-two { grid-template-columns: minmax(0, 1fr); }
+  .mx-meet .cx-call .nv-doc { overflow: visible; border-radius: var(--mx-r-card); }
+  .mx-meet .cx-call .nv-tx li { grid-template-columns: 48px minmax(0, 1fr); }
+  .mx-meet .cx-call .nv-tx li b,
+  .mx-meet .cx-call .nv-tx li p { grid-column: 2; }
+
+  /* Pre-join: one column, in the order you need it. */
+  .mx-meet .cx-call .pj { padding: 0 16px 32px; }
+  .mx-meet .cx-call .pj-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .mx-meet .cx-call .pj-left,
+  .mx-meet .cx-call .pj-right { display: contents; }
+  .mx-meet .cx-call .pv-stage { order: 1; max-height: 56dvh; min-height: 0; }
+  .mx-meet .cx-call .pj-meet { order: 2; }
+  .mx-meet .cx-call .pj-devices { order: 3; }
+  .mx-meet .cx-call .pj-consent { order: 4; }
+  .mx-meet .cx-call .pj-agent { order: 5; }
+  .mx-meet .cx-conn { top: 66px; }
+}
+
+@media (max-width: 719px) {
+  .mx-meet .cx-call .cx-brand .wordmark { display: none; }
+  .mx-meet .cx-call .cx-modes button { padding: 0 10px; }
+  .mx-meet .cx-call .cx-modes button span { display: none; }
+  .mx-meet .cx-call .cx-top-title p .cx-invited { display: none; }
+  .mx-meet .captions { bottom: 62px; padding: 6px 10px; font-size: 13px; line-height: 1.35; gap: 1px; }
+  .mx-meet .cap-line,
+  .mx-meet .cap-interim { -webkit-line-clamp: 1; }
+  .mx-meet .cap-interim { min-height: 18px; }
+  .mx-meet .main-video:has(.captions) .cx-grid { bottom: 112px; }
+}
+
+@media (max-width: 640px) {
+  .mx-meet .cx-call .pj-dev { grid-template-columns: minmax(0, 1fr); }
+  .mx-meet .cx-call .pv-stage { aspect-ratio: 3 / 4; }
+  .mx-meet .cx-call .pj-card { padding: 18px; }
+  .mx-meet .cx-call .pj-join { grid-template-columns: minmax(0, 1fr); }
+  .mx-meet .cx-call .pj-join > :first-child { order: 2; }
+  .mx-meet .cx-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 420px) {
+  .mx-meet .side-tab { padding: 0 6px; gap: 5px; }
+  .mx-meet .side-tab > svg { display: none; }
+}
+
+@media (max-width: 959px) {
+  .mx-meet .cx-call .nv-chat-label { display: none; }
 }

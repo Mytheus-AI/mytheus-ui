@@ -1,33 +1,25 @@
-import { ScrollProgressBar } from "@/components/landing/motion";
-import { SmoothScroll } from "@/components/landing/SmoothScroll";
-import { Loader } from "@/components/landing/Loader";
-import { SiteHeader } from "@/components/landing/SiteHeader";
-import { Hero } from "@/components/landing/Hero";
-import { FeatureCards } from "@/components/landing/FeatureCards";
-import { Statement } from "@/components/landing/Statement";
-import { Steps } from "@/components/landing/Steps";
-import { MemoryTimeline } from "@/components/landing/MemoryTimeline";
-import { FAQ } from "@/components/landing/FAQ";
-import { FinalCTA } from "@/components/landing/FinalCTA";
-import { SiteFooter } from "@/components/landing/SiteFooter";
+import { CloseCTA } from "@/components/site/CloseCTA";
+import { HomeHero } from "@/components/home/HomeHero";
+import { NotesSection } from "@/components/home/NotesSection";
+import { RoomSection } from "@/components/home/RoomSection";
+import { AgentsSection } from "@/components/home/AgentsSection";
+import { HowSection } from "@/components/home/HowSection";
+import { WeekSection } from "@/components/home/WeekSection";
+import { FaqSection } from "@/components/home/FaqSection";
 
+/* The home page. Nav, the page-long line and the footer come from the marketing layout; the
+   line starts at the hero loop and crosses the page above each `cross` section. */
 export default function Home() {
   return (
-    <div className="relative min-h-screen bg-bg text-ink-2">
-      <SmoothScroll />
-      <Loader />
-      <ScrollProgressBar />
-      <SiteHeader />
-      <main>
-        <Hero />
-        <FeatureCards />
-        <Statement />
-        <Steps />
-        <MemoryTimeline />
-        <FAQ />
-        <FinalCTA />
-      </main>
-      <SiteFooter />
-    </div>
+    <>
+      <HomeHero />
+      <NotesSection />
+      <RoomSection />
+      <AgentsSection />
+      <HowSection />
+      <WeekSection />
+      <FaqSection />
+      <CloseCTA />
+    </>
   );
 }

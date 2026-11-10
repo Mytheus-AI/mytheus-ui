@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Trash } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { Toggle } from "@/components/settings/Toggle";
+import { dangerSolid, focusPill } from "@/components/settings/primitives";
 import { removeFeatureFlag, toggleFeatureFlag } from "@/app/actions/ops";
 
 /* One feature flag's controls: the on/off switch (optimistic, rolled back if the server refuses)
@@ -52,13 +53,21 @@ export function FlagControls({ id, flagKey, enabled }: { id: string; flagKey: st
   return (
     <div className="flex flex-wrap items-center justify-end gap-3">
       {error ? (
-        <span role="alert" className="text-[12.5px] text-priority-high">
+        <span role="alert" className="text-[13.5px] font-medium text-priority-high">
           {error}
         </span>
       ) : null}
       <Toggle checked={on} onChange={toggle} label={`${flagKey} enabled`} />
-      <Button variant={armed ? "danger" : "ghost"} size="sm" onClick={remove} disabled={pending} aria-label={armed ? undefined : `Delete ${flagKey}`}>
-        {armed ? "Confirm delete" : <Trash size={16} aria-hidden />}
+      <Button
+        variant={armed ? "danger" : "ghost"}
+        size="sm"
+        onClick={remove}
+        disabled={pending}
+        aria-label={armed ? undefined : `Delete ${flagKey}`}
+        title={armed ? undefined : `Delete ${flagKey}`}
+        className={armed ? dangerSolid : `w-10 !px-0 hover:!text-priority-high ${focusPill}`}
+      >
+        {armed ? "Confirm delete" : <Trash size={17} aria-hidden />}
       </Button>
     </div>
   );

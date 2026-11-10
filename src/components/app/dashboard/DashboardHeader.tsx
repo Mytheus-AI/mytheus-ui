@@ -15,7 +15,14 @@ function Figure({
   return (
     <div className={`min-w-0 px-3 first:pl-0 last:pr-0 min-[721px]:px-[30px] ${className}`}>
       <span className="display block text-[34px] leading-none text-ink min-[721px]:text-[40px]">
-        {value}
+        {value === "-" ? (
+          <>
+            <span aria-hidden>-</span>
+            <span className="sr-only">Not available</span>
+          </>
+        ) : (
+          value
+        )}
       </span>
       <span className="mt-1.5 block max-w-none text-[12.5px] font-semibold leading-snug text-ink-3 min-[721px]:max-w-[13ch]">
         {label}
@@ -82,12 +89,12 @@ export function DashboardHeader({
   }
 
   return (
-    <header className="flex flex-wrap items-end justify-between gap-x-12 gap-y-5 pb-[22px] pt-2 min-[721px]:pb-7">
+    <header className="flex flex-wrap items-end justify-between gap-x-12 gap-y-5 pb-6 pt-2 min-[721px]:pb-7">
       <div className="min-w-0 flex-[1_1_380px]">
-        <h1 className="display text-[clamp(30px,3.4vw,40px)] text-ink-display">
+        <h1 className="display text-[clamp(28px,3vw,34px)] text-ink-display">
           <Greeting initialIso={nowIso} />, {firstName}
         </h1>
-        <p className="mt-2 max-w-[54ch] text-[15.5px] text-ink-3">{lede}</p>
+        <p className="mt-2 max-w-[56ch] text-[15px] leading-normal text-ink-3">{lede}</p>
       </div>
       <div
         role="group"

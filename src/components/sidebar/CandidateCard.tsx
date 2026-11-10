@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { CheckSquare, Scales } from "@phosphor-icons/react";
 import { confirmCandidate, dismissCandidate, editCandidate } from "@/app/actions/candidates";
 import type { Candidate } from "@/lib/realtime/candidates";
 import { useRoomName } from "@/lib/realtime/room-names";
 
-/* One decision or action the agent heard, waiting for a person. Confirm is the only button that
+/* One decision or action the agent heard, waiting for a person, with an amber "Not saved yet" chip
+   until someone confirms it. Confirm is the only button that
    commits anything: core-api stores it and tells the rest of the system (Plan 7-9 section 3.8,
    ADR-0031). Edit rewrites the draft first. Dismiss throws it away and tells no one. */
 
@@ -75,11 +77,14 @@ export function CandidateCard({
     ? candidate.rationale || undefined
     : [owner, dueLabel(candidate.dueDate)].filter(Boolean).join(", ") || undefined;
   const label = isDecision ? "Decision detected" : "Action item";
+  const KindIcon = isDecision ? Scales : CheckSquare;
 
   return (
     <div className={`nfy-card is-${isDecision ? "decision" : "action"} is-p3${leaving ? " is-leaving" : ""}`}>
       <div className="nfy-kind">
-        {label} <span className="nfy-meta">not saved yet</span>
+        <KindIcon size={16} weight="bold" aria-hidden />
+        {label}
+        <span className="nfy-meta is-medium">Not saved yet</span>
       </div>
 
       {editing ? (

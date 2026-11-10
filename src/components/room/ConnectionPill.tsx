@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { ArrowClockwise, WarningCircle } from "@phosphor-icons/react";
 
-/* How the call is connecting, as one small pill centred over the stage instead of a full-width
-   card. A connect that finishes quickly shows nothing at all: the pill waits SHOW_AFTER_MS
+/* How the call is connecting, as one small light pill centred under the top bar instead of a
+   full-width card. A connect that finishes quickly shows nothing at all: the pill waits SHOW_AFTER_MS
    before appearing, so the usual sub-second join is not a flash of "Connecting". Reconnecting
    shows at once (the call was working and now is not). An error stays until you act on it. */
 
@@ -33,14 +33,14 @@ export function ConnectionPill({
   if (status === "error") {
     return (
       <div role="alert" className="cx-conn is-error">
-        <WarningCircle size={16} weight="fill" aria-hidden />
+        <WarningCircle size={18} weight="fill" aria-hidden />
         <span>{message}</span>
         <button
           type="button"
           className="cx-conn-retry tap"
           onClick={() => window.location.reload()}
         >
-          <ArrowClockwise size={13} weight="bold" aria-hidden />
+          <ArrowClockwise size={14} weight="bold" aria-hidden />
           Try again
         </button>
       </div>

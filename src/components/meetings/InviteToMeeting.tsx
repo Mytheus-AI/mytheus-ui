@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, X } from "@phosphor-icons/react";
 import { inviteToMeeting } from "@/app/actions/meetings";
 import { MemberPicker, type PickableMember } from "./MemberPicker";
+import { useDialogKeys } from "./useDialogKeys";
 
 /* "Invite people" on a meeting's page: pick workspace members not yet in it. The server only
    lets someone already in the meeting invite, and keeps invitees inside the workspace. */
@@ -32,16 +33,9 @@ export function InviteToMeeting({
     openerRef.current?.focus();
   };
 
-  useEffect(() => {
-    if (!open) return;
-    dialogRef.current?.querySelector<HTMLElement>("input, button[role='checkbox'], a")?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  useDialogKeys(dialogRef, open, close, () =>
+    dialogRef.current?.querySelector<HTMLElement>("input, button[role='checkbox'], a")?.focus(),
+  );
 
   const send = async () => {
     if (selected.length === 0) return setError("Pick at least one person.");
@@ -59,14 +53,14 @@ export function InviteToMeeting({
       <button
         ref={openerRef}
         type="button"
-        className="btn-ghost-sm tap mh-invite-open"
+        className="mx-btn is-outline tap"
         onClick={() => {
           setSelected([]);
           setError(null);
           setOpen(true);
         }}
       >
-        <UserPlus size={14} weight="bold" aria-hidden="true" />
+        <UserPlus size={18} weight="bold" aria-hidden="true" />
         Invite people
       </button>
 
@@ -76,8 +70,8 @@ export function InviteToMeeting({
           <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={`${ids}-h`} className="mh-new">
             <div className="mh-new-head">
               <h2 id={`${ids}-h`}>Invite people</h2>
-              <button type="button" className="mh-new-x tap" aria-label="Close" onClick={close}>
-                <X size={16} weight="bold" aria-hidden="true" />
+              <button type="button" className="cx-icon-btn sm tap" aria-label="Close" onClick={close}>
+                <X size={18} weight="bold" aria-hidden="true" />
               </button>
             </div>
             <div className="mh-new-body">
@@ -92,19 +86,19 @@ export function InviteToMeeting({
                   {error}
                 </p>
               )}
-              <div className="mh-new-acts">
-                <button type="button" className="btn-ghost-sm tap" onClick={close} disabled={busy}>
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn-accent-sm tap"
-                  onClick={send}
-                  disabled={busy || !members || members.length === 0}
-                >
-                  {busy ? "Inviting…" : selected.length > 1 ? `Invite ${selected.length} people` : "Invite"}
-                </button>
-              </div>
+            </div>
+            <div className="mh-new-acts">
+              <button type="button" className="mx-btn is-outline tap" onClick={close} disabled={busy}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="mx-btn tap"
+                onClick={send}
+                disabled={busy || !members || members.length === 0}
+              >
+                {busy ? "Inviting..." : selected.length > 1 ? `Invite ${selected.length} people` : "Invite"}
+              </button>
             </div>
           </div>
         </div>
