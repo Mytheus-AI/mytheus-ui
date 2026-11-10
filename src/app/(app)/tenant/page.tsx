@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, DownloadSimple, PlugsConnected, CreditCard, Trash } from "@phosphor-icons/react/dist/ssr";
+import { LinkButton } from "@/components/ui/Button";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
@@ -11,14 +12,14 @@ import { resolveOrgContext } from "@/lib/api/org-context";
 import { listMembers, type MemberTier } from "@/lib/api/members";
 import { WorkspaceInvite } from "@/components/admin/WorkspaceInvite";
 import { fetchUsage } from "@/lib/api/usage";
+import { loadIntegrations } from "@/lib/api/integrations";
 
 export const metadata: Metadata = { title: "Workspace admin | Mytheus" };
 
 /* Tenant admin console, overview: members (`GET /users` plus pending Clerk invitations), the
-   plan (`GET /usage` on `billing-metering-service`), integrations, and the data-rights requests
-   (export, erasure). Integrations and the data requests have no service behind them yet
-   (`integration-service` and `admin-ops-service` serve no routes), so they say "not
-   available yet" and their buttons stay off rather than pretend to work. */
+   plan (`GET /usage` on `billing-metering-service`), integrations (`GET /integrations` on
+   `integration-service`), and the data-rights requests. Export lives on its own tab over
+   `/admin/tenant/data-export`; erasure has no console route yet, so its button stays off. */
 
 const tierTone: Record<MemberTier, "default" | "medium" | "low"> = {
   owner: "medium",
@@ -62,12 +63,17 @@ async function pendingInvites(): Promise<Row[]> {
 }
 
 export default async function TenantAdminPage() {
-  const [ctx, real, invited, usage] = await Promise.all([
+  const [ctx, real, invited, usage, integrations] = await Promise.all([
     resolveOrgContext(),
     listMembers(),
     pendingInvites(),
     fetchUsage(),
+    loadIntegrations(),
   ]);
+  const connected =
+    integrations.kind === "live"
+      ? Array.from(integrations.items.values()).filter((i) => i.status === "active" || i.status === "degraded").length
+      : null;
   const plan = usage.kind === "live" ? usage.usage.plan : null;
   const active: Row[] = (real ?? []).map((m) => ({
     key: m.id,
@@ -92,7 +98,7 @@ export default async function TenantAdminPage() {
         <StatCard label="Active members" value={real ? active.length : "-"} />
         <StatCard label="Pending invites" value={invited.length} />
         <StatCard label="Plan" value={plan?.name ?? "-"} />
-        <StatCard label="Integrations" value="None yet" />
+        <StatCard label="Integrations" value={connected ?? "-"} />
       </div>
 
       <section aria-labelledby="members-heading" className="overflow-hidden rounded-card border border-line bg-surface shadow-sm">
@@ -192,7 +198,11 @@ export default async function TenantAdminPage() {
           <span className="min-w-0 flex-1">
             <span className="block text-[15px] font-semibold text-ink">Integrations</span>
             <span className="mt-0.5 block text-[13.5px] text-ink-3">
-              Calendar, Slack and project tracker connections are not available yet
+              {connected === null
+                ? "Calendar, Slack and Jira connections could not be loaded just now"
+                : connected === 0
+                  ? "Nothing connected yet. Connect Calendar, Slack and Jira"
+                  : `${connected} connected. Manage Calendar, Slack and Jira`}
             </span>
           </span>
           <ArrowRight size={16} className="mt-1 shrink-0 text-ink-3 transition-transform group-hover:translate-x-0.5" aria-hidden />
@@ -204,10 +214,10 @@ export default async function TenantAdminPage() {
           label="Export workspace data"
           help="Meetings, transcripts, confirmed decisions and action items, as a downloadable archive."
         >
-          <Button variant="outline" size="sm" disabled>
+          <LinkButton href="/tenant/data" variant="outline" size="sm">
             <DownloadSimple size={16} aria-hidden />
-            Request export
-          </Button>
+            Export data
+          </LinkButton>
         </InlineRow>
         <InlineRow
           label="Erase a person's data"
@@ -220,7 +230,7 @@ export default async function TenantAdminPage() {
         </InlineRow>
       </SectionCard>
 
-      <Note>Export and erasure requests are not available yet. The admin service that runs and audits them is still being built, so these buttons stay off rather than pretend to work.</Note>
+      <Note>Erasing one person&apos;s data is not available from this console yet, so that button stays off rather than pretend to work.</Note>
     </div>
   );
 }

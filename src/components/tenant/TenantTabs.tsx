@@ -2,15 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChartBar, Handshake, UsersThree } from "@phosphor-icons/react";
+import { Buildings, ChartBar, DownloadSimple, Handshake, Lifebuoy, SlidersHorizontal, UsersThree } from "@phosphor-icons/react";
 
-/* Section switcher for the tenant admin console. A horizontal pill row: the console has three
-   sections, which does not earn a side rail. */
+/* Section switcher for the tenant admin console. A horizontal pill row that scrolls on narrow
+   screens. */
 
 const TABS = [
-  { href: "/tenant", label: "Overview", icon: UsersThree },
+  { href: "/tenant", label: "Overview", icon: Buildings },
+  { href: "/tenant/members", label: "Members", icon: UsersThree },
+  { href: "/tenant/settings", label: "Settings", icon: SlidersHorizontal },
   { href: "/tenant/usage", label: "Usage and budget", icon: ChartBar },
   { href: "/tenant/agents", label: "Agent collaboration", icon: Handshake },
+  { href: "/tenant/support", label: "Support access", icon: Lifebuoy },
+  { href: "/tenant/data", label: "Data export", icon: DownloadSimple },
 ] as const;
 
 export function TenantTabs() {
