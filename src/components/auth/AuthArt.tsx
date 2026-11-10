@@ -10,7 +10,8 @@ import { defaultDoodleSeed } from "@/lib/doodle";
 /*    sign-in    the week's meetings as cards on the line (doodle      */
 /*               faces of who was there, what was kept), ending on     */
 /*               today's card and a solid bead                         */
-/*    sign-up    the line starting fresh from one solid bead           */
+/*    sign-up    the line starting at your first meeting's card and    */
+/*               running down through faint cards still to come        */
 /*    workspace  the line branching from you to your teammates         */
 /*  All decorative: the panel's headline carries the meaning.          */
 /*  The SVG and its HTML overlays share one aspect ratio, so overlay   */
@@ -31,7 +32,7 @@ export function AuthArt({ kind, label }: { kind: AuthArtKind; label?: string }) 
       <svg viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 h-full w-full overflow-visible">
         {kind === "sign-in" ? <MemoryLine /> : kind === "sign-up" ? <FirstMeeting /> : <Branches label={label} />}
       </svg>
-      {kind === "workspace" ? <Teammates /> : kind === "sign-in" ? <WeekCards /> : null}
+      {kind === "workspace" ? <Teammates /> : kind === "sign-in" ? <WeekCards /> : <FirstCards />}
     </div>
   );
 }
@@ -53,16 +54,26 @@ const TODAY = { y: 412, dl: 2.15 };
 const RAIL_X = 34;
 const CARD_X = 68;
 
-function MemoryLine() {
+/** The thread down the rail: through every bead at RAIL_X, swinging out to the left between
+    them. `leadIn` brings it in from above the art (sign-in); without it the line starts at the
+    first bead (sign-up). */
+function railPath(ys: number[], leadIn: boolean) {
   const x = RAIL_X;
   const bend = 12;
-  const ys = [...WEEK.map((m) => m.y), TODAY.y];
   const seg = (from: number, to: number) => {
     const mid = (from + to) / 2;
     return `C ${x} ${from + 28} ${bend} ${from + 28} ${bend} ${mid} C ${bend} ${to - 28} ${x} ${to - 28} ${x} ${to}`;
   };
-  let d = `M ${bend} -16 C ${bend} 24 ${x} 24 ${x} ${ys[0]}`;
+  let d = leadIn ? `M ${bend} -16 C ${bend} 24 ${x} 24 ${x} ${ys[0]}` : `M ${x} ${ys[0]}`;
   for (let i = 1; i < ys.length; i++) d += ` ${seg(ys[i - 1], ys[i])}`;
+  return d;
+}
+
+const place = (y: number) => ({ left: `${(CARD_X / W) * 100}%`, top: `${(y / H) * 100}%` });
+
+function MemoryLine() {
+  const x = RAIL_X;
+  const d = railPath([...WEEK.map((m) => m.y), TODAY.y], true);
   return (
     <>
       <path className="art-line auth-draw" pathLength={1} style={timing(2.3, 0.1)} d={d} />
@@ -74,24 +85,32 @@ function MemoryLine() {
   );
 }
 
-function Faces({ people, size = 34 }: { people: string[]; size?: number }) {
+/** Overlapping doodle faces, then `seats` empty dashed chairs for people not there yet. */
+function Faces({ people, size = 34, seats = 0 }: { people: string[]; size?: number; seats?: number }) {
+  const overlap = -size / 3.2;
   return (
     <span className="flex">
       {people.map((p, i) => (
         <span
           key={p}
           className="block overflow-hidden rounded-full bg-surface shadow-warm-1 ring-2 ring-surface"
-          style={{ width: size, height: size, marginLeft: i ? -size / 3.2 : 0, zIndex: people.length - i }}
+          style={{ width: size, height: size, marginLeft: i ? overlap : 0, zIndex: people.length - i + seats }}
         >
           <Doodle seed={defaultDoodleSeed(p)} className="block h-full w-full" />
         </span>
+      ))}
+      {Array.from({ length: seats }, (_, i) => (
+        <span
+          key={`seat-${i}`}
+          className="block rounded-full border-2 border-dashed border-line-2 bg-surface-2 ring-2 ring-surface"
+          style={{ width: size, height: size, marginLeft: people.length || i ? overlap : 0, zIndex: seats - i }}
+        />
       ))}
     </span>
   );
 }
 
 function WeekCards() {
-  const place = (y: number) => ({ left: `${(CARD_X / W) * 100}%`, top: `${(y / H) * 100}%` });
   return (
     <>
       {WEEK.map((m) => (
@@ -117,10 +136,9 @@ function WeekCards() {
         style={{ ...place(TODAY.y), ...delay(TODAY.dl) }}
       >
         <div className="flex items-baseline justify-between gap-3">
-          <span className="text-[13px] font-semibold text-signal-ink">Today</span>
-          <span className="text-[13px] text-ink-3">10:30</span>
+          <p className="font-display text-[20px] font-medium leading-tight tracking-[-0.01em] text-ink">Launch review</p>
+          <span className="text-[13px] font-semibold text-signal-ink">Today, 10:30</span>
         </div>
-        <p className="mt-0.5 font-display text-[20px] font-medium leading-tight tracking-[-0.01em] text-ink">Launch review</p>
         <div className="mt-2 flex items-center justify-between gap-3">
           <span className="font-display text-[15px] italic text-ink-3">picks up with 3 open questions</span>
           <Faces people={["Maya", "Raj", "Sarah", "Diego"]} size={36} />
@@ -132,34 +150,65 @@ function WeekCards() {
 
 /* ---------------- sign-up: a fresh line ---------------- */
 
-const NEXT = [
-  { x: 220, y: 262, note: "the next one", dl: 0.9, below: true },
-  { x: 330, y: 202, note: "the one after", dl: 1.35, below: true },
-  { x: 430, y: 122, note: "and every one after", dl: 1.8, below: false },
+/* The mirror of sign-in. The line starts at a solid bead on your first meeting's card (you, and
+   empty seats for the team you will invite), then runs down through dashed cards for the
+   meetings still to come, each fainter than the last. */
+
+const FIRST = { y: 66, dl: 0.1 };
+const AHEAD = [
+  { y: 196, title: "The next one", note: "kept for you", seats: 3, fade: 0.9, dl: 0.85 },
+  { y: 306, title: "The one after", note: "remembered too", seats: 3, fade: 0.65, dl: 1.3 },
+  { y: 416, title: "And every one after", note: "never lost", seats: 2, fade: 0.4, dl: 1.75 },
 ];
 
 function FirstMeeting() {
-  const d = "M 86 342 C 140 342 166 262 220 262 C 274 262 286 202 330 202 C 376 202 390 122 430 122";
+  const x = RAIL_X;
+  const d = railPath([FIRST.y, ...AHEAD.map((a) => a.y)], false);
   return (
     <>
       <path className="art-line auth-draw" pathLength={1} style={timing(1.9, 0.5)} d={d} />
-      {NEXT.map((b) => (
-        <g key={b.note} className="auth-appear" style={delay(b.dl)}>
-          <circle className="art-bead-ghost" cx={b.x} cy={b.y} r={6.5} />
-          <text className="art-note" x={b.below ? b.x : b.x + 16} y={b.below ? b.y + 34 : b.y - 22} textAnchor={b.below ? "middle" : "end"}>
-            {b.note}
-          </text>
-        </g>
+      {AHEAD.map((a) => (
+        <circle key={a.title} className="art-bead-ghost auth-appear" style={delay(a.dl)} cx={x} cy={a.y} r={6.5} />
       ))}
-      <g className="auth-appear" style={delay(0.1)}>
-        <circle className="art-bead-now" cx={86} cy={342} r={11} />
-        <text className="art-title" x={62} y={392}>
-          Your first meeting
-        </text>
-        <text className="art-note" x={62} y={418}>
-          where the line starts
-        </text>
-      </g>
+      <circle className="art-bead-now auth-appear" style={delay(FIRST.dl)} cx={x} cy={FIRST.y} r={10} />
+    </>
+  );
+}
+
+function FirstCards() {
+  return (
+    <>
+      <div
+        className="auth-appear absolute right-0 -translate-y-1/2 rounded-card bg-surface px-4 pb-3.5 pt-3 shadow-warm-2 ring-1 ring-signal-line"
+        style={{ ...place(FIRST.y), ...delay(FIRST.dl) }}
+      >
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-[13px] font-semibold text-signal-ink">Your first meeting</span>
+          <span className="text-[13px] text-ink-3">Today</span>
+        </div>
+        <p className="mt-0.5 font-display text-[20px] font-medium leading-tight tracking-[-0.01em] text-ink">Kickoff</p>
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <span className="font-display text-[15px] italic text-ink-3">where the line starts</span>
+          <Faces people={["You"]} size={36} seats={2} />
+        </div>
+      </div>
+      {AHEAD.map((a) => (
+        <div key={a.title} className="auth-appear absolute right-0 -translate-y-1/2" style={{ ...place(a.y), ...delay(a.dl) }}>
+          <div
+            className="rounded-card border-[1.5px] border-dashed border-line-2 bg-surface-2 px-4 py-2.5"
+            style={{ opacity: a.fade }}
+          >
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="font-display text-[17px] font-medium leading-tight tracking-[-0.01em] text-ink-2">{a.title}</p>
+              <span className="text-[13px] text-ink-3">Soon</span>
+            </div>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <span className="font-display text-[15px] italic text-ink-3">{a.note}</span>
+              <Faces people={[]} seats={a.seats} size={28} />
+            </div>
+          </div>
+        </div>
+      ))}
     </>
   );
 }
