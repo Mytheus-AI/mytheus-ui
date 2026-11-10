@@ -2,9 +2,10 @@
 
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import { NotePencil, Plus, Sparkle } from "@phosphor-icons/react";
+import { NotePencil, Plus, Sparkle, Target } from "@phosphor-icons/react";
 import { replaceAgenda, setAgendaItemStatus } from "@/app/actions/agenda";
 import { AGENDA_STATUSES, type AgendaItem, type AgendaStatus } from "@/lib/api/meeting-agenda-types";
+import type { OrgGoal } from "@/lib/api/meeting-brain-types";
 import {
   agendaProgress,
   beginHostStatus,
@@ -23,7 +24,9 @@ import { Chip } from "./Chip";
 
    The host or the creator may change it: Edit agenda replaces it (`PUT .../agenda`, items keep
    their status), and each item's status can be set (`PATCH .../agenda/{id}`), applied at once and
-   put back if the server refuses. After the meeting has ended the agenda is a read-only record. */
+   put back if the server refuses. After the meeting has ended the agenda is a read-only record.
+
+   ADR-0039 B3: an item can serve a company goal, shown under it and chosen in the editor. */
 
 let opSeq = 0;
 
@@ -34,6 +37,7 @@ export function MeetingAgendaCard({
   canEdit,
   ended,
   meetingMinutes,
+  goals = [],
 }: {
   meetingId: string;
   items: AgendaItem[];
@@ -43,7 +47,10 @@ export function MeetingAgendaCard({
   canEdit: boolean;
   ended: boolean;
   meetingMinutes: number;
+  /** Active company goals, for the goal picker and to name an item's goal. */
+  goals?: OrgGoal[];
 }) {
+  const goalOf = new Map(goals.map((g) => [g.id, g.title]));
   const router = useRouter();
   const uid = useId();
   const [state, setState] = useState<AgendaState>(() => initialAgendaState(items));
@@ -142,6 +149,7 @@ export function MeetingAgendaCard({
             errors={rowErrors}
             meetingMinutes={meetingMinutes}
             disabled={saving}
+            goals={goals}
           />
           {message ? (
             <p className="ag-msg" role="alert">
@@ -188,6 +196,13 @@ export function MeetingAgendaCard({
                   <div className="ag-body">
                     <p className="ag-title">{item.title}</p>
                     {meta ? <p className="ag-meta">{meta}</p> : null}
+                    {item.goal_id && goalOf.has(item.goal_id) ? (
+                      <p className="ag-goal">
+                        <Target size={13} aria-hidden="true" />
+                        <span className="sr-only">Serves the goal </span>
+                        {goalOf.get(item.goal_id)}
+                      </p>
+                    ) : null}
                     {item.agent_note ? (
                       <p className="ag-note">
                         <Sparkle size={13} aria-hidden="true" />
