@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowBendDownRight, BookmarkSimple, CheckSquare, Scales } from "@phosphor-icons/react/ssr";
+import { ArrowBendDownRight, BookmarkSimple, CheckSquare, ListChecks, Question, Scales } from "@phosphor-icons/react/ssr";
 import { LatestStatus } from "@/components/briefs/LatestStatus";
 import type { CarryForward } from "@/lib/api/meeting-agenda-types";
 
@@ -9,7 +9,10 @@ import type { CarryForward } from "@/lib/api/meeting-agenda-types";
    says so; an empty one says nothing was left open. A server component: no interaction.
 
    ADR-0039 B7: each open action shows its owner's latest status, asked for an hour before this
-   meeting, or says none came yet. */
+   meeting, or says none came yet.
+
+   Minutes for everyone: the open items and unanswered questions of the earlier meeting's shared
+   minutes, under "From the minutes". */
 
 const dueFormatter = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
@@ -29,7 +32,13 @@ export function CarryForwardCard({
   data: CarryForward | null;
   nameOf: (id: string) => string;
 }) {
-  const empty = data && data.decisions.length === 0 && data.open_actions.length === 0 && data.saved_questions.length === 0;
+  const fromMinutes = (data?.open_items?.length ?? 0) + (data?.unanswered_questions?.length ?? 0);
+  const empty =
+    data &&
+    data.decisions.length === 0 &&
+    data.open_actions.length === 0 &&
+    data.saved_questions.length === 0 &&
+    fromMinutes === 0;
   return (
     <section className="mx-card mx-card-pad cf-card" aria-labelledby="cf-h">
       <div className="mx-card-head">
@@ -88,6 +97,45 @@ export function CarryForwardCard({
                     </li>
                   );
                 })}
+              </ul>
+            </div>
+          ) : null}
+          {data.open_items && data.open_items.length > 0 ? (
+            <div>
+              <h3 className="cf-sub">
+                <ListChecks size={15} aria-hidden="true" />
+                Open in the minutes
+              </h3>
+              <ul className="cf-list">
+                {data.open_items.map((o, i) => {
+                  const owner = o.owner_name ?? (o.owner_user_id ? nameOf(o.owner_user_id) : null);
+                  const meta = [owner, o.due ? `by ${o.due}` : null].filter(Boolean).join(", ");
+                  return (
+                    <li key={`oi${i}`} className="cf-action">
+                      <span className="cf-action-head">
+                        {o.text}
+                        {meta ? <small>{meta}</small> : null}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ) : null}
+          {data.unanswered_questions && data.unanswered_questions.length > 0 ? (
+            <div>
+              <h3 className="cf-sub">
+                <Question size={15} aria-hidden="true" />
+                Nobody answered
+              </h3>
+              <ul className="cf-list">
+                {data.unanswered_questions.map((q, i) => (
+                  <li key={`uq${i}`}>
+                    <ArrowBendDownRight size={14} aria-hidden="true" className="cf-q-ico" />
+                    {q.text}
+                    {q.asked_by_name ? <small className="cf-asked"> asked by {q.asked_by_name}</small> : null}
+                  </li>
+                ))}
               </ul>
             </div>
           ) : null}

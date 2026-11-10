@@ -40,6 +40,12 @@ export async function fetchCarryForward(
       decisions: Array.isArray(res.data.decisions) ? res.data.decisions : [],
       open_actions: Array.isArray(res.data.open_actions) ? res.data.open_actions : [],
       saved_questions: Array.isArray(res.data.saved_questions) ? res.data.saved_questions : [],
+      open_items: Array.isArray(res.data.open_items)
+        ? res.data.open_items.filter((o) => o && typeof o.text === "string" && o.text.trim())
+        : [],
+      unanswered_questions: Array.isArray(res.data.unanswered_questions)
+        ? res.data.unanswered_questions.filter((q) => q && typeof q.text === "string" && q.text.trim())
+        : [],
     },
   };
 }
