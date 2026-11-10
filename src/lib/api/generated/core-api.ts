@@ -334,6 +334,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/erasures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apply Erasure
+         * @description authz: admin. Erase core-api's data for one person or one meeting (module docstring).
+         */
+        post: operations["apply_erasure"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/meeting-templates": {
         parameters: {
             query?: never;
@@ -1253,6 +1273,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/internal/agent-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Agent Policy */
+        get: operations["agent_policy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/internal/decisions/{decision_id}/record": {
         parameters: {
             query?: never;
@@ -1318,6 +1355,23 @@ export interface paths {
          * @description workflow-service, after the meeting ended: send the follow-up (or `disabled`).
          */
         post: operations["dispatch_follow_up"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/meetings/{meeting_id}/index-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Index Policy */
+        get: operations["index_policy"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1706,6 +1760,13 @@ export interface components {
             /** Items */
             items: components["schemas"]["AgendaItemPut"][];
         };
+        /** AgentPolicy */
+        AgentPolicy: {
+            /** Agent Confidence Overrides */
+            agent_confidence_overrides?: {
+                [key: string]: components["schemas"]["ConfidenceBand"];
+            };
+        };
         /**
          * AttendanceUpdate
          * @description `PUT /meetings/{id}/attendance` (ADR-0039 B5): the caller's own attendance. A PUT, so an
@@ -1958,6 +2019,13 @@ export interface components {
              * @enum {string}
              */
             status: "open" | "done" | "dismissed";
+        };
+        /** ConfidenceBand */
+        ConfidenceBand: {
+            /** Silent */
+            silent: number;
+            /** Surface */
+            surface: number;
         };
         /** ContextFill */
         ContextFill: {
@@ -2296,6 +2364,59 @@ export interface components {
              */
             user_id: string;
         };
+        /** ErasureApplied */
+        ErasureApplied: {
+            /**
+             * Anonymized
+             * @description Records kept with the person removed.
+             */
+            anonymized: {
+                [key: string]: number;
+            };
+            /**
+             * Erased
+             * @description Rows deleted, by kind of data.
+             */
+            erased: {
+                [key: string]: number;
+            };
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "person" | "meeting";
+            /**
+             * Label
+             * @description What the confirmation matched: an email or a meeting title.
+             */
+            label: string;
+            /** Revoked Share Links */
+            revoked_share_links: number;
+            /**
+             * Target Id
+             * Format: uuid
+             */
+            target_id: string;
+        };
+        /** ErasureRequest */
+        ErasureRequest: {
+            /**
+             * Confirm
+             * @description Typed confirmation: the person's email, or the meeting's title (`Untitled meeting` when it has none). Case and outer spaces are ignored.
+             */
+            confirm: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "person" | "meeting";
+            /**
+             * Target Id
+             * Format: uuid
+             * @description The person's `users.id` or the meeting's id.
+             */
+            target_id: string;
+        };
         /**
          * @description The frozen program-wide error enum. Clients branch on this and never on `detail`, which is human-readable and free to change. Values are added, never removed or repurposed. Emitted verbatim from `libs.shared.errors.ErrorCode`, so this list cannot drift from the code; the no-removal half is asserted by `test_no_published_error_code_is_ever_removed`, because `oasdiff` does not treat narrowing a response enum as a breaking change.
          * @enum {string}
@@ -2439,6 +2560,11 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** IndexPolicy */
+        IndexPolicy: {
+            /** Confidential */
+            confidential: boolean;
         };
         /** InternalAgenda */
         InternalAgenda: {
@@ -4792,6 +4918,78 @@ export interface operations {
                 };
             };
             /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    apply_erasure: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ErasureRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErasureApplied"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description No such person or meeting in this workspace. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The meeting is live. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The typed confirmation does not match, or it is your own data. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7284,6 +7482,44 @@ export interface operations {
             };
         };
     };
+    agent_policy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentPolicy"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     decision_record_internal_decisions__decision_id__record_get: {
         parameters: {
             query: {
@@ -7455,6 +7691,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FollowUpDispatch"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    index_policy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndexPolicy"];
                 };
             };
             /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */

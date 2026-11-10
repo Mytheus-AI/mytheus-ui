@@ -208,6 +208,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/tenant/erasures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Erasures
+         * @description authz: admin. Completed erasures, newest first. A person's label is their email read now
+         *     from `users` (RLS-scoped); null when they are gone.
+         */
+        get: operations["list_erasures"];
+        put?: never;
+        /**
+         * Create Erasure
+         * @description authz: admin. Erase one person's or one meeting's data (see the module docstring).
+         *     core-api's 404 / 409 (meeting live) / 422 (confirmation mismatch, own data) pass through.
+         */
+        post: operations["create_erasure"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/tenant/members": {
         parameters: {
             query?: never;
@@ -457,6 +483,90 @@ export interface components {
             count: number;
             /** Topic */
             topic: string;
+        };
+        /**
+         * Erasure
+         * @description One completed erasure, as recorded in `audit_logs` (`data_erasure.completed`).
+         */
+        Erasure: {
+            /** Anonymized */
+            anonymized?: {
+                [key: string]: number;
+            };
+            /** Erased */
+            erased?: {
+                [key: string]: number;
+            };
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "person" | "meeting";
+            /**
+             * Label
+             * @description The person's email or the meeting's title; null when no longer readable.
+             */
+            label?: string | null;
+            /**
+             * Requested At
+             * Format: date-time
+             */
+            requested_at: string;
+            /** Requested By */
+            requested_by?: string | null;
+            /**
+             * Revoked Share Links
+             * @default 0
+             */
+            revoked_share_links: number;
+            /**
+             * Revoked Tokens
+             * @default 0
+             */
+            revoked_tokens: number;
+            /**
+             * Status
+             * @default completed
+             * @constant
+             */
+            status: "completed";
+            /**
+             * Target Id
+             * Format: uuid
+             */
+            target_id: string;
+        };
+        /**
+         * ErasureCreate
+         * @description Erase one person's, or one meeting's, data in this workspace.
+         */
+        ErasureCreate: {
+            /**
+             * Confirm
+             * @description Typed confirmation: the person's email, or the meeting's title (`Untitled meeting` when it has none). Case and outer spaces are ignored.
+             */
+            confirm: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "person" | "meeting";
+            /**
+             * Target Id
+             * Format: uuid
+             * @description The person's `users.id`, or the meeting's id.
+             */
+            target_id: string;
+        };
+        /** ErasureList */
+        ErasureList: {
+            /** Items */
+            items: components["schemas"]["Erasure"][];
         };
         /**
          * @description The frozen program-wide error enum. Clients branch on this and never on `detail`, which is human-readable and free to change. Values are added, never removed or repurposed. Emitted verbatim from `libs.shared.errors.ErrorCode`, so this list cannot drift from the code; the no-removal half is asserted by `test_no_published_error_code_is_ever_removed`, because `oasdiff` does not treat narrowing a response enum as a breaking change.
@@ -1334,6 +1444,98 @@ export interface operations {
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_erasures: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErasureList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    create_erasure: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ErasureCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erasure"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
