@@ -35,9 +35,9 @@ export async function setAgentCollaboration(level: CollaborationLevel): Promise<
     }
     if (plan.template) await adoptAgentAuthzTemplate(plan.template);
   } catch (err) {
-    revalidatePath("/tenant/agents");
+    revalidatePath("/workspace/agents");
     return failure(err);
   }
-  revalidatePath("/tenant/agents");
+  revalidatePath("/workspace/agents");
   return { ok: true };
 }

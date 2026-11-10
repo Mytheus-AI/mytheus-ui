@@ -4,8 +4,12 @@ import { useId, useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "@phosphor-icons/react";
 import { saveNotificationPreferences } from "@/app/actions/notifications";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { CardFoot as FormFooter, SectionCard } from "@/components/ui/Card";
+import { Chip } from "@/components/ui/Chip";
+import { InlineRow } from "@/components/ui/Form";
+import { Note } from "@/components/ui/Note";
+import { notifyError, notifySuccess } from "@/lib/toast";
 import {
   fromView,
   toView,
@@ -13,7 +17,6 @@ import {
   type EmailMode,
   type PreferencesView,
 } from "@/lib/notification-preferences";
-import { FormFooter, InlineRow, Note, SaveStatus, SectionCard, focusPill } from "./primitives";
 import { Toggle } from "./Toggle";
 
 /* How alerts from your agent reach you: in the meeting (always), by email (on or off, urgent
@@ -30,28 +33,28 @@ export function NotificationPreferencesForm({ initial, loaded }: { initial: Chan
   const [view, setView] = useState<PreferencesView>(() => toView(initial));
   const [saved, setSaved] = useState<PreferencesView>(() => toView(initial));
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const ids = { inApp: useId(), email: useId(), mode: useId(), slack: useId() };
   const dirty = view.emailEnabled !== saved.emailEnabled || view.emailMode !== saved.emailMode;
 
-  const save = async () => {
+  const save = async (target: PreferencesView, isUndo = false) => {
+    const before = saved;
     setBusy(true);
-    setStatus(null);
-    const res = await saveNotificationPreferences(fromView(view, prefs));
+    const res = await saveNotificationPreferences(fromView(target, prefs));
     setBusy(false);
     if (!res.ok) {
-      setStatus({ tone: "error", text: res.message });
+      notifyError(res.message);
       return;
     }
     setPrefs(res.items);
     const next = toView(res.items);
     setView(next);
     setSaved(next);
-    setStatus({ tone: "ok", text: "Preferences saved." });
+    if (isUndo) notifySuccess("Preferences restored");
+    else notifySuccess("Preferences saved", { undo: () => void save(before, true) });
   };
 
   return (
-    <SectionCard title="Alerts and notifications" description="How alerts from your agent reach you.">
+    <SectionCard title="Alerts from your agent" headingLevel={3} description="How alerts from your agent reach you.">
       {loaded ? null : (
         <div className="px-4 py-4 sm:px-[22px]">
           <Note tone="warning">We could not load your saved preferences, so the defaults are shown.</Note>
@@ -62,7 +65,7 @@ export function NotificationPreferencesForm({ initial, loaded }: { initial: Chan
         labelId={ids.inApp}
         help="Conflicts, workload, blocked work and missing people appear in your agent sidebar."
       >
-        <Badge>Always on</Badge>
+        <Chip tone="ok">Always on</Chip>
       </InlineRow>
 
       <InlineRow label="Email" labelId={ids.email} help="Send alerts to your inbox as well.">
@@ -103,7 +106,7 @@ export function NotificationPreferencesForm({ initial, loaded }: { initial: Chan
                   tabIndex={on ? 0 : -1}
                   data-mode={m.value}
                   onClick={() => setView((v) => ({ ...v, emailMode: m.value }))}
-                  className={`flex items-start gap-3 rounded-ctl border px-3.5 py-3 text-left transition-[border-color,background-color,box-shadow] duration-150 ${focusPill} ${
+                  className={`flex items-start gap-3 rounded-ctl border px-3.5 py-3 text-left transition-[border-color,background-color,box-shadow] duration-150 ${
                     on
                       ? "border-signal bg-surface-2 shadow-[0_0_0_1px_var(--signal)]"
                       : "border-line-2 bg-surface hover:border-ink-4 hover:bg-surface-2"
@@ -118,8 +121,8 @@ export function NotificationPreferencesForm({ initial, loaded }: { initial: Chan
                     {on ? <span className="h-2 w-2 rounded-full bg-signal" /> : null}
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-[14.5px] font-semibold text-ink">{m.label}</span>
-                    <span className="block text-[13px] leading-snug text-ink-3">{m.help}</span>
+                    <span className="block text-[14px] font-semibold text-ink">{m.label}</span>
+                    <span className="block text-[12.5px] leading-snug text-ink-3">{m.help}</span>
                   </span>
                 </button>
               );
@@ -134,21 +137,20 @@ export function NotificationPreferencesForm({ initial, loaded }: { initial: Chan
         help={
           <Link
             href="/settings/integrations"
-            className={`inline-flex items-center gap-1 font-semibold text-signal underline-offset-4 hover:text-signal-deep hover:underline ${focusPill}`}
+            className="inline-flex items-center gap-1 font-semibold text-signal-ink underline-offset-4 hover:underline"
           >
             Connect Slack in integrations
             <ArrowRight size={12} weight="bold" aria-hidden="true" />
           </Link>
         }
       >
-        <Badge>Not connected</Badge>
+        <Chip tone="outline">Not connected</Chip>
       </InlineRow>
 
       <FormFooter>
-        <Button disabled={!dirty || busy} className={focusPill} onClick={() => void save()}>
+        <Button disabled={!dirty || busy} onClick={() => void save(view)}>
           {busy ? "Saving preferences" : "Save preferences"}
         </Button>
-        <SaveStatus tone={status?.tone}>{status?.text ?? ""}</SaveStatus>
       </FormFooter>
     </SectionCard>
   );

@@ -3,9 +3,11 @@
 import { useCallback, useState } from "react";
 import { answerStatusRequest } from "@/app/actions/status-requests";
 import { composeStatusText, type QuickPick, type StatusRequestView } from "@/lib/api/personal-types";
+import { notifySuccess } from "@/lib/toast";
 
 /* Pending requests and their drafts. Sending is optimistic: the request moves to Answered at
-   once with the text it will carry; a refusal moves it back with the draft intact and the
+   once with the text it will carry, and an "Update sent" toast confirms it (a sent answer cannot
+   be taken back, so there is no Undo); a refusal moves it back with the draft intact and the
    reason beside it. A request the server says is gone (already answered, expired) is dropped. */
 
 export interface Draft {
@@ -56,6 +58,7 @@ export function useStatusAnswers(pending: StatusRequestView[], answered: StatusR
       if (res.ok) {
         setDone((list) => list.map((r) => (r.id === req.id ? { ...r, answered_at: res.answeredAt } : r)));
         setSentCount((n) => n + 1);
+        notifySuccess("Update sent", { description: req.actionTitle });
         return;
       }
       setDone((list) => list.filter((r) => r.id !== req.id));

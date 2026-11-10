@@ -3,7 +3,11 @@ import type { CSSProperties } from "react";
 import { CheckSquare, Scales, UsersThree } from "@phosphor-icons/react/dist/ssr";
 import type { DashboardRecentMeeting } from "@/lib/api/types";
 import { LocalTime } from "./LiveTime";
-import { CardEmpty, CardHead, Chip, ErrorBlock, TextLink, cardClass } from "./parts";
+import { CardHead, cardClass } from "@/components/ui/Card";
+import { Chip } from "@/components/ui/Chip";
+import { TextLink } from "@/components/ui/TextLink";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { formatDuration, minutesBetween, plural } from "./format";
 
 /** Catch up: your ended meetings and what was kept from each (`/bff/dashboard`
@@ -17,7 +21,7 @@ import { formatDuration, minutesBetween, plural } from "./format";
 export function RecentMeetings({ meetings, failed }: { meetings: DashboardRecentMeeting[]; failed: boolean }) {
   const kept = meetings.reduce((n, m) => n + m.decision_count + m.action_count, 0);
   return (
-    <section aria-labelledby="catch-up-title" className={cardClass}>
+    <section aria-labelledby="catch-up-title" className={cardClass({ flush: true })}>
       <CardHead
         id="catch-up-title"
         title="Catch up"
@@ -25,7 +29,7 @@ export function RecentMeetings({ meetings, failed }: { meetings: DashboardRecent
         right={<TextLink href="/meetings">All meetings</TextLink>}
       />
       {failed ? (
-        <ErrorBlock title="We could not load recent meetings" text="Your meetings are safe. Try again in a moment." />
+        <ErrorState variant="inline" title="We could not load recent meetings" text="Your meetings are safe. Try again in a moment." />
       ) : meetings.length > 0 ? (
         <>
           <ol className="px-[18px] pb-2 pt-1 sm:px-[22px]">
@@ -63,7 +67,7 @@ export function RecentMeetings({ meetings, failed }: { meetings: DashboardRecent
                       <span className="block text-[15px] font-semibold leading-snug text-ink">
                         {m.title ?? "Untitled meeting"}
                       </span>
-                      <span className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-ink-3">
+                      <span className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[12.5px] text-ink-3">
                         <span>
                           <LocalTime iso={start} variant="when" />
                           {minutes ? `, ${formatDuration(minutes)}` : null}
@@ -91,7 +95,7 @@ export function RecentMeetings({ meetings, failed }: { meetings: DashboardRecent
                           ) : null}
                         </>
                       ) : (
-                        <span className="text-[13px] text-ink-3">Nothing confirmed</span>
+                        <span className="text-[12.5px] text-ink-3">Nothing confirmed</span>
                       )}
                     </span>
                   </Link>
@@ -99,16 +103,16 @@ export function RecentMeetings({ meetings, failed }: { meetings: DashboardRecent
               );
             })}
           </ol>
-          <p className="border-t border-line bg-surface-2 px-[18px] py-3 text-[13.5px] text-ink-3 sm:px-[22px]">
+          <p className="border-t border-line bg-surface-2 px-[18px] py-3 text-[14px] text-ink-3 sm:px-[22px]">
             {kept > 0
               ? `${plural(kept, "item", "items")} carried forward from your last ${plural(meetings.length, "meeting", "meetings")}.`
               : "Confirm decisions and tasks after a call and they carry forward here."}
           </p>
         </>
       ) : (
-        <CardEmpty
+        <EmptyState inCard art="meetings"
           title="No finished meetings yet"
-          text="Once you have been in a meeting, it shows up here with the decisions and tasks confirmed in it."
+          description="Once you have been in a meeting, it shows up here with the decisions and tasks confirmed in it."
           action={<TextLink href="/meetings">Open meetings</TextLink>}
         />
       )}

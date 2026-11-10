@@ -1,6 +1,9 @@
 import Link from "next/link";
 import type { DashboardDecision } from "@/lib/api/types";
-import { CardEmpty, CardHead, ErrorBlock, TextLink, cardClass } from "./parts";
+import { CardHead, cardClass } from "@/components/ui/Card";
+import { TextLink } from "@/components/ui/TextLink";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { formatShortDate } from "./format";
 
 /** Confirmed decisions from meetings you were in, newest first: `/bff/dashboard` `decisions`.
@@ -15,10 +18,10 @@ export function RecentDecisions({
   className?: string;
 }) {
   return (
-    <section aria-labelledby="decisions-title" className={`${cardClass} ${className}`}>
+    <section aria-labelledby="decisions-title" className={cardClass({ flush: true, className })}>
       <CardHead id="decisions-title" title="Recent decisions" right={<TextLink href="/decisions">Decision log</TextLink>} />
       {failed ? (
-        <ErrorBlock title="We could not load decisions" text="Confirmed decisions are safe. Try again in a moment." />
+        <ErrorState variant="inline" title="We could not load decisions" text="Confirmed decisions are safe. Try again in a moment." />
       ) : decisions.length > 0 ? (
         <ul className="divide-y divide-line border-t border-line pb-1">
           {decisions.map((decision) => (
@@ -29,7 +32,7 @@ export function RecentDecisions({
               >
                 <span className="block text-[14px] font-semibold leading-snug text-ink">{decision.content}</span>
                 {decision.rationale ? (
-                  <span className="mt-1 line-clamp-2 block text-[13.5px] text-ink-3">{decision.rationale}</span>
+                  <span className="mt-1 line-clamp-2 block text-[14px] text-ink-3">{decision.rationale}</span>
                 ) : null}
                 <span className="mt-1.5 block text-[12.5px] text-ink-3">
                   {decision.meeting_title ?? "Untitled meeting"}, {formatShortDate(decision.created_at)}
@@ -39,7 +42,7 @@ export function RecentDecisions({
           ))}
         </ul>
       ) : (
-        <CardEmpty title="No decisions yet" text="Decisions confirmed in your meetings go on the record here." />
+        <EmptyState inCard art="decisions" title="No decisions yet" description="Decisions confirmed in your meetings go on the record here." />
       )}
     </section>
   );

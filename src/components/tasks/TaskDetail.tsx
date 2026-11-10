@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowUpRight, VideoCamera } from "@phosphor-icons/react";
 import { Avatar } from "@/components/ui/Avatar";
-import { Badge } from "@/components/ui/Badge";
+import { Chip } from "@/components/ui/Chip";
 import { formatLong, type Task } from "./dates";
 import { CheckButton, DueChip, PriorityBadge } from "./task-ui";
 
@@ -13,9 +13,9 @@ export function TaskDetailHeader({ task, onToggle }: { task: Task; onToggle: () 
   return (
     <>
       <CheckButton title={task.title} done={task.done} onToggle={onToggle} large />
-      <Badge tone={task.done ? "success" : "default"} className="ml-1">
+      <Chip tone={task.done ? "ok" : "neutral"} className="ml-1">
         {task.done ? "Done" : "Open"}
-      </Badge>
+      </Chip>
     </>
   );
 }
@@ -23,7 +23,7 @@ export function TaskDetailHeader({ task, onToggle }: { task: Task; onToggle: () 
 export function TaskDetailBody({ task, isMine }: { task: Task; isMine: boolean }) {
   return (
     <div className="flex flex-col gap-7">
-      <h2 className={`display text-[24px] leading-tight ${task.done ? "text-ink-3 line-through" : "text-ink-display"}`}>
+      <h2 className={`display text-[22px] leading-tight ${task.done ? "text-ink-3 line-through" : "text-ink-display"}`}>
         {task.title}
       </h2>
 
@@ -59,6 +59,7 @@ export function TaskDetailBody({ task, isMine }: { task: Task; isMine: boolean }
         <h3 id="task-meeting-heading" className="kicker">
           Linked meeting
         </h3>
+        {task.meetingId ? (
         <Link
           href={`/meetings/${task.meetingId}`}
           className="group mt-2 flex items-center gap-3 rounded-ctl border border-line p-3 transition-colors hover:border-line-2 hover:bg-surface-2 active:bg-bg-2"
@@ -67,11 +68,14 @@ export function TaskDetailBody({ task, isMine }: { task: Task; isMine: boolean }
             <VideoCamera size={18} aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[14.5px] font-semibold text-ink">{task.meetingTitle}</span>
+            <span className="block truncate text-[14px] font-semibold text-ink">{task.meetingTitle}</span>
             <span className="block text-[12.5px] text-ink-3">Where this was captured</span>
           </span>
           <ArrowUpRight size={16} className="shrink-0 text-ink-3 group-hover:text-ink" aria-hidden />
         </Link>
+        ) : (
+          <p className="mt-2 text-[14px] text-ink-3">Added by hand, not from a meeting.</p>
+        )}
       </section>
     </div>
   );

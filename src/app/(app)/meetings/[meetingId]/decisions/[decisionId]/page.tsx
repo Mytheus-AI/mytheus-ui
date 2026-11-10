@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, CheckCircle, ClockCounterClockwise, GitCommit, Scales } from "@phosphor-icons/react/dist/ssr";
-import { Badge } from "@/components/ui/Badge";
+import { ArrowRight, CheckCircle, ClockCounterClockwise, GitCommit, Scales, VideoCamera } from "@phosphor-icons/react/dist/ssr";
+import { Chip } from "@/components/ui/Chip";
 import { LinkButton } from "@/components/ui/Button";
-import { Note, SectionCard } from "@/components/settings/primitives";
+import { Note } from "@/components/ui/Note";
+import { SectionCard } from "@/components/ui/Card";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { Page, PageColumns, PageHead } from "@/components/ui/Page";
+import { Crumb } from "@/components/app/Crumb";
 import { fetchDecisionLineage, type LineageDecision } from "@/lib/api/lineage";
 
 export const metadata: Metadata = { title: "Decision lineage | Mytheus" };
@@ -13,7 +17,7 @@ export const metadata: Metadata = { title: "Decision lineage | Mytheus" };
    decision, oldest first. What it superseded comes before it, what superseded it comes after.
    Read from `bff` -> `knowledge-graph-service`'s `decision_lineage` template, which only ever
    holds confirmed decisions. With no gateway configured the page says history is unavailable
-   rather than showing a sample. */
+   rather than showing a sample. The topbar breadcrumb reads Decisions / the decision. */
 
 type ChainNode = {
   id: string;
@@ -45,6 +49,10 @@ function fromLive(d: LineageDecision): ChainNode {
   };
 }
 
+function clip(text: string, max = 60): string {
+  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
+}
+
 function caption(node: ChainNode, index: number): string {
   if (node.role === "subject") return "This decision";
   if (node.role === "descendant") return "Replaced this decision";
@@ -65,24 +73,23 @@ export default async function DecisionLineagePage({
   params: { meetingId: string; decisionId: string };
 }) {
   const chain = await loadChain(params.meetingId, params.decisionId);
-  const backLink = (
-    <Link href={`/meetings/${params.meetingId}#decisions`} className="mx-back self-start">
-      <ArrowLeft size={16} weight="bold" aria-hidden />
-      Back to the meeting
-    </Link>
+  const openMeeting = (
+    <LinkButton href={`/meetings/${params.meetingId}`} variant="outline">
+      <VideoCamera size={16} aria-hidden />
+      Open meeting
+    </LinkButton>
   );
 
   if (chain === "unavailable") {
     return (
-      <div className="mx-page flex max-w-5xl flex-col gap-6">
-        {backLink}
-        <div role="alert" className="rounded-card border border-line bg-surface px-6 py-12 text-center shadow-warm-1">
-          <h1 className="font-display text-[22px] font-medium text-ink">Decision history is unavailable</h1>
-          <p className="mx-auto mt-2 max-w-sm text-[15px] text-ink-3">
-            We could not reach the knowledge graph just now. The decision itself is safe. Try again in a moment.
-          </p>
-        </div>
-      </div>
+      <Page>
+        <Crumb label="Decision" />
+        <PageHead title="Decision lineage" action={openMeeting} />
+        <ErrorState
+          title="Decision history is unavailable"
+          text="We could not reach the knowledge graph just now. The decision itself is safe. Try again in a moment."
+        />
+      </Page>
     );
   }
 
@@ -91,31 +98,33 @@ export default async function DecisionLineagePage({
   const earlier = chain.filter((n) => n.role === "ancestor").length;
   const later = chain.filter((n) => n.role === "descendant").length;
   const superseded = subject.status === "superseded";
+  const title = subject.content ?? "Confirmed decision";
 
   return (
-    <div className="mx-page flex max-w-5xl flex-col gap-6">
-      {backLink}
-
-      <header className="rounded-hero border border-line bg-surface p-6 shadow-warm-1 sm:p-8">
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          {superseded ? (
-            <Badge tone="medium">
-              <ClockCounterClockwise size={14} weight="bold" className="mr-1.5" aria-hidden />
+    <Page>
+      <Crumb label={clip(title)} icon="decision" />
+      <PageHead
+        title={title}
+        action={openMeeting}
+        context={
+          superseded ? (
+            <Chip tone="medium" icon={<ClockCounterClockwise size={14} weight="bold" />}>
               Superseded
-            </Badge>
+            </Chip>
           ) : (
-            <Badge tone="success">
-              <CheckCircle size={14} weight="fill" className="mr-1.5" aria-hidden />
-              Confirmed{subject.confirmedAt ? ` ${dateTime.format(new Date(subject.confirmedAt))}` : ""}
-            </Badge>
-          )}
-        </div>
-        <h1 className="display max-w-[40ch] text-balance text-[clamp(1.75rem,3.2vw,2.25rem)] text-ink-display">
-          {subject.content ?? "Confirmed decision"}
-        </h1>
-      </header>
+            <Chip tone="ok" icon={<CheckCircle size={14} weight="fill" />}>
+              Confirmed{subject.confirmedAt ? ` ${dateTime.format(new Date(subject.confirmedAt))} UTC` : ""}
+            </Chip>
+          )
+        }
+      />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+      <PageColumns
+        sticky={false}
+        aside={
+          <Note>Only confirmed decisions appear in a lineage. Nothing your agent proposed is saved until someone confirms it.</Note>
+        }
+      >
         <SectionCard
           title="Lineage"
           description={
@@ -146,7 +155,7 @@ export default async function DecisionLineagePage({
                   <p className={`text-[15px] leading-snug ${current ? "font-semibold text-ink" : "font-medium text-ink-2"}`}>
                     {node.content ?? "An earlier decision"}
                   </p>
-                  <p className="mt-1 text-[13px] text-ink-3">
+                  <p className="mt-1 text-[12.5px] text-ink-3">
                     {caption(node, i)}
                     {node.confirmedAt ? `, ${shortDate.format(new Date(node.confirmedAt))}` : ""}
                   </p>
@@ -168,7 +177,7 @@ export default async function DecisionLineagePage({
                     {!current && node.meetingId ? (
                       <Link
                         href={`/meetings/${node.meetingId}/decisions/${node.id}`}
-                        className="group inline-flex flex-col rounded-md hover:text-ink"
+                        className="group inline-flex flex-col rounded-ctl hover:text-ink"
                       >
                         {body}
                       </Link>
@@ -184,14 +193,7 @@ export default async function DecisionLineagePage({
             })}
           </ol>
         </SectionCard>
-
-        <div className="flex min-w-0 flex-col gap-6">
-          <Note>Only confirmed decisions appear in a lineage. Nothing your agent proposed is saved until someone confirms it.</Note>
-          <LinkButton href={`/meetings/${params.meetingId}`} variant="outline" className="self-start">
-            Open meeting
-          </LinkButton>
-        </div>
-      </div>
-    </div>
+      </PageColumns>
+    </Page>
   );
 }

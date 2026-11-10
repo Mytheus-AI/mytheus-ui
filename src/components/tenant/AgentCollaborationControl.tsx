@@ -1,14 +1,19 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { setAgentCollaboration } from "@/app/actions/agent-collaboration";
 import type { CollaborationLevel, CurrentLevel } from "@/lib/agent-collaboration";
 import { Button } from "@/components/ui/Button";
-import { Note, SaveStatus, focusPill } from "@/components/settings/primitives";
+import { CardFoot } from "@/components/ui/Card";
+import { Chip } from "@/components/ui/Chip";
+import { Note } from "@/components/ui/Note";
+import { notifyError, notifySuccess } from "@/lib/toast";
 
 /* The workspace's "Agent collaboration" level: how far one person's agent may ask another
    person's agent for context during a meeting. One choice, saved with one button; the server
-   action turns it into grant changes on identity-tenant-service. */
+   action turns it into grant changes on identity-tenant-service. "Save level" answers with a
+   "Level saved" toast whose Undo puts the previous level back (when there was a plain one). */
 
 const OPTIONS: { value: CollaborationLevel; label: string; help: string }[] = [
   { value: "off", label: "Off", help: "Agents never ask each other. Each agent only uses its own person's knowledge base." },
@@ -19,21 +24,32 @@ const OPTIONS: { value: CollaborationLevel; label: string; help: string }[] = [
 
 export function AgentCollaborationControl({ current }: { current: CurrentLevel }) {
   const [choice, setChoice] = useState<CollaborationLevel | null>(current === "custom" ? null : current);
-  const [message, setMessage] = useState<{ tone: "info" | "error"; text: string } | null>(null);
+  const [saved, setSaved] = useState<CurrentLevel>(current);
   const [pending, startTransition] = useTransition();
-  const dirty = choice !== null && choice !== current;
+  const router = useRouter();
+  const dirty = choice !== null && choice !== saved;
+
+  const apply = (level: CollaborationLevel, previous: CurrentLevel, isUndo = false) => {
+    startTransition(async () => {
+      const res = await setAgentCollaboration(level);
+      if (!res.ok) {
+        notifyError(res.message);
+        return;
+      }
+      setSaved(level);
+      setChoice(level);
+      router.refresh();
+      if (isUndo) notifySuccess("Level restored", { description: OPTIONS.find((o) => o.value === level)?.label });
+      else
+        notifySuccess("Level saved", {
+          description: "New requests follow it within a minute.",
+          undo: previous !== "custom" ? () => apply(previous, level, true) : undefined,
+        });
+    });
+  };
 
   const save = () => {
-    if (!choice) return;
-    setMessage(null);
-    startTransition(async () => {
-      const res = await setAgentCollaboration(choice);
-      setMessage(
-        res.ok
-          ? { tone: "info", text: "Level saved. New requests follow it within a minute." }
-          : { tone: "error", text: res.message },
-      );
-    });
+    if (choice) apply(choice, saved);
   };
 
   return (
@@ -75,18 +91,16 @@ export function AgentCollaborationControl({ current }: { current: CurrentLevel }
               <span className="min-w-0">
                 <span className="flex flex-wrap items-center gap-2 text-[15px] font-semibold text-ink">
                   {o.label}
-                  {current === o.value ? (
-                    <span className="rounded-full bg-bg-2 px-2 py-px text-[12.5px] font-semibold text-ink-2">Current</span>
-                  ) : null}
+                  {saved === o.value ? <Chip>Current</Chip> : null}
                 </span>
-                <span className="mt-0.5 block text-[13.5px] leading-snug text-ink-3">{o.help}</span>
+                <span className="mt-0.5 block text-[14px] leading-snug text-ink-3">{o.help}</span>
               </span>
             </label>
           );
         })}
       </fieldset>
 
-      {current === "custom" ? (
+      {saved === "custom" ? (
         <div className="px-4 pb-4 sm:px-[22px]">
           <Note tone="warning">
             This workspace has grants that match none of these options. Picking one replaces them with that option&apos;s
@@ -95,12 +109,11 @@ export function AgentCollaborationControl({ current }: { current: CurrentLevel }
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line bg-surface-2 px-4 py-3.5 sm:px-[22px]">
-        <Button type="submit" disabled={!dirty || pending} className={focusPill}>
+      <CardFoot>
+        <Button type="submit" disabled={!dirty || pending}>
           {pending ? "Saving level" : "Save level"}
         </Button>
-        <SaveStatus tone={message ? (message.tone === "error" ? "error" : "ok") : undefined}>{message?.text ?? ""}</SaveStatus>
-      </div>
+      </CardFoot>
     </form>
   );
 }

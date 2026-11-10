@@ -38,7 +38,7 @@ export function Modal({
         className="relative w-full max-w-md rounded-card border border-line bg-surface p-6 shadow-xl"
       >
         {title ? (
-          <h2 className="mb-4 text-[18px] font-medium tracking-tight text-ink-display">
+          <h2 className="mb-4 text-[22px] font-medium tracking-tight text-ink-display">
             {title}
           </h2>
         ) : null}

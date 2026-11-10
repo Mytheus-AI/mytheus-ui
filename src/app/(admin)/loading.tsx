@@ -1,5 +1,5 @@
-import { CardsSkeleton } from "@/components/settings/Skeletons";
+import { PageSkeleton } from "@/components/ui/Page";
 
 export default function Loading() {
-  return <CardsSkeleton label="Loading the console" />;
+  return <PageSkeleton label="Loading the console" layout="list" />;
 }

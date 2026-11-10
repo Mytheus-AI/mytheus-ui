@@ -36,7 +36,9 @@ import type { MeetingSocketState } from "@/lib/realtime/useMeetingSocket";
    it is rendered with the page, re-read from core-api on every (re)connect, and moved along live
    by the MeetingAgent's "agent-agenda" events. The host (or the creator) can mark an item covered
    or skipped, or reopen it: applied at once, put back if core-api refuses, and never overridden
-   by the agent afterwards.
+   by the agent afterwards. Once core-api has stored it, the room is told ("agenda-status" through
+   the gateway, which re-reads the item first), so everyone's agenda moves within a second
+   (polish program, Phase 0: it used to change on the host's screen only).
 
    Nudges ("agent-nudge") reach the host only. One shows at a time above the list, as a calm card
    in the frozen language: running over is amber (attention), off the agenda and still-open items
@@ -119,10 +121,13 @@ export function AgendaPanel({
     });
     if (res.ok) {
       host.commit(item.id, op, res.item);
-      toast(DONE_TOAST[status]);
+      toast(DONE_TOAST[status], "success");
+      // Everyone else's agenda moves too. If the room link is down, their next re-hydrate
+      // (on reconnect) brings it; nothing is lost, so this is not an error for the host.
+      void host.announce(item.id);
     } else {
       host.rollback(item.id, op);
-      toast(res.message);
+      toast(res.message, "error");
     }
   };
 

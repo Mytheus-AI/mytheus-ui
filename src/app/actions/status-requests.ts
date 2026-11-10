@@ -40,7 +40,7 @@ export async function answerStatusRequest(id: string, statusText: string): Promi
     }
     return { ok: false, message: "Your answer could not be sent just now. Try again in a moment." };
   }
-  revalidatePath("/status-requests");
+  revalidatePath("/work/updates");
   revalidatePath("/dashboard");
   return { ok: true, answeredAt };
 }

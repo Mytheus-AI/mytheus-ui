@@ -154,6 +154,22 @@ export function rollbackHostStatus(state: AgendaState, itemId: string, op: numbe
   return { ...state, items: state.items.map((it) => (it.id === itemId ? inFlight.before : it)), pending };
 }
 
+/**
+ * "agenda-status": the host (or creator) changed an item and core-api stored it; the gateway sent
+ * the stored row to everyone (polish program, Phase 0). The host's own optimistic change in flight
+ * on this client is left to settle by itself; everyone else takes the row as it is, position kept.
+ */
+export function applyHostAgendaStatus(state: AgendaState, row: AgendaItem | null | undefined): AgendaState {
+  if (!row || typeof row.id !== "string" || !UUID.test(row.id)) return state;
+  if (!["pending", "in_progress", "covered", "skipped"].includes(row.status)) return state;
+  if (state.pending[row.id]) return state;
+  const i = state.items.findIndex((it) => it.id === row.id);
+  if (i < 0) return state;
+  const items = [...state.items];
+  items[i] = { ...state.items[i], ...row, position: state.items[i].position, status_source: "host" };
+  return { ...state, items };
+}
+
 /** How far along the agenda is: covered or skipped, of all. */
 export function agendaProgress(items: AgendaItem[]): { done: number; total: number } {
   return { done: items.filter((it) => it.status === "covered" || it.status === "skipped").length, total: items.length };

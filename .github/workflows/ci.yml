@@ -32,6 +32,31 @@ jobs:
       - run: npx tsc --noEmit
       - run: npx next lint
 
+  room-a11y:
+    # The meeting room's accessibility gate (polish program, Phase 0): the real <MeetingRoom /> in
+    # a real Chromium via Playwright component testing, with the gateway, Clerk and LiveKit mocked
+    # at the edges (tests/e2e/playwright-ct.config.ts). axe (WCAG 2.1 A/AA, contrast in light and
+    # dark), the keyboard path through the controls and the panel, shortcuts that can be turned
+    # off. Needs no backend and no secrets.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:a11y
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: room-a11y-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
   build:
     # Proves the image production runs can actually be built, on every PR rather than at deploy
     # time. Clerk validates its publishable key at BUILD time and its provider wraps the root

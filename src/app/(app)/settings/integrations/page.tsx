@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { SettingsShell } from "@/components/settings/SettingsShell";
 import { IntegrationsPanel } from "@/components/settings/IntegrationsPanel";
-import { Note } from "@/components/settings/primitives";
+import { Note } from "@/components/ui/Note";
+import { SectionBar } from "@/components/ui/Page";
 import { resolveOrgContext } from "@/lib/api/org-context";
 import { loadIntegrations } from "@/lib/api/integrations";
 import { listMembers } from "@/lib/api/members";
@@ -23,9 +23,10 @@ export default async function IntegrationsSettingsPage({
 
   if (!isAdmin) {
     return (
-      <SettingsShell title="Integrations" description="Calendar, Slack and one project tracker for the workspace.">
+      <>
+        <SectionBar title="Integrations" context="Calendar, Slack and one project tracker for the workspace." />
         <Note>Only workspace owners and admins can manage integrations. Ask an admin to connect one.</Note>
-      </SettingsShell>
+      </>
     );
   }
 
@@ -33,11 +34,14 @@ export default async function IntegrationsSettingsPage({
   const people = new Map((members ?? []).map((m) => [m.id, m.isYou ? `${m.name} (you)` : m.name]));
 
   return (
-    <SettingsShell
-      title="Integrations"
-      description="Calendar, Slack and one project tracker. Agents use them to prepare for meetings and route what you confirm."
-    >
-      <IntegrationsPanel load={load} banner={banner} people={people} />
-    </SettingsShell>
+    <>
+      <SectionBar
+        title="Integrations"
+        context="Calendar, Slack and one project tracker. Agents use them to prepare for meetings and route what you confirm."
+      />
+      <div className="grid gap-5">
+        <IntegrationsPanel load={load} banner={banner} people={people} />
+      </div>
+    </>
   );
 }

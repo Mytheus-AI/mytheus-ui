@@ -1,27 +1,11 @@
-import { Bone } from "@/components/app/PageHead";
+import { Bone, CardSkeleton, Page } from "@/components/ui/Page";
 
-/* Skeleton for Home, in the same two-column rhythm as the page so nothing jumps when the real
-   content streams in. Bones pulse only when motion is allowed. */
-
-function CardSkeleton({ rows, className = "" }: { rows: number; className?: string }) {
-  return (
-    <div className={`rounded-card border border-line bg-surface p-5 shadow-warm-1 ${className}`}>
-      <Bone className="h-4 w-32" />
-      <div className="mt-5 flex flex-col gap-4">
-        {Array.from({ length: rows }, (_, i) => (
-          <div key={i} className="flex flex-col gap-2">
-            <Bone className="h-4 w-[85%]" />
-            <Bone className="h-3 w-[45%]" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+/* Skeleton for Home, built from the same frame and the same two-column rhythm as the page, so
+   nothing jumps when the real content streams in. */
 
 export default function DashboardLoading() {
   return (
-    <div role="status" aria-label="Loading your dashboard" className="mx-auto max-w-[1240px]">
+    <Page label="Loading your dashboard">
       <div className="flex flex-wrap items-end justify-between gap-x-12 gap-y-5 pb-6 pt-2 min-[721px]:pb-7">
         <div className="min-w-0 flex-[1_1_380px]">
           <Bone className="h-9 w-72 max-w-full" />
@@ -37,7 +21,7 @@ export default function DashboardLoading() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 items-start gap-6 min-[1101px]:grid-cols-[minmax(0,1fr)_minmax(300px,368px)]">
+      <div className="grid grid-cols-1 items-start gap-6 min-[1101px]:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]">
         <div className="flex min-w-0 flex-col gap-7">
           <div className="rounded-hero border border-line bg-bg-2 p-7">
             <div className="flex justify-between gap-4">
@@ -62,6 +46,6 @@ export default function DashboardLoading() {
       </div>
 
       <span className="sr-only">Loading your dashboard</span>
-    </div>
+    </Page>
   );
 }

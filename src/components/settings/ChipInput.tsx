@@ -116,7 +116,7 @@ export function ChipInput({
                     remove(i);
                   }}
                   aria-label={`Remove ${item}`}
-                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-ink-3 transition-colors duration-150 hover:bg-surface-2 hover:text-ink focus-visible:!rounded-full"
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-ink-3 transition-colors duration-150 hover:bg-surface-2 hover:text-ink"
                 >
                   <X size={13} weight="bold" aria-hidden="true" />
                 </button>
@@ -144,7 +144,7 @@ export function ChipInput({
           aria-describedby={[describedBy, countId].filter(Boolean).join(" ")}
           enterKeyHint="enter"
           autoComplete="off"
-          className="h-8 min-w-[9rem] flex-1 bg-transparent px-1.5 text-[15px] text-ink placeholder:text-ink-4 focus-visible:outline-none"
+          className="h-8 min-w-[9rem] flex-1 bg-transparent px-1.5 text-[15px] text-ink placeholder:text-ink-3"
         />
       </div>
       <p id={countId} className="sr-only">

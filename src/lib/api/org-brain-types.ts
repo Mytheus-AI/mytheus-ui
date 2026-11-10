@@ -711,12 +711,12 @@ export function splitNewAndExisting<R extends { term: string }>(
 
 /** Where each check is fixed, and the words on the link. */
 export const READINESS_FIX: Record<ReadinessKey, { href: string; action: string; label: string }> = {
-  profile: { href: "/tenant/brain/about", action: "Describe the company", label: "About the company" },
-  vocabulary: { href: "/tenant/brain/vocabulary", action: "Add terms", label: "Vocabulary" },
-  owners: { href: "/tenant/brain/owners", action: "Name owners", label: "Who owns what" },
-  goals: { href: "/tenant/brain/goals", action: "Add a goal", label: "Goals" },
-  ground_rules: { href: "/tenant/brain/ground-rules", action: "Set ground rules", label: "Ground rules" },
-  roles: { href: "/tenant/members", action: "See members", label: "Everyone has a role" },
+  profile: { href: "/workspace/brain/about", action: "Describe the company", label: "About the company" },
+  vocabulary: { href: "/workspace/brain/vocabulary", action: "Add terms", label: "Vocabulary" },
+  owners: { href: "/workspace/brain/owners", action: "Name owners", label: "Who owns what" },
+  goals: { href: "/workspace/brain/goals", action: "Add a goal", label: "Goals" },
+  ground_rules: { href: "/workspace/brain/ground-rules", action: "Set ground rules", label: "Ground rules" },
+  roles: { href: "/workspace/members", action: "See members", label: "Everyone has a role" },
 };
 
 export function isReadinessKey(k: unknown): k is ReadinessKey {
@@ -815,7 +815,7 @@ export function deriveReadiness(f: ReadinessFacts): Readiness {
 
 /** Where a check is fixed; unknown keys go to the brain's overview. */
 export function fixFor(key: string): { href: string; action: string } {
-  return isReadinessKey(key) ? READINESS_FIX[key] : { href: "/tenant/brain", action: "Open" };
+  return isReadinessKey(key) ? READINESS_FIX[key] : { href: "/workspace/brain", action: "Open" };
 }
 
 /* ---------------- first run and the welcome window ---------------- */

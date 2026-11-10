@@ -2,15 +2,11 @@
 
 import type { MouseEvent } from "react";
 import { CalendarBlank, CalendarCheck, Check, Flag, WarningCircle } from "@phosphor-icons/react";
-import { Badge } from "@/components/ui/Badge";
+import { Chip, type ChipTone } from "@/components/ui/Chip";
 import { dueInfo, type DueTone } from "./dates";
 import type { Priority } from "@/lib/types";
 
-const dueToneClass: Record<DueTone, string> = {
-  overdue: "bg-priority-high-soft text-priority-high",
-  today: "bg-priority-medium-soft text-priority-medium",
-  quiet: "bg-bg-2 text-ink-2",
-};
+const dueTone: Record<DueTone, ChipTone> = { overdue: "high", today: "medium", quiet: "neutral" };
 
 /** Due date chip: red when overdue (acts now), amber when due today (attention), neutral otherwise,
  *  always with an icon so colour is never the only cue. */
@@ -18,22 +14,18 @@ export function DueChip({ dueDate, done }: { dueDate: string | null; done: boole
   const info = dueInfo(dueDate, done);
   const Icon = info.icon === "warning" ? WarningCircle : info.icon === "done" ? CalendarCheck : CalendarBlank;
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-[3px] text-[12.5px] font-semibold leading-[1.35] ${dueToneClass[info.tone]}`}
-    >
-      <Icon size={14} weight={info.tone === "overdue" ? "fill" : "regular"} aria-hidden />
+    <Chip tone={dueTone[info.tone]} icon={<Icon size={14} weight={info.tone === "overdue" ? "fill" : "regular"} />}>
       {info.label}
-    </span>
+    </Chip>
   );
 }
 
 export function PriorityBadge({ priority }: { priority: Priority }) {
   return (
-    <Badge tone={priority}>
-      <Flag size={12} weight="fill" aria-hidden />
+    <Chip tone={priority} icon={<Flag size={12} weight="fill" />}>
       <span className="capitalize">{priority}</span>
       <span className="sr-only"> priority</span>
-    </Badge>
+    </Chip>
   );
 }
 
@@ -59,7 +51,7 @@ export function CheckButton({
         stop(e);
         onToggle();
       }}
-      className="group/check -m-2 grid h-10 w-10 shrink-0 place-items-center rounded-full focus-visible:!outline-offset-0"
+      className="group/check -m-2 grid h-10 w-10 shrink-0 place-items-center rounded-full"
     >
       <span
         className={`grid place-items-center rounded-full border transition-[background-color,border-color,transform] duration-150 motion-safe:group-active/check:scale-90 ${

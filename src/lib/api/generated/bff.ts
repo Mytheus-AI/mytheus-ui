@@ -12,6 +12,26 @@
  */
 
 export interface paths {
+    "/api/v1/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask across your meetings
+         * @description A grounded answer with numbered citations, from the meetings you took part in (transcripts, decisions, actions and shared documents). Read-only: allowed for `read` API tokens. 503 `ask_not_connected` until retrieval is wired on the server.
+         */
+        post: operations["ask_route"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/bff/dashboard": {
         parameters: {
             query?: never;
@@ -179,6 +199,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mcp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * MCP server (Streamable HTTP)
+         * @description Model Context Protocol endpoint. Point an MCP client at `{API}/mcp` with `Authorization: Bearer mytheus_pat_...`. Tools: search_meetings, ask_meetings, get_meeting_outcome, get_decision_record, list_my_open_actions, list_my_promises, create_action (read_write tokens). Resources: meeting summaries and decision records.
+         */
+        post: operations["mcp_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -189,6 +229,68 @@ export interface components {
             covered: number;
             /** Total */
             total: number;
+        };
+        /** AskAnswer */
+        AskAnswer: {
+            /**
+             * Abstained
+             * @description True when the sources did not support an answer.
+             */
+            abstained: boolean;
+            /**
+             * Answer
+             * @description Null when no answer could be grounded (see `abstained`).
+             */
+            answer?: string | null;
+            /** Citations */
+            citations: components["schemas"]["AskCitation"][];
+            /**
+             * Degraded
+             * @description True when the workspace's AI budget limited the answer.
+             */
+            degraded: boolean;
+            /** Question */
+            question: string;
+        };
+        /** AskCitation */
+        AskCitation: {
+            /** Action Id */
+            action_id?: string | null;
+            /** Decision Id */
+            decision_id?: string | null;
+            /**
+             * Kind
+             * @description transcript | document | decision | action
+             */
+            kind: string;
+            /** Meeting Id */
+            meeting_id?: string | null;
+            /** Meeting Title */
+            meeting_title?: string | null;
+            /**
+             * N
+             * @description The [n] marker the answer uses.
+             */
+            n: number;
+            /** Occurred At */
+            occurred_at?: string | null;
+            /** Speaker */
+            speaker?: string | null;
+            /** Text */
+            text: string;
+        };
+        /** AskRequest */
+        AskRequest: {
+            /**
+             * Meeting Id
+             * @description Narrow to one meeting you took part in.
+             */
+            meeting_id?: string | null;
+            /**
+             * Question
+             * @description Your question.
+             */
+            question: string;
         };
         /** BriefAction */
         BriefAction: {
@@ -548,7 +650,7 @@ export interface components {
          * @description The frozen program-wide error enum. Clients branch on this and never on `detail`, which is human-readable and free to change. Values are added, never removed or repurposed. Emitted verbatim from `libs.shared.errors.ErrorCode`, so this list cannot drift from the code; the no-removal half is asserted by `test_no_published_error_code_is_ever_removed`, because `oasdiff` does not treat narrowing a response enum as a breaking change.
          * @enum {string}
          */
-        ErrorCode: "MALFORMED_BODY" | "INVALID_CURSOR" | "AUTH_REQUIRED" | "TOKEN_EXPIRED" | "FORBIDDEN_ROLE" | "CROSS_TENANT_DENIED" | "NOT_FOUND" | "IDEMPOTENCY_KEY_REUSED" | "VERSION_CONFLICT" | "VALIDATION_FAILED" | "RATE_LIMITED" | "QUOTA_EXCEEDED" | "INTERNAL" | "DEPENDENCY_UNAVAILABLE" | "NOT_IMPLEMENTED" | "NOT_A_PARTICIPANT" | "CONSENT_REQUIRED" | "PROVIDER_NOT_CONFIGURED" | "PM_ALREADY_CONNECTED" | "ACCOUNT_CONNECTED_ELSEWHERE";
+        ErrorCode: "MALFORMED_BODY" | "INVALID_CURSOR" | "AUTH_REQUIRED" | "TOKEN_EXPIRED" | "FORBIDDEN_ROLE" | "CROSS_TENANT_DENIED" | "NOT_FOUND" | "IDEMPOTENCY_KEY_REUSED" | "VERSION_CONFLICT" | "VALIDATION_FAILED" | "RATE_LIMITED" | "QUOTA_EXCEEDED" | "INTERNAL" | "DEPENDENCY_UNAVAILABLE" | "NOT_IMPLEMENTED" | "NOT_A_PARTICIPANT" | "CONSENT_REQUIRED" | "EXTERNAL_MEETING" | "PROVIDER_NOT_CONFIGURED" | "PM_ALREADY_CONNECTED" | "ACCOUNT_CONNECTED_ELSEWHERE";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -878,6 +980,69 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    ask_route: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AskRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AskAnswer"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Ask is not connected or unavailable (`reason`). */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     dashboard: {
         parameters: {
             query?: {
@@ -1229,6 +1394,65 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    mcp_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /** @description One JSON-RPC 2.0 request or notification (Model Context Protocol). */
+        requestBody: {
+            content: {
+                "application/json": {
+                    id?: string | number;
+                    /** @enum {string} */
+                    jsonrpc: "2.0";
+                    method: string;
+                    params?: Record<string, never>;
+                };
+            };
+        };
+        responses: {
+            /** @description The JSON-RPC response. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+            /** @description A notification was accepted (no body). */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Unhandled server error. Carries a `trace_id` and no internals. */

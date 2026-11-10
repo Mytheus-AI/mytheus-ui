@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { api, ApiError } from "@/lib/api/client";
 import { planRosterChanges, type ApiTeamMember } from "@/lib/org-chart";
 
-/* Org chart writes: departments, teams and who is on them, all through core-api. Only a
+/* People (org chart) writes: departments, teams and who is on them, all through core-api. Only a
    workspace admin may make them; core-api enforces that (`require_tier("admin")`), and the UI
    only hides the buttons from everyone else. Nothing about the tenant comes from the input. */
 
@@ -16,7 +16,7 @@ const cleanIds = (ids: string[]) => Array.from(new Set(ids.filter((id) => UUID.t
 function failure(err: unknown, fallback: string): OrgActionResult {
   if (err instanceof ApiError) {
     if (err.isAuthFailure) return { ok: false, message: "Your session expired. Sign in again." };
-    if (err.status === 403) return { ok: false, message: "Only workspace admins can change the org chart." };
+    if (err.status === 403) return { ok: false, message: "Only workspace admins can change People." };
     if (err.status === 404) return { ok: false, message: "That team, department or person is no longer in this workspace." };
     if (err.status === 422) return { ok: false, message: "That name wasn't accepted. Keep it under 200 characters." };
   }
@@ -51,7 +51,7 @@ export async function createDepartment(input: { name: string; parentId: string |
   } catch (err) {
     return failure(err, "The department couldn't be created just now. Try again in a moment.");
   }
-  revalidatePath("/org");
+  revalidatePath("/people");
   return { ok: true };
 }
 
@@ -82,7 +82,7 @@ export async function createTeam(input: {
   } catch {
     failed = 1;
   }
-  revalidatePath("/org");
+  revalidatePath("/people");
   return failed > 0
     ? { ok: true, warning: "The team was created, but some people couldn't be added. Use Edit team to try again." }
     : { ok: true };
@@ -100,6 +100,6 @@ export async function updateTeamMembers(input: {
   } catch (err) {
     return failure(err, "The team couldn't be updated just now. Try again in a moment.");
   }
-  revalidatePath("/org");
+  revalidatePath("/people");
   return failed > 0 ? { ok: false, message: "Some changes didn't go through. Check the team and try again." } : { ok: true };
 }

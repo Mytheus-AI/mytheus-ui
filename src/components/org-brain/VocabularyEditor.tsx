@@ -5,7 +5,11 @@ import { ClipboardText, MagnifyingGlass, PencilSimple, Plus, X } from "@phosphor
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Select } from "@/components/ui/Select";
-import { fieldClass } from "@/components/settings/primitives";
+import { Chip, type ChipTone } from "@/components/ui/Chip";
+import { cardClass } from "@/components/ui/Card";
+import { FieldMsg, fieldClass } from "@/components/ui/Form";
+import { RemoveButton } from "@/components/ui/RemoveButton";
+import { notifyError, notifySuccess } from "@/lib/toast";
 import { createTerm, deleteTerm, updateTerm } from "@/app/actions/org-brain";
 import {
   BRAIN_LIMITS,
@@ -21,7 +25,6 @@ import {
   type TermField,
 } from "@/lib/api/org-brain-types";
 import { GlossaryImport } from "./GlossaryImport";
-import { FieldMsg, FlashLine, RemoveButton, useFlash } from "./ui";
 
 /* Vocabulary (ADR-0039 A2): the company's own words, so agents understand them and captions
    spell them. A fast list: search, kinds as filter chips, an add row that stays open for the next
@@ -45,16 +48,17 @@ const splitAliases = (s: string) => s.split(/[,;]/).map((a) => a.trim()).filter(
 
 let tempSeq = 0;
 
+const KIND_TONE: Record<GlossaryKind, ChipTone> = {
+  product: "accent",
+  customer: "low",
+  codename: "medium",
+  acronym: "neutral",
+  person: "neutral",
+  other: "neutral",
+};
+
 function KindChip({ kind }: { kind: GlossaryKind }) {
-  const tone =
-    kind === "product"
-      ? "bg-signal-soft text-signal-ink"
-      : kind === "customer"
-        ? "bg-priority-low-soft text-priority-low"
-        : kind === "codename"
-          ? "bg-tint-ochre text-ink"
-          : "bg-bg-2 text-ink-2";
-  return <span className={`inline-flex rounded-full px-2.5 py-[3px] text-[12.5px] font-semibold ${tone}`}>{KIND_LABEL[kind]}</span>;
+  return <Chip tone={KIND_TONE[kind]}>{KIND_LABEL[kind]}</Chip>;
 }
 
 /** The add and edit row. Enter saves, Escape cancels. */
@@ -100,7 +104,7 @@ function TermForm({
   return (
     <form onSubmit={submit} onKeyDown={onKey} noValidate aria-busy={busy || undefined} className={`grid gap-3 md:items-start md:gap-x-4 ${COLS}`}>
       <div className="min-w-0">
-        <label htmlFor={`${idBase}-term`} className="mb-1 block text-[13px] font-semibold text-ink-3 md:sr-only">
+        <label htmlFor={`${idBase}-term`} className="mb-1 block text-[12.5px] font-semibold text-ink-3 md:sr-only">
           Term
         </label>
         <input
@@ -117,7 +121,7 @@ function TermForm({
           className={`${fieldClass} !h-10 ${errors.term ? "!border-priority-high" : ""}`}
         />
         <FieldMsg id={`${idBase}-term-msg`} error={errors.term} />
-        <label htmlFor={`${idBase}-aliases`} className="mb-1 mt-3 block text-[13px] font-semibold text-ink-3">
+        <label htmlFor={`${idBase}-aliases`} className="mb-1 mt-3 block text-[12.5px] font-semibold text-ink-3">
           Other spellings <span className="font-normal">(optional)</span>
         </label>
         <input
@@ -133,11 +137,11 @@ function TermForm({
         <FieldMsg id={`${idBase}-aliases-msg`} error={errors.aliases} />
       </div>
       <div className="min-w-0">
-        <span className="mb-1 block text-[13px] font-semibold text-ink-3 md:sr-only">Kind</span>
+        <span className="mb-1 block text-[12.5px] font-semibold text-ink-3 md:sr-only">Kind</span>
         <Select value={d.kind} onChange={(k) => set({ kind: k })} options={KIND_OPTIONS} label="Kind" />
       </div>
       <div className="min-w-0">
-        <label htmlFor={`${idBase}-definition`} className="mb-1 block text-[13px] font-semibold text-ink-3 md:sr-only">
+        <label htmlFor={`${idBase}-definition`} className="mb-1 block text-[12.5px] font-semibold text-ink-3 md:sr-only">
           Definition
         </label>
         <textarea
@@ -154,22 +158,22 @@ function TermForm({
           placeholder="Our invoicing product for accounting firms"
           aria-invalid={errors.definition ? true : undefined}
           aria-describedby={err("definition")}
-          className={`block w-full resize-y rounded-ctl border bg-surface px-3.5 py-2 text-[14.5px] leading-snug text-ink placeholder:text-ink-4 transition-[border-color,box-shadow] duration-150 hover:border-ink-4 focus-visible:!rounded-ctl focus-visible:border-signal focus-visible:shadow-[0_0_0_4px_var(--signal-soft)] focus-visible:outline-none ${
+          className={`block w-full resize-y rounded-ctl border bg-surface px-3.5 py-2 text-[14px] leading-snug text-ink placeholder:text-ink-3 transition-[border-color,box-shadow] duration-150 hover:border-ink-4 focus-visible:border-signal focus-visible:shadow-[0_0_0_4px_var(--signal-soft)] ${
             errors.definition ? "border-priority-high" : "border-line-2"
           }`}
         />
         <div className="mt-1 flex justify-end">
-          <span aria-hidden className={`text-[12.5px] tabular-nums ${d.definition.trim().length > L.definition ? "text-priority-high" : "text-ink-4"}`}>
+          <span aria-hidden className={`text-[12.5px] tabular-nums ${d.definition.trim().length > L.definition ? "text-priority-high" : "text-ink-3"}`}>
             {d.definition.trim().length} of {L.definition}
           </span>
         </div>
         <FieldMsg id={`${idBase}-definition-msg`} error={errors.definition} />
       </div>
       <div className="flex items-center gap-1.5 md:justify-end">
-        <Button type="submit" size="sm" disabled={busy} className="focus-visible:!rounded-ctl">
+        <Button type="submit" size="sm" disabled={busy}>
           {submitLabel}
         </Button>
-        <Button type="button" variant="ghost" size="sm" onClick={onCancel} className="focus-visible:!rounded-ctl">
+        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
           Cancel
         </Button>
       </div>
@@ -190,7 +194,6 @@ export function VocabularyEditor({ initial, canEdit }: { initial: GlossaryTerm[]
   const [editErrors, setEditErrors] = useState<FieldErrors<TermField>>({});
   const [editDraft, setEditDraft] = useState<Draft | null>(null);
   const [importing, setImporting] = useState(false);
-  const [flash, setFlash] = useFlash();
   const addBtn = useRef<HTMLButtonElement>(null);
 
   const counts = useMemo(() => kindCounts(terms), [terms]);
@@ -219,19 +222,18 @@ export function VocabularyEditor({ initial, canEdit }: { initial: GlossaryTerm[]
     const temp: GlossaryTerm = { id: tempId, ...checked.value, created_at: "", updated_at: "" };
     setTerms((t) => sortTerms([...t, temp]));
     mark(tempId, true);
-    setFlash({ tone: "busy", text: `Adding ${checked.value.term}` });
     const res = await createTerm(checked.value);
     mark(tempId, false);
     if (res.ok) {
       setTerms((t) => sortTerms(t.map((x) => (x.id === tempId ? res.data : x))));
-      setFlash({ tone: "ok", text: `${res.data.term} added.` });
+      notifySuccess("Term added", { description: res.data.term });
     } else {
       setTerms((t) => t.filter((x) => x.id !== tempId));
       setAdding(true);
       setAddDraft(d);
       setAddErrors(res.fieldErrors ?? {});
       setAddKey((k) => k + 1);
-      setFlash({ tone: "error", text: res.message });
+      notifyError(res.message);
     }
   };
 
@@ -255,28 +257,36 @@ export function VocabularyEditor({ initial, canEdit }: { initial: GlossaryTerm[]
     mark(before.id, false);
     if (res.ok) {
       setTerms((t) => sortTerms(t.map((x) => (x.id === before.id ? res.data : x))));
-      setFlash({ tone: "ok", text: `${res.data.term} saved.` });
+      notifySuccess("Term saved", { description: res.data.term });
     } else if (res.gone) {
       setTerms((t) => t.filter((x) => x.id !== before.id));
-      setFlash({ tone: "error", text: res.message });
+      notifyError(res.message);
     } else {
       setTerms((t) => sortTerms(t.map((x) => (x.id === before.id ? before : x))));
       setEditing(before.id);
       setEditDraft(d);
       setEditErrors(res.fieldErrors ?? {});
-      setFlash({ tone: "error", text: res.message });
+      notifyError(res.message);
     }
   };
 
   /* ---- remove, optimistic ---- */
+  // Undo after a remove adds the same term back (the server has no restore).
+  const restore = async (t: GlossaryTerm) => {
+    const res = await createTerm({ term: t.term, kind: t.kind, definition: t.definition, aliases: t.aliases });
+    if (res.ok) {
+      setTerms((list) => sortTerms([...list, res.data]));
+      notifySuccess("Term restored", { description: res.data.term });
+    } else notifyError(res.message);
+  };
+
   const remove = async (t: GlossaryTerm) => {
     setTerms((list) => list.filter((x) => x.id !== t.id));
-    setFlash({ tone: "busy", text: `Removing ${t.term}` });
     const res = await deleteTerm(t.id);
-    if (res.ok) setFlash({ tone: "ok", text: `${t.term} removed.` });
+    if (res.ok) notifySuccess("Term removed", { description: t.term, undo: () => void restore(t) });
     else {
       setTerms((list) => sortTerms([...list, t]));
-      setFlash({ tone: "error", text: res.message });
+      notifyError(res.message);
     }
   };
 
@@ -288,8 +298,8 @@ export function VocabularyEditor({ initial, canEdit }: { initial: GlossaryTerm[]
         type="button"
         aria-pressed={on}
         onClick={() => setKind(on && value !== null ? null : value)}
-        className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[14px] font-semibold transition-colors duration-150 focus-visible:!rounded-full ${
-          on ? "border-pill bg-pill text-pill-on" : "border-line-2 bg-surface text-ink-2 hover:bg-surface-2"
+        className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[14px] font-semibold transition-colors duration-150 ${
+          on ? "border-signal bg-signal-soft text-signal-ink" : "border-line-2 bg-surface text-ink-2 hover:bg-surface-2"
         }`}
       >
         {label}
@@ -315,14 +325,15 @@ export function VocabularyEditor({ initial, canEdit }: { initial: GlossaryTerm[]
               aria-controls="glossary-import"
               onClick={() => setImporting((v) => !v)}
               disabled={full}
-              className="focus-visible:!rounded-ctl"
+             
             >
               <ClipboardText size={16} aria-hidden />
               Paste a list
             </Button>
-            <button
+            <Button
               ref={addBtn}
               type="button"
+              size="sm"
               disabled={full || adding}
               onClick={() => {
                 setAdding(true);
@@ -330,11 +341,10 @@ export function VocabularyEditor({ initial, canEdit }: { initial: GlossaryTerm[]
                 setAddErrors({});
                 setAddKey((k) => k + 1);
               }}
-              className="inline-flex h-9 items-center gap-2 rounded-ctl border border-pill bg-pill px-3.5 text-[14px] font-semibold text-pill-on transition-colors duration-150 hover:bg-pill-2 focus-visible:!rounded-ctl disabled:pointer-events-none disabled:opacity-50"
             >
               <Plus size={16} weight="bold" aria-hidden />
               Add term
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}
@@ -346,12 +356,12 @@ export function VocabularyEditor({ initial, canEdit }: { initial: GlossaryTerm[]
           onImported={(list, n) => {
             setTerms(sortTerms(list));
             setImporting(false);
-            setFlash({ tone: "ok", text: `${n} ${n === 1 ? "term" : "terms"} imported.` });
+            notifySuccess(n === 1 ? "Term imported" : `${n} terms imported`);
           }}
         />
       ) : null}
 
-      <div className="overflow-hidden rounded-card border border-line bg-surface shadow-warm-1">
+      <div className={cardClass({ flush: true })}>
         {/* search and kind filters */}
         <div className="flex flex-col gap-3 border-b border-line px-4 py-3.5 sm:px-[22px] lg:flex-row lg:items-center">
           <div className="relative lg:w-[300px] lg:shrink-0">
@@ -377,7 +387,7 @@ export function VocabularyEditor({ initial, canEdit }: { initial: GlossaryTerm[]
 
         {/* column heads, for sighted readers; every row says the same in its own text */}
         {terms.length > 0 || adding ? (
-          <div aria-hidden className={`hidden gap-x-4 border-b border-line bg-surface-2 px-[22px] py-2.5 text-[13px] font-semibold text-ink-3 md:grid ${COLS}`}>
+          <div aria-hidden className={`hidden gap-x-4 border-b border-line bg-surface-2 px-[22px] py-2.5 text-[12.5px] font-semibold text-ink-3 md:grid ${COLS}`}>
             <span>Term</span>
             <span>Kind</span>
             <span>Definition</span>
@@ -408,8 +418,9 @@ export function VocabularyEditor({ initial, canEdit }: { initial: GlossaryTerm[]
 
         {terms.length === 0 && !adding ? (
           <EmptyState
-            className="!rounded-none !border-0 !bg-transparent"
-            title={canEdit ? "No vocabulary yet" : "No vocabulary yet"}
+            inCard
+            art="notes"
+            title="No vocabulary yet"
             description={
               canEdit
                 ? "Add the words your company uses that an outsider would not know: product names, codenames, acronyms, customers. Or paste a list you already have."
@@ -462,13 +473,13 @@ export function VocabularyEditor({ initial, canEdit }: { initial: GlossaryTerm[]
                 >
                   <div className="min-w-0">
                     <p className="flex flex-wrap items-center gap-2">
-                      <span className="break-words text-[15.5px] font-semibold text-ink">{t.term}</span>
+                      <span className="break-words text-[15px] font-semibold text-ink">{t.term}</span>
                       <span className="md:hidden">
                         <KindChip kind={t.kind} />
                       </span>
                     </p>
                     {t.aliases.length ? (
-                      <p className="mt-0.5 text-[13.5px] text-ink-3">
+                      <p className="mt-0.5 text-[14px] text-ink-3">
                         <span className="sr-only">Other spellings: </span>
                         <span aria-hidden>also </span>
                         {t.aliases.join(", ")}
@@ -478,7 +489,7 @@ export function VocabularyEditor({ initial, canEdit }: { initial: GlossaryTerm[]
                   <div className="hidden md:block">
                     <KindChip kind={t.kind} />
                   </div>
-                  <p className={`min-w-0 text-[14.5px] leading-relaxed ${t.definition ? "text-ink-2" : "text-ink-4"}`}>
+                  <p className={`min-w-0 text-[14px] leading-relaxed ${t.definition ? "text-ink-2" : "text-ink-3"}`}>
                     {t.definition ?? "No definition"}
                   </p>
                   {canEdit ? (
@@ -489,7 +500,7 @@ export function VocabularyEditor({ initial, canEdit }: { initial: GlossaryTerm[]
                         onClick={() => startEdit(t)}
                         aria-label={`Edit ${t.term}`}
                         title={`Edit ${t.term}`}
-                        className="grid h-10 w-10 place-items-center rounded-ctl text-ink-3 transition-colors duration-150 hover:bg-bg-2 hover:text-ink focus-visible:!rounded-ctl disabled:opacity-50"
+                        className="grid h-10 w-10 place-items-center rounded-ctl text-ink-3 transition-colors duration-150 hover:bg-bg-2 hover:text-ink disabled:opacity-50"
                       >
                         <PencilSimple size={17} aria-hidden />
                       </button>
@@ -504,11 +515,6 @@ export function VocabularyEditor({ initial, canEdit }: { initial: GlossaryTerm[]
           </ul>
         )}
 
-        {canEdit ? (
-          <div className="border-t border-line bg-surface-2 px-4 py-3 sm:px-[22px]">
-            <FlashLine flash={flash} />
-          </div>
-        ) : null}
       </div>
     </div>
   );

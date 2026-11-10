@@ -5,26 +5,14 @@ import { usePathname } from "next/navigation";
 import { List, MagnifyingGlass } from "@phosphor-icons/react";
 import { ThemeToggle } from "@/components/app/ThemeToggle";
 import { AccountMenu } from "@/components/app/AccountMenu";
-import { ADMIN_ITEMS, FOOT_ITEMS, NAV_SECTIONS } from "@/components/app/nav";
+import Link from "next/link";
+import { CaretRight } from "@phosphor-icons/react";
+import { useCrumbLabel } from "@/components/app/Crumb";
+import { breadcrumbFor } from "@/components/app/breadcrumbs";
 
-function titleFor(pathname: string | null): string {
-  if (!pathname) return "";
-  if (/^\/meetings\/[^/]+\/decisions\/[^/]+$/.test(pathname)) return "Decision lineage";
-  if (/^\/meetings\/[^/]+\/collaborations$/.test(pathname)) return "Agent collaboration";
-  if (/^\/people\/[^/]+$/.test(pathname)) return "Person";
-  if (pathname === "/tenant/usage") return "Usage and budget";
-  if (pathname === "/tenant/agents") return "Agent collaboration";
-  if (/^\/meetings\/[^/]+\/transcript$/.test(pathname)) return "Transcript";
-  if (/^\/meetings\/[^/]+$/.test(pathname)) return "Meeting";
-  const all = [...NAV_SECTIONS.flatMap((s) => s.items), ...FOOT_ITEMS, ...ADMIN_ITEMS];
-  const hit = all
-    .filter((i) => pathname === i.href || pathname.startsWith(`${i.href}/`))
-    .sort((a, b) => b.href.length - a.href.length)[0];
-  return hit?.label ?? "";
-}
-
-/* The topbar: menu button (below lg), the screen's name, the search trigger (Cmd/Ctrl+K),
-   the theme toggle and the account menu. */
+/* The topbar: menu button (below lg), a breadcrumb on detail pages only (Decisions / the
+   decision), the search trigger (Cmd/Ctrl+K), the theme toggle and the account menu. Top-level
+   pages show no title here: the page's own h1 is the one title on screen. */
 export function Topbar({
   onMenuClick,
   onSearchClick,
@@ -33,6 +21,7 @@ export function Topbar({
   onSearchClick: () => void;
 }) {
   const pathname = usePathname();
+  const crumbs = breadcrumbFor(pathname, useCrumbLabel());
   // The server cannot know the platform, so the first render says Ctrl K and a Mac swaps it after
   // mount (hydration-safe). The label beside it is flexible, so nothing else moves.
   const [mac, setMac] = useState(false);
@@ -53,8 +42,29 @@ export function Topbar({
           <List size={20} aria-hidden />
         </button>
       ) : null}
-      {/* A paragraph, not a heading: each screen owns its own h1. */}
-      <p className="display hidden min-w-0 truncate text-[20px] text-ink-display sm:block">{titleFor(pathname)}</p>
+      {crumbs ? (
+        <nav aria-label="Breadcrumb" className="hidden min-w-0 sm:block">
+          <ol className="flex min-w-0 items-center gap-1.5 text-[14px]">
+            {crumbs.map((c, i) => {
+              const last = i === crumbs.length - 1;
+              return (
+                <li key={`${i}-${c.label}`} className={`flex items-center gap-1.5 ${last ? "min-w-0" : "shrink-0"}`}>
+                  {i > 0 ? <CaretRight size={12} weight="bold" aria-hidden className="shrink-0 text-ink-4" /> : null}
+                  {last || !c.href ? (
+                    <span aria-current={last ? "page" : undefined} className="max-w-[46ch] truncate font-semibold text-ink">
+                      {c.label}
+                    </span>
+                  ) : (
+                    <Link href={c.href} className="inline-flex min-h-10 items-center rounded-ctl font-semibold text-ink-3 transition-colors hover:text-ink">
+                      {c.label}
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        </nav>
+      ) : null}
 
       <button
         type="button"
@@ -68,7 +78,7 @@ export function Topbar({
         <span className="flex-1 truncate">Search or ask Mytheus</span>
         <kbd
           aria-hidden
-          className="hidden shrink-0 rounded-full border border-line-2 bg-surface-2 px-2 py-0.5 font-sans text-[12px] font-semibold text-ink-3 md:inline"
+          className="hidden shrink-0 rounded-full border border-line-2 bg-surface-2 px-2 py-0.5 font-sans text-[12.5px] font-semibold text-ink-3 md:inline"
         >
           {mac ? "⌘ K" : "Ctrl K"}
         </kbd>

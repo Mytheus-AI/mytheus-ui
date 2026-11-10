@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import { Note, PageHeader } from "@/components/settings/primitives";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { Note } from "@/components/ui/Note";
+import { SectionBar } from "@/components/ui/Page";
 import { AuditLogViewer } from "@/components/ops/AuditLogViewer";
 import { loadOpsTenants } from "@/lib/api/admin-ops";
 
@@ -12,16 +14,16 @@ export const dynamic = "force-dynamic";
 export default async function OpsAuditPage() {
   const tenants = await loadOpsTenants();
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader title="Audit log" description="Who did what in one tenant. Read only, and every search here is recorded in the ops audit log." />
+    <div className="flex flex-col gap-5">
+      <SectionBar title="Audit log" context="Who did what in one tenant. Read only, and every search here is recorded in the ops audit log." />
       {tenants.kind === "live" ? (
         <AuditLogViewer tenants={tenants.data.tenants.map((t) => ({ org_id: t.org_id, name: t.name }))} />
       ) : (
-        <Note tone={tenants.kind === "forbidden" ? "error" : "warning"}>
-          {tenants.kind === "forbidden"
-            ? "This account is not on the Mytheus staff list."
-            : "The tenant list could not be loaded just now, so there is nothing to pick. Try again in a moment."}
-        </Note>
+        tenants.kind === "forbidden" ? (
+          <Note tone="error">This account is not on the Mytheus staff list.</Note>
+        ) : (
+          <ErrorState title="The tenant list could not be loaded" text="There is nothing to pick until it loads. Nothing was changed." />
+        )
       )}
     </div>
   );

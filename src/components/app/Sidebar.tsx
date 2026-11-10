@@ -8,14 +8,15 @@ import { useOrgContext } from "@/lib/org-context";
 import { Wordmark } from "@/components/site/Wordmark";
 import { Doodle } from "@/components/ui/Doodle";
 import { defaultDoodleSeed } from "@/lib/doodle";
+import { buttonClass } from "@/components/ui/Button";
+import { countLabel } from "@/lib/inbox";
 import {
   ADMIN_ITEMS,
   AGENT_ITEM,
   FOOT_ITEMS,
-  NAV_SECTIONS,
+  MAIN_ITEMS,
   NEW_MEETING_HREF,
-  allNavItems,
-  isActive,
+  currentNavHref,
   type NavItem,
 } from "@/components/app/nav";
 
@@ -24,7 +25,8 @@ import {
    - rail: a 76px icon column that opens to 252px over the page while hovered or keyboard-focused,
      so the content never reflows. The choice is the user's (the pin button) and is remembered.
    `drawer` renders it full width with a close button and no rail behaviour, for the small-screen
-   overlay. The current page is marked by the marketing nav's coral squiggle, drawn once.
+   overlay. The current page is marked by two signals only: a white card and a coral icon.
+   The Inbox row carries its open count (from the shell, refreshed as you work).
    Up and Down arrows move between items, as in a menu; Tab still walks them in order. */
 
 /* Rail labels open with the panel: on hover, or on KEYBOARD focus. Not `focus-within`: a mouse click
@@ -70,13 +72,6 @@ const HEAD: Lay = {
   rail: "mx-auto mb-2.5 mt-1 h-px w-6 bg-line p-0 text-transparent",
   peek: "group-hover/sb:mx-0 group-hover/sb:mb-0 group-hover/sb:mt-0 group-hover/sb:h-7 group-hover/sb:w-auto group-hover/sb:bg-transparent group-hover/sb:px-3 group-hover/sb:pb-1.5 group-hover/sb:pt-1 group-hover/sb:text-ink-3 group-has-[:focus-visible]/sb:mx-0 group-has-[:focus-visible]/sb:mb-0 group-has-[:focus-visible]/sb:mt-0 group-has-[:focus-visible]/sb:h-7 group-has-[:focus-visible]/sb:w-auto group-has-[:focus-visible]/sb:bg-transparent group-has-[:focus-visible]/sb:px-3 group-has-[:focus-visible]/sb:pb-1.5 group-has-[:focus-visible]/sb:pt-1 group-has-[:focus-visible]/sb:text-ink-3",
 };
-// The active marker (a short coral line ending in a bead) sits at the row's right end when the
-// label shows; in the collapsed rail the row's white card and filled coral icon carry it alone.
-const BEAD: Lay = {
-  open: "flex",
-  rail: "hidden",
-  peek: "group-hover/sb:flex group-has-[:focus-visible]/sb:flex",
-};
 // The agent tab: face and name open, the face alone in the rail.
 const AGENT: Lay = {
   open: "gap-3 px-2.5 py-2",
@@ -89,18 +84,6 @@ export type LiveCall = { href: string; title: string };
 
 /** The signed-in person's agent as the sidebar draws it. */
 export type SidebarAgent = { name: string; seed: string };
-
-/** The current item's marker: the memory line's last stretch, ending in the bead that means
-    "you are here" everywhere else in the product (the dashboard's recent meetings, the auth
-    panel). The line draws in from the left, then the bead settles. */
-function ActiveBead({ className }: { className: string }) {
-  return (
-    <span aria-hidden className={`sb-bead pointer-events-none absolute right-3 top-1/2 -mt-[5px] h-[10px] items-center ${className}`}>
-      <span className="sb-bead-line block h-[2px] w-3.5 rounded-full bg-[var(--signal-line)]" />
-      <span className="sb-bead-dot -ml-0.5 block h-[10px] w-[10px] rounded-full bg-signal ring-[3px] ring-signal-soft" />
-    </span>
-  );
-}
 
 /* Up/Down move between the sidebar's items, Home/End jump to the ends. */
 function onNavKey(e: KeyboardEvent<HTMLElement>) {
@@ -119,10 +102,13 @@ export function Sidebar({
   drawer = false,
   liveCall = null,
   agent = null,
+  inboxCount = null,
   onToggleRail,
   onNavigate,
   onClose,
 }: {
+  /** open items in the Inbox; null hides the number */
+  inboxCount?: number | null;
   rail?: boolean;
   drawer?: boolean;
   /** shown as the in-call card; null hides it */
@@ -152,10 +138,7 @@ export function Sidebar({
     : "grid";
 
   // The deepest matching href wins, so /tenant/usage does not also light up /tenant.
-  const current =
-    allNavItems(isAdmin)
-      .filter((i) => isActive(pathname, i.href))
-      .sort((a, b) => b.href.length - a.href.length)[0]?.href ?? null;
+  const current = currentNavHref(pathname, [AGENT_ITEM, ...MAIN_ITEMS, ...(isAdmin ? ADMIN_ITEMS : []), ...FOOT_ITEMS]);
 
   const toggleRail = (e: MouseEvent<HTMLButtonElement>) => {
     if (!rail) {
@@ -178,6 +161,7 @@ export function Sidebar({
   const item = (it: NavItem) => {
     const active = current === it.href;
     const Icon = it.icon;
+    const badge = it.count === "inbox" ? countLabel(inboxCount) : null;
     return (
       <Link
         key={it.href}
@@ -185,13 +169,29 @@ export function Sidebar({
         onClick={onNavigate}
         data-sb-item=""
         aria-current={active ? "page" : undefined}
+        aria-label={badge ? `${it.label}, ${inboxCount} waiting` : undefined}
         className={`relative flex h-[42px] shrink-0 items-center ${lay(ROW)} rounded-ctl text-[14px] font-semibold transition-[background-color,color,transform] duration-150 motion-safe:active:scale-[0.98] ${
-          active ? "bg-surface text-ink shadow-warm-1" : "text-ink-3 hover:bg-bg-2 hover:text-ink"
+          active ? "bg-surface text-ink" : "text-ink-3 hover:bg-bg-2 hover:text-ink"
         }`}
       >
-        <Icon size={20} weight={active ? "fill" : "regular"} aria-hidden className={active ? "text-signal" : ""} />
-        <span className={`sb-fade ${label}`}>{it.label}</span>
-        {active ? <ActiveBead className={lay(BEAD)} /> : null}
+        <span className="relative inline-flex shrink-0">
+          <Icon size={20} weight={active ? "fill" : "regular"} aria-hidden className={active ? "text-signal" : ""} />
+          {badge && railed ? (
+            <span
+              aria-hidden
+              className={`absolute -right-1.5 -top-1 h-2.5 w-2.5 rounded-full bg-signal ring-2 ring-bg ${peekable ? "group-hover/sb:hidden group-has-[:focus-visible]/sb:hidden" : ""}`}
+            />
+          ) : null}
+        </span>
+        <span className={`sb-fade min-w-0 flex-1 ${label}`}>{it.label}</span>
+        {badge ? (
+          <span
+            aria-hidden
+            className={`sb-fade ml-auto shrink-0 rounded-full bg-signal-soft px-2 py-px text-[12.5px] font-semibold tabular-nums text-signal-ink ${label}`}
+          >
+            {badge}
+          </span>
+        ) : null}
       </Link>
     );
   };
@@ -245,11 +245,11 @@ export function Sidebar({
         aria-label={`${org.name}: switch workspace`}
         className={`mb-3 flex shrink-0 items-center rounded-ctl border transition-colors hover:border-line-2 ${lay(ORG)}`}
       >
-        <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full bg-pill text-[13px] font-bold text-pill-on">
+        <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full bg-pill text-[12.5px] font-bold text-pill-on">
           {org.name.slice(0, 1).toUpperCase()}
         </span>
         <span className={`sb-fade min-w-0 flex-1 ${label}`}>
-          <span className="block truncate text-[13.5px] font-semibold leading-tight text-ink">{org.name}</span>
+          <span className="block truncate text-[14px] font-semibold leading-tight text-ink">{org.name}</span>
           <span className="block text-[12.5px] text-ink-3">{isAdmin ? "Workspace admin" : "Member"}</span>
         </span>
         <CaretUpDown size={16} aria-hidden className={`shrink-0 text-ink-3 ${openOnly}`} />
@@ -260,7 +260,7 @@ export function Sidebar({
         onClick={onNavigate}
         data-sb-item=""
         aria-label="New meeting"
-        className={`mb-3.5 flex h-10 shrink-0 items-center ${lay(CTA)} rounded-ctl bg-pill text-[14px] font-semibold text-pill-on transition-[background-color,box-shadow,transform] duration-150 hover:bg-pill-2 hover:shadow-warm-2 motion-safe:active:scale-[0.98]`}
+        className={`${buttonClass({ variant: "primary", size: "md" })} mb-3.5 !flex ${lay(CTA)}`}
       >
         <Plus size={18} weight="bold" aria-hidden />
         <span className={`sb-fade ${label}`}>New meeting</span>
@@ -271,7 +271,6 @@ export function Sidebar({
         active={current === AGENT_ITEM.href}
         layout={lay(AGENT)}
         label={label}
-        bead={lay(BEAD)}
         onNavigate={onNavigate}
       />
 
@@ -288,19 +287,14 @@ export function Sidebar({
             <span className="h-2.5 w-2.5 rounded-full bg-priority-high" />
           </span>
           <span className={`sb-fade min-w-0 ${label}`}>
-            <span className="block text-[13px] font-semibold leading-tight">In call</span>
+            <span className="block text-[12.5px] font-semibold leading-tight">In call</span>
             <span className="block truncate text-[12.5px] opacity-75">{liveCall.title}</span>
           </span>
         </Link>
       ) : null}
 
       <nav aria-label="Main" className="-mx-1.5 flex-1 overflow-y-auto overflow-x-hidden px-1.5">
-        {NAV_SECTIONS.map((section) => (
-          <div key={section.label ?? "root"} className="mb-3">
-            {section.label ? groupTitle(section.label) : null}
-            <div className="flex flex-col gap-0.5">{section.items.map(item)}</div>
-          </div>
-        ))}
+        <div className="mb-3 flex flex-col gap-0.5">{MAIN_ITEMS.map(item)}</div>
         {isAdmin ? (
           <div className="mb-3">
             {groupTitle("Admin")}
@@ -314,23 +308,21 @@ export function Sidebar({
   );
 }
 
-/* Your agent's own row: its face in a dashed coral orbit (it is listening on your behalf), its
-   name, and "Your agent" in the accent ink, on the peach wash the auth panels use. No other row
-   in the sidebar has a face, a wash or an orbit, so it reads as a someone, not a screen. Open:
-   the orbit closes into a solid ring and the row turns to a white card like any current item. */
+/* Your agent's own row: its face in a static dashed coral orbit (it is listening on your behalf),
+   its name, and "Your agent" in the accent ink. No other row has a face or an orbit, so it reads
+   as a someone, not a screen. Open: the orbit closes into a solid ring and the row turns to a
+   white card like any current item. */
 function AgentTab({
   agent,
   active,
   layout,
   label,
-  bead,
   onNavigate,
 }: {
   agent: SidebarAgent;
   active: boolean;
   layout: string;
   label: string;
-  bead: string;
   onNavigate?: () => void;
 }) {
   return (
@@ -341,8 +333,8 @@ function AgentTab({
       aria-current={active ? "page" : undefined}
       aria-label={`${agent.name}, your agent`}
       title={`${agent.name}, your agent`}
-      className={`group/agent relative mb-3.5 flex min-h-[52px] shrink-0 items-center rounded-card transition-[background-color,box-shadow,transform] duration-150 motion-safe:active:scale-[0.98] ${layout} ${
-        active ? "bg-surface shadow-warm-1" : "sb-agent-wash hover:shadow-warm-1"
+      className={`relative mb-3.5 flex min-h-[52px] shrink-0 items-center rounded-card transition-[background-color,transform] duration-150 motion-safe:active:scale-[0.98] ${layout} ${
+        active ? "bg-surface" : "hover:bg-bg-2"
       }`}
     >
       <span className="relative grid h-[38px] w-[38px] shrink-0 place-items-center">
@@ -353,11 +345,10 @@ function AgentTab({
           <Doodle seed={agent.seed} className="block h-full w-full" />
         </span>
       </span>
-      <span className={`sb-fade min-w-0 flex-1 pr-6 ${label}`}>
+      <span className={`sb-fade min-w-0 flex-1 ${label}`}>
         <span className="block truncate text-[14px] font-semibold leading-tight text-ink">{agent.name}</span>
         <span className="block text-[12.5px] font-medium text-signal-ink">Your agent</span>
       </span>
-      {active ? <ActiveBead className={bead} /> : null}
     </Link>
   );
 }

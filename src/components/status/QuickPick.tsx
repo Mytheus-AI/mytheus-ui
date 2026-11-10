@@ -64,7 +64,7 @@ export function QuickPick({
             tabIndex={on || (at === -1 && i === 0) ? 0 : -1}
             disabled={disabled}
             onClick={() => onChange(on ? null : q.key)}
-            className={`inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-ctl px-2.5 text-[13.5px] font-semibold transition-colors duration-150 disabled:opacity-50 ${
+            className={`inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-ctl px-2.5 text-[14px] font-semibold transition-colors duration-150 disabled:opacity-50 ${
               on ? ON[q.key] : "text-ink-2 hover:bg-bg-2 hover:text-ink"
             }`}
           >

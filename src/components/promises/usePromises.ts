@@ -3,20 +3,23 @@
 import { useCallback, useRef, useState } from "react";
 import { setCommitmentStatus } from "@/app/actions/commitments";
 import type { CommitmentStatus, PromiseView } from "@/lib/api/personal-types";
-import type { UndoNotice } from "./UndoBar";
+import { notifyError, notifySuccess } from "@/lib/toast";
 
 /* The promise list as the person changes it. Every change is optimistic: the row moves at once,
-   the server action runs, and a refusal puts it back where it was with the reason. A successful
-   done or dismiss offers Undo, which is the same change back to the previous status. A promise
-   the server says no longer exists is dropped rather than restored. */
+   the server action runs, and a refusal puts it back where it was with the reason (an error
+   toast). A successful change answers with a toast in the control's own verb and offers Undo,
+   which is the same change back to the previous status (the server can reopen a promise). A
+   promise the server says no longer exists is dropped rather than restored. */
 
-const VERB: Record<CommitmentStatus, string> = { done: "Marked done", dismissed: "Dismissed", open: "Moved back to open" };
+const VERB: Record<CommitmentStatus, string> = {
+  done: "Promise marked done",
+  dismissed: "Promise dismissed",
+  open: "Promise moved back to open",
+};
 
 export function usePromises(initial: PromiseView[]) {
   const [items, setItems] = useState<PromiseView[]>(initial);
   const [pending, setPending] = useState<Record<string, true>>({});
-  const [notice, setNotice] = useState<UndoNotice | null>(null);
-  const seq = useRef(0);
   const itemsRef = useRef(items);
   itemsRef.current = items;
 
@@ -39,22 +42,15 @@ export function usePromises(initial: PromiseView[]) {
     });
     if (!res.ok) {
       patch(id, res.gone ? null : { status: before.status, done_at: before.done_at, updated_at: before.updated_at });
-      setNotice({ kind: "error", key: ++seq.current, text: res.message });
+      notifyError(res.message);
       return;
     }
-    if (isUndo) {
-      setNotice(null);
-      return;
-    }
-    setNotice({
-      kind: "undo",
-      key: ++seq.current,
-      text: `${VERB[next]}: ${before.content.length > 60 ? `${before.content.slice(0, 59).trimEnd()}…` : before.content}`,
-      onUndo: () => void change(id, before.status, true),
+    if (isUndo) return;
+    notifySuccess(VERB[next], {
+      description: before.content.length > 80 ? `${before.content.slice(0, 79).trimEnd()}…` : before.content,
+      undo: () => void change(id, before.status, true),
     });
   }, []);
 
-  const closeNotice = useCallback(() => setNotice(null), []);
-
-  return { items, pending, notice, change, closeNotice };
+  return { items, pending, change };
 }

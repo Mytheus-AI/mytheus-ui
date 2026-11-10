@@ -45,6 +45,13 @@ ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY \
     NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
+# Mytheus Capture, the Chrome extension in extension/ (its own package and build, outside the
+# Next app). Built here so the /capture page can offer the zip for download. The dashboard
+# origin it signs in through is baked into the extension at build time.
+ARG CAPTURE_DASHBOARD_ORIGIN=https://dashboard.mytheus.cloud
+RUN npm ci --prefix extension && \
+    MYTHEUS_DASHBOARD_ORIGIN=$CAPTURE_DASHBOARD_ORIGIN npm run build --prefix extension
+
 FROM node:20-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
@@ -53,6 +60,8 @@ RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+# Served by /api/capture/extension (CAPTURE_EXTENSION_ZIP defaults to this path).
+COPY --from=builder --chown=nextjs:nodejs /app/extension/dist/mytheus-capture.zip ./extension/dist/mytheus-capture.zip
 USER nextjs
 EXPOSE 3000
 # No shell form: exec form makes node PID 1 so SIGTERM reaches it and rollouts drain cleanly.

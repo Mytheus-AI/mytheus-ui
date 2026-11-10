@@ -12,6 +12,29 @@
  */
 
 export interface paths {
+    "/api/meetings/{meeting_id}/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Room Session
+         * @description The caller's standing in this meeting's call: whether consent is required and already
+         *     given (so the pre-join asks once per person per meeting), whether audio/video is recorded
+         *     (so the notice says exactly what is kept), and when the call started (the meeting clock).
+         *     Same existence-then-participation order and codes as the token mint.
+         */
+        get: operations["get_room_session"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/meetings/{meeting_id}/token": {
         parameters: {
             query?: never;
@@ -102,10 +125,21 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * ConsentAck
+         * @description The participant read the consent notice and agreed to join with it in force.
+         *
+         *     `version` names the exact notice text the client showed (the UI owns the copy, so it owns the
+         *     version label). It is stored verbatim in `meeting_participants.consent_version`.
+         */
+        ConsentAck: {
+            /** Version */
+            version: string;
+        };
+        /**
          * @description The frozen program-wide error enum. Clients branch on this and never on `detail`, which is human-readable and free to change. Values are added, never removed or repurposed. Emitted verbatim from `libs.shared.errors.ErrorCode`, so this list cannot drift from the code; the no-removal half is asserted by `test_no_published_error_code_is_ever_removed`, because `oasdiff` does not treat narrowing a response enum as a breaking change.
          * @enum {string}
          */
-        ErrorCode: "MALFORMED_BODY" | "INVALID_CURSOR" | "AUTH_REQUIRED" | "TOKEN_EXPIRED" | "FORBIDDEN_ROLE" | "CROSS_TENANT_DENIED" | "NOT_FOUND" | "IDEMPOTENCY_KEY_REUSED" | "VERSION_CONFLICT" | "VALIDATION_FAILED" | "RATE_LIMITED" | "QUOTA_EXCEEDED" | "INTERNAL" | "DEPENDENCY_UNAVAILABLE" | "NOT_IMPLEMENTED" | "NOT_A_PARTICIPANT" | "CONSENT_REQUIRED" | "PROVIDER_NOT_CONFIGURED" | "PM_ALREADY_CONNECTED" | "ACCOUNT_CONNECTED_ELSEWHERE";
+        ErrorCode: "MALFORMED_BODY" | "INVALID_CURSOR" | "AUTH_REQUIRED" | "TOKEN_EXPIRED" | "FORBIDDEN_ROLE" | "CROSS_TENANT_DENIED" | "NOT_FOUND" | "IDEMPOTENCY_KEY_REUSED" | "VERSION_CONFLICT" | "VALIDATION_FAILED" | "RATE_LIMITED" | "QUOTA_EXCEEDED" | "INTERNAL" | "DEPENDENCY_UNAVAILABLE" | "NOT_IMPLEMENTED" | "NOT_A_PARTICIPANT" | "CONSENT_REQUIRED" | "EXTERNAL_MEETING" | "PROVIDER_NOT_CONFIGURED" | "PM_ALREADY_CONNECTED" | "ACCOUNT_CONNECTED_ELSEWHERE";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -154,12 +188,47 @@ export interface components {
             /** Scheduled Start */
             scheduled_start?: string | null;
         };
+        /**
+         * RoomSession
+         * @description `GET /api/meetings/{meeting_id}/session`: the caller's standing in this meeting's call.
+         *
+         *     Read by the pre-join (ask for consent only when it has not been given for this meeting) and
+         *     by the room (the meeting clock).
+         */
+        RoomSession: {
+            /** Consent Required */
+            consent_required: boolean;
+            /** Consent Version */
+            consent_version: string | null;
+            /** Consented At */
+            consented_at: string | null;
+            /** Ended */
+            ended: boolean;
+            /** Recording */
+            recording: boolean;
+            /** Started At */
+            started_at: string | null;
+        };
+        /**
+         * TokenRequest
+         * @description Optional body of `POST /api/meetings/{meeting_id}/token`. An empty or absent body is the
+         *     original contract: no acknowledgment is recorded.
+         */
+        TokenRequest: {
+            consent?: components["schemas"]["ConsentAck"] | null;
+        };
         /** TokenResponse */
         TokenResponse: {
+            /** Consent Version */
+            consent_version?: string | null;
+            /** Consented At */
+            consented_at?: string | null;
             /** Livekit Url */
             livekit_url: string;
             /** Room */
             room: string;
+            /** Started At */
+            started_at?: string | null;
             /** Token */
             token: string;
         };
@@ -185,6 +254,55 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    get_room_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoomSession"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     mint_token: {
         parameters: {
             query?: never;
@@ -197,7 +315,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["TokenRequest"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

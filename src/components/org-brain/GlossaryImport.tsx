@@ -4,7 +4,9 @@ import { useMemo, useState } from "react";
 import { WarningCircle, X } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
-import { textareaClass } from "@/components/settings/primitives";
+import { CardFoot, cardClass } from "@/components/ui/Card";
+import { textareaClass } from "@/components/ui/Form";
+import { notifyError } from "@/lib/toast";
 import { importTerms } from "@/app/actions/org-brain";
 import {
   BRAIN_LIMITS,
@@ -15,7 +17,6 @@ import {
   type GlossaryKind,
   type GlossaryTerm,
 } from "@/lib/api/org-brain-types";
-import { FlashLine, useFlash } from "./ui";
 
 /* "Paste a list" (ADR-0039 A2 import): one term per line, "term: definition" understood, with a
    live preview of what will be added, what will update an existing term (the import upserts by
@@ -37,7 +38,6 @@ export function GlossaryImport({
   const [defaultKind, setDefaultKind] = useState<GlossaryKind>("other");
   const [acronyms, setAcronyms] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [flash, setFlash] = useFlash();
 
   const parsed = useMemo(() => {
     const p = parseGlossaryImport(text, { defaultKind, detectAcronyms: acronyms });
@@ -54,20 +54,19 @@ export function GlossaryImport({
   const run = async () => {
     if (!count || overCap || busy) return;
     setBusy(true);
-    setFlash({ tone: "busy", text: `Importing ${count} ${count === 1 ? "term" : "terms"}` });
     const res = await importTerms(parsed.rows.map(({ term, kind, definition, aliases }) => ({ term, kind, definition, aliases })));
     setBusy(false);
     if (res.ok) {
       setText("");
       onImported(res.data, count);
-    } else setFlash({ tone: "error", text: res.message });
+    } else notifyError(res.message);
   };
 
   return (
     <section
       id="glossary-import"
       aria-labelledby="glossary-import-h"
-      className="overflow-hidden rounded-card border border-line bg-surface shadow-warm-1"
+      className={cardClass({ flush: true })}
     >
       <div className="flex items-start justify-between gap-4 px-4 pb-3 pt-[18px] sm:px-[22px]">
         <div>
@@ -84,7 +83,7 @@ export function GlossaryImport({
           type="button"
           onClick={onClose}
           aria-label="Close paste a list"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-ctl text-ink-3 transition-colors hover:bg-bg-2 hover:text-ink focus-visible:!rounded-ctl"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-ctl text-ink-3 transition-colors hover:bg-bg-2 hover:text-ink"
         >
           <X size={18} aria-hidden />
         </button>
@@ -105,7 +104,7 @@ export function GlossaryImport({
             className={`${textareaClass} !resize-y font-mono !text-[14px]`}
             aria-describedby="glossary-paste-help"
           />
-          <p id="glossary-paste-help" className="text-[13px] text-ink-3">
+          <p id="glossary-paste-help" className="text-[12.5px] text-ink-3">
             Up to {L.importMax} terms at a time. Bullets and numbering are ignored.
           </p>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
@@ -137,7 +136,7 @@ export function GlossaryImport({
                   .join(", ")}
           </p>
           {parsed.repeated || parsed.overLimit ? (
-            <p className="mt-1 text-[13px] text-ink-3">
+            <p className="mt-1 text-[12.5px] text-ink-3">
               {parsed.repeated ? `${parsed.repeated} repeated ${parsed.repeated === 1 ? "line" : "lines"} skipped. ` : ""}
               {parsed.overLimit ? `${parsed.overLimit} past the limit of ${L.importMax} left out.` : ""}
             </p>
@@ -150,11 +149,11 @@ export function GlossaryImport({
                 return (
                   <li key={r.line} className="flex items-start gap-3 px-3 py-2.5">
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[14.5px] font-semibold text-ink">
+                      <span className="block truncate text-[14px] font-semibold text-ink">
                         {r.term}
                         {r.aliases.length ? <span className="font-normal text-ink-3"> also {r.aliases.join(", ")}</span> : null}
                       </span>
-                      <span className={`block truncate text-[13.5px] ${r.definition ? "text-ink-3" : "text-ink-4"}`}>
+                      <span className={`block truncate text-[14px] ${r.definition ? "text-ink-3" : "text-ink-3"}`}>
                         {r.definition ?? "No definition"}
                       </span>
                     </span>
@@ -171,33 +170,32 @@ export function GlossaryImport({
           {parsed.problems.length ? (
             <ul className="mt-3 space-y-1.5" aria-label="Lines that cannot be used">
               {parsed.problems.slice(0, 6).map((p) => (
-                <li key={p.line} className="flex items-start gap-2 text-[13.5px] text-priority-medium">
+                <li key={p.line} className="flex items-start gap-2 text-[14px] text-priority-medium">
                   <WarningCircle size={15} weight="bold" className="mt-0.5 shrink-0" aria-hidden />
                   <span className="min-w-0">
                     Line {p.line}: {p.reason} <span className="text-ink-3">{p.text.slice(0, 48)}</span>
                   </span>
                 </li>
               ))}
-              {parsed.problems.length > 6 ? <li className="text-[13px] text-ink-3">And {parsed.problems.length - 6} more.</li> : null}
+              {parsed.problems.length > 6 ? <li className="text-[12.5px] text-ink-3">And {parsed.problems.length - 6} more.</li> : null}
             </ul>
           ) : null}
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line bg-surface-2 px-4 py-3.5 sm:px-[22px]">
-        <Button type="button" onClick={run} disabled={!count || overCap || busy} aria-busy={busy || undefined} className="focus-visible:!rounded-ctl">
+      <CardFoot>
+        <Button type="button" onClick={run} disabled={!count || overCap || busy} aria-busy={busy || undefined}>
           {busy ? "Importing" : count ? `Import ${count} ${count === 1 ? "term" : "terms"}` : "Import"}
         </Button>
-        <Button type="button" variant="ghost" onClick={onClose} className="focus-visible:!rounded-ctl">
+        <Button type="button" variant="ghost" onClick={onClose}>
           Cancel
         </Button>
-        <FlashLine
-          flash={
-            flash ??
-            (overCap ? { tone: "error", text: `That is ${added.length} new terms, and there is room for ${roomLeft} (the limit is ${L.maxTerms}).` } : null)
-          }
-        />
-      </div>
+        {overCap ? (
+          <p role="alert" className="text-[14px] font-medium text-priority-high">
+            That is {added.length} new terms, and there is room for {roomLeft} (the limit is {L.maxTerms}).
+          </p>
+        ) : null}
+      </CardFoot>
     </section>
   );
 }

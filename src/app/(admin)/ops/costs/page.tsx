@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { StatCard, theadRowClass, thClass } from "@/components/admin/StatCard";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Note, PageHeader, SectionCard } from "@/components/settings/primitives";
+import { SectionCard } from "@/components/ui/Card";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { Note } from "@/components/ui/Note";
+import { SectionBar } from "@/components/ui/Page";
 import { loadCosts } from "@/lib/api/admin-ops";
 import { sortCosts } from "@/lib/ops";
 
@@ -28,11 +31,13 @@ export default async function OpsCostsPage() {
   const res = await loadCosts();
   if (res.kind !== "live") {
     return (
-      <div className="flex flex-col gap-6">
-        <PageHeader title="Cost and lag" description="Model spend by tenant and pipeline health." />
-        <Note tone={res.kind === "forbidden" ? "error" : "warning"}>
-          {res.kind === "forbidden" ? "This account is not on the Mytheus staff list." : "The cost and lag figures could not be loaded just now. Try again in a moment."}
-        </Note>
+      <div className="flex flex-col gap-5">
+        <SectionBar title="Cost and lag" context="Model spend by tenant and pipeline health." />
+        {res.kind === "forbidden" ? (
+          <Note tone="error">This account is not on the Mytheus staff list.</Note>
+        ) : (
+          <ErrorState title="The cost and lag figures could not be loaded" />
+        )}
       </div>
     );
   }
@@ -44,8 +49,8 @@ export default async function OpsCostsPage() {
   const dlqTotal = d.dlq ? d.dlq.reduce((s, x) => s + x.count, 0) : null;
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader title="Cost and lag" description={`Agent token use by tenant${d.period ? ` for ${periodLabel(d.period)}` : ""}, and pipeline health. Aggregates only.`} />
+    <div className="flex flex-col gap-5">
+      <SectionBar title="Cost and lag" context={`Agent token use by tenant${d.period ? ` for ${periodLabel(d.period)}` : ""}, and pipeline health. Aggregates only.`} />
 
       {d.truncated ? (
         <Note tone="warning">Showing the {rows.length} newest tenants only, so the totals below leave out older tenants.</Note>
@@ -69,7 +74,8 @@ export default async function OpsCostsPage() {
       >
         {rows.length === 0 ? (
           <EmptyState
-            className="!rounded-none !border-0 !bg-transparent !py-10"
+            inCard
+            art="billing"
             title="No token use yet"
             description="No agent token use is recorded for this period."
           />
@@ -114,14 +120,14 @@ export default async function OpsCostsPage() {
         )}
       </SectionCard>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2">
         <SectionCard title="Dead-letter queues" headingLevel={2} headingId="dlq-heading" description="Messages that failed processing and were set aside.">
           {d.dlq === null ? (
             <p className="px-4 py-5 text-[14px] text-ink-3 sm:px-[22px]">Not readable from the ops service yet.</p>
           ) : d.dlq.length === 0 ? (
             <p className="px-4 py-5 text-[14px] text-ink-3 sm:px-[22px]">No dead letters.</p>
           ) : (
-            <table className="w-full border-collapse text-left text-[14.5px]">
+            <table className="mx-table w-full border-collapse text-left text-[14px]">
               <thead>
                 <tr className={theadRowClass}>
                   <th scope="col" className={`${thClass} !pl-[22px]`}>Topic</th>
@@ -131,8 +137,12 @@ export default async function OpsCostsPage() {
               <tbody className="divide-y divide-line">
                 {d.dlq.map((x) => (
                   <tr key={x.topic}>
-                    <td className="break-all py-3 pl-[22px] pr-5 font-mono text-[14px] text-ink">{x.topic}</td>
-                    <td className="py-3 pl-5 pr-[22px] text-right tabular-nums text-ink-2">{whole.format(x.count)}</td>
+                    <th scope="row" className="break-all py-3 pl-[22px] pr-5 text-left font-mono text-[14px] font-normal text-ink">
+                      {x.topic}
+                    </th>
+                    <td data-label="Messages" className="py-3 pl-5 pr-[22px] text-right tabular-nums text-ink-2">
+                      {whole.format(x.count)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -146,7 +156,7 @@ export default async function OpsCostsPage() {
           ) : d.consumer_lag.length === 0 ? (
             <p className="px-4 py-5 text-[14px] text-ink-3 sm:px-[22px]">No consumer groups reported.</p>
           ) : (
-            <table className="w-full border-collapse text-left text-[14.5px]">
+            <table className="mx-table w-full border-collapse text-left text-[14px]">
               <thead>
                 <tr className={theadRowClass}>
                   <th scope="col" className={`${thClass} !pl-[22px]`}>Group</th>
@@ -157,9 +167,15 @@ export default async function OpsCostsPage() {
               <tbody className="divide-y divide-line">
                 {d.consumer_lag.map((x) => (
                   <tr key={`${x.group}|${x.topic}`}>
-                    <td className="break-all py-3 pl-[22px] pr-5 font-mono text-[14px] text-ink">{x.group}</td>
-                    <td className="break-all px-5 py-3 font-mono text-[14px] text-ink-2">{x.topic}</td>
-                    <td className="py-3 pl-5 pr-[22px] text-right tabular-nums text-ink-2">{whole.format(x.lag)}</td>
+                    <th scope="row" className="break-all py-3 pl-[22px] pr-5 text-left font-mono text-[14px] font-normal text-ink">
+                      {x.group}
+                    </th>
+                    <td data-label="Topic" className="break-all px-5 py-3 font-mono text-[14px] text-ink-2">
+                      {x.topic}
+                    </td>
+                    <td data-label="Lag" className="py-3 pl-5 pr-[22px] text-right tabular-nums text-ink-2">
+                      {whole.format(x.lag)}
+                    </td>
                   </tr>
                 ))}
               </tbody>

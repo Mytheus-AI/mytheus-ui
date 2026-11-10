@@ -7,6 +7,8 @@ import { AgentWorkspace } from "@/components/agent/AgentWorkspace";
 import { ListeningCard } from "@/components/agent/ListeningCard";
 import { KeptNotes } from "@/components/agent/KeptNotes";
 import { TopicWatchCard } from "@/components/watch/TopicWatchCard";
+import { Page, PageHead } from "@/components/ui/Page";
+import { ErrorState } from "@/components/ui/ErrorState";
 
 export const metadata: Metadata = { title: "Your agent | Mytheus" };
 
@@ -37,19 +39,16 @@ export default async function AgentPage() {
   );
 
   return (
-    <div className="mx-auto w-full max-w-[1480px] py-5 sm:py-6">
+    <Page className="pt-2">
       {profile ? (
         <AgentWorkspace profile={profile} personName={personName} aside={aside} />
       ) : (
-        <div className="space-y-6">
-          <section className="rounded-hero bg-bg-2 px-6 py-8">
-            <p className="text-[13px] font-semibold text-signal-ink">Your agent</p>
-            <h1 className="display mt-1 text-[clamp(2rem,4.5vw,2.8rem)] text-ink">Your agent</h1>
-            <p className="mt-2 text-[15px] text-ink-3">Its details could not be loaded right now. Try again in a moment.</p>
-          </section>
-          <div className="grid items-start gap-6 lg:grid-cols-2">{aside}</div>
+        <div className="space-y-5">
+          <PageHead title="Your agent" />
+          <ErrorState title="Your agent's details could not be loaded" text="Its notes and settings are safe. Try again in a moment." />
+          <div className="grid items-start gap-5 lg:grid-cols-2">{aside}</div>
         </div>
       )}
-    </div>
+    </Page>
   );
 }

@@ -124,6 +124,6 @@ export function describeNotification(row: FeedRowInput): FeedItem {
     body: row.body,
     quote: null,
     href: safeLink(row.link) ?? meetingHref,
-    linkLabel: safeLink(row.link) === "/status-requests" ? "Answer it" : "Open",
+    linkLabel: ["/status-requests", "/work/updates"].includes(safeLink(row.link) ?? "") ? "Answer it" : "Open",
   };
 }

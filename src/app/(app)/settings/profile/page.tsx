@@ -1,17 +1,20 @@
 import type { Metadata } from "next";
-import { SettingsShell } from "@/components/settings/SettingsShell";
+import { SectionBar } from "@/components/ui/Page";
 import { ProfilePanel } from "@/components/settings/ProfilePanel";
-import { NotificationPreferencesSection } from "@/components/settings/NotificationPreferencesSection";
 import { fetchMyProfile } from "@/lib/api/profile";
 
 export const metadata: Metadata = { title: "Profile | Mytheus" };
 
+/* Settings > Profile: your account, your doodle, and what your agent knows about you. How alerts
+   reach you moved to Settings > Notifications. */
 export default async function ProfileSettingsPage() {
   const profile = await fetchMyProfile();
   return (
-    <SettingsShell title="Profile" description="How you appear to teammates, and what your agent knows about you.">
-      <ProfilePanel profile={profile} />
-      <NotificationPreferencesSection />
-    </SettingsShell>
+    <>
+      <SectionBar title="Profile" context="How you appear to teammates, and what your agent knows about you." />
+      <div className="grid gap-5">
+        <ProfilePanel profile={profile} />
+      </div>
+    </>
   );
 }

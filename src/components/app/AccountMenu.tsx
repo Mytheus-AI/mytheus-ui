@@ -3,12 +3,13 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { useClerk } from "@clerk/nextjs";
-import { CreditCard, GearSix, SignOut, UserCircle } from "@phosphor-icons/react";
+import { GearSix, SignOut, UserCircle, UsersThree } from "@phosphor-icons/react";
 import { Avatar } from "@/components/ui/Avatar";
 import { useOrgContext } from "@/lib/org-context";
 
-/* The account control in the topbar: your face, opening a short menu (profile, settings, billing,
-   sign out). Menu-button pattern: Enter, Space or Down opens it on the first item, Up on the last;
+/* The account control in the topbar: your face, opening a short menu (profile, settings, the
+   Workspace console for admins, sign out). Billing lives in Workspace, for admins only, so a member
+   is never handed a link that 404s. Menu-button pattern: Enter, Space or Down opens it on the first item, Up on the last;
    arrows move, Home/End jump, Escape or Tab closes and focus returns to the button. */
 export function AccountMenu() {
   const { user } = useOrgContext();
@@ -66,7 +67,7 @@ export function AccountMenu() {
   };
 
   const itemClass =
-    "flex h-11 w-full items-center gap-3 rounded-ctl px-3 text-left text-[14px] font-semibold text-ink-2 transition-colors hover:bg-bg-2 hover:text-ink focus-visible:bg-bg-2 focus-visible:text-ink focus-visible:!outline-offset-0";
+    "flex h-11 w-full items-center gap-3 rounded-ctl px-3 text-left text-[14px] font-semibold text-ink-2 transition-colors hover:bg-bg-2 hover:text-ink focus-visible:bg-bg-2 focus-visible:text-ink";
 
   return (
     <div className="relative shrink-0">
@@ -112,10 +113,12 @@ export function AccountMenu() {
               <GearSix size={19} aria-hidden className="text-ink-3" />
               Settings
             </Link>
-            <Link href="/billing" role="menuitem" tabIndex={-1} onClick={() => setOpen(false)} className={itemClass}>
-              <CreditCard size={19} aria-hidden className="text-ink-3" />
-              Billing
-            </Link>
+            {user.role === "admin" ? (
+              <Link href="/workspace" role="menuitem" tabIndex={-1} onClick={() => setOpen(false)} className={itemClass}>
+                <UsersThree size={19} aria-hidden className="text-ink-3" />
+                Workspace
+              </Link>
+            ) : null}
           </div>
           <div className="mt-1.5 border-t border-line pt-1.5">
             <button

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Allow microphone | Mytheus Capture</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body class="page">
+    <main class="card">
+      <header class="head">
+        <img src="icons/icon-32.png" alt="" width="20" height="20" />
+        <span class="brand">Mytheus Capture</span>
+      </header>
+      <section class="body">
+        <h1>Allow your microphone</h1>
+        <p class="lead">
+          Meet, Teams and Zoom never play your own voice back into the tab, so Mytheus listens to
+          your microphone to put what you say in the transcript. It only listens while you are
+          transcribing a call.
+        </p>
+        <p id="status" class="fine" role="status" aria-live="polite"></p>
+        <button id="allow" class="primary" type="button">Allow microphone</button>
+      </section>
+    </main>
+    <script src="permissions.js"></script>
+  </body>
+</html>

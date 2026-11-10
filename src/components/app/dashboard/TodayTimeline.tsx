@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { Broadcast, Check } from "@phosphor-icons/react/dist/ssr";
 import { LocalTime, RelativeStart } from "./LiveTime";
-import { CardEmpty, CardHead, ErrorBlock, TextLink, cardClass } from "./parts";
+import { CardHead, cardClass } from "@/components/ui/Card";
+import { TextLink } from "@/components/ui/TextLink";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { formatDuration, formatShortDate, minutesBetween } from "./format";
 import type { HomeMeeting } from "./types";
 
@@ -101,18 +104,18 @@ export function TodayTimeline({
   const nowAt = firstAhead === -1 ? today.length : firstAhead;
 
   return (
-    <section aria-labelledby="today-title" className={`${cardClass} ${className}`}>
-      <CardHead id="today-title" title="Today" right={<span className="text-[13px] font-semibold text-ink-3">{dateLabel}</span>} />
+    <section aria-labelledby="today-title" className={cardClass({ flush: true, className })}>
+      <CardHead id="today-title" title="Today" right={<span className="text-[12.5px] font-semibold text-ink-3">{dateLabel}</span>} />
 
       {calendarFailed ? (
-        <ErrorBlock
+        <ErrorState variant="inline"
           title="We could not load your schedule"
           text="Your meetings are safe. This panel failed to load, and the rest of the page is unaffected."
         />
       ) : today.length === 0 && later.length === 0 ? (
-        <CardEmpty
+        <EmptyState inCard art="calendar"
           title="A clear day"
-          text="Meetings you schedule or are invited to appear here as a timeline, with the next one highlighted."
+          description="Meetings you schedule or are invited to appear here as a timeline, with the next one highlighted."
           action={<TextLink href="/meetings">Open meetings</TextLink>}
         />
       ) : (

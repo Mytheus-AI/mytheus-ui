@@ -3,6 +3,7 @@
 import { useId, type FormEvent } from "react";
 import { PaperPlaneRight, VideoCamera, WarningCircle } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
+import { fieldClass } from "@/components/ui/Form";
 import { PERSONAL_LIMITS, composeStatusText, type StatusRequestView } from "@/lib/api/personal-types";
 import { LocalWhen } from "./LocalWhen";
 import { QuickPick } from "./QuickPick";
@@ -20,7 +21,12 @@ export function StatusAnswerRow({
   wide = false,
   onDraft,
   onSubmit,
+  as: Tag = "li",
+  className = "px-4 py-4 sm:px-[22px]",
 }: {
+  /** a div when the caller supplies its own list item (the Inbox) */
+  as?: "li" | "div";
+  className?: string;
   req: StatusRequestView;
   draft: Draft;
   error?: string;
@@ -43,13 +49,13 @@ export function StatusAnswerRow({
   };
 
   return (
-    <li aria-busy={saving || undefined} className="px-[18px] py-4 sm:px-[22px]">
+    <Tag aria-busy={saving || undefined} className={className}>
       <div className={`grid gap-3 ${wide ? "xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center xl:gap-6" : ""}`}>
         <div className="min-w-0">
           <p id={titleId} className="text-[15px] font-semibold leading-snug text-ink">
             {req.actionTitle}
           </p>
-          <p className="mt-1 flex items-center gap-1.5 text-[13px] text-ink-3">
+          <p className="mt-1 flex items-center gap-1.5 text-[12.5px] text-ink-3">
             <VideoCamera size={14} aria-hidden className="shrink-0" />
             <span className="min-w-0 truncate">
               For {req.meetingTitle}
@@ -81,9 +87,7 @@ export function StatusAnswerRow({
             placeholder="Add a line, optional"
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? errId : undefined}
-            className={`h-11 min-w-0 flex-1 basis-[200px] rounded-ctl border bg-surface px-3.5 text-[15px] text-ink placeholder:text-ink-4 transition-[border-color,box-shadow] hover:border-ink-4 focus-visible:border-signal focus-visible:shadow-[0_0_0_4px_var(--signal-soft)] focus-visible:outline-none disabled:opacity-60 ${
-              error ? "border-priority-high" : "border-line-2"
-            } ${wide ? "xl:w-[280px] xl:flex-none" : ""}`}
+            className={`${fieldClass} !w-auto min-w-0 flex-1 basis-[200px] ${wide ? "xl:!w-[280px] xl:flex-none" : ""}`}
           />
           <Button type="submit" size="md" disabled={saving || !text} aria-busy={saving} className="shrink-0">
             <PaperPlaneRight size={15} weight="bold" aria-hidden />
@@ -92,11 +96,11 @@ export function StatusAnswerRow({
         </form>
       </div>
       {error ? (
-        <p id={errId} role="alert" className="mt-2 flex items-center gap-1.5 text-[13.5px] text-priority-high">
+        <p id={errId} role="alert" className="mt-2 flex items-center gap-1.5 text-[14px] text-priority-high">
           <WarningCircle size={15} weight="fill" aria-hidden className="shrink-0" />
           {error}
         </p>
       ) : null}
-    </li>
+    </Tag>
   );
 }

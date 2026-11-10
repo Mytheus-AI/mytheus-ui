@@ -1,119 +1,145 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { RoomEvent, type RemoteParticipant, type Room } from "livekit-client";
-import { PaperPlaneRight } from "@phosphor-icons/react";
+import { ArrowClockwise, PaperPlaneRight, WarningCircle } from "@phosphor-icons/react";
 import { initials, toneOf } from "@/components/room/tone";
-import { useOrgContext } from "@/lib/org-context";
 import { useRoomName } from "@/lib/realtime/room-names";
-import type { ChatMessage } from "@/lib/mock/data";
+import { unreadCount, type ChatItem, type ChatState } from "@/lib/realtime/chat";
 
-/* In-meeting chat, the Chat tab of the room's panel (and the chat column of the Notes view). In a
-   real call it travels over LiveKit's data channel (topic CHAT_TOPIC), so everyone connected sees
-   it; it is not stored, so someone who joins later sees only what is sent after they arrive.
-   Attachments, reactions and a typing indicator are left out: nothing behind them exists. */
+/* In-meeting chat, the Chat tab of the room's panel (and the chat column of the Notes view).
 
-const CHAT_TOPIC = "mx-chat";
-const enc = new TextEncoder();
-const dec = new TextDecoder();
-const clock = () => new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+   It travels through the meeting link (`realtime-gateway`), which shows it to everyone at once and
+   stores it in the meeting (polish program, Phase 0; it used to be LiveKit data only and lost).
+   So people who join later see the conversation, it comes back after a reconnect, and agents can
+   read it. Your message shows at once; if it reached the room but could not be stored it says so,
+   and if it did not go out at all it offers Send again. */
 
+const timeFormat = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" });
+const MAX_CHARS = 2000;
+
+function at(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "" : timeFormat.format(d);
+}
 
 export function ChatPanel({
   id,
-  room = null,
+  chat,
+  connected,
+  visible,
+  onSend,
+  onSeen,
 }: {
   id?: string;
-  /** The connected LiveKit room; messages are sent and received over it. */
-  room?: Room | null;
+  chat: ChatState;
+  /** The meeting link is joined: sending works. */
+  connected: boolean;
+  /** This panel is on screen, so new messages count as seen. */
+  visible: boolean;
+  onSend: (text: string) => void;
+  onSeen: () => void;
 }) {
-  const { user } = useOrgContext();
-  // Read through a ref so the data listener (bound once per room) always names with the latest
-  // member list instead of the one it closed over.
   const nameOf = useRoomName();
-  const nameRef = useRef(nameOf);
-  nameRef.current = nameOf;
-  const [messages, setMessages] = useState<(ChatMessage & { isNew?: boolean })[]>([]);
-  // With no connected call there is nowhere to send to, so the composer waits.
-  const offline = !room;
-
-  useEffect(() => {
-    if (!room) return;
-    const onData = (payload: Uint8Array, participant?: RemoteParticipant, _kind?: unknown, topic?: string) => {
-      if (topic !== CHAT_TOPIC) return;
-      try {
-        const { text } = JSON.parse(dec.decode(payload)) as { text?: string };
-        if (!text) return;
-        const from = participant?.name || nameRef.current(participant?.identity);
-        setMessages((m) => [...m, { id: `ch_${Date.now()}_${m.length}`, from, at: clock(), text, isNew: true }]);
-      } catch {
-        // Not one of our chat messages.
-      }
-    };
-    room.on(RoomEvent.DataReceived, onData);
-    return () => {
-      room.off(RoomEvent.DataReceived, onData);
-    };
-  }, [room]);
   const [draft, setDraft] = useState("");
   const bodyRef = useRef<HTMLDivElement | null>(null);
+  const unread = unreadCount(chat);
 
   useEffect(() => {
+    if (visible && unread > 0) onSeen();
+  }, [visible, unread, onSeen]);
+
+  // Follow the conversation, unless you scrolled up to read something earlier.
+  const atBottom = useRef(true);
+  useEffect(() => {
     const el = bodyRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [messages]);
+    if (el && atBottom.current) el.scrollTop = el.scrollHeight;
+  }, [chat.items.length]);
 
   const send = (e: React.FormEvent) => {
     e.preventDefault();
     const text = draft.trim();
-    if (!text || offline) return;
-    void room.localParticipant
-      .publishData(enc.encode(JSON.stringify({ text })), { reliable: true, topic: CHAT_TOPIC })
-      .catch(() => undefined);
-    setMessages((m) => [...m, { id: `ch_local_${m.length}`, from: user.name, at: clock(), text, isNew: true }]);
+    if (!text || !connected) return;
+    onSend(text);
     setDraft("");
+    atBottom.current = true;
   };
+
+  const who = (m: ChatItem) => (m.mine ? "You" : nameOf(m.senderId, "Someone"));
 
   return (
     <div className="chat" id={id}>
-      <div className="chat-body" ref={bodyRef} role="log" aria-live="polite" aria-label="Chat messages">
-        {messages.length === 0 ? (
+      <div
+        className="chat-body"
+        ref={bodyRef}
+        role="log"
+        aria-live="polite"
+        aria-label="Chat messages"
+        tabIndex={0}
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+        }}
+      >
+        {chat.items.length === 0 ? (
           <p className="chat-empty">
-            {offline
-              ? "Chat opens once you are connected to the call."
-              : "No messages yet. Chat is not stored, so people who join later only see what is sent after they arrive."}
+            {connected
+              ? "No messages yet. Messages are kept with the meeting, so people who join later can read them."
+              : "Chat opens once you are connected to the meeting."}
           </p>
         ) : null}
-        {messages.map((m) => {
-          const me = m.from === user.name;
-          return (
-            <div className={`cmsg${me ? " is-sent" : ""}`} key={m.id}>
-              {me ? null : (
-                <span className={`mx-av ${toneOf(m.from)}`} aria-hidden>
-                  {initials(m.from)}
-                </span>
-              )}
-              <div className="cmsg-meta">
-                <strong>{me ? "You" : m.from}</strong>
-                <time>{m.at}</time>
-              </div>
-              <div className="cbubble">{m.text}</div>
+        {chat.items.map((m) => (
+          <div className={`cmsg${m.mine ? " is-sent" : ""}`} key={m.key}>
+            {m.mine ? null : (
+              <span className={`mx-av ${toneOf(m.senderId ?? m.key)}`} aria-hidden>
+                {initials(who(m))}
+              </span>
+            )}
+            <div className="cmsg-meta">
+              <strong>{who(m)}</strong>
+              <time dateTime={m.at}>{at(m.at)}</time>
             </div>
-          );
-        })}
+            <div className="cbubble">{m.content}</div>
+            {m.mine && m.delivery !== "sent" ? (
+              <p className={`cmsg-state is-${m.delivery}`}>
+                {m.delivery === "sending" ? (
+                  "Sending..."
+                ) : (
+                  <>
+                    <WarningCircle size={13} weight="fill" aria-hidden />
+                    {m.delivery === "unsaved"
+                      ? "Everyone here saw it, but it was not saved for people who join later."
+                      : "Not sent."}
+                    {m.delivery === "failed" ? (
+                      <button
+                        type="button"
+                        className="cmsg-retry tap"
+                        disabled={!connected}
+                        onClick={() => onSend(m.content)}
+                      >
+                        <ArrowClockwise size={12} weight="bold" aria-hidden />
+                        Send again
+                      </button>
+                    ) : null}
+                  </>
+                )}
+              </p>
+            ) : null}
+          </div>
+        ))}
       </div>
 
       <form className="composer" onSubmit={send} autoComplete="off">
         <input
           type="text"
           className="composer-input"
-          placeholder={offline ? "Chat opens when you are connected" : "Message everyone"}
+          placeholder={connected ? "Message everyone" : "Chat opens when you are connected"}
           aria-label="Message everyone"
-          disabled={offline}
+          disabled={!connected}
+          maxLength={MAX_CHARS}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
         />
-        <button type="submit" className="comp-send tap tip-end" data-tip="Send" aria-label="Send message" disabled={offline}>
+        <button type="submit" className="comp-send tap tip-end" data-tip="Send" aria-label="Send message" disabled={!connected || !draft.trim()}>
           <PaperPlaneRight size={18} weight="fill" aria-hidden />
         </button>
       </form>

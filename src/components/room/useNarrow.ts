@@ -19,3 +19,21 @@ export function useNarrow(): boolean {
     () => false,
   );
 }
+
+/* True on a phone-width screen, where the control bar keeps only the essentials and moves screen
+   share, the layout switch and devices into More. */
+const COMPACT = "(max-width: 640px)";
+
+function subscribeCompact(onChange: () => void) {
+  const mq = window.matchMedia(COMPACT);
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
+}
+
+export function useCompactBar(): boolean {
+  return useSyncExternalStore(
+    subscribeCompact,
+    () => window.matchMedia(COMPACT).matches,
+    () => false,
+  );
+}

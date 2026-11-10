@@ -29,7 +29,7 @@ export async function setCommitmentStatus(id: string, status: CommitmentStatus):
     }
     return { ok: false, message: "Your promise could not be updated just now. Try again in a moment." };
   }
-  revalidatePath("/promises");
+  revalidatePath("/work/promises");
   revalidatePath("/dashboard");
   return { ok: true };
 }

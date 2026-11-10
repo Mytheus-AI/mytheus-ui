@@ -94,7 +94,7 @@ export function Select<T extends string>({
     e.preventDefault();
   };
 
-  const h = size === "sm" ? "h-9 text-[13.5px]" : "h-10 text-[14px]";
+  const h = size === "sm" ? "h-9 text-[14px]" : "h-10 text-[14px]";
 
   return (
     <div ref={root} className={`relative ${className}`}>

@@ -34,7 +34,7 @@ test("citations open the transcript at the second, the decision history, or My T
     citationHref({ kind: "decision", meeting_id: M, decision_id: D }),
     `/meetings/${M}/decisions/${D}`,
   );
-  assert.equal(citationHref({ kind: "action", action_id: D, meeting_id: M }), "/tasks");
+  assert.equal(citationHref({ kind: "action", action_id: D, meeting_id: M }), "/work/tasks");
   assert.equal(citationHref({ kind: "document", document_id: D, element_id: "el_1" }), null);
 });
 

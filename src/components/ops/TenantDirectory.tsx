@@ -3,11 +3,14 @@
 import { useReducer, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { MagnifyingGlass } from "@phosphor-icons/react";
-import { Badge } from "@/components/ui/Badge";
+import { Chip } from "@/components/ui/Chip";
+import { cardClass } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Note, dangerGhost, dangerSolid, fieldClass, focusPill, textareaClass } from "@/components/settings/primitives";
+import { fieldClass, textareaClass } from "@/components/ui/Form";
+import { Note } from "@/components/ui/Note";
+import { notifySuccess } from "@/lib/toast";
 import { theadRowClass, thClass } from "@/components/admin/StatCard";
 import { setTenantSuspended } from "@/app/actions/ops";
 import { REASON_MIN, canSubmitSuspend, suspendReducer, type OpsTenant } from "@/lib/ops";
@@ -38,6 +41,7 @@ export function TenantDirectory({ tenants }: { tenants: OpsTenant[] }) {
       const res = await setTenantSuspended(orgId, verb, reason);
       if (res.ok) {
         dispatch({ type: "succeeded", message: `${name} is ${verb === "suspend" ? "suspended" : "reinstated"}.` });
+        notifySuccess(verb === "suspend" ? "Tenant suspended" : "Tenant reinstated", { description: name });
         router.refresh();
       } else {
         dispatch({ type: "failed", message: res.message });
@@ -47,8 +51,6 @@ export function TenantDirectory({ tenants }: { tenants: OpsTenant[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div aria-live="polite">{state.step === "done" ? <Note tone="success">{state.message}</Note> : null}</div>
-
       <label className="relative block max-w-sm">
         <span className="sr-only">Filter tenants</span>
         <MagnifyingGlass size={17} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-3" aria-hidden />
@@ -61,16 +63,17 @@ export function TenantDirectory({ tenants }: { tenants: OpsTenant[] }) {
         />
       </label>
 
-      <section aria-label="Tenants" className="overflow-hidden rounded-card border border-line bg-surface shadow-warm-1">
+      <section aria-label="Tenants" className={cardClass({ flush: true })}>
         {rows.length === 0 ? (
           <EmptyState
-            className="!rounded-none !border-0 !bg-transparent !py-10"
+            inCard
+            art="search"
             title={tenants.length === 0 ? "No tenants yet" : "No tenant matches that filter"}
             description={tenants.length === 0 ? "Workspaces appear here as soon as someone signs up." : "Try part of the name, or paste the full id."}
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] border-collapse text-left text-[14.5px]">
+          <div>
+            <table className="mx-table w-full border-collapse text-left text-[14px]">
               <caption className="sr-only">Tenants with plan, members, created date and status</caption>
               <thead>
                 <tr className={theadRowClass}>
@@ -89,27 +92,30 @@ export function TenantDirectory({ tenants }: { tenants: OpsTenant[] }) {
                   const suspended = t.status === "suspended";
                   return (
                     <tr key={t.org_id} className="transition-colors duration-150 hover:bg-surface-2">
-                      <td className="max-w-[300px] py-3 pl-[22px] pr-5">
+                      <th scope="row" className="max-w-[300px] py-3 pl-[22px] pr-5 text-left font-normal">
                         <span className="block truncate font-semibold text-ink">{t.name}</span>
                         <span className="block truncate font-mono text-[12.5px] text-ink-3" title={t.org_id}>
                           {t.org_id}
                         </span>
+                      </th>
+                      <td data-label="Plan" className="px-5 py-3 capitalize text-ink-2">
+                        {t.plan ?? "None"}
                       </td>
-                      <td className="px-5 py-3 capitalize text-ink-2">{t.plan ?? "None"}</td>
-                      <td className="px-5 py-3 tabular-nums text-ink-2">{t.member_count}</td>
-                      <td className="whitespace-nowrap px-5 py-3 tabular-nums text-ink-3">
+                      <td data-label="Members" className="px-5 py-3 tabular-nums text-ink-2">
+                        {t.member_count}
+                      </td>
+                      <td data-label="Created" className="whitespace-nowrap px-5 py-3 tabular-nums text-ink-3">
                         {Number.isNaN(Date.parse(t.created_at)) ? "" : date.format(new Date(t.created_at))}
                       </td>
-                      <td className="px-5 py-3">
-                        <Badge tone={suspended ? "danger" : "success"} className="capitalize">
+                      <td data-label="Status" className="px-5 py-3">
+                        <Chip tone={suspended ? "high" : "ok"} className="capitalize">
                           {t.status}
-                        </Badge>
+                        </Chip>
                       </td>
                       <td className="py-3 pl-5 pr-[22px] text-right">
                         <Button
-                          variant="outline"
+                          variant={suspended ? "outline" : "danger-outline"}
                           size="sm"
-                          className={suspended ? focusPill : dangerGhost}
                           disabled={state.step === "submitting"}
                           onClick={() => dispatch({ type: "ask", orgId: t.org_id, name: t.name, verb: suspended ? "reinstate" : "suspend" })}
                         >
@@ -146,7 +152,7 @@ export function TenantDirectory({ tenants }: { tenants: OpsTenant[] }) {
             {state.verb === "suspend" ? (
               <label className="flex flex-col gap-1.5">
                 <span className="text-[14px] font-semibold text-ink">Reason</span>
-                <span className="text-[13.5px] text-ink-3">At least {REASON_MIN} characters. Stored with the audit record.</span>
+                <span className="text-[14px] text-ink-3">At least {REASON_MIN} characters. Stored with the audit record.</span>
                 <textarea
                   required
                   minLength={REASON_MIN}
@@ -164,7 +170,6 @@ export function TenantDirectory({ tenants }: { tenants: OpsTenant[] }) {
               <Button
                 type="button"
                 variant="outline"
-                className={focusPill}
                 onClick={() => dispatch({ type: "cancel" })}
                 disabled={state.step === "submitting"}
               >
@@ -173,7 +178,6 @@ export function TenantDirectory({ tenants }: { tenants: OpsTenant[] }) {
               <Button
                 type="submit"
                 variant={state.verb === "suspend" ? "danger" : "primary"}
-                className={state.verb === "suspend" ? dangerSolid : focusPill}
                 disabled={!canSubmitSuspend(state)}
               >
                 {state.step === "submitting"

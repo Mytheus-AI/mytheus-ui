@@ -1,31 +1,25 @@
 import type { ReactNode } from "react";
+import { Chip, type ChipTone } from "./Chip";
+
+/* Kept for older call sites (the meeting room among them): a Badge is a Chip with the old tone
+   names. New code uses `Chip` directly. */
 
 type Tone = "default" | "success" | "warning" | "danger" | "high" | "medium" | "low";
 
-const toneClass: Record<Tone, string> = {
-  default: "bg-bg-2 text-ink-2",
-  success: "bg-ok-soft text-ok",
-  warning: "bg-priority-medium-soft text-priority-medium",
-  danger: "bg-priority-high-soft text-priority-high",
-  high: "bg-priority-high-soft text-priority-high",
-  medium: "bg-priority-medium-soft text-priority-medium",
-  low: "bg-priority-low-soft text-priority-low",
+const TONE: Record<Tone, ChipTone> = {
+  default: "neutral",
+  success: "ok",
+  warning: "medium",
+  danger: "high",
+  high: "high",
+  medium: "medium",
+  low: "low",
 };
 
-export function Badge({
-  tone = "default",
-  children,
-  className = "",
-}: {
-  tone?: Tone;
-  children: ReactNode;
-  className?: string;
-}) {
+export function Badge({ tone = "default", children, className = "" }: { tone?: Tone; children: ReactNode; className?: string }) {
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-[3px] text-[12.5px] font-semibold leading-[1.35] ${toneClass[tone]} ${className}`}
-    >
+    <Chip tone={TONE[tone]} className={className}>
       {children}
-    </span>
+    </Chip>
   );
 }

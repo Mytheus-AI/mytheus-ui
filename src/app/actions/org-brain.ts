@@ -47,8 +47,8 @@ export type BrainResult<T, F extends string = string> =
   | { ok: false; message: string; fieldErrors?: FieldErrors<F>; gone?: boolean };
 
 function refresh() {
-  revalidatePath("/tenant/brain", "layout");
-  revalidatePath("/tenant");
+  revalidatePath("/workspace/brain", "layout");
+  revalidatePath("/workspace");
   revalidatePath("/welcome");
 }
 

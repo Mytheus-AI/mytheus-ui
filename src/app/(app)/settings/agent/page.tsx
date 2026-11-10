@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
+import { legacyHref, type SearchParams } from "@/lib/legacy-routes";
 
-/** Your agent has its own page now (the sidebar's agent tab); old links land there. */
-export default function AgentSettingsPage() {
-  redirect("/agent");
+/** Moved in the November 2026 information architecture; old links land on the new home. */
+export default function LegacyRedirect({ searchParams }: { searchParams: SearchParams }) {
+  redirect(legacyHref("/settings/agent", searchParams) ?? "/dashboard");
 }

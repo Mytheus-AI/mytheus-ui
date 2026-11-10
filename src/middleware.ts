@@ -64,6 +64,10 @@ const isPublicRoute = createRouteMatcher([
   // organization, and `auth.protect()` treats pending as signed out, so gating this page would
   // bounce the user to sign-in forever. The page itself sends a visitor with no session away.
   "/onboarding(.*)",
+  // Mytheus Capture's extension calls these with no Clerk cookie. Each route authenticates
+  // itself with the signed link token and the Clerk session behind it, and fails closed
+  // (src/app/api/capture/_lib/session.ts).
+  "/api/capture/session(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, request) => {

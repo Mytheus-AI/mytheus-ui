@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { MagnifyingGlass } from "@phosphor-icons/react";
-import { fieldClass } from "@/components/settings/primitives";
+import { fieldClass } from "@/components/ui/Form";
 import { KIND_LABEL, filterTerms, type GlossaryTerm } from "@/lib/api/org-brain-types";
 
 /* The new joiner's word list: every term with its meaning, in columns on wide screens, with a
@@ -27,7 +27,7 @@ export function WelcomeVocabulary({ terms }: { terms: GlossaryTerm[] }) {
             onChange={(e) => setQuery(e.target.value)}
             placeholder={`Search ${terms.length} words`}
             autoComplete="off"
-            className={`${fieldClass} !h-10 !pl-10`}
+            className={`${fieldClass} pl-10`}
           />
         </div>
       ) : null}
@@ -41,12 +41,12 @@ export function WelcomeVocabulary({ terms }: { terms: GlossaryTerm[] }) {
           {shown.map((t) => (
             <div key={t.id} className="mb-4 break-inside-avoid">
               <dt className="flex flex-wrap items-baseline gap-x-2">
-                <span className="text-[15.5px] font-semibold text-ink">{t.term}</span>
+                <span className="text-[15px] font-semibold text-ink">{t.term}</span>
                 <span className="text-[12.5px] font-medium text-ink-3">{KIND_LABEL[t.kind]}</span>
               </dt>
-              <dd className="mt-0.5 text-[14.5px] leading-relaxed text-ink-2">
-                {t.definition ?? <span className="text-ink-4">No definition yet.</span>}
-                {t.aliases.length ? <span className="block text-[13px] text-ink-3">Also said as {t.aliases.join(", ")}</span> : null}
+              <dd className="mt-0.5 text-[14px] leading-relaxed text-ink-2">
+                {t.definition ?? <span className="text-ink-3">No definition yet.</span>}
+                {t.aliases.length ? <span className="block text-[12.5px] text-ink-3">Also said as {t.aliases.join(", ")}</span> : null}
               </dd>
             </div>
           ))}
