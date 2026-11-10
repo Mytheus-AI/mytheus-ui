@@ -9,6 +9,7 @@
 
 import { ApiError, api } from "@/lib/api/client";
 import { toMockStatus } from "@/lib/api/present";
+import type { AgendaItem, MeetingAgendaFields, MeetingLinkSummary } from "@/lib/api/meeting-agenda-types";
 import type { ApiMeeting, MeetingPage } from "@/lib/api/types";
 import type { MeetingStatus } from "@/lib/types";
 
@@ -28,6 +29,16 @@ export interface CallMeeting {
   participants: { id: string; role: string | null }[];
   /** Its time came and went with nobody ever joining: shown as ended, never as joinable. */
   missed: boolean;
+  /** The one host (ADR-0038 D5): `host_user_id`, else the participant marked host, else the creator. */
+  hostUserId: string | null;
+  /** Who created it; with the host, the only person who may edit the agenda or the link (D6). */
+  createdBy: string | null;
+  /** The meeting this one follows up, when linked (D5). */
+  previousMeetingId: string | null;
+  /** Its title and start, on a single-meeting read only (D6). */
+  previousMeeting: MeetingLinkSummary | null;
+  /** The agenda in order, on a single-meeting read only; [] otherwise (D6). */
+  agenda: AgendaItem[];
 }
 
 /** A scheduled meeting this long past its end with nobody having joined is over. Matches the
@@ -37,7 +48,9 @@ const GRACE_MS = 5 * 60_000;
 /** A meeting without a scheduled end is shown as the default half hour. */
 const DEFAULT_MINUTES = 30;
 
-export function toCallMeeting(m: ApiMeeting): CallMeeting {
+export function toCallMeeting(raw: ApiMeeting): CallMeeting {
+  // ADR-0038 fields, read by hand until the generated core-api client is regenerated.
+  const m = raw as ApiMeeting & Partial<MeetingAgendaFields>;
   const minutes =
     m.scheduled_start && m.scheduled_end
       ? Math.max(1, Math.round((Date.parse(m.scheduled_end) - Date.parse(m.scheduled_start)) / 60000))
@@ -58,6 +71,12 @@ export function toCallMeeting(m: ApiMeeting): CallMeeting {
     participantIds: (m.participants ?? []).map((p) => p.user_id),
     participants: (m.participants ?? []).map((p) => ({ id: p.user_id, role: p.role_in_meeting ?? null })),
     missed,
+    hostUserId:
+      m.host_user_id ?? (m.participants ?? []).find((p) => p.role_in_meeting === "host")?.user_id ?? m.created_by ?? null,
+    createdBy: m.created_by ?? null,
+    previousMeetingId: m.previous_meeting_id ?? m.previous_meeting?.id ?? null,
+    previousMeeting: m.previous_meeting ?? null,
+    agenda: Array.isArray(m.agenda) ? [...m.agenda].sort((a, b) => a.position - b.position) : [],
   };
 }
 

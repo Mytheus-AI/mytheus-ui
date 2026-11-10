@@ -1,10 +1,23 @@
 "use server";
 
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { auth } from "@clerk/nextjs/server";
 import { api, ApiError } from "@/lib/api/client";
 import { profileTag } from "@/lib/api/org-context";
-import { myUserId, type AgentProfile } from "@/lib/api/profile";
+import { fetchMyProfile } from "@/lib/api/profile";
+import {
+  fieldFromDetail,
+  normalizeProfile,
+  validatePersona,
+  validateProfile,
+  type FieldErrors,
+  type PersonaField,
+  type PersonaInput,
+  type ProfileField,
+  type ProfileInput,
+  type UserProfile,
+  type UserProfileUpdate,
+} from "@/lib/api/profile-types";
 
 /**
  * Drop the caller's cached Clerk profile after they change it in the browser (a new doodle), so
@@ -16,36 +29,78 @@ export async function refreshMyProfile(): Promise<void> {
   if (userId) revalidateTag(profileTag(userId));
 }
 
-export type SaveProfileResult = { ok: true; profile: AgentProfile } | { ok: false; message: string };
+export type SaveResult<F extends string> =
+  | { ok: true; profile: UserProfile }
+  | { ok: false; message: string; fieldErrors?: FieldErrors<F> };
+
+const PROFILE_FIELDS: readonly ProfileField[] = ["role", "bio", "skills", "listen_for", "ignore_topics"];
+const PERSONA_FIELDS: readonly PersonaField[] = [
+  "agent_name",
+  "agent_avatar_seed",
+  "agent_personality",
+  "agent_instructions",
+];
+
+const FIELD_NAMES: Record<ProfileField | PersonaField, string> = {
+  role: "role",
+  bio: "what you work on",
+  skills: "focus areas",
+  listen_for: "listen for",
+  ignore_topics: "ignore",
+  agent_name: "name",
+  agent_avatar_seed: "face",
+  agent_personality: "personality",
+  agent_instructions: "instructions",
+};
+
+/** PATCH the caller's own row. The id comes from `GET /users/me`, resolved server-side. */
+async function patchMe<F extends ProfileField | PersonaField>(
+  body: UserProfileUpdate,
+  fields: readonly F[],
+): Promise<SaveResult<F>> {
+  const me = await fetchMyProfile();
+  if (!me) return { ok: false, message: "Your profile could not be found just now. Try again in a moment." };
+  try {
+    const saved = await api<Partial<UserProfile> & { id: string }>(`/users/${me.id}`, { method: "PATCH", body });
+    // Lists such as the dashboard prompt read the profile; drop the client router cache too.
+    revalidatePath("/", "layout");
+    return { ok: true, profile: normalizeProfile({ ...me, ...saved }) };
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 422) {
+      const field = fieldFromDetail(err.message, fields);
+      if (field) {
+        const message = `Check ${FIELD_NAMES[field]}: it wasn't accepted.`;
+        return { ok: false, message, fieldErrors: { [field]: message } as FieldErrors<F> };
+      }
+      return { ok: false, message: "Some details weren't accepted. Check them and try again." };
+    }
+    if (err instanceof ApiError && err.status === 403)
+      return { ok: false, message: "Only you can change your own agent and profile." };
+    if (err instanceof ApiError && err.isAuthFailure)
+      return { ok: false, message: "Your session ended. Sign in again, then save." };
+    return { ok: false, message: "Your changes could not be saved just now. Try again in a moment." };
+  }
+}
 
 /**
- * Save the caller's role and focus areas to `users` (`PATCH /users/{id}` on
- * `identity-tenant-service`, which also drops the cached `get_user_context()` entry so agents
- * see the change). The user id is resolved server-side from the session.
+ * Save what the caller's agent knows about them (ADR-0038 D1). `onboarding` asks for a role and
+ * at least 20 characters about their work; Settings saves without those, like the API.
  */
-export async function saveAgentProfile(input: { role: string; focus: string }): Promise<SaveProfileResult> {
-  const role = input.role.trim();
-  const skills = Array.from(
-    new Set(
-      input.focus
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-    ),
-  );
-  if (role.length > 200) return { ok: false, message: "Keep the role under 200 characters." };
-  if (skills.some((s) => s.length > 100)) return { ok: false, message: "Keep each focus area under 100 characters." };
-  if (skills.length > 30) return { ok: false, message: "Keep it to 30 focus areas or fewer." };
-  const id = await myUserId();
-  if (!id) return { ok: false, message: "Your profile could not be found just now. Try again in a moment." };
-  try {
-    const saved = await api<{ role: string | null; skills: string[] }>(`/users/${id}`, {
-      method: "PATCH",
-      body: { role: role || null, skills },
-    });
-    return { ok: true, profile: { role: saved.role ?? "", skills: saved.skills } };
-  } catch (err) {
-    if (err instanceof ApiError && err.status === 422) return { ok: false, message: "Some details weren't accepted. Check them and try again." };
-    return { ok: false, message: "Your profile could not be saved just now. Try again in a moment." };
-  }
+export async function saveWorkingProfile(
+  input: ProfileInput,
+  opts: { onboarding?: boolean } = {},
+): Promise<SaveResult<ProfileField>> {
+  const checked = validateProfile(input, opts);
+  if (!checked.ok) return { ok: false, message: "A few details need a look.", fieldErrors: checked.errors };
+  return patchMe(checked.value, PROFILE_FIELDS);
+}
+
+/**
+ * Save the caller's agent persona (ADR-0038 D2). Blank name, face or instructions store NULL,
+ * which the UI shows as the defaults. Self only: the API refuses anyone else with 403.
+ */
+export async function saveAgentPersona(input: PersonaInput): Promise<SaveResult<PersonaField>> {
+  const checked = validatePersona(input);
+  if (!checked.ok) return { ok: false, message: "A few details need a look.", fieldErrors: checked.errors };
+  return patchMe(checked.value, PERSONA_FIELDS);
 }

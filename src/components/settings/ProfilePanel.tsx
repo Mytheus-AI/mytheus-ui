@@ -7,21 +7,23 @@ import { LockSimple } from "@phosphor-icons/react";
 import { DoodlePicker } from "@/components/ui/DoodlePicker";
 import { defaultDoodleSeed, isDoodleSeed } from "@/lib/doodle";
 import { saveDoodle } from "@/lib/doodle-client";
-import { refreshMyProfile, saveAgentProfile } from "@/app/actions/profile";
-import type { AgentProfile } from "@/lib/api/profile";
+import { refreshMyProfile, saveWorkingProfile } from "@/app/actions/profile";
+import { LIMITS, type FieldErrors, type ProfileField, type UserProfile } from "@/lib/api/profile-types";
 import { useOrgContext } from "@/lib/org-context";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { FormFooter, Note, SaveStatus, SectionCard, SettingsRow, focusPill, inputClass } from "./primitives";
+import { ChipInput } from "./ChipInput";
+import { FormFooter, Note, SaveStatus, SectionCard, SettingsRow, focusPill, inputClass, textareaClass } from "./primitives";
 
-/* Profile: who you are and the role and focus that tune what your PersonalListener captures.
-   The name is your Clerk account's (saved there, then the cached profile is dropped); role and
-   focus areas are `users.role` / `users.skills`, read from `get_user_context()` and saved by
-   `saveAgentProfile`. The email comes from the sign-in, so it is shown read-only. When the
-   profile cannot be loaded the agent card says so instead of showing blank fields to save. */
-export function ProfilePanel({ agent }: { agent: AgentProfile | null }) {
+/* Profile: who you are, and the working profile that tunes what your PersonalListener captures.
+   The name is your Clerk account's (saved there, then the cached profile is dropped); the role,
+   what you work on, focus areas, listen for and ignore are `users` columns (ADR-0038 D1), read
+   from `GET /users/me` and saved by `saveWorkingProfile`. The email comes from the sign-in, so it
+   is shown read-only. When the profile cannot be loaded the card says so instead of showing
+   blank fields to save. */
+export function ProfilePanel({ profile }: { profile: UserProfile | null }) {
   const { user } = useOrgContext();
   const { user: clerkUser } = useUser();
   const router = useRouter();
@@ -30,15 +32,7 @@ export function ProfilePanel({ agent }: { agent: AgentProfile | null }) {
   const [name, setName] = useState(user.name);
   const [nameState, setNameState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
-  const initial = { title: agent?.role ?? "", focus: (agent?.skills ?? []).join(", ") };
-  const [saved, setSaved] = useState(initial);
-  const [title, setTitle] = useState(initial.title);
-  const [focus, setFocus] = useState(initial.focus);
-  const [agentState, setAgentState] = useState<"idle" | "saving" | "saved">("idle");
-  const [agentError, setAgentError] = useState<string | null>(null);
-
   const nameDirty = name.trim() !== savedName && name.trim() !== "";
-  const agentDirty = title !== saved.title || focus !== saved.focus;
 
   const saveName = async () => {
     if (!clerkUser) return;
@@ -54,22 +48,6 @@ export function ProfilePanel({ agent }: { agent: AgentProfile | null }) {
       router.refresh();
     } catch {
       setNameState("error");
-    }
-  };
-
-  const saveAgent = async () => {
-    setAgentState("saving");
-    setAgentError(null);
-    const result = await saveAgentProfile({ role: title, focus });
-    if (result.ok) {
-      const next = { title: result.profile.role, focus: result.profile.skills.join(", ") };
-      setSaved(next);
-      setTitle(next.title);
-      setFocus(next.focus);
-      setAgentState("saved");
-    } else {
-      setAgentState("idle");
-      setAgentError(result.message);
     }
   };
 
@@ -133,58 +111,7 @@ export function ProfilePanel({ agent }: { agent: AgentProfile | null }) {
 
       <DoodleCard />
 
-      <SectionCard
-        title="What your agent knows about you"
-        description="Your role and focus areas tune what your agent captures. An engineer and a PM leave the same meeting with different notes."
-      >
-        {agent === null ? (
-          <div className="px-4 py-4 sm:px-[22px]">
-            <Note tone="warning">Your role and focus areas could not be loaded just now. Reload the page to try again.</Note>
-          </div>
-        ) : (
-          <>
-            <SettingsRow label="Role title" htmlFor="title" help="What you do, in your own words.">
-              <Input
-                id="title"
-                name="title"
-                value={title}
-                maxLength={200}
-                placeholder="Product manager"
-                className={inputClass}
-                onChange={(e) => {
-                  setTitle(e.target.value);
-                  setAgentState("idle");
-                }}
-              />
-            </SettingsRow>
-            <SettingsRow label="Focus areas" htmlFor="focus" help="Topics your agent should listen for. Separate them with commas.">
-              <Input
-                id="focus"
-                name="focus"
-                value={focus}
-                className={inputClass}
-                onChange={(e) => {
-                  setFocus(e.target.value);
-                  setAgentState("idle");
-                }}
-                placeholder="Billing, infrastructure, hiring"
-              />
-            </SettingsRow>
-            <FormFooter>
-              <Button
-                disabled={!agentDirty || agentState === "saving"}
-                className={focusPill}
-                onClick={() => void saveAgent()}
-              >
-                {agentState === "saving" ? "Saving changes" : "Save changes"}
-              </Button>
-              <SaveStatus tone={agentError ? "error" : agentState === "saved" ? "ok" : undefined}>
-                {agentError ?? (agentState === "saved" ? "Changes saved. Your agent uses them from now on." : "")}
-              </SaveStatus>
-            </FormFooter>
-          </>
-        )}
-      </SectionCard>
+      <WorkingProfileCard profile={profile} />
     </>
   );
 }
@@ -240,6 +167,188 @@ function DoodleCard() {
             : state === "error"
               ? "Doodle not used. Try again."
               : ""}
+        </SaveStatus>
+      </FormFooter>
+    </SectionCard>
+  );
+}
+
+type Working = { role: string; bio: string; skills: string[]; listen_for: string[]; ignore_topics: string[] };
+
+const fromProfile = (p: UserProfile): Working => ({
+  role: p.role ?? "",
+  bio: p.bio ?? "",
+  skills: p.skills,
+  listen_for: p.listen_for,
+  ignore_topics: p.ignore_topics,
+});
+
+const sameList = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
+
+/* What your agent knows about you: the five working-profile fields, saved together. Settings
+   does not require a role or a minimum about the work (the API does not either); onboarding does. */
+function WorkingProfileCard({ profile }: { profile: UserProfile | null }) {
+  const [saved, setSaved] = useState<Working | null>(profile ? fromProfile(profile) : null);
+  const [form, setForm] = useState<Working | null>(saved);
+  const [state, setState] = useState<"idle" | "saving" | "saved">("idle");
+  const [message, setMessage] = useState<string | null>(null);
+  const [errors, setErrors] = useState<FieldErrors<ProfileField>>({});
+
+  const card = {
+    title: "What your agent knows about you",
+    description:
+      "Your role and your work tune what your agent captures. An engineer and a PM leave the same meeting with different notes.",
+  };
+
+  if (!saved || !form) {
+    return (
+      <SectionCard {...card}>
+        <div className="px-4 py-4 sm:px-[22px]">
+          <Note tone="warning">What your agent knows about you could not be loaded just now. Reload the page to try again.</Note>
+        </div>
+      </SectionCard>
+    );
+  }
+
+  const dirty =
+    form.role !== saved.role ||
+    form.bio !== saved.bio ||
+    !sameList(form.skills, saved.skills) ||
+    !sameList(form.listen_for, saved.listen_for) ||
+    !sameList(form.ignore_topics, saved.ignore_topics);
+
+  const set = <K extends keyof Working>(key: K, value: Working[K]) => {
+    setForm({ ...form, [key]: value });
+    setState("idle");
+    setMessage(null);
+    if (errors[key] || (key === "listen_for" && errors.ignore_topics))
+      setErrors((e) => ({ ...e, [key]: undefined, ...(key === "listen_for" ? { ignore_topics: undefined } : {}) }));
+  };
+
+  const save = async () => {
+    setState("saving");
+    setMessage(null);
+    setErrors({});
+    const result = await saveWorkingProfile(form);
+    if (result.ok) {
+      const next = fromProfile(result.profile);
+      setSaved(next);
+      setForm(next);
+      setState("saved");
+      return;
+    }
+    setState("idle");
+    setErrors(result.fieldErrors ?? {});
+    setMessage(result.message);
+    const first = (["role", "bio", "skills", "listen_for", "ignore_topics"] as const).find((f) => result.fieldErrors?.[f]);
+    if (first) document.getElementById(`pf-${first}`)?.focus();
+  };
+
+  const err = (f: ProfileField) =>
+    errors[f] ? (
+      <p id={`pf-${f}-err`} className="mt-1.5 text-[13.5px] leading-snug text-priority-high">
+        {errors[f]}
+      </p>
+    ) : null;
+  const described = (f: ProfileField) => (errors[f] ? `pf-${f}-err` : undefined);
+
+  return (
+    <SectionCard {...card}>
+      <SettingsRow label="Role" htmlFor="pf-role" help="What you do, in your own words.">
+        <Input
+          id="pf-role"
+          name="role"
+          value={form.role}
+          maxLength={LIMITS.role}
+          placeholder="Product manager"
+          autoComplete="organization-title"
+          aria-invalid={errors.role ? true : undefined}
+          aria-describedby={described("role")}
+          className={`${inputClass} ${errors.role ? "!border-priority-high" : ""}`}
+          onChange={(e) => set("role", e.target.value)}
+        />
+        {err("role")}
+      </SettingsRow>
+      <SettingsRow
+        label="What you work on"
+        htmlFor="pf-bio"
+        help="A sentence or two about your work right now. Your agent reads it before every meeting."
+      >
+        <textarea
+          id="pf-bio"
+          name="bio"
+          rows={4}
+          value={form.bio}
+          placeholder="I run the billing team. This quarter we are moving invoices to the new payments API."
+          aria-invalid={errors.bio ? true : undefined}
+          aria-describedby={["pf-bio-count", described("bio")].filter(Boolean).join(" ")}
+          className={`${textareaClass} resize-y ${errors.bio ? "!border-priority-high" : ""}`}
+          onChange={(e) => set("bio", e.target.value)}
+        />
+        <p
+          id="pf-bio-count"
+          className={`mt-1 text-right text-[13px] tabular-nums ${form.bio.trim().length > LIMITS.bio ? "text-priority-high" : "text-ink-3"}`}
+        >
+          {form.bio.trim().length} of {LIMITS.bio} characters
+        </p>
+        {err("bio")}
+      </SettingsRow>
+      <SettingsRow label="Focus areas" htmlFor="pf-skills" help="Areas you own or care about. Press Enter or type a comma after each.">
+        <ChipInput
+          id="pf-skills"
+          value={form.skills}
+          onChange={(v) => set("skills", v)}
+          max={LIMITS.skills.max}
+          placeholder="Billing, infrastructure, hiring"
+          noun="focus area"
+          invalid={!!errors.skills}
+          describedBy={described("skills")}
+        />
+        {err("skills")}
+      </SettingsRow>
+      <SettingsRow label="Listen for" htmlFor="pf-listen_for" help="Topics your agent should always note for you.">
+        <ChipInput
+          id="pf-listen_for"
+          value={form.listen_for}
+          onChange={(v) => set("listen_for", v)}
+          max={LIMITS.listenFor.max}
+          placeholder="Deadlines, pricing, anything about Q3"
+          invalid={!!errors.listen_for}
+          describedBy={described("listen_for")}
+        />
+        {err("listen_for")}
+      </SettingsRow>
+      <SettingsRow label="Ignore" htmlFor="pf-ignore_topics" help="Topics your agent can let pass.">
+        <ChipInput
+          id="pf-ignore_topics"
+          value={form.ignore_topics}
+          onChange={(v) => set("ignore_topics", v)}
+          max={LIMITS.ignoreTopics.max}
+          placeholder="Office logistics, lunch orders"
+          invalid={!!errors.ignore_topics}
+          describedBy={described("ignore_topics")}
+        />
+        {err("ignore_topics")}
+      </SettingsRow>
+      <FormFooter>
+        <Button disabled={!dirty || state === "saving"} className={focusPill} onClick={() => void save()}>
+          {state === "saving" ? "Saving changes" : "Save changes"}
+        </Button>
+        {dirty && state !== "saving" ? (
+          <Button
+            variant="ghost"
+            className={focusPill}
+            onClick={() => {
+              setForm(saved);
+              setErrors({});
+              setMessage(null);
+            }}
+          >
+            Discard changes
+          </Button>
+        ) : null}
+        <SaveStatus tone={message ? "error" : state === "saved" ? "ok" : undefined}>
+          {message ?? (state === "saved" ? "Changes saved. Your agent uses them from its next meeting." : "")}
         </SaveStatus>
       </FormFooter>
     </SectionCard>

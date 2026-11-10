@@ -84,6 +84,20 @@ import {
   type AlertRow,
   type AlertsState,
 } from "./alerts";
+import {
+  applyAgentAgenda,
+  applyNudge,
+  beginHostStatus,
+  commitHostStatus,
+  dismissNudge as dismissNudgeIn,
+  hydrateAgenda,
+  initialAgendaState,
+  rollbackHostStatus,
+  type AgendaState,
+  type NudgeState,
+  emptyNudgeState,
+} from "./agenda";
+import type { AgendaItem, AgendaStatus, AgentAgendaPayload, AgentNudgePayload } from "@/lib/api/meeting-agenda-types";
 
 export type SocketStatus =
   | "disabled" // no NEXT_PUBLIC_REALTIME_WS_URL: caller falls back to mock captions
@@ -124,6 +138,17 @@ export interface MeetingSocketState {
   markAlertRead: (id: string) => void;
   /** Drop an alert this participant dismissed (or that is gone on the server), for good. */
   dismissAlert: (id: string) => void;
+  /** The meeting's shared agenda (ADR-0038 D9), re-hydrated on every (re)connect. */
+  agenda: AgendaState;
+  /** The host's optimistic status change: begin, then commit or roll back with the same `op`. */
+  agendaHost: {
+    begin: (itemId: string, status: AgendaStatus, op: number) => void;
+    commit: (itemId: string, op: number, row: AgendaItem | null) => void;
+    rollback: (itemId: string, op: number) => void;
+  };
+  /** The MeetingAgent's nudges, host only and never replayed: one showing at a time. */
+  nudges: NudgeState;
+  dismissNudge: (id: string) => void;
 }
 
 interface JoinAck {
@@ -132,7 +157,12 @@ interface JoinAck {
   error?: "FORBIDDEN" | "INVALID_PAYLOAD";
 }
 
-export function useMeetingSocket(meetingId: string, token: string | null): MeetingSocketState {
+export function useMeetingSocket(
+  meetingId: string,
+  token: string | null,
+  /** The agenda the page was rendered with, shown until the first re-hydrate answers. */
+  initialAgenda?: AgendaItem[],
+): MeetingSocketState {
   const url = process.env.NEXT_PUBLIC_REALTIME_WS_URL;
   const [status, setStatus] = useState<SocketStatus>(url ? "connecting" : "disabled");
   const [captions, setCaptions] = useState<CaptionState>(emptyCaptionState);
@@ -142,6 +172,8 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
   const [suggestions, setSuggestions] = useState<SuggestionsState>(emptySuggestionsState);
   const [contextFills, setContextFills] = useState<ContextFillsState>(emptyContextFillsState);
   const [alerts, setAlerts] = useState<AlertsState>(emptyAlertsState);
+  const [agenda, setAgenda] = useState<AgendaState>(() => initialAgendaState(initialAgenda ?? []));
+  const [nudges, setNudges] = useState<NudgeState>(emptyNudgeState);
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -255,6 +287,24 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
       }
     };
 
+    // And for the shared agenda (ADR-0038 D9): the gateway replays nothing, so every (re)connect
+    // re-reads it from core-api. A failure keeps what is shown and marks it stale.
+    const rehydrateAgenda = async () => {
+      try {
+        const response = await fetch(`/api/meeting-agenda?meeting_id=${encodeURIComponent(meetingId)}`);
+        if (cancelled) return;
+        if (!response.ok) {
+          setAgenda((prev) => hydrateAgenda(prev, null));
+          return;
+        }
+        const body = (await response.json()) as { items?: AgendaItem[] };
+        if (cancelled) return;
+        setAgenda((prev) => hydrateAgenda(prev, Array.isArray(body.items) ? body.items : null));
+      } catch {
+        if (!cancelled) setAgenda((prev) => hydrateAgenda(prev, null));
+      }
+    };
+
     const join = () => {
       void rehydrate();
       void rehydrateNotes();
@@ -262,6 +312,7 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
       void rehydrateSuggestions();
       void rehydrateContextFills();
       void rehydrateAlerts();
+      void rehydrateAgenda();
       socket.emit("join", { meetingId }, (ack: JoinAck) => {
         if (cancelled) return;
         if (ack?.ok) {
@@ -331,6 +382,20 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
       setAlerts((prev) => applyLiveAlert(prev, event.payload, meetingId));
     });
 
+    // Shared with the whole meeting (ADR-0038 D9): the MeetingAgent's agenda updates. The reducer
+    // applies core-api's rules (the host wins, never back from covered).
+    socket.on("agent-agenda", (event: { meetingId: string; payload: AgentAgendaPayload }) => {
+      if (cancelled || event?.meetingId !== meetingId || !event.payload) return;
+      setAgenda((prev) => applyAgentAgenda(prev, event.payload));
+    });
+
+    // Private to the host: the gateway sends a nudge only to the host's sockets, and never
+    // replays it, so it lives only in this tab's state.
+    socket.on("agent-nudge", (event: { meetingId: string; payload: AgentNudgePayload }) => {
+      if (cancelled || event?.meetingId !== meetingId || !event.payload) return;
+      setNudges((prev) => applyNudge(prev, event.payload));
+    });
+
     socket.on("presence", (members: string[]) => {
       if (!cancelled) setPresence(Array.isArray(members) ? members : []);
     });
@@ -369,6 +434,18 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
     [],
   );
 
+  const agendaHost = useMemo(
+    () => ({
+      begin: (itemId: string, status: AgendaStatus, op: number) =>
+        setAgenda((prev) => beginHostStatus(prev, itemId, status, op)),
+      commit: (itemId: string, op: number, row: AgendaItem | null) =>
+        setAgenda((prev) => commitHostStatus(prev, itemId, op, row)),
+      rollback: (itemId: string, op: number) => setAgenda((prev) => rollbackHostStatus(prev, itemId, op)),
+    }),
+    [],
+  );
+  const dismissNudge = useCallback((id: string) => setNudges((prev) => dismissNudgeIn(prev, id)), []);
+
   const markAlertRead = useCallback((id: string) => setAlerts((prev) => markAlertReadIn(prev, id)), []);
   const dismissAlert = useCallback((id: string) => setAlerts((prev) => dismissAlertIn(prev, id)), []);
 
@@ -389,8 +466,16 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
       alerts,
       markAlertRead,
       dismissAlert,
+      agenda,
+      agendaHost,
+      nudges,
+      dismissNudge,
     }),
     [
+      agenda,
+      agendaHost,
+      nudges,
+      dismissNudge,
       status,
       captions,
       presence,

@@ -3,6 +3,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { MicrophoneSlash, Microphone, PushPin, UsersThree } from "@phosphor-icons/react";
 import { initials, toneOf } from "@/components/room/tone";
+import { Doodle } from "@/components/ui/Doodle";
 
 /* The meeting stage, shared by your own pre-connect tile and the live LiveKit tiles so connecting
    is not also a visual change. Each tile is plain data (`RoomTile`); the live grid passes a
@@ -33,7 +34,20 @@ export type RoomTile = {
   media?: ReactNode;
   /** Profile photo for the camera-off avatar; initials when absent. */
   imageUrl?: string;
+  /** This person's agent (ADR-0038 D11): a small badge of its face, named for screen readers. */
+  agent?: { name: string; seed: string };
 };
+
+/* A participant's agent, as a small doodle badge in their name tag. Its accessible name says
+   whose agent it is. */
+function AgentBadge({ agent }: { agent?: RoomTile["agent"] }) {
+  if (!agent) return null;
+  return (
+    <span className="cx-agent-badge" role="img" aria-label={`Agent: ${agent.name}`} title={agent.name}>
+      <Doodle seed={agent.seed} className="block h-full w-full" />
+    </span>
+  );
+}
 
 const MAX_THUMBS = 3;
 
@@ -101,6 +115,7 @@ export function RoomGrid({
               {!main.micOn && main.kind !== "screen" ? (
                 <MicrophoneSlash size={14} weight="fill" className="cx-muted" aria-label="Muted" role="img" />
               ) : null}
+              {main.kind !== "screen" ? <AgentBadge agent={main.agent} /> : null}
               {main.isLocal ? `${main.name} (you)` : main.name}
               {mainSpeaking ? <small>Speaking</small> : null}
             </span>
@@ -194,6 +209,7 @@ function Thumb({ tile, pinLabel, onPin }: { tile: RoomTile; pinLabel: string; on
       ) : null}
       <span className="thumb-name">
         {speaking ? <Wave /> : null}
+        {screen ? null : <AgentBadge agent={tile.agent} />}
         {tile.isLocal ? "You" : tile.name.split(" ")[0]}
       </span>
       {screen ? null : (

@@ -1,14 +1,21 @@
 "use server";
 
 import { api, ApiError } from "@/lib/api/client";
+import { AGENDA_LIMITS, type AgendaItemCreate } from "@/lib/api/meeting-agenda-types";
 
 export type CreateMeetingInput = {
   title: string;
   /** ISO 8601 with offset, computed in the browser so it is the visitor's own local time. */
   scheduledStart: string;
   durationMinutes: number;
-  /** Internal user ids of workspace members to invite. The creator is added as host anyway. */
+  /** Internal user ids of workspace members to invite. The creator is always a participant. */
   participantIds?: string[];
+  /** The host (ADR-0038 D5): the creator (omitted) or one of `participantIds`. */
+  hostUserId?: string | null;
+  /** The earlier meeting this one follows up (D5), or null. */
+  previousMeetingId?: string | null;
+  /** At most 20 items; owners must be participants (D6). */
+  agenda?: AgendaItemCreate[];
 };
 
 export type CreateMeetingResult = { ok: true; id: string } | { ok: false; message: string };
@@ -20,9 +27,28 @@ function cleanIds(ids: string[] | undefined): string[] {
   return Array.from(new Set((ids ?? []).filter((id) => UUID.test(id)))).slice(0, 50);
 }
 
+/** The agenda as D6 accepts it, or null when it breaks a limit the dialog already checks. */
+function cleanAgenda(items: AgendaItemCreate[] | undefined): AgendaItemCreate[] | null {
+  const list = items ?? [];
+  if (list.length > AGENDA_LIMITS.maxItems) return null;
+  const out: AgendaItemCreate[] = [];
+  for (const it of list) {
+    const title = typeof it?.title === "string" ? it.title.trim() : "";
+    if (!title || title.length > AGENDA_LIMITS.titleMax) return null;
+    const m = it.duration_minutes ?? null;
+    if (m !== null && (!Number.isInteger(m) || m < AGENDA_LIMITS.minutesMin || m > AGENDA_LIMITS.minutesMax)) return null;
+    out.push({
+      title,
+      owner_user_id: it.owner_user_id && UUID.test(it.owner_user_id) ? it.owner_user_id : null,
+      duration_minutes: m,
+    });
+  }
+  return out;
+}
+
 /**
- * Create a meeting through core-api (`POST /api/v1/meetings`). The caller becomes its host
- * server-side; nothing about the tenant or the user is taken from the input. `api()` attaches
+ * Create a meeting through core-api (`POST /api/v1/meetings`). The caller is its host unless an
+ * invitee is named (ADR-0038 D5); nothing about the tenant or the user is taken from the input. `api()` attaches
  * the session token and an Idempotency-Key, so a double submit cannot make two meetings.
  */
 export async function createMeeting(input: CreateMeetingInput): Promise<CreateMeetingResult> {
@@ -33,23 +59,34 @@ export async function createMeeting(input: CreateMeetingInput): Promise<CreateMe
   if (Number.isNaN(start.getTime())) return { ok: false, message: "Pick a valid start time." };
   const minutes = DURATIONS.has(input.durationMinutes) ? input.durationMinutes : 30;
   const end = new Date(start.getTime() + minutes * 60_000);
+  const participantIds = cleanIds(input.participantIds);
+
+  const body: Record<string, unknown> = {
+    title,
+    scheduled_start: start.toISOString(),
+    scheduled_end: end.toISOString(),
+    participant_ids: participantIds,
+  };
+  // Only a chosen invitee is sent as host; leaving it out makes the creator the host server-side.
+  if (input.hostUserId && UUID.test(input.hostUserId) && participantIds.includes(input.hostUserId)) {
+    body.host_user_id = input.hostUserId;
+  }
+  if (input.previousMeetingId && UUID.test(input.previousMeetingId)) body.previous_meeting_id = input.previousMeetingId;
+  const agenda = cleanAgenda(input.agenda);
+  if (agenda === null) return { ok: false, message: "Some agenda details weren't accepted. Check the titles, owners and minutes." };
+  if (agenda.length > 0) body.agenda = agenda;
 
   try {
-    const meeting = await api<{ id: string }>("/api/v1/meetings", {
-      method: "POST",
-      body: {
-        title,
-        scheduled_start: start.toISOString(),
-        scheduled_end: end.toISOString(),
-        participant_ids: cleanIds(input.participantIds),
-      },
-    });
+    const meeting = await api<{ id: string }>("/api/v1/meetings", { method: "POST", body });
     return { ok: true, id: meeting.id };
   } catch (err) {
     if (err instanceof ApiError) {
       if (err.isAuthFailure) return { ok: false, message: "Your session expired. Sign in again." };
       if (err.status === 403) return { ok: false, message: "You don't have permission to create meetings here." };
-      if (err.status === 422) return { ok: false, message: "Some details weren't accepted. Check the title and time." };
+      // Callers branch on the status, never the prose: a 422 names the field only in its detail.
+      if (err.status === 422) {
+        return { ok: false, message: "Some details weren't accepted. Check the time, the host, the follow-up and the agenda." };
+      }
     }
     return { ok: false, message: "The meeting couldn't be created just now. Try again in a moment." };
   }

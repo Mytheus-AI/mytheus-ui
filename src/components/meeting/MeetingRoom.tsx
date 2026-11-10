@@ -5,6 +5,8 @@ import { useAuth } from "@clerk/nextjs";
 import { RoomAudioRenderer, StartAudio } from "@livekit/components-react";
 import { ParticipantEvent, RoomEvent, Track, type LocalTrackPublication } from "livekit-client";
 import { AgentSidebar, type AgentAttention } from "@/components/sidebar/AgentSidebar";
+import { AgentHead } from "@/components/sidebar/AgentHead";
+import { AgendaPanel } from "@/components/sidebar/AgendaPanel";
 import { LiveVideoGrid } from "@/components/meeting/LiveVideoGrid";
 import { LiveCaptions } from "@/components/meeting/LiveCaptions";
 import { CallToastProvider, useCallToast } from "@/components/call/CallToast";
@@ -28,6 +30,8 @@ import { openSuggestions, savedSuggestions } from "@/lib/realtime/suggestions";
 import { visibleContextFills } from "@/lib/realtime/contextFills";
 import { orderedAlerts } from "@/lib/realtime/alerts";
 import { useMeetingSocket } from "@/lib/realtime/useMeetingSocket";
+import { agentFace, type AgentFace } from "@/lib/realtime/agent-persona";
+import type { AgentPersonality } from "@/lib/api/meeting-agenda-types";
 import type { CallMeeting } from "@/components/call/resolve-meeting";
 import type { AgentSidebarCard } from "@/lib/mock/data";
 
@@ -46,6 +50,23 @@ import type { AgentSidebarCard } from "@/lib/mock/data";
 const NO_AGENT_CARDS: AgentSidebarCard[] = [];
 
 export type RoomMode = "call" | "notes";
+
+/** You in this room (ADR-0038 D11), resolved server-side from the member list. */
+export type RoomMe = {
+  id: string;
+  name: string;
+  agentName: string | null;
+  agentSeed: string | null;
+  personality: AgentPersonality | null;
+  /** You host or created the meeting: the agenda controls and nudges are yours. */
+  steers: boolean;
+};
+
+/** The person behind a tile id (`{identity}:{source}`, or "self" before the call connects). */
+function tilePerson(id: string, selfId: string | undefined): string | undefined {
+  if (id === "self") return selfId;
+  return id.split(":")[0] || undefined;
+}
 const ROOM_MODE_KEY = "mytheus.room-mode";
 
 /** Plain words for why the call would not let you in, keyed by the server's stable code. */
@@ -86,7 +107,15 @@ function DeviceNote({ note }: { note: { text: string; at: number } | null }) {
   return null;
 }
 
-export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; names?: RoomNames }) {
+export function MeetingRoom({
+  meeting,
+  names = {},
+  me = null,
+}: {
+  meeting: CallMeeting;
+  names?: RoomNames;
+  me?: RoomMe | null;
+}) {
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [captionsOn, setCaptionsOn] = useState(true);
@@ -137,7 +166,7 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
       cancelled = true;
     };
   }, [getToken]);
-  const socket = useMeetingSocket(meeting.id, socketToken);
+  const socket = useMeetingSocket(meeting.id, socketToken, meeting.agenda);
   const myNotes = useMemo(() => orderedNotes(socket.notes), [socket.notes]);
   const candidates = useMemo(() => orderedCandidates(socket.candidates), [socket.candidates]);
   const suggestions = useMemo(() => openSuggestions(socket.suggestions), [socket.suggestions]);
@@ -345,6 +374,24 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
     [liveRoom, live.participants, selfTiles, user.name, names],
   );
 
+  // Everyone's agent, for the tile badges; yours also heads the sidebar.
+  const myFace = useMemo<AgentFace | null>(
+    () => (me ? agentFace(me.id, me.name || user.name, me.agentName, me.agentSeed) : null),
+    [me, user.name],
+  );
+  const withAgents = useCallback(
+    (tiles: RoomTile[]): RoomTile[] =>
+      tiles.map((t) => {
+        if (t.kind === "screen") return t;
+        const who = tilePerson(t.id, me?.id);
+        if (!who) return t;
+        if (me && who === me.id && myFace) return { ...t, agent: myFace };
+        const person = names[who];
+        return { ...t, agent: agentFace(who, person?.name ?? t.name, person?.agentName, person?.agentSeed) };
+      }),
+    [me, myFace, names],
+  );
+
   const pin = (id: string | null) => {
     setPinnedId(id);
     if (id) setLayout("spotlight");
@@ -382,7 +429,7 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
 
   const stage = (tiles: RoomTile[]) => (
     <RoomGrid
-      tiles={tiles}
+      tiles={withAgents(tiles)}
       layout={layout}
       pinnedId={pinnedId}
       onPin={pin}
@@ -400,7 +447,7 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
     <NotesView
       title={meeting.title}
       when={whenLine}
-      tiles={tiles}
+      tiles={withAgents(tiles)}
       notes={myNotes}
       lines={socket.captions.lines}
       speakerLabel={(id) => (id === myUserId ? "You" : names[id]?.name ?? "Someone")}
@@ -463,7 +510,20 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
               attention={attention.count}
               conflict={attention.conflict}
               peopleCount={people.length}
-              agent={<AgentSidebar onAttentionChange={onAttention} id={SECTION_IDS.agent} items={NO_AGENT_CARDS} notes={myNotes} candidates={candidates} onCandidateResolved={socket.resolveCandidate} onCandidateUpdated={socket.updateCandidate} meetingId={meeting.id} suggestions={suggestions} savedSuggestions={saved} onSuggestionResolved={socket.resolveSuggestion} onSuggestionSaved={socket.markSuggestionSaved} contextFills={contextFills} onContextFillDismissed={socket.dismissContextFill} alerts={alerts} onAlertRead={socket.markAlertRead} onAlertDismissed={socket.dismissAlert} />}
+              agent={<AgentSidebar
+                head={myFace ? <AgentHead face={myFace} personality={me?.personality ?? null} /> : undefined}
+                agenda={
+                  <AgendaPanel
+                    meetingId={meeting.id}
+                    agenda={socket.agenda}
+                    host={socket.agendaHost}
+                    nudges={socket.nudges}
+                    onDismissNudge={socket.dismissNudge}
+                    steers={Boolean(me?.steers)}
+                    nameOf={(id) => (id === me?.id ? "You" : names[id]?.name ?? "Former member")}
+                  />
+                }
+                onAttentionChange={onAttention} id={SECTION_IDS.agent} items={NO_AGENT_CARDS} notes={myNotes} candidates={candidates} onCandidateResolved={socket.resolveCandidate} onCandidateUpdated={socket.updateCandidate} meetingId={meeting.id} suggestions={suggestions} savedSuggestions={saved} onSuggestionResolved={socket.resolveSuggestion} onSuggestionSaved={socket.markSuggestionSaved} contextFills={contextFills} onContextFillDismissed={socket.dismissContextFill} alerts={alerts} onAlertRead={socket.markAlertRead} onAlertDismissed={socket.dismissAlert} />}
               people={<PeoplePanel people={people} id={SECTION_IDS.people} />}
               chat={<ChatPanel id={SECTION_IDS.chat} room={liveRoom} />}
             />

@@ -395,6 +395,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read My Profile
+         * @description authz: member. The caller's own profile, working profile and agent persona (ADR-0038
+         *     D3). A principal with no `users` row in this tenant is a 404, like any unknown user.
+         */
+        get: operations["read_my_profile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/{user_id}": {
         parameters: {
             query?: never;
@@ -555,8 +576,14 @@ export interface components {
          * Member
          * @description One person in the caller's tenant: who to show in a members list or an invite picker.
          *     Names are not stored here (Clerk owns them); clients join on `clerk_user_id` for display.
+         *     `agent_name` / `agent_avatar_seed` let a meeting room label everyone's agent (ADR-0038 D3);
+         *     null means the UI's default ("{first name}'s agent", a seed derived from the user id).
          */
         Member: {
+            /** Agent Avatar Seed */
+            agent_avatar_seed?: string | null;
+            /** Agent Name */
+            agent_name?: string | null;
             /** Avatar Url */
             avatar_url: string | null;
             /** Clerk User Id */
@@ -858,11 +885,24 @@ export interface components {
          *     model is also what validates a value read back from Redis.
          */
         UserContext: {
+            /** Agent Instructions */
+            agent_instructions?: string | null;
+            /** Agent Name */
+            agent_name?: string | null;
+            /**
+             * Agent Personality
+             * @default balanced
+             */
+            agent_personality: string;
             /** Avatar Url */
             avatar_url: string | null;
             /** Bio */
             bio: string | null;
             department: components["schemas"]["DepartmentRef"] | null;
+            /** Ignore Topics */
+            ignore_topics?: string[];
+            /** Listen For */
+            listen_for?: string[];
             /**
              * Org Id
              * Format: uuid
@@ -886,6 +926,17 @@ export interface components {
         };
         /** UserProfile */
         UserProfile: {
+            /** Agent Avatar Seed */
+            agent_avatar_seed: string | null;
+            /** Agent Instructions */
+            agent_instructions: string | null;
+            /** Agent Name */
+            agent_name: string | null;
+            /**
+             * Agent Personality
+             * @enum {string}
+             */
+            agent_personality: "balanced" | "concise" | "detailed" | "direct" | "friendly";
             /** Avatar Url */
             avatar_url: string | null;
             /** Bio */
@@ -902,6 +953,10 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Ignore Topics */
+            ignore_topics: string[];
+            /** Listen For */
+            listen_for: string[];
             /** Role */
             role: string | null;
             /** Skills */
@@ -919,10 +974,27 @@ export interface components {
          *     path for it here would race the webhook rather than complement it. `role` here is the
          *     DOMAIN role (job title/function) on `users`, never `rbac_grants.tier` - see `libs/shared/
          *     authz.py`'s module docstring for why the two must never be conflated.
+         *
+         *     ADR-0038 adds the working profile (`listen_for`, `ignore_topics`: profile fields, same
+         *     authorization as `role`) and the agent persona (`agent_*`: self only, see the route). An
+         *     empty string for `agent_name` / `agent_avatar_seed` / `agent_instructions` stores NULL.
+         *     Every failure is a 422 whose `errors[].loc` names the field.
          */
         UserProfileUpdate: {
+            /** Agent Avatar Seed */
+            agent_avatar_seed?: string | null;
+            /** Agent Instructions */
+            agent_instructions?: string | null;
+            /** Agent Name */
+            agent_name?: string | null;
+            /** Agent Personality */
+            agent_personality?: ("balanced" | "concise" | "detailed" | "direct" | "friendly") | null;
             /** Bio */
             bio?: string | null;
+            /** Ignore Topics */
+            ignore_topics?: string[] | null;
+            /** Listen For */
+            listen_for?: string[] | null;
             /** Role */
             role?: string | null;
             /** Skills */
@@ -2099,6 +2171,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MemberList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    read_my_profile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfile"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
