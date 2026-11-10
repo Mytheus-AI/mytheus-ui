@@ -3,7 +3,6 @@ import { apiSafe } from "@/lib/api/client";
 import { toMeetingView } from "@/lib/api/present";
 import type { DashboardResponse } from "@/lib/api/types";
 import { resolveOrgContext } from "@/lib/api/org-context";
-import { openConflicts, myOpenTasks } from "@/components/app/dashboard/data";
 import { DashboardHeader } from "@/components/app/dashboard/DashboardHeader";
 import { HeroUpNext } from "@/components/app/dashboard/HeroUpNext";
 import { NeedsYou } from "@/components/app/dashboard/NeedsYou";
@@ -26,13 +25,14 @@ export const metadata: Metadata = {
  * its own panel rather than replacing the whole screen with an error boundary. That mirrors
  * how `bff` already reports a per-arm status instead of failing the composite.
  *
- * The meetings arm is real and drives the hero, the header and the Today timeline. The task,
- * decision, recent-meeting and conflict panels still read the mock, because `action_items` and
- * `decisions` are shaped-but-empty on the server until Plan 8: wiring them now would replace a
- * populated demo with permanently empty boxes. Your notes (`worklogs`) are real.
+ * Every panel is real. The meetings arm drives the hero, the header and the Today timeline;
+ * `needs_review` is the Needs you queue (unconfirmed candidates from your meetings, with
+ * Confirm and Dismiss); `action_items`, `decisions`, `recent_meetings` and `worklogs` fill
+ * the rest. Each panel tells "nothing here" apart from "could not load" by its arm status.
  *
  * Server Component throughout. The only client code is small leaf islands: the live countdown
- * and relative time, local-timezone times, the greeting word, and the retry button.
+ * and relative time, local-timezone times, the greeting word, the retry button, and the
+ * Needs you queue's Confirm and Dismiss.
  */
 export default async function DashboardPage() {
   const [orgContext, dashboard] = await Promise.all([
@@ -47,13 +47,18 @@ export default async function DashboardPage() {
     ...toMeetingView(m),
     endTime: meetingsArm?.items[i]?.scheduled_end ?? undefined,
   }));
-  // `worklogs` is real since Plan 7: the caller's own notes. Read loosely so a client generated
-  // before the arm was typed still compiles.
-  const notesArm = dashboard.ok
-    ? (dashboard.data.worklogs as { status: string; items: unknown[] } | undefined)
-    : undefined;
-  const notes = (notesArm?.items ?? []) as DashboardNote[];
-  const notesFailed = !dashboard.ok || notesArm?.status === "degraded";
+  // A failed fetch and a server-reported degraded arm are the same thing to a panel.
+  const arm = <K extends keyof DashboardResponse>(key: K) => {
+    const a = dashboard.ok ? dashboard.data[key] : null;
+    return { items: (a?.items ?? []) as DashboardResponse[K]["items"], failed: !a || a.status === "degraded" };
+  };
+  const notesArm = arm("worklogs");
+  const notes: DashboardNote[] = notesArm.items;
+  const notesFailed = notesArm.failed;
+  const tasks = arm("action_items");
+  const decisions = arm("decisions");
+  const recent = arm("recent_meetings");
+  const review = arm("needs_review");
   // A failed fetch and a server-reported degraded arm are the same thing to the panels.
   const calendarFailed = !dashboard.ok || meetingsArm?.status === "degraded";
 
@@ -71,8 +76,6 @@ export default async function DashboardPage() {
   const today = meetings.filter(isToday);
   const later = meetings.filter((m) => !isToday(m) && m.status !== "past");
 
-  const { mine } = myOpenTasks();
-
   return (
     <div className="mx-auto max-w-[1240px]">
       <div {...reveal(0)}>
@@ -83,8 +86,8 @@ export default async function DashboardPage() {
           next={calendarFailed ? null : next}
           calendarFailed={calendarFailed}
           todayCount={today.length}
-          openTasks={mine.length}
-          needsYou={openConflicts.length}
+          openTasks={tasks.failed ? null : tasks.items.length}
+          needsYou={review.failed ? null : review.items.length}
         />
       </div>
 
@@ -93,8 +96,8 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 items-start gap-6 min-[1101px]:grid-cols-[minmax(0,1fr)_minmax(300px,368px)]">
         <div className="flex min-w-0 flex-col gap-7">
           <HeroUpNext next={next} after={after} calendarFailed={calendarFailed} nowMs={nowMs} {...reveal(1)} />
-          <NeedsYou {...reveal(2)} />
-          <RecentMeetings {...reveal(5)} />
+          <NeedsYou items={review.items} failed={review.failed} {...reveal(2)} />
+          <RecentMeetings meetings={recent.items} failed={recent.failed} {...reveal(5)} />
         </div>
 
         <aside
@@ -110,8 +113,10 @@ export default async function DashboardPage() {
             {...reveal(3)}
           />
           <MyNotes notes={notes} failed={notesFailed} {...reveal(4)} />
-          <TaskList {...reveal(4)} />
+          <TaskList tasks={tasks.items} failed={tasks.failed} nowIso={now.toISOString()} {...reveal(4)} />
           <RecentDecisions
+            decisions={decisions.items}
+            failed={decisions.failed}
             className={`${reveal(6).className} min-[721px]:col-span-2 min-[1101px]:col-span-1`}
             style={reveal(6).style}
           />
