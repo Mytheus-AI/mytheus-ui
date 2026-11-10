@@ -26,6 +26,7 @@ import { orderedNotes } from "@/lib/realtime/notes";
 import { orderedCandidates } from "@/lib/realtime/candidates";
 import { openSuggestions, savedSuggestions } from "@/lib/realtime/suggestions";
 import { visibleContextFills } from "@/lib/realtime/contextFills";
+import { orderedAlerts } from "@/lib/realtime/alerts";
 import { useMeetingSocket } from "@/lib/realtime/useMeetingSocket";
 import type { CallMeeting } from "@/components/call/resolve-meeting";
 import type { AgentSidebarCard } from "@/lib/mock/data";
@@ -142,6 +143,7 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
   const suggestions = useMemo(() => openSuggestions(socket.suggestions), [socket.suggestions]);
   const saved = useMemo(() => savedSuggestions(socket.suggestions), [socket.suggestions]);
   const contextFills = useMemo(() => visibleContextFills(socket.contextFills), [socket.contextFills]);
+  const alerts = useMemo(() => orderedAlerts(socket.alerts), [socket.alerts]);
 
   const liveRoom = live.status === "connected" ? live.room : null;
   // Someone starting a screen share is the one moment spotlight is clearly right, so the room
@@ -462,7 +464,7 @@ export function MeetingRoom({ meeting, names = {} }: { meeting: CallMeeting; nam
                   attention={attention.count}
                   conflict={attention.conflict}
                   peopleCount={people.length}
-                  agent={<AgentSidebar onAttentionChange={onAttention} id={SECTION_IDS.agent} items={NO_AGENT_CARDS} notes={myNotes} candidates={candidates} onCandidateResolved={socket.resolveCandidate} onCandidateUpdated={socket.updateCandidate} meetingId={meeting.id} suggestions={suggestions} savedSuggestions={saved} onSuggestionResolved={socket.resolveSuggestion} onSuggestionSaved={socket.markSuggestionSaved} contextFills={contextFills} onContextFillDismissed={socket.dismissContextFill} />}
+                  agent={<AgentSidebar onAttentionChange={onAttention} id={SECTION_IDS.agent} items={NO_AGENT_CARDS} notes={myNotes} candidates={candidates} onCandidateResolved={socket.resolveCandidate} onCandidateUpdated={socket.updateCandidate} meetingId={meeting.id} suggestions={suggestions} savedSuggestions={saved} onSuggestionResolved={socket.resolveSuggestion} onSuggestionSaved={socket.markSuggestionSaved} contextFills={contextFills} onContextFillDismissed={socket.dismissContextFill} alerts={alerts} onAlertRead={socket.markAlertRead} onAlertDismissed={socket.dismissAlert} />}
                   people={<PeoplePanel people={people} id={SECTION_IDS.people} />}
                   chat={<ChatPanel id={SECTION_IDS.chat} room={liveRoom} />}
                 />

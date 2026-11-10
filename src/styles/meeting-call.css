@@ -715,3 +715,80 @@
 .mx-meet .cx-call .nfy-edit textarea:focus-visible,
 .mx-meet .cx-call .nfy-edit input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .mx-meet .cx-call .nfy-act:disabled { opacity: .55; cursor: default; }
+
+/* ---------------------------------------------------------------- P11 proactive alerts
+   ProactiveAgent alerts (plan 10-13 section 3.9) in the frozen priority language: red acts now
+   (priority 1, the pinned banner), yellow needs attention (workload, dependency), blue informs
+   (missing stakeholder). The meeting palette binds that language as --prioHigh / --prioMid /
+   --prioLow (and their dark twins in meeting-dark.css); the app-wide --priority-* tokens are the
+   fallback. Priority is carried by the label colour, the icon and the soft tint, never an edge. */
+
+/* Every pinned banner sits in one sticky stack, so two conflicts never overlap each other. */
+.mx-meet .cx-call .alert-banners {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mx-meet .cx-call .alert-banners .conflict-banner { position: relative; top: auto; }
+.mx-meet .cx-call .alert-banner { min-height: 84px; }
+.mx-meet .cx-call .alert-banner .cbn-kind { color: var(--prioHigh, var(--priority-high)); }
+.mx-meet .cx-call .alert-banner.is-read { animation: none; background: var(--surface); box-shadow: var(--shadow-iconBtn); }
+.mx-meet .cx-call .alert-banner .cbn-text { margin-bottom: 2px; font-weight: 700; color: var(--ink); }
+
+/* Cards reserve their height, so a card landing above others never makes the panel jump. */
+.mx-meet .cx-call .nfy-card.is-alert { min-height: 92px; }
+.mx-meet .cx-call .nfy-card.is-alert .nfy-kind { align-items: center; }
+.mx-meet .cx-call .nfy-card.is-alert .nfy-kind::before { content: none; }
+.mx-meet .cx-call .nfy-card.is-alert.is-p2 { background: var(--prioMidBg, var(--priority-medium-soft)); }
+.mx-meet .cx-call .nfy-card.is-alert.is-p2 .nfy-kind { color: var(--prioMid, var(--priority-medium)); }
+.mx-meet .cx-call .nfy-card.is-alert.is-p3 { background: var(--prioLowBg, var(--priority-low-soft)); }
+.mx-meet .cx-call .nfy-card.is-alert.is-p3 .nfy-kind { color: var(--prioLow, var(--priority-low)); }
+.mx-meet .cx-call .nfy-card.is-alert.is-read { background: var(--surface); }
+.mx-meet .cx-call .nfy-card.is-alert.is-read .alert-title { color: var(--mutedDeep); }
+
+.mx-meet .cx-call .alert-body { font-size: 12px; line-height: 1.45; font-weight: 500; color: var(--body); margin: 2px 0 6px; }
+.mx-meet .cx-call .alert-why { margin: 0 0 7px; }
+.mx-meet .cx-call .alert-why-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--mutedDeep);
+  border-radius: 5px;
+}
+.mx-meet .cx-call .alert-why-toggle:hover { color: var(--ink); }
+.mx-meet .cx-call .alert-why-toggle svg { transition: transform 0.15s ease; }
+.mx-meet .cx-call .alert-why-toggle svg.is-open { transform: rotate(180deg); }
+.mx-meet .cx-call .alert-why-text { font-size: 11px; line-height: 1.45; font-weight: 500; color: var(--mutedAlt); margin-top: 4px; }
+
+/* Streamed notes: the draft and its settled note are one node (keyed by window), and the body
+   keeps a two-line floor so neither the deltas appending nor the swap moves the panel. */
+.mx-meet .cx-call .mynote .mynote-body { min-height: 36px; }
+.mx-meet .cx-call .mynote-writing { display: inline-flex; align-items: center; }
+
+/* Reduced motion: entrances become a short opacity fade (no slide), exits fade in place, and
+   the conflict ring does not pulse. This overrides meeting.css's blanket "no animation" for the
+   sidebar only, so a card still arrives visibly instead of popping. */
+@keyframes cx-opacity-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mx-meet .cx-call .nfy-card.is-new,
+  .mx-meet .cx-call .mynote.is-new,
+  .mx-meet .cx-call .afeed-item.is-new,
+  .mx-meet .cx-call .conflict-banner {
+    animation: cx-opacity-in 0.15s linear both !important;
+  }
+  .mx-meet .cx-call .nfy-card,
+  .mx-meet .cx-call .conflict-banner {
+    transition: opacity 0.15s linear !important;
+  }
+  .mx-meet .cx-call .nfy-card.is-leaving,
+  .mx-meet .cx-call .conflict-banner.is-leaving { transform: none !important; }
+  .mx-meet .cx-call .stream-caret { animation: none !important; }
+}

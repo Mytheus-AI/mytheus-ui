@@ -74,6 +74,16 @@ import {
   type ContextFillRow,
   type ContextFillsState,
 } from "./contextFills";
+import {
+  applyLiveAlert,
+  dismissAlert as dismissAlertIn,
+  emptyAlertsState,
+  hydrateAlerts,
+  markAlertRead as markAlertReadIn,
+  type AlertEventPayload,
+  type AlertRow,
+  type AlertsState,
+} from "./alerts";
 
 export type SocketStatus =
   | "disabled" // no NEXT_PUBLIC_REALTIME_WS_URL: caller falls back to mock captions
@@ -108,6 +118,12 @@ export interface MeetingSocketState {
   contextFills: ContextFillsState;
   /** Drop a context fill this participant dismissed (or that is gone on the server). */
   dismissContextFill: (id: string) => void;
+  /** This participant's own ProactiveAgent alerts (Phase P11, plan 3.9). */
+  alerts: AlertsState;
+  /** Keep an alert the server marked read, quieter. */
+  markAlertRead: (id: string) => void;
+  /** Drop an alert this participant dismissed (or that is gone on the server), for good. */
+  dismissAlert: (id: string) => void;
 }
 
 interface JoinAck {
@@ -125,6 +141,7 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
   const [candidates, setCandidates] = useState<CandidatesState>(emptyCandidatesState);
   const [suggestions, setSuggestions] = useState<SuggestionsState>(emptySuggestionsState);
   const [contextFills, setContextFills] = useState<ContextFillsState>(emptyContextFillsState);
+  const [alerts, setAlerts] = useState<AlertsState>(emptyAlertsState);
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -223,12 +240,28 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
       }
     };
 
+    // And for this participant's alerts: the gateway drains each alert to the socket once, so
+    // every (re)connect re-reads their notification-service rows for this meeting. A dismissed
+    // row is remembered in the reducer and never returns.
+    const rehydrateAlerts = async () => {
+      try {
+        const response = await fetch(`/api/meeting-alerts?meeting_id=${encodeURIComponent(meetingId)}`);
+        if (!response.ok) return;
+        const body = (await response.json()) as { items?: AlertRow[] };
+        if (cancelled) return;
+        setAlerts((prev) => hydrateAlerts(prev, body));
+      } catch {
+        // Same reasoning as captions: the live stream keeps working without it.
+      }
+    };
+
     const join = () => {
       void rehydrate();
       void rehydrateNotes();
       void rehydrateCandidates();
       void rehydrateSuggestions();
       void rehydrateContextFills();
+      void rehydrateAlerts();
       socket.emit("join", { meetingId }, (ack: JoinAck) => {
         if (cancelled) return;
         if (ack?.ok) {
@@ -289,6 +322,14 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
       setContextFills((prev) => applyLiveContextFill(prev, event.payload));
     });
 
+    // Private to the recipient, drained from their priority queue most urgent first (P11
+    // contract section 4). The outer meetingId is the room it was delivered in; an alert queued
+    // while the user was elsewhere can be about another meeting, which its links say.
+    socket.on("agent-alert", (event: { meetingId: string; payload: AlertEventPayload }) => {
+      if (cancelled || event?.meetingId !== meetingId || !event.payload) return;
+      setAlerts((prev) => applyLiveAlert(prev, event.payload));
+    });
+
     socket.on("presence", (members: string[]) => {
       if (!cancelled) setPresence(Array.isArray(members) ? members : []);
     });
@@ -327,6 +368,9 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
     [],
   );
 
+  const markAlertRead = useCallback((id: string) => setAlerts((prev) => markAlertReadIn(prev, id)), []);
+  const dismissAlert = useCallback((id: string) => setAlerts((prev) => dismissAlertIn(prev, id)), []);
+
   return useMemo(
     () => ({
       status,
@@ -341,6 +385,9 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
       markSuggestionSaved,
       contextFills,
       dismissContextFill,
+      alerts,
+      markAlertRead,
+      dismissAlert,
     }),
     [
       status,
@@ -355,6 +402,9 @@ export function useMeetingSocket(meetingId: string, token: string | null): Meeti
       markSuggestionSaved,
       contextFills,
       dismissContextFill,
+      alerts,
+      markAlertRead,
+      dismissAlert,
     ],
   );
 }
