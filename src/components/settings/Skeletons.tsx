@@ -57,7 +57,7 @@ export function SettingsSkeleton() {
         <Header />
         <div className="mt-7 grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start lg:gap-10">
           <div className="flex gap-1.5 overflow-hidden lg:flex-col">
-            {[0, 1, 2, 3].map((i) => (
+            {[0, 1, 2, 3, 4].map((i) => (
               <div key={i} className="h-10 w-32 shrink-0 rounded-ctl bg-bg-2 lg:h-11 lg:w-full" />
             ))}
           </div>
