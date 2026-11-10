@@ -1,20 +1,6 @@
-import type { Metadata } from "next";
-import { SettingsShell } from "@/components/settings/SettingsShell";
-import { AgentPanel } from "@/components/settings/AgentPanel";
-import { fetchMyProfile } from "@/lib/api/profile";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Your agent | Mytheus" };
-
-/** The caller's agent persona (ADR-0038 D2, D11), read from `GET /users/me`. Loading and errors
-    fall to the settings segment's `loading.tsx` and `error.tsx`. */
-export default async function AgentSettingsPage() {
-  const profile = await fetchMyProfile();
-  return (
-    <SettingsShell
-      title="Your agent"
-      description="Its name, its face and how it writes your notes. Only you can change these."
-    >
-      <AgentPanel profile={profile} />
-    </SettingsShell>
-  );
+/** Your agent has its own page now (the sidebar's agent tab); old links land there. */
+export default function AgentSettingsPage() {
+  redirect("/agent");
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Buildings, CreditCard, PlugsConnected, Smiley, UserCircle } from "@phosphor-icons/react";
+import { Buildings, CreditCard, PlugsConnected, UserCircle } from "@phosphor-icons/react";
 
 /* Section nav shared by every settings screen: a vertical list from lg up (sticky beside the
    panel), a horizontal scroller below. Billing lives at its own top-level route but belongs to
@@ -12,7 +12,6 @@ import { Buildings, CreditCard, PlugsConnected, Smiley, UserCircle } from "@phos
 const TABS = [
   { href: "/settings", label: "Workspace", icon: Buildings },
   { href: "/settings/profile", label: "Profile", icon: UserCircle },
-  { href: "/settings/agent", label: "Your agent", icon: Smiley },
   { href: "/settings/integrations", label: "Integrations", icon: PlugsConnected },
   { href: "/billing", label: "Billing", icon: CreditCard },
 ] as const;

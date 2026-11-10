@@ -95,13 +95,34 @@
 /* No slide while the saved sidebar mode is first applied on load. */
 .mx-app.sb-instant .sb-slot, .mx-app.sb-instant .sb-panel { transition: none; }
 
-/* The active nav marker: the marketing nav's coral squiggle, drawn once when an item becomes
-   current. `pathLength="1"` on the path makes the dash maths length-free. */
-.mx-app .sb-squiggle path { stroke-dasharray: 1; stroke-dashoffset: 0; }
+/* The current item's marker: a short stretch of line that draws in from the left, then the bead
+   it ends in settles. Final state without motion. */
 @media (prefers-reduced-motion: no-preference) {
-  .mx-app .sb-squiggle path { animation: mx-squiggle 0.5s var(--ease-draw) 0.05s both; }
+  .mx-app .sb-bead-line { transform-origin: left center; animation: mx-bead-line 0.22s var(--ease-out) both; }
+  .mx-app .sb-bead-dot { animation: mx-bead-dot 0.24s var(--ease-out) 0.16s both; }
 }
-@keyframes mx-squiggle { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes mx-bead-line { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes mx-bead-dot { from { transform: scale(0.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* The agent tab. Its wash is the auth panel's, and its face sits in a dashed orbit that closes
+   into a solid ring while its page is open. */
+.mx-app .sb-agent-wash { background-image: var(--wash-glow), var(--wash); }
+.mx-app .sb-orbit circle { stroke-dasharray: 2.6 4.2; opacity: 0.9; transition: stroke-dasharray 0.3s var(--ease-out); }
+.mx-app .sb-orbit.is-active circle { stroke-dasharray: 120 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .mx-app .group\/agent:hover .sb-orbit:not(.is-active) { animation: mx-orbit 9s linear infinite; }
+}
+@keyframes mx-orbit { to { transform: rotate(360deg); } }
+.mx-app .sb-orbit { transform-origin: 50% 50%; }
+
+/* The agent page's portrait orbit: dashed like the sidebar tab's, with one bead that travels a
+   full turn once as the face inks in, then rests at the top. */
+.mx-app .agent-orbit circle:first-child { stroke-dasharray: 4 7; opacity: 0.85; }
+.mx-app .agent-orbit { transform-origin: 50% 50%; }
+@media (prefers-reduced-motion: no-preference) {
+  .mx-app .agent-orbit { animation: mx-orbit-once 1.6s var(--ease-out) 0.1s both; }
+}
+@keyframes mx-orbit-once { from { transform: rotate(-200deg); } to { transform: rotate(0deg); } }
 
 /* Overlays (command palette, account menu) answer the action that opened them: a short settle,
    never a bounce. */

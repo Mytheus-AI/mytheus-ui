@@ -23,7 +23,7 @@ export function AgentHead({ face, personality }: { face: AgentFace; personality:
         </span>
       </span>
       <Link
-        href="/settings/agent"
+        href="/agent"
         target="_blank"
         rel="noopener"
         className="cx-icon-btn sm tap tip-below tip-end"

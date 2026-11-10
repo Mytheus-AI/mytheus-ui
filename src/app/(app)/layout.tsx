@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import { OrgProvider } from "@/lib/org-context";
 import { resolveOrgContext } from "@/lib/api/org-context";
 import { AppShell } from "@/components/app/AppShell";
+import type { SidebarAgent } from "@/components/app/Sidebar";
+import { fetchMyProfile } from "@/lib/api/profile";
+import { agentDisplayName, agentSeed } from "@/lib/api/profile-types";
 import "@/styles/app-theme.css";
 
 export const metadata: Metadata = {
@@ -24,12 +27,21 @@ export const metadata: Metadata = {
  * the JWT on every request; the client's job is to send the token and nothing else.
  */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const orgContext = await resolveOrgContext();
+  // The agent rides along with the org context: one more gateway read, on the docker network.
+  // A failed read leaves the sidebar's agent tab generic rather than failing the shell.
+  const [orgContext, profile] = await Promise.all([resolveOrgContext(), fetchMyProfile()]);
   if (!orgContext) redirect("/sign-in");
+
+  const agent: SidebarAgent | null = profile
+    ? {
+        name: agentDisplayName(profile.agent_name, orgContext.user.name),
+        seed: agentSeed(profile.agent_avatar_seed, profile.id),
+      }
+    : null;
 
   return (
     <OrgProvider value={orgContext}>
-      <AppShell>{children}</AppShell>
+      <AppShell agent={agent}>{children}</AppShell>
     </OrgProvider>
   );
 }
