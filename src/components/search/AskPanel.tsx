@@ -219,6 +219,9 @@ function SourcePreview({ p }: { p: RagPassage }) {
         <span className="font-semibold text-ink">{p.text}</span>
         {p.context_after ? <span className="text-ink-3"> {p.context_after}</span> : null}
       </p>
+      {p.citation.kind === "document" ? (
+        <p className="mt-3 text-[13px] text-ink-3">The cited part of a company brain document, shown here in full context.</p>
+      ) : null}
       {href ? (
         <Link
           href={href}
