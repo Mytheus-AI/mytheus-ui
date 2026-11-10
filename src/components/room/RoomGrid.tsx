@@ -47,8 +47,9 @@ export type RoomTile = {
   imageUrl?: string;
   /** This person's agent (ADR-0038 D11): a small badge of its face, named for screen readers. */
   agent?: { name: string; seed: string };
-  /** A proxy tile's person and the update they gave their agent for the room. */
-  proxy?: { forName: string; update: string | null };
+  /** A proxy tile's person and the update they gave their agent for the room, and opening the
+   *  stand-in (their whole update and "Ask their agent"). */
+  proxy?: { forName: string; update: string | null; onOpen?: () => void };
   /** This person's hand is up. */
   handUp?: boolean;
 };
@@ -262,30 +263,38 @@ function Thumb({ tile, pinLabel, onPin }: { tile: RoomTile; pinLabel: string; on
   );
 }
 
-/* An agent attending for someone: its face where the camera would be, whose agent it is, and the
-   update they sent with it, revealed on hover or focus. */
+/* An agent attending for someone (polish program, Phase 1: the update is ON the tile, not behind
+   a hover): its face, whose agent it is, the update they sent with it, and "Ask <name>'s agent",
+   which opens the stand-in with the whole update and the permission-gated ask. On a tile too
+   small to read (a thumbnail), the text gives way to the button alone. */
 function ProxyBody({ tile, large = false }: { tile: RoomTile; large?: boolean }) {
   const uid = useId();
   const forName = tile.proxy?.forName ?? "someone";
+  const first = forName.split(" ")[0] || forName;
   const update = tile.proxy?.update ?? null;
+  const onOpen = tile.proxy?.onOpen;
   return (
     <div
-      className={`cx-proxy${large ? " is-large" : ""}`}
-      tabIndex={0}
+      className={`cx-proxy is-open${large ? " is-large" : ""}`}
       role="group"
-      aria-label={`${tile.agent?.name ?? "An agent"}, attending for ${forName}`}
+      aria-label={`${tile.agent?.name ?? "An agent"}, standing in for ${forName}`}
       aria-describedby={`${uid}-u`}
     >
       <span className="cx-tile-bg is-proxy" aria-hidden />
-      <span className="cx-proxy-face" aria-hidden>
-        {tile.agent ? <Doodle seed={tile.agent.seed} className="block h-full w-full" /> : null}
-      </span>
-      <span className="cx-proxy-for" aria-hidden>
-        Attending for {forName}
-      </span>
-      <div id={`${uid}-u`} className="cx-proxy-update">
-        <strong>{forName}&rsquo;s update</strong>
-        <p>{update ?? `${forName} sent their agent without an update. It listens and takes notes for them.`}</p>
+      <div className="cx-proxy-card">
+        <span className="cx-proxy-face" aria-hidden>
+          {tile.agent ? <Doodle seed={tile.agent.seed} className="block h-full w-full" /> : null}
+        </span>
+        <p className="cx-proxy-for">Standing in for {forName}</p>
+        <p id={`${uid}-u`} className={`cx-proxy-text${update ? "" : " is-empty"}`}>
+          <span className="sr-only">{forName}&rsquo;s update: </span>
+          {update ?? "No update left. Their agent listens and takes notes for them."}
+        </p>
+        {onOpen ? (
+          <button type="button" className="cx-proxy-ask tap" onClick={onOpen} aria-label={`Ask ${forName}'s agent, and read the whole update`}>
+            Ask {first}&rsquo;s agent
+          </button>
+        ) : null}
       </div>
       <span className="thumb-name">{tile.agent?.name ?? `${forName}'s agent`}</span>
     </div>

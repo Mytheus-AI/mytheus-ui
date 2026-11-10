@@ -170,6 +170,37 @@ export function applyHostAgendaStatus(state: AgendaState, row: AgendaItem | null
   return { ...state, items };
 }
 
+/**
+ * "agenda-status" with several stored rows ("Start next" finishes one item and starts the next;
+ * the gateway sends every row it verified as `items`). Each row is applied under the same rule as
+ * a single one. An older gateway sends `item` only, which is the one-row case.
+ */
+export function applyHostAgendaRows(
+  state: AgendaState,
+  rows: ReadonlyArray<AgendaItem | null | undefined> | null | undefined,
+): AgendaState {
+  if (!Array.isArray(rows)) return state;
+  return rows.reduce<AgendaState>((acc, row) => applyHostAgendaStatus(acc, row), state);
+}
+
+/**
+ * The host's own write came back from core-api (Start next, Extend): its stored rows are the
+ * truth on this screen at once, position kept. An item with a mark of the host's still in flight
+ * keeps that attempt pending, so its own settle still applies.
+ */
+export function applyServerRows(state: AgendaState, rows: ReadonlyArray<AgendaItem> | null | undefined): AgendaState {
+  if (!Array.isArray(rows) || rows.length === 0) return state;
+  const byId = new Map(rows.filter((r) => r && typeof r.id === "string").map((r) => [r.id, r]));
+  let changed = false;
+  const items = state.items.map((it) => {
+    const row = byId.get(it.id);
+    if (!row) return it;
+    changed = true;
+    return { ...it, ...row, position: it.position };
+  });
+  return changed ? { ...state, items } : state;
+}
+
 /** How far along the agenda is: covered or skipped, of all. */
 export function agendaProgress(items: AgendaItem[]): { done: number; total: number } {
   return { done: items.filter((it) => it.status === "covered" || it.status === "skipped").length, total: items.length };

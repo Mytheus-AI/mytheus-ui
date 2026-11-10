@@ -37,6 +37,7 @@ export default defineConfig({
           { find: /^next\/navigation$/, replacement: stub("next-navigation.ts") },
           { find: /^socket\.io-client$/, replacement: stub("socket.io-client.ts") },
           { find: /^@\/components\/room\/actions$/, replacement: stub("room-actions.ts") },
+          { find: /^@\/components\/room\/stage-actions$/, replacement: stub("stage-actions.ts") },
           { find: /^@\/app\/actions\/.*$/, replacement: stub("actions.ts") },
           { find: /^@\//, replacement: `${path.resolve(root, "src")}/` },
         ],
