@@ -43,11 +43,14 @@ export function DashboardHeader({
   /** The meetings arm could not be read. Not the same as an empty calendar. */
   calendarFailed: boolean;
   todayCount: number;
-  openTasks: number;
-  needsYou: number;
+  /** null when that panel could not be read: shown as a dash, never as zero. */
+  openTasks: number | null;
+  needsYou: number | null;
 }) {
   const waiting: ReactNode =
-    needsYou > 0 ? (
+    needsYou === null ? (
+      <>.</>
+    ) : needsYou > 0 ? (
       <>
         , and your agent is waiting on <b className="font-semibold text-ink">{plural(needsYou, "item", "items")}</b> from you.
       </>
@@ -92,8 +95,8 @@ export function DashboardHeader({
         className="grid flex-[1_1_100%] grid-cols-3 divide-x divide-line min-[721px]:flex min-[721px]:flex-[0_0_auto]"
       >
         <Figure value={calendarFailed ? "-" : todayCount} label="Meetings today" />
-        <Figure value={openTasks} label="Open tasks" />
-        <Figure value={needsYou} label="Items need you" />
+        <Figure value={openTasks ?? "-"} label="Open tasks" />
+        <Figure value={needsYou ?? "-"} label="Items need you" />
       </div>
     </header>
   );

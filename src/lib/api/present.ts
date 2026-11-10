@@ -5,14 +5,14 @@
  * WITHOUT changing those components, and without inventing the fields the backend does not
  * have yet.
  *
- * `Meeting` in `src/lib/mock/data.ts` carries `durationMinutes`, `participants`,
- * `decisionCount` and `actionCount`. None of those exist server-side yet: duration and
- * speakers come from transcription (Plan 3-4), decision and action counts from the agent and
- * confirmation bands (Plan 7-9). They are returned as `undefined` here rather than `0`,
- * because `0` renders as "0 decisions" and states a fabricated fact as a measured one.
+ * The components were first written against sample meetings that carried `durationMinutes`,
+ * `participants`, `decisionCount` and `actionCount`. The meetings arm does not carry those, so
+ * they are returned as `undefined` here rather than `0`, because `0` renders as "0 decisions"
+ * and states a fabricated fact as a measured one. (The dashboard's Recent meetings panel reads
+ * real counts from its own `recent_meetings` arm.)
  */
 
-import type { MeetingStatus as MockMeetingStatus } from "@/lib/mock/data";
+import type { MeetingStatus as MockMeetingStatus } from "@/lib/types";
 import type { DashboardMeeting, MeetingStatus } from "./types";
 
 /**

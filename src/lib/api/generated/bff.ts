@@ -114,10 +114,39 @@ export interface components {
     schemas: {
         /** Dashboard */
         Dashboard: {
-            action_items: components["schemas"]["UnbuiltArm"];
-            decisions: components["schemas"]["UnbuiltArm"];
+            action_items: components["schemas"]["TasksArm"];
+            decisions: components["schemas"]["DecisionsArm"];
+            needs_review: components["schemas"]["NeedsReviewArm"];
+            recent_meetings: components["schemas"]["RecentMeetingsArm"];
             upcoming_meetings: components["schemas"]["MeetingsArm"];
             worklogs: components["schemas"]["WorklogsArm"];
+        };
+        /**
+         * DashboardDecision
+         * @description A confirmed decision from one of the caller's meetings, for Recent decisions.
+         */
+        DashboardDecision: {
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Meeting Title */
+            meeting_title: string | null;
+            /** Rationale */
+            rationale: string | null;
         };
         /**
          * DashboardMeeting
@@ -173,6 +202,92 @@ export interface components {
             /** Meeting Title */
             meeting_title: string | null;
         };
+        /**
+         * DashboardRecentMeeting
+         * @description An ended meeting the caller was in, with what was confirmed in it.
+         */
+        DashboardRecentMeeting: {
+            /** Action Count */
+            action_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decision Count */
+            decision_count: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Participant Count */
+            participant_count: number;
+            /** Scheduled End */
+            scheduled_end: string | null;
+            /** Scheduled Start */
+            scheduled_start: string | null;
+            /** Title */
+            title: string | null;
+        };
+        /**
+         * DashboardReviewItem
+         * @description An agent candidate (proposed, above the tenant's surface threshold) in one of the
+         *     caller's meetings that nobody has confirmed or dismissed yet.
+         */
+        DashboardReviewItem: {
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "decision" | "action";
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Meeting Title */
+            meeting_title: string | null;
+        };
+        /**
+         * DashboardTask
+         * @description One of the caller's open (confirmed, not done) action items, for Your tasks.
+         */
+        DashboardTask: {
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Due Date */
+            due_date: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Meeting Title */
+            meeting_title: string | null;
+        };
         /** DecisionLineage */
         DecisionLineage: {
             /** Chain */
@@ -187,6 +302,16 @@ export interface components {
              * Format: uuid
              */
             meeting_id: string;
+        };
+        /** DecisionsArm */
+        DecisionsArm: {
+            /** Items */
+            items: components["schemas"]["DashboardDecision"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "degraded" | "empty";
         };
         /** DepartmentNode */
         DepartmentNode: {
@@ -297,6 +422,16 @@ export interface components {
              */
             user_id: string;
         };
+        /** NeedsReviewArm */
+        NeedsReviewArm: {
+            /** Items */
+            items: components["schemas"]["DashboardReviewItem"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "degraded" | "empty";
+        };
         /** OrgChart */
         OrgChart: {
             /** Departments */
@@ -361,6 +496,26 @@ export interface components {
              */
             type: string;
         };
+        /** RecentMeetingsArm */
+        RecentMeetingsArm: {
+            /** Items */
+            items: components["schemas"]["DashboardRecentMeeting"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "degraded" | "empty";
+        };
+        /** TasksArm */
+        TasksArm: {
+            /** Items */
+            items: components["schemas"]["DashboardTask"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "degraded" | "empty";
+        };
         /** TeamNode */
         TeamNode: {
             /**
@@ -388,35 +543,6 @@ export interface components {
             id: string;
             /** Name */
             name: string;
-        };
-        /**
-         * UnbuiltArm
-         * @description A panel whose read model does not exist yet, so its item type stays open.
-         *
-         *     `action_items`, `worklogs` and `decisions` are shaped-but-empty until Plan 7-9 builds the
-         *     read models behind them. Inventing an item shape now would freeze a wire contract that
-         *     band has to either honour or break, on no evidence, and a generated client would carry
-         *     that invention to every caller as though it were measured.
-         *
-         *     The item type is therefore left exactly as it is on the wire today, an open object map.
-         *     Widening it to `Any` was tried and reverted: `oasdiff breaking` reports `object` -> `any`
-         *     as a `response-property-type-changed` on all three arms, and no client can observe the
-         *     difference because these arrays are always empty. Loosening a live response type to make
-         *     an always-empty array read better is not worth a breaking-change entry.
-         *
-         *     The name is the signal: when a read model lands, this class is replaced by a typed arm,
-         *     and that rename is a visible breaking change rather than a silent shape swap.
-         */
-        UnbuiltArm: {
-            /** Items */
-            items: {
-                [key: string]: unknown;
-            }[];
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "ok" | "degraded" | "empty";
         };
         /** ValidationError */
         ValidationError: {

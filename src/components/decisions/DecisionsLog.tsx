@@ -3,10 +3,11 @@
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import {
+  ArrowsClockwise,
   CalendarBlank,
   CaretRight,
   CheckCircle,
-  Flag,
+  ClockCounterClockwise,
   MagnifyingGlass,
   VideoCamera,
   X,
@@ -17,13 +18,14 @@ import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SidePanel } from "@/components/tasks/SidePanel";
-import type { Decision, Priority } from "@/lib/mock/data";
+import type { DecisionView as Decision } from "@/lib/api/decisions";
 
-/* The decision log: everything the org has confirmed, newest first, grouped by month. Only
-   confirmed decisions exist in the record (dismissed detections never reach it), so every entry
-   carries a Confirmed chip. Search, filters and the detail panel are client-side presentation. */
+/* The decision log: every decision confirmed in a meeting you were in, newest first, grouped by
+   month (`GET /api/v1/decisions`). Only confirmed decisions exist in the record (dismissed
+   detections never reach it); one a later decision replaced is marked Superseded and links to
+   its replacement. Search, filters and the detail panel are client-side presentation. */
 
-type PriorityFilter = "all" | Priority;
+type StatusFilter = "all" | Decision["status"];
 
 const monthFmt = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
 const shortFmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
@@ -37,15 +39,19 @@ const longFmt = new Intl.DateTimeFormat("en-US", {
   timeZone: "UTC",
 });
 
-const PRIORITY_FILTERS: { key: PriorityFilter; label: string }[] = [
+const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
   { key: "all", label: "All" },
-  { key: "high", label: "High" },
-  { key: "medium", label: "Medium" },
-  { key: "low", label: "Low" },
+  { key: "confirmed", label: "In force" },
+  { key: "superseded", label: "Replaced" },
 ];
 
-function ConfirmedChip() {
-  return (
+function StatusChip({ status }: { status: Decision["status"] }) {
+  return status === "superseded" ? (
+    <Badge tone="medium" className="gap-1.5">
+      <ClockCounterClockwise size={14} weight="bold" aria-hidden />
+      Superseded
+    </Badge>
+  ) : (
     <Badge tone="success" className="gap-1.5">
       <CheckCircle size={14} weight="fill" aria-hidden />
       Confirmed
@@ -53,37 +59,35 @@ function ConfirmedChip() {
   );
 }
 
-function PriorityChip({ priority }: { priority: Priority }) {
+/* One FOLLOWS_FROM hop, in either direction: what this decision replaced, or what replaced it.
+   The linked decision's text is shown when it is in this log too. */
+function LineageHop({
+  label,
+  target,
+  byId,
+}: {
+  label: string;
+  target: string;
+  byId: Map<string, Decision>;
+}) {
+  const other = byId.get(target);
   return (
-    <Badge tone={priority} className="gap-1.5">
-      <Flag size={12} weight="fill" aria-hidden />
-      <span className="capitalize">{priority}</span>
-      <span className="sr-only"> priority</span>
-    </Badge>
-  );
-}
-
-/* The FOLLOWS_FROM chain, oldest to newest. */
-function LineageTrail({ lineage }: { lineage: string[] }) {
-  return (
-    <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-pill border border-line bg-bg px-3 py-1.5 text-[12px]">
-      <span className="font-semibold text-ink-3">Follows from</span>
-      {lineage.map((m, i) => (
-        <span key={`${m}-${i}`} className="inline-flex items-center gap-1.5 font-medium text-ink-2">
-          {i > 0 && <CaretRight size={11} weight="bold" className="text-ink-3" aria-hidden />}
-          {m}
-        </span>
-      ))}
-    </div>
+    <span className="inline-flex max-w-full items-center gap-1.5 rounded-pill border border-line bg-bg px-3 py-1.5 text-[12px]">
+      <ArrowsClockwise size={12} className="shrink-0 text-ink-3" aria-hidden />
+      <span className="shrink-0 font-semibold text-ink-3">{label}</span>
+      {other ? <span className="truncate font-medium text-ink-2">{other.content}</span> : null}
+    </span>
   );
 }
 
 function DecisionCard({
   decision,
+  byId,
   selected,
   onOpen,
 }: {
   decision: Decision;
+  byId: Map<string, Decision>;
   selected: boolean;
   onOpen: (id: string) => void;
 }) {
@@ -95,11 +99,10 @@ function DecisionCard({
       }`}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <ConfirmedChip />
-        <PriorityChip priority={decision.priority} />
+        <StatusChip status={decision.status} />
         <span className="ml-auto inline-flex items-center gap-1.5 text-[12.5px] text-ink-3">
           <CalendarBlank size={14} aria-hidden />
-          {shortFmt.format(new Date(decision.confirmedAt))}
+          {shortFmt.format(new Date(decision.recordedAt))}
         </span>
       </div>
 
@@ -113,10 +116,12 @@ function DecisionCard({
           aria-haspopup="dialog"
           className="rounded-md text-left font-semibold text-ink transition-colors hover:text-signal-deep active:text-signal-deep"
         >
-          {decision.title}
+          {decision.content}
         </button>
       </h3>
-      <p className="mt-1.5 max-w-[64ch] text-[14px] leading-relaxed text-ink-2">{decision.summary}</p>
+      {decision.rationale ? (
+        <p className="mt-1.5 max-w-[64ch] text-[14px] leading-relaxed text-ink-2">{decision.rationale}</p>
+      ) : null}
 
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2.5">
         <Link
@@ -127,37 +132,45 @@ function DecisionCard({
           <VideoCamera size={14} className="shrink-0" aria-hidden />
           <span className="truncate">{decision.meetingTitle}</span>
         </Link>
-        {decision.lineage && decision.lineage.length > 0 && <LineageTrail lineage={decision.lineage} />}
+        {decision.supersedes ? <LineageHop label="Replaces" target={decision.supersedes} byId={byId} /> : null}
+        {decision.supersededBy ? (
+          <LineageHop label="Replaced by" target={decision.supersededBy} byId={byId} />
+        ) : null}
       </div>
     </Card>
   );
 }
 
-function DetailBody({ decision }: { decision: Decision }) {
-  const lineage = decision.lineage ?? [];
+function DetailBody({ decision, byId }: { decision: Decision; byId: Map<string, Decision> }) {
+  const hops = [
+    decision.supersedes ? { label: "Replaces", id: decision.supersedes } : null,
+    decision.supersededBy ? { label: "Replaced by", id: decision.supersededBy } : null,
+  ].filter((h): h is { label: string; id: string } => h !== null);
   return (
     <div className="flex flex-col gap-7">
-      <h2 className="display text-[26px] leading-tight text-ink-display">{decision.title}</h2>
+      <h2 className="display text-[26px] leading-tight text-ink-display">{decision.content}</h2>
 
       <dl className="grid grid-cols-1 gap-x-5 gap-y-5 min-[420px]:grid-cols-2">
         <div>
-          <dt className="kicker uppercase">Confirmed</dt>
-          <dd className="mt-2 text-[14px] font-medium text-ink">{longFmt.format(new Date(decision.confirmedAt))} UTC</dd>
+          <dt className="kicker uppercase">Recorded</dt>
+          <dd className="mt-2 text-[14px] font-medium text-ink">{longFmt.format(new Date(decision.recordedAt))} UTC</dd>
         </div>
         <div>
-          <dt className="kicker uppercase">Priority</dt>
+          <dt className="kicker uppercase">Status</dt>
           <dd className="mt-2">
-            <PriorityChip priority={decision.priority} />
+            <StatusChip status={decision.status} />
           </dd>
         </div>
       </dl>
 
-      <section aria-labelledby="decision-summary-heading">
-        <h3 id="decision-summary-heading" className="kicker uppercase">
-          Summary
-        </h3>
-        <p className="mt-2 text-[14.5px] leading-relaxed text-ink-2">{decision.summary}</p>
-      </section>
+      {decision.rationale ? (
+        <section aria-labelledby="decision-summary-heading">
+          <h3 id="decision-summary-heading" className="kicker uppercase">
+            Why
+          </h3>
+          <p className="mt-2 text-[14.5px] leading-relaxed text-ink-2">{decision.rationale}</p>
+        </section>
+      ) : null}
 
       <section aria-labelledby="decision-source-heading">
         <h3 id="decision-source-heading" className="kicker uppercase">
@@ -182,29 +195,23 @@ function DetailBody({ decision }: { decision: Decision }) {
         <h3 id="decision-lineage-heading" className="kicker uppercase">
           Lineage
         </h3>
-        {lineage.length > 0 ? (
-          <ol className="mt-3 flex flex-col gap-3">
-            {lineage.map((m, i) => {
-              const current = i === lineage.length - 1;
+        {hops.length > 0 ? (
+          <ul className="mt-3 flex flex-col gap-3">
+            {hops.map((hop) => {
+              const other = byId.get(hop.id);
               return (
-                <li key={`${m}-${i}`} className="flex items-center gap-3 text-[14px]">
-                  <span
-                    aria-hidden
-                    className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11.5px] font-semibold ${
-                      current ? "bg-signal text-white" : "bg-bg-2 text-ink-2"
-                    }`}
-                  >
-                    {i + 1}
+                <li key={hop.id} className="text-[14px]">
+                  <span className="block text-[12.5px] font-semibold text-ink-3">{hop.label}</span>
+                  <span className="text-ink-2">
+                    {other ? other.content : "A decision from a meeting you were not in"}
                   </span>
-                  <span className={`min-w-0 flex-1 ${current ? "font-semibold text-ink" : "text-ink-2"}`}>{m}</span>
-                  {current && <Badge>This decision</Badge>}
                 </li>
               );
             })}
-          </ol>
+          </ul>
         ) : (
           <p className="mt-2 text-[14px] text-ink-3">
-            No earlier meetings feed into this decision. It started here.
+            Nothing came before this decision and nothing has replaced it.
           </p>
         )}
       </section>
@@ -223,15 +230,16 @@ function DetailBody({ decision }: { decision: Decision }) {
 
 export function DecisionsLog({ decisions }: { decisions: Decision[] }) {
   const [query, setQuery] = useState("");
-  const [priority, setPriority] = useState<PriorityFilter>("all");
+  const [status, setStatus] = useState<StatusFilter>("all");
   const [meeting, setMeeting] = useState("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
 
   const sorted = useMemo(
-    () => [...decisions].sort((a, b) => new Date(b.confirmedAt).getTime() - new Date(a.confirmedAt).getTime()),
+    () => [...decisions].sort((a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime()),
     [decisions],
   );
+  const byId = useMemo(() => new Map(decisions.map((d) => [d.id, d])), [decisions]);
   const meetings = useMemo(() => {
     const seen = new Map<string, string>();
     sorted.forEach((d) => seen.set(d.meetingId, d.meetingTitle));
@@ -240,26 +248,26 @@ export function DecisionsLog({ decisions }: { decisions: Decision[] }) {
 
   const q = query.trim().toLowerCase();
   const matches = useCallback(
-    (d: Decision, skipPriority = false) => {
-      if (!skipPriority && priority !== "all" && d.priority !== priority) return false;
+    (d: Decision, skipStatus = false) => {
+      if (!skipStatus && status !== "all" && d.status !== status) return false;
       if (meeting !== "all" && d.meetingId !== meeting) return false;
       if (q) {
-        const hay = `${d.title} ${d.summary} ${d.meetingTitle} ${(d.lineage ?? []).join(" ")}`.toLowerCase();
+        const hay = `${d.content} ${d.rationale ?? ""} ${d.meetingTitle}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     },
-    [priority, meeting, q],
+    [status, meeting, q],
   );
 
   const visible = useMemo(() => sorted.filter((d) => matches(d)), [sorted, matches]);
-  const anyFilter = q !== "" || priority !== "all" || meeting !== "all";
+  const anyFilter = q !== "" || status !== "all" || meeting !== "all";
   const selected = sorted.find((d) => d.id === selectedId) ?? null;
 
   const months = useMemo(() => {
     const out: { key: string; label: string; items: Decision[] }[] = [];
     visible.forEach((d) => {
-      const date = new Date(d.confirmedAt);
+      const date = new Date(d.recordedAt);
       const key = `${date.getUTCFullYear()}-${date.getUTCMonth()}`;
       const last = out[out.length - 1];
       if (last && last.key === key) last.items.push(d);
@@ -270,7 +278,7 @@ export function DecisionsLog({ decisions }: { decisions: Decision[] }) {
 
   const clear = () => {
     setQuery("");
-    setPriority("all");
+    setStatus("all");
     setMeeting("all");
   };
   const openDecision = useCallback((id: string) => {
@@ -287,15 +295,15 @@ export function DecisionsLog({ decisions }: { decisions: Decision[] }) {
     >
       <h1 className="display text-[clamp(1.8rem,4vw,2.4rem)]">Decisions</h1>
       <p className="mt-2 max-w-[60ch] text-[14px] text-ink-3">
-        Every decision here was confirmed by a person in the room. The lineage trail shows what a decision followed
-        from, meeting by meeting.
+        Every decision here was confirmed by a person in a meeting you were in. When a later decision replaces one,
+        both stay on the record and link to each other.
       </p>
 
       {sorted.length === 0 ? (
         <EmptyState
           className="mt-8"
           title="No decisions yet"
-          description="Decisions confirmed in meetings will build the org's history here."
+          description="Decisions confirmed in your meetings build your history here."
           action={<LinkButton href="/meetings">View meetings</LinkButton>}
         />
       ) : (
@@ -320,18 +328,18 @@ export function DecisionsLog({ decisions }: { decisions: Decision[] }) {
               </div>
               <div
                 role="group"
-                aria-label="Priority"
-                className="inline-flex h-10 shrink-0 items-center gap-0.5 rounded-full bg-bg-2 p-1 max-sm:grid max-sm:w-full max-sm:grid-cols-4"
+                aria-label="Status"
+                className="inline-flex h-10 shrink-0 items-center gap-0.5 rounded-full bg-bg-2 p-1 max-sm:grid max-sm:w-full max-sm:grid-cols-3"
               >
-                {PRIORITY_FILTERS.map(({ key, label }) => {
-                  const count = sorted.filter((d) => matches(d, true) && (key === "all" || d.priority === key)).length;
-                  const on = priority === key;
+                {STATUS_FILTERS.map(({ key, label }) => {
+                  const count = sorted.filter((d) => matches(d, true) && (key === "all" || d.status === key)).length;
+                  const on = status === key;
                   return (
                     <button
                       key={key}
                       type="button"
                       aria-pressed={on}
-                      onClick={() => setPriority(key)}
+                      onClick={() => setStatus(key)}
                       className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-full px-3.5 text-[13px] font-medium transition-colors duration-150 focus-visible:!rounded-full ${
                         on ? "bg-surface text-ink shadow-sm" : "text-ink-3 hover:text-ink active:bg-bg-3"
                       }`}
@@ -397,6 +405,7 @@ export function DecisionsLog({ decisions }: { decisions: Decision[] }) {
                       <DecisionCard
                         key={d.id}
                         decision={d}
+                        byId={byId}
                         selected={panelOpen && selectedId === d.id}
                         onOpen={openDecision}
                       />
@@ -415,14 +424,10 @@ export function DecisionsLog({ decisions }: { decisions: Decision[] }) {
         label="Decision details"
         closeLabel="Close decision details"
         header={
-          selected ? (
-            <>
-              <ConfirmedChip />
-            </>
-          ) : null
+          selected ? <StatusChip status={selected.status} /> : null
         }
       >
-        {selected ? <DetailBody decision={selected} /> : null}
+        {selected ? <DetailBody decision={selected} byId={byId} /> : null}
       </SidePanel>
     </div>
   );

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { OrgProvider } from "@/lib/org-context";
-import { mockOrgContext } from "@/lib/mock/data";
+import { resolveOrgContext } from "@/lib/api/org-context";
 import { Badge } from "@/components/ui/Badge";
 import { LogoMark } from "@/components/Logo";
 import { appFontClass } from "@/lib/fonts";
@@ -12,13 +12,14 @@ export const metadata: Metadata = {
   title: "Mytheus | Admin",
 };
 
-/* RBAC gate is UX courtesy only per CLAUDE.md; real enforcement is
-   server-side. Auth isn't wired up yet, so there's no gate at all right now
-   - anyone can reach /admin. Add the Clerk role check here once auth lands. */
-// TODO(auth): restore Clerk middleware + RBAC gate for (admin) here.
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+/* The platform-staff consoles. Clerk middleware already requires a session here; the org
+   context is the signed-in user's own, from the verified session. There is no staff role yet,
+   so the pages under this layout show no cross-tenant data at all (see
+   `PlatformConsoleUnavailable`); the real gate lands with that role and `admin-ops-service`. */
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const orgContext = await resolveOrgContext();
   return (
-    <OrgProvider value={mockOrgContext}>
+    <OrgProvider value={orgContext ?? undefined}>
       <div suppressHydrationWarning className={`mx-app ${appFontClass} min-h-dvh bg-bg`}>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
         <header className="flex min-h-16 flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-line bg-surface px-4 py-2 sm:px-6 lg:px-8">

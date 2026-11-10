@@ -4,7 +4,7 @@ import type { MouseEvent } from "react";
 import { CalendarBlank, CalendarCheck, Check, Flag, WarningCircle } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/Badge";
 import { dueInfo, type DueTone } from "./dates";
-import type { Priority } from "@/lib/mock/data";
+import type { Priority } from "@/lib/types";
 
 const dueToneClass: Record<DueTone, string> = {
   overdue: "bg-priority-high-soft text-priority-high",

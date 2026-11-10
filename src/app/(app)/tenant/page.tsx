@@ -10,21 +10,22 @@ import { StatCard, thClass } from "@/components/admin/StatCard";
 import { resolveOrgContext } from "@/lib/api/org-context";
 import { listMembers, type MemberTier } from "@/lib/api/members";
 import { WorkspaceInvite } from "@/components/admin/WorkspaceInvite";
-import { mockBilling, mockIntegrations } from "@/lib/mock/data";
+import { fetchUsage } from "@/lib/api/usage";
 
 export const metadata: Metadata = { title: "Workspace admin | Mytheus" };
 
-/* Tenant admin console, overview: members, plan, integrations, and the data-rights requests
-   (export, erasure). Reads `/admin/tenant/*` once `admin-ops-service` serves it; mock until
-   then. Nothing here pretends to act: the request buttons stay disabled until the service
-   behind them exists. */
+/* Tenant admin console, overview: members (`GET /users` plus pending Clerk invitations), the
+   plan (`GET /usage` on `billing-metering-service`), integrations, and the data-rights requests
+   (export, erasure). Integrations and the data requests have no service behind them yet
+   (`integration-service` and `admin-ops-service` serve no routes), so they say "not
+   available yet" and their buttons stay off rather than pretend to work. */
 
 const tierTone: Record<MemberTier, "default" | "medium" | "low"> = {
   owner: "medium",
   admin: "low",
   member: "default",
 };
-const planLabel = { starter: "Starter", pro: "Pro", enterprise: "Enterprise" } as const;
+const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
 type Row = {
   key: string;
@@ -61,7 +62,13 @@ async function pendingInvites(): Promise<Row[]> {
 }
 
 export default async function TenantAdminPage() {
-  const [ctx, real, invited] = await Promise.all([resolveOrgContext(), listMembers(), pendingInvites()]);
+  const [ctx, real, invited, usage] = await Promise.all([
+    resolveOrgContext(),
+    listMembers(),
+    pendingInvites(),
+    fetchUsage(),
+  ]);
+  const plan = usage.kind === "live" ? usage.usage.plan : null;
   const active: Row[] = (real ?? []).map((m) => ({
     key: m.id,
     name: m.name,
@@ -72,7 +79,6 @@ export default async function TenantAdminPage() {
     isYou: m.isYou,
   }));
   const members = [...active, ...invited];
-  const connected = mockIntegrations.filter((i) => i.status === "connected");
 
   return (
     <div className="flex flex-col gap-8 motion-safe:animate-[fadeUp_0.15s_var(--ease-out)_both]">
@@ -83,10 +89,10 @@ export default async function TenantAdminPage() {
       />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Active members" value={active.length} />
+        <StatCard label="Active members" value={real ? active.length : "-"} />
         <StatCard label="Pending invites" value={invited.length} />
-        <StatCard label="Seats" value={`${mockBilling.seatsUsed} / ${mockBilling.seatsTotal}`} />
-        <StatCard label="Integrations" value={connected.length} />
+        <StatCard label="Plan" value={plan?.name ?? "-"} />
+        <StatCard label="Integrations" value="None yet" />
       </div>
 
       <section aria-labelledby="members-heading" className="overflow-hidden rounded-card border border-line bg-surface shadow-sm">
@@ -167,10 +173,11 @@ export default async function TenantAdminPage() {
             <CreditCard size={20} aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[15px] font-semibold text-ink">{planLabel[mockBilling.plan]} plan</span>
+            <span className="block text-[15px] font-semibold text-ink">{plan ? `${plan.name} plan` : "Plan and billing"}</span>
             <span className="mt-0.5 block text-[13.5px] text-ink-3">
-              {mockBilling.seatsUsed} of {mockBilling.seatsTotal} seats used &middot; ${mockBilling.pricePerSeat} per seat, billed{" "}
-              {mockBilling.billingCycle}
+              {plan
+                ? `${plan.seat_price_cents > 0 ? `${currency.format(plan.seat_price_cents / 100)} per seat on the price list` : "No charge on this plan"} · payments not connected yet`
+                : "The plan could not be loaded just now"}
             </span>
           </span>
           <ArrowRight size={16} className="mt-1 shrink-0 text-ink-3 transition-transform group-hover:translate-x-0.5" aria-hidden />
@@ -185,7 +192,7 @@ export default async function TenantAdminPage() {
           <span className="min-w-0 flex-1">
             <span className="block text-[15px] font-semibold text-ink">Integrations</span>
             <span className="mt-0.5 block text-[13.5px] text-ink-3">
-              {connected.length ? `${connected.map((i) => i.name).join(", ")} connected` : "Nothing connected yet"}
+              Calendar, Slack and project tracker connections are not available yet
             </span>
           </span>
           <ArrowRight size={16} className="mt-1 shrink-0 text-ink-3 transition-transform group-hover:translate-x-0.5" aria-hidden />
@@ -213,7 +220,7 @@ export default async function TenantAdminPage() {
         </InlineRow>
       </SectionCard>
 
-      <Note>Sample members and settings. This console reads your workspace once the admin service is live; until then its request buttons stay off rather than pretend to work.</Note>
+      <Note>Export and erasure requests are not available yet. The admin service that runs and audits them is still being built, so these buttons stay off rather than pretend to work.</Note>
     </div>
   );
 }
