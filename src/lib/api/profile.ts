@@ -1,13 +1,13 @@
 /**
- * The caller's agent profile: the domain role and focus areas (`users.role`, `users.skills`)
- * that `identity-tenant-service` serves through `get_user_context()` and that tune what their
- * PersonalListener captures. Read with `GET /context/{user_id}`, written with
- * `PATCH /users/{user_id}`.
+ * The caller's own profile on `identity-tenant-service` (ADR-0038 D3): their working profile
+ * (`role`, `skills` shown as focus areas, `bio` shown as "what you work on", `listen_for`,
+ * `ignore_topics`) and their agent's persona (`agent_name`, `agent_avatar_seed`,
+ * `agent_personality`, `agent_instructions`). Read with `GET /users/me`, written with
+ * `PATCH /users/{user_id}` by the server actions in `app/actions/profile.ts`.
  *
- * The caller's own `users.id` is found by matching their verified Clerk user id against
- * `GET /users`; nothing about the user or tenant comes from the browser. Only `role` and
- * `skills` leave this module: the context response also carries our `org_id`, which the client
- * never needs and never sees.
+ * The caller is the verified session; nothing about the user or tenant comes from the browser.
+ * Until every gateway serves `GET /users/me`, a 404 or 405 there falls back to finding the
+ * caller in `GET /users` by their Clerk user id.
  *
  * SERVER-ONLY, inherited from `lib/api/client.ts`.
  */
@@ -15,13 +15,12 @@
 import { auth } from "@clerk/nextjs/server";
 import { apiSafe } from "@/lib/api/client";
 import type { components as IdentitySchemas } from "@/lib/api/generated/identity-tenant-service";
+import { normalizeProfile, type UserProfile } from "@/lib/api/profile-types";
 
 type MemberList = IdentitySchemas["schemas"]["MemberList"];
 type UserContext = IdentitySchemas["schemas"]["UserContext"];
 
-export type AgentProfile = { role: string; skills: string[] };
-
-/** The caller's `users.id`, or null when the gateway or the user row is unavailable. */
+/** The caller's `users.id` from `GET /users`, or null when the gateway or the row is unavailable. */
 export async function myUserId(): Promise<string | null> {
   const { userId } = await auth();
   if (!userId) return null;
@@ -30,11 +29,19 @@ export async function myUserId(): Promise<string | null> {
   return res.data.items.find((m) => m.clerk_user_id === userId)?.id ?? null;
 }
 
-/** The caller's role and focus areas, or null when they cannot be loaded. */
-export async function fetchMyAgentProfile(): Promise<AgentProfile | null> {
+/**
+ * The caller's full profile, or null when it cannot be loaded (gateway down, or the user row not
+ * created yet right after sign-up).
+ */
+export async function fetchMyProfile(): Promise<UserProfile | null> {
+  const me = await apiSafe<Partial<UserProfile> & { id: string }>("/users/me");
+  if (me.ok) return normalizeProfile(me.data);
+  if (me.error.status !== 404 && me.error.status !== 405) return null;
+
+  // Older gateway: no `/users/me` yet. Role and focus areas are still readable from the context.
   const id = await myUserId();
   if (!id) return null;
-  const res = await apiSafe<UserContext>(`/context/${id}`);
-  if (!res.ok) return null;
-  return { role: res.data.role ?? "", skills: res.data.skills };
+  const ctx = await apiSafe<UserContext>(`/context/${id}`);
+  if (!ctx.ok) return null;
+  return normalizeProfile({ id, role: ctx.data.role, skills: ctx.data.skills });
 }
