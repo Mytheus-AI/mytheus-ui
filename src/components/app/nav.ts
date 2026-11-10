@@ -9,6 +9,7 @@ import {
   Compass,
   Gauge,
   GearSix,
+  Key,
   Handshake,
   House,
   Lifebuoy,
@@ -92,7 +93,8 @@ export const WORKSPACE_TABS: NavItem[] = [
 export const SETTINGS_TABS: NavItem[] = [
   { href: "/settings/profile", label: "Profile", icon: UserCircle, keywords: "name role" },
   { href: "/settings/notifications", label: "Notifications", icon: Bell, keywords: "email alerts" },
-  { href: "/settings/integrations", label: "Integrations", icon: PlugsConnected, keywords: "calendar slack jira" },
+  { href: "/settings/integrations", label: "Integrations", icon: PlugsConnected, keywords: "calendar slack jira hubspot notion confluence" },
+  { href: "/settings/api", label: "API access", icon: Key, keywords: "personal access token mcp claude api curl" },
   { href: "/settings/appearance", label: "Appearance", icon: PaintBrush, keywords: "theme dark light shortcuts" },
 ];
 
