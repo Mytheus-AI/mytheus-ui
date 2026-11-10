@@ -5,12 +5,14 @@ import type { Room } from "livekit-client";
 import {
   ClosedCaptioning,
   DotsThree,
+  EyeSlash,
   GearSix,
   HandPalm,
   Microphone,
   MicrophoneSlash,
   MonitorArrowUp,
   PhoneDisconnect,
+  Receipt,
   Smiley,
   SquaresFour,
   VideoCamera,
@@ -18,6 +20,8 @@ import {
 } from "@phosphor-icons/react";
 import { Popover } from "@/components/room/Popover";
 import { DeviceMenu } from "@/components/room/DeviceMenu";
+import { CaptionLanguagePicker } from "@/components/room/CaptionLanguage";
+import { CAPTION_LANGUAGES, isCaptionLanguage, type CaptionLanguage } from "@/lib/realtime/privacy";
 import { REACTIONS, type ReactionId } from "@/lib/realtime/room-live";
 import { SHORTCUTS } from "@/lib/realtime/shortcuts";
 
@@ -30,7 +34,11 @@ import { SHORTCUTS } from "@/lib/realtime/shortcuts";
    The host (or the meeting's creator) gets a Leave menu: leave on your own, or End for everyone,
    which asks once more before it ends the meeting for the whole room.
 
-   Shortcut letters appear in the tooltips only while shortcuts are on. */
+   Shortcut letters appear in the tooltips only while shortcuts are on.
+
+   Wave 3: Off the record (the host or creator takes the meeting off the record and back; anyone
+   else asks them), the caption language beside the captions button, and "What is recorded" in
+   More. */
 
 export function ControlBar({
   micOn,
@@ -53,6 +61,9 @@ export function ControlBar({
   onShortcuts,
   onEndForEveryone,
   compact = false,
+  offRecord,
+  captionLanguage,
+  onWhatIsRecorded,
 }: {
   micOn: boolean;
   camOn: boolean;
@@ -80,6 +91,12 @@ export function ControlBar({
   onEndForEveryone?: () => void;
   /** A narrow screen: screen share, the layout switch and devices move into More. */
   compact?: boolean;
+  /** Off the record: present while the meeting link is joined. `steers` toggles; anyone else asks. */
+  offRecord?: { active: boolean; steers: boolean; busy: boolean; asked: boolean; onPress: () => void };
+  /** The caption language picker: present while captions are available. */
+  captionLanguage?: { value: CaptionLanguage | null; onChange: (language: CaptionLanguage | null) => void };
+  /** Opens your consent receipt and what the meeting keeps. */
+  onWhatIsRecorded?: () => void;
 }) {
   const key = (k: string) => (shortcutsOn ? ` (${k})` : "");
 
@@ -156,6 +173,35 @@ export function ControlBar({
         </Popover>
       ) : null}
 
+      {offRecord && !compact ? (
+        <button
+          type="button"
+          className={`ctl tap${offRecord.active ? " is-offrec" : ""}`}
+          data-tip={
+            offRecord.steers
+              ? offRecord.active
+                ? "Back on the record"
+                : "Go off the record"
+              : offRecord.active
+                ? "The meeting is off the record"
+                : offRecord.asked
+                  ? "You asked the host"
+                  : "Ask to go off the record"
+          }
+          aria-label={offRecord.steers ? "Off the record" : offRecord.active ? "Off the record" : "Ask to go off the record"}
+          aria-pressed={offRecord.steers || offRecord.active ? offRecord.active : undefined}
+          aria-disabled={!offRecord.steers && (offRecord.active || offRecord.asked) ? true : undefined}
+          aria-busy={offRecord.busy || undefined}
+          onClick={() => {
+            if (offRecord.busy) return;
+            if (!offRecord.steers && (offRecord.active || offRecord.asked)) return;
+            offRecord.onPress();
+          }}
+        >
+          <EyeSlash size={20} weight={offRecord.active ? "fill" : "regular"} aria-hidden />
+        </button>
+      ) : null}
+
       <span className="ctl-sep" aria-hidden="true"></span>
 
       {onCaptions ? (
@@ -170,6 +216,9 @@ export function ControlBar({
         >
           <ClosedCaptioning size={20} weight={captionsOn ? "fill" : "regular"} aria-hidden />
         </button>
+      ) : null}
+      {onCaptions && captionLanguage && !compact ? (
+        <CaptionLanguagePicker value={captionLanguage.value} onChange={captionLanguage.onChange} />
       ) : null}
       {compact ? null : (
         <button
@@ -190,7 +239,7 @@ export function ControlBar({
         </Popover>
       ) : null}
       <Popover label="More options" tip="More" icon={<DotsThree size={22} weight="bold" aria-hidden />} panelClassName="is-more">
-        {() => (
+        {(close) => (
           <div className="more-menu">
             {compact ? (
               <div className="more-toggles">
@@ -210,7 +259,69 @@ export function ControlBar({
                   </label>
                 ) : null}
                 {room ? <DeviceMenu room={room} onPicked={onDevicePicked} /> : null}
+                {onCaptions && captionLanguage ? (
+                  <label className="more-select">
+                    <span>Caption language</span>
+                    <select
+                      value={captionLanguage.value ?? ""}
+                      onChange={(e) => captionLanguage.onChange(isCaptionLanguage(e.target.value) ? e.target.value : null)}
+                    >
+                      <option value="">As spoken</option>
+                      {CAPTION_LANGUAGES.map((l) => (
+                        <option key={l.code} value={l.code}>
+                          {l.name} ({l.native})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
+                {offRecord ? (
+                  <button
+                    type="button"
+                    className="more-item tap"
+                    aria-disabled={!offRecord.steers && (offRecord.active || offRecord.asked) ? true : undefined}
+                    onClick={() => {
+                      if (offRecord.busy || (!offRecord.steers && (offRecord.active || offRecord.asked))) return;
+                      close();
+                      offRecord.onPress();
+                    }}
+                  >
+                    <EyeSlash size={18} weight={offRecord.active ? "fill" : "regular"} aria-hidden />
+                    <span>
+                      <strong>
+                        {offRecord.steers
+                          ? offRecord.active
+                            ? "Back on the record"
+                            : "Go off the record"
+                          : offRecord.active
+                            ? "Off the record"
+                            : offRecord.asked
+                              ? "You asked the host"
+                              : "Ask to go off the record"}
+                      </strong>
+                      <small>
+                        {offRecord.active ? "Agents are paused and nothing is transcribed." : "Pauses every agent and the transcript."}
+                      </small>
+                    </span>
+                  </button>
+                ) : null}
               </div>
+            ) : null}
+            {onWhatIsRecorded ? (
+              <button
+                type="button"
+                className="more-item tap"
+                onClick={() => {
+                  close();
+                  onWhatIsRecorded();
+                }}
+              >
+                <Receipt size={18} aria-hidden />
+                <span>
+                  <strong>What is recorded</strong>
+                  <small>Your agreement and what this meeting keeps.</small>
+                </span>
+              </button>
             ) : null}
             <label className="more-switch">
               <input type="checkbox" role="switch" checked={shortcutsOn} onChange={(e) => onShortcuts(e.target.checked)} />

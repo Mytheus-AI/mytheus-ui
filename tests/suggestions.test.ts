@@ -134,7 +134,7 @@ test("each citation kind links where it should", () => {
   assert.deepEqual(citationLink(document), { label: "Q3 plan", href: null });
   assert.deepEqual(citationLink(decision), { label: "Ship on 2 Dec", href: `/meetings/${M0}/decisions/${D1}` });
   assert.deepEqual(citationLink(action, M1), { label: "Action", href: `/meetings/${M1}` });
-  assert.deepEqual(citationLink(action), { label: "Action", href: "/tasks" });
+  assert.deepEqual(citationLink(action), { label: "Action", href: "/work/tasks" });
 });
 
 test("an id that is not a UUID never reaches an href", () => {

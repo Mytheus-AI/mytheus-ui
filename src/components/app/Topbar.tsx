@@ -7,11 +7,11 @@ import { ThemeToggle } from "@/components/app/ThemeToggle";
 import { AccountMenu } from "@/components/app/AccountMenu";
 import Link from "next/link";
 import { CaretRight } from "@phosphor-icons/react";
-import { useCrumbLabel } from "@/components/app/Crumb";
+import { useCrumbLabel, useCrumbParent } from "@/components/app/Crumb";
 import { breadcrumbFor } from "@/components/app/breadcrumbs";
 
-/* The topbar: menu button (below lg), a breadcrumb on detail pages only (Decisions / the
-   decision), the search trigger (Cmd/Ctrl+K), the theme toggle and the account menu. Top-level
+/* The topbar: menu button (below lg), a breadcrumb on detail pages only (Meetings / the meeting /
+   Transcript), the search trigger (Cmd/Ctrl+K), the theme toggle and the account menu. Top-level
    pages show no title here: the page's own h1 is the one title on screen. */
 export function Topbar({
   onMenuClick,
@@ -21,7 +21,7 @@ export function Topbar({
   onSearchClick: () => void;
 }) {
   const pathname = usePathname();
-  const crumbs = breadcrumbFor(pathname, useCrumbLabel());
+  const crumbs = breadcrumbFor(pathname, useCrumbLabel(), useCrumbParent());
   // The server cannot know the platform, so the first render says Ctrl K and a Mac swaps it after
   // mount (hydration-safe). The label beside it is flexible, so nothing else moves.
   const [mac, setMac] = useState(false);

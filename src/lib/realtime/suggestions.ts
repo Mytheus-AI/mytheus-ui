@@ -271,7 +271,7 @@ export function citationLink(
       };
     }
     case "action":
-      return { label: c.title || "Action", href: meeting ? `/meetings/${meeting}` : "/tasks" };
+      return { label: c.title || "Action", href: meeting ? `/meetings/${meeting}` : "/work/tasks" };
     case "document":
       return { label: c.title || "Document", href: null };
   }

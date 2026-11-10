@@ -12,6 +12,30 @@
  */
 
 export interface paths {
+    "/api/meetings/{meeting_id}/consent-receipt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Consent Receipt
+         * @description Your own consent receipt for this meeting (polish wave 3, Off the record): whether you
+         *     agreed, when, to which version of the notice, and what that version said, clause by clause.
+         *     Read from the room ("What is recorded") and from the meeting page. Only ever the caller's
+         *     own participant row: there is no way to name another person. Same existence-then-
+         *     participation order and codes as the token mint.
+         */
+        get: operations["get_consent_receipt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/meetings/{meeting_id}/session": {
         parameters: {
             query?: never;
@@ -135,6 +159,64 @@ export interface components {
             /** Version */
             version: string;
         };
+        /** ConsentClause */
+        ConsentClause: {
+            /** Body */
+            body: string;
+            /**
+             * Key
+             * @description Stable clause id, e.g. `transcript`, `audio_video`.
+             */
+            key: string;
+            /** Title */
+            title: string;
+        };
+        /**
+         * ConsentReceipt
+         * @description `GET /api/meetings/{meeting_id}/consent-receipt`: the caller's own record of what they
+         *     agreed to for this meeting (polish wave 3, Off the record). Only ever the caller's own row.
+         */
+        ConsentReceipt: {
+            /**
+             * Clauses
+             * @description What the notice you agreed to said, clause by clause; null when the stored version is not one this server knows.
+             */
+            clauses?: components["schemas"]["ConsentClause"][] | null;
+            /**
+             * Consent Required
+             * @description Whether this workspace requires agreement before joining.
+             */
+            consent_required: boolean;
+            /**
+             * Consent Version
+             * @description The version of the notice you agreed to.
+             */
+            consent_version?: string | null;
+            /** Consented */
+            consented: boolean;
+            /**
+             * Consented At
+             * @description When you agreed.
+             */
+            consented_at?: string | null;
+            /**
+             * Current Version
+             * @description The notice's version today.
+             */
+            current_version: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Meeting Title */
+            meeting_title: string;
+            /**
+             * Recording
+             * @description Whether audio and video are recorded.
+             */
+            recording: boolean;
+        };
         /**
          * @description The frozen program-wide error enum. Clients branch on this and never on `detail`, which is human-readable and free to change. Values are added, never removed or repurposed. Emitted verbatim from `libs.shared.errors.ErrorCode`, so this list cannot drift from the code; the no-removal half is asserted by `test_no_published_error_code_is_ever_removed`, because `oasdiff` does not treat narrowing a response enum as a breaking change.
          * @enum {string}
@@ -254,6 +336,55 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    get_consent_receipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsentReceipt"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     get_room_session: {
         parameters: {
             query?: never;

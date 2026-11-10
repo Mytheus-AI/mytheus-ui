@@ -6,7 +6,6 @@ import { appFontClass } from "@/lib/fonts";
 import { THEME_INIT } from "@/components/app/theme-init";
 import "@/styles/app-theme.css";
 import "@/styles/meeting.css";
-import "@/styles/meeting-dark.css";
 
 export const metadata: Metadata = { title: "Meeting | Mytheus" };
 

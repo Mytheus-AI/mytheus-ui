@@ -1,3 +1,4 @@
+import { Card, CardBody, CardHead } from "@/components/ui/Card";
 import { resolveSpeaker, wordCount } from "@/components/meetings/transcript-utils";
 import type { MeetingSpeaker, TranscriptChunk } from "@/lib/api/transcript";
 
@@ -36,24 +37,21 @@ export function TalkTimePanel({
     });
 
   return (
-    <section className="mx-card mx-card-pad" aria-labelledby="tx-talk-h">
-      <div className="mx-card-head">
-        <h2 className="mx-card-title" id="tx-talk-h">
-          Talk time
-        </h2>
-        <span className="mx-card-note">Share of words</span>
-      </div>
-      {rows.map((s) => (
-        <div className="md-talk-row tx-talk-row" key={s.id}>
-          <span className="md-talk-name" title={s.full}>
-            {s.label}
-          </span>
-          <span className="md-bar" role="img" aria-label={`${s.full} spoke ${s.share} percent of the words`}>
-            <i style={{ width: `${s.share}%` }}></i>
-          </span>
-          <span className="md-talk-pct">{s.share}%</span>
-        </div>
-      ))}
-    </section>
+    <Card as="section" flush aria-labelledby="tx-talk-h">
+      <CardHead id="tx-talk-h" title="Talk time" right={<span className="text-[14px] text-ink-3">Share of words</span>} />
+      <CardBody>
+        {rows.map((s) => (
+          <div className="md-talk-row tx-talk-row" key={s.id}>
+            <span className="md-talk-name" title={s.full}>
+              {s.label}
+            </span>
+            <span className="md-bar" role="img" aria-label={`${s.full} spoke ${s.share} percent of the words`}>
+              <i style={{ width: `${s.share}%` }}></i>
+            </span>
+            <span className="md-talk-pct">{s.share}%</span>
+          </div>
+        ))}
+      </CardBody>
+    </Card>
   );
 }

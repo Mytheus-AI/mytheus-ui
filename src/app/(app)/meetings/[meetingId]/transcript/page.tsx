@@ -11,6 +11,9 @@ import { TalkTimePanel } from "@/components/transcript/TalkTimePanel";
 import { TranscriptHead } from "@/components/transcript/TranscriptHead";
 import { resolveCallMeeting } from "@/components/call/resolve-meeting";
 import { fetchTranscriptSurface } from "@/lib/api/transcript";
+import { apiSafe } from "@/lib/api/client";
+import type { OffRecordStateRow } from "@/app/actions/off-record";
+import type { TranscriptGap } from "@/components/meeting/TranscriptView";
 import "@/styles/meeting-transcript.css";
 
 export const metadata: Metadata = { title: "Transcript | Mytheus" };
@@ -36,13 +39,23 @@ export default async function TranscriptPage({
   params: { meetingId: string };
 }) {
   const meeting = await resolveCallMeeting(params.meetingId);
-  const [live, members] = await Promise.all([
+  const [live, members, offRecord] = await Promise.all([
     fetchTranscriptSurface(meeting.id).catch((error: unknown) => {
       if (error instanceof ApiError && error.status === 404) notFound();
       return null;
     }),
     listMembers(),
+    // Off the record (wave 3): where nothing was transcribed. A failed read only hides the markers.
+    apiSafe<OffRecordStateRow>(`/api/v1/meetings/${encodeURIComponent(meeting.id)}/off-record`),
   ]);
+  const gaps: TranscriptGap[] = offRecord.ok
+    ? offRecord.data.segments.map((g) => ({
+        id: g.id,
+        startMs: g.start_ms,
+        durationMs: g.duration_ms,
+        running: g.ended_at === null,
+      }))
+    : [];
   // Silence used to be saved as lines with no text; older transcripts still hold them.
   const chunks = (live?.chunks ?? []).filter((c) => c.text.trim().length > 0);
   const speakers = live?.speakers ?? [];
@@ -130,6 +143,7 @@ export default async function TranscriptPage({
       meta={meta}
       backHref={backHref}
       rail={rail}
+      gaps={gaps}
     />
   );
 }

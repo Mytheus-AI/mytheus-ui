@@ -1,0 +1,242 @@
+/* Off the record and live caption translation in the room (polish program wave 3).
+   Tokens only (globals.css, the dark set in app-theme.css): radii 12 / 20 / pill, the type scale
+   12.5 / 14 / 15 / 17, the frozen priority colours. Off the record reads as a calm, deliberate
+   state, not an alarm: ink on the stage wash, the pill colours for its one action. */
+
+/* ---------------------------------------------------------------- the room-wide banner */
+
+.mx-meet .offrec-banner,
+.mx-meet .offrec-ask {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 16px 10px;
+  padding: 10px 10px 10px 12px;
+  border-radius: var(--radius-card);
+  color: var(--ink);
+}
+.mx-meet .offrec-banner { background: var(--pill); color: var(--pill-on); }
+.mx-meet .offrec-ask { background: var(--surface); border: 1px solid var(--line-2); box-shadow: var(--sh-1); }
+.mx-meet .offrec-ico {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+.mx-meet .offrec-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mx-meet .offrec-copy strong { font-size: 15px; font-weight: 650; }
+.mx-meet .offrec-copy span { font-size: 14px; line-height: 1.45; color: color-mix(in srgb, var(--pill-on) 82%, var(--pill)); }
+.mx-meet .offrec-ask p { flex: 1; min-width: 0; font-size: 15px; line-height: 1.45; color: var(--ink-2); }
+.mx-meet .offrec-ask p strong { color: var(--ink); font-weight: 650; }
+.mx-meet .offrec-ask-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.mx-meet .offrec-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  background: var(--pill);
+  color: var(--pill-on);
+  font-size: 14px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mx-meet .offrec-btn:hover { background: var(--pill-2); }
+.mx-meet .offrec-btn:disabled { opacity: 0.6; cursor: progress; }
+.mx-meet .offrec-btn:focus-visible { outline: 2px solid var(--signal-line); outline-offset: 2px; }
+/* On the dark banner the action inverts, so it stays the one strong control. */
+.mx-meet .offrec-banner .offrec-btn { background: var(--pill-on); color: var(--pill); }
+.mx-meet .offrec-banner .offrec-btn:hover { background: color-mix(in srgb, var(--pill-on) 88%, var(--pill)); }
+
+@media (max-width: 640px) {
+  .mx-meet .offrec-banner,
+  .mx-meet .offrec-ask { flex-wrap: wrap; margin: 0 8px 8px; }
+  .mx-meet .offrec-banner .offrec-btn,
+  .mx-meet .offrec-ask-acts { width: 100%; }
+  .mx-meet .offrec-ask-acts > * { flex: 1; }
+  .mx-meet .offrec-ico { display: none; }
+}
+
+/* ---------------------------------------------------------------- the control */
+
+.mx-meet .ctl.is-offrec { background: var(--pill-on); color: var(--pill); }
+.mx-meet .ctl.is-offrec:hover { background: color-mix(in srgb, var(--pill-on) 88%, var(--pill)); }
+.mx-meet .ctl[aria-disabled="true"] { opacity: 0.7; cursor: default; }
+.mx-meet .ctl-lang { position: relative; display: grid; place-items: center; }
+.mx-meet .ctl-lang-code {
+  position: absolute;
+  right: -10px;
+  bottom: -9px;
+  min-width: 20px;
+  padding: 1px 4px;
+  border-radius: 999px;
+  background: var(--pill-on);
+  color: var(--pill);
+  box-shadow: 0 0 0 2px var(--pill);
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* ---------------------------------------------------------------- the language picker */
+
+.mx-meet .ctl-pop-panel.is-langs { width: min(360px, calc(100vw - 32px)); }
+.mx-meet .lang-menu { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.mx-meet .lang-menu legend { padding: 0; color: var(--ink); font-size: 15px; font-weight: 650; }
+.mx-meet .lang-note { color: var(--ink-3); font-size: 12.5px; line-height: 1.4; }
+.mx-meet .lang-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; max-height: min(320px, 46vh); overflow-y: auto; }
+.mx-meet .lang-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 6px 10px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+.mx-meet .lang-opt:hover { background: var(--surface-2); }
+.mx-meet .lang-opt.is-on { background: var(--signal-soft); }
+.mx-meet .lang-opt input { width: 16px; height: 16px; flex-shrink: 0; accent-color: var(--pill); }
+.mx-meet .lang-opt span { display: flex; flex-direction: column; min-width: 0; }
+.mx-meet .lang-opt strong { color: var(--ink); font-size: 14px; font-weight: 600; }
+.mx-meet .lang-opt small { color: var(--ink-3); font-size: 12.5px; }
+.mx-meet .lang-opt.is-on small { color: var(--signal-ink); }
+.mx-meet .lang-opt:has(input:focus-visible) { outline: 2px solid var(--signal-line); outline-offset: 1px; }
+
+/* ---------------------------------------------------------------- More: What is recorded */
+
+.mx-meet .more-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 8px;
+  margin: -4px -4px 0;
+  border-radius: var(--radius-pill);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.mx-meet .more-item:hover { background: var(--surface-2); }
+.mx-meet .more-item svg { flex-shrink: 0; margin-top: 2px; color: var(--ink-2); }
+.mx-meet .more-item span { display: flex; flex-direction: column; gap: 2px; }
+.mx-meet .more-item strong { font-size: 14px; font-weight: 650; }
+.mx-meet .more-item small { color: var(--ink-3); font-size: 12.5px; }
+
+.mx-meet .more-select { display: grid; gap: 4px; color: var(--ink); font-size: 14px; font-weight: 650; }
+.mx-meet .more-select select {
+  height: 40px;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ---------------------------------------------------------------- captions */
+
+.mx-meet .cap-paused { color: var(--ink-2); font-size: 15px; }
+.mx-meet .cap-notice {
+  margin-bottom: 4px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--priority-medium-soft);
+  color: var(--mx-medium-ink);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.mx-meet .cap-tr {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 1px 8px 1px 2px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink-3);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-style: normal;
+  vertical-align: 1px;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.mx-meet .cap-tr:hover { color: var(--ink); }
+.mx-meet .cap-tr[aria-pressed="true"] { background: var(--signal-soft); color: var(--signal-ink); border-color: transparent; }
+.mx-meet .cap-lang {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-weight: 700;
+}
+
+/* ---------------------------------------------------------------- the receipt dialog and page */
+
+.room-dialog .offrec-dialog { display: grid; gap: 10px; }
+.offrec-now {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.offrec-now svg { flex-shrink: 0; margin-top: 2px; color: var(--ok); }
+.offrec-now.is-off { background: var(--pill); color: var(--pill-on); }
+.offrec-now.is-off svg { color: var(--pill-on); }
+.offrec-h { margin-top: 4px; color: var(--ink); font-size: 15px; font-weight: 650; }
+.offrec-skel { display: grid; gap: 8px; }
+.offrec-skel span { height: 14px; border-radius: 999px; background: var(--bg-2); }
+.offrec-skel span:nth-child(2) { width: 82%; }
+.offrec-skel span:nth-child(3) { width: 64%; }
+.offrec-error { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; color: var(--priority-high); font-size: 14px; }
+.room-dialog .pj-terms { max-height: 40vh; overflow-y: auto; }
+
+.receipt { display: grid; gap: 10px; }
+.receipt-summary { color: var(--ink); font-size: 15px; line-height: 1.5; }
+.receipt-note { color: var(--ink-3); font-size: 14px; line-height: 1.45; }
+.receipt-clauses { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; max-height: 40vh; overflow-y: auto; }
+.receipt-clauses li { display: grid; gap: 2px; padding-top: 10px; border-top: 1px solid var(--line); }
+.receipt-clauses li:first-child { padding-top: 0; border-top: 0; }
+.receipt-clauses strong { color: var(--ink); font-size: 14px; font-weight: 650; }
+.receipt-clauses span { color: var(--ink-2); font-size: 14px; line-height: 1.45; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mx-meet .offrec-btn,
+  .mx-meet .lang-opt,
+  .mx-meet .cap-tr { transition: none; }
+}
+
+/* On a phone the More menu (which now also holds the caption language and Off the record) and the
+   language picker open as a sheet across the control bar instead of from their button, so they
+   never run off the left edge, and scroll inside rather than past the top of the stage. */
+@media (max-width: 640px) {
+  .mx-meet .controls .ctl-pop:has(> .ctl-pop-panel.is-more),
+  .mx-meet .controls .ctl-pop:has(> .ctl-pop-panel.is-langs) { position: static; }
+  .mx-meet .ctl-pop-panel.is-more,
+  .mx-meet .ctl-pop-panel.is-langs {
+    left: 0;
+    right: 0;
+    width: auto;
+    transform: none;
+    bottom: calc(100% + 10px);
+    max-height: 42dvh;
+    overflow-y: auto;
+  }
+}

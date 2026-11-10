@@ -130,3 +130,63 @@ export async function forgetEverything() {
   memoryState = forgotten(memoryState);
   return { ok: true as const };
 }
+
+// Off the record and the consent receipt (wave 3), answered as core-api and meeting-service would.
+const offRecordState = (active: boolean, requestedBy: string | null = null) => {
+  const started = new Date(Date.now() - 4 * 60_000).toISOString();
+  const seg = {
+    id: "66666666-6666-4666-8666-666666666666",
+    started_at: started,
+    started_by: "u-maya",
+    requested_by: requestedBy,
+    ended_at: active ? null : new Date().toISOString(),
+    ended_by: active ? null : "u-maya",
+    start_ms: 600_000,
+    end_ms: active ? null : 840_000,
+    duration_ms: active ? null : 240_000,
+  };
+  const state = { meeting_id: "m", active, current: active ? seg : null, segments: [seg], total_ms: active ? 0 : 240_000, can_toggle: true };
+  return {
+    ok: true as const,
+    state,
+    wire: {
+      active,
+      segmentId: seg.id,
+      startedAt: seg.started_at,
+      startedBy: seg.started_by,
+      requestedBy,
+      endedAt: seg.ended_at,
+      endedBy: seg.ended_by,
+      totalMs: state.total_ms,
+      at: new Date().toISOString(),
+    },
+  };
+};
+export async function startOffRecord(_meetingId: string, requestedBy: string | null = null) {
+  return offRecordState(true, requestedBy);
+}
+export async function endOffRecord() {
+  return offRecordState(false);
+}
+export async function loadOffRecord() {
+  return offRecordState(false);
+}
+export async function loadConsentReceipt(meetingId: string) {
+  return {
+    ok: true as const,
+    receipt: {
+      meeting_id: meetingId,
+      meeting_title: "Q4 launch review",
+      consent_required: true,
+      consented: true,
+      consented_at: "2026-11-11T09:59:00Z",
+      consent_version: "room-notice-2026-11-11.2",
+      current_version: "room-notice-2026-11-11.2",
+      recording: false,
+      clauses: [
+        { key: "transcript", title: "A transcript is kept", body: "What is said is transcribed with who said it." },
+        { key: "off_record", title: "You can go off the record", body: "Anyone can ask the host to go off the record." },
+      ],
+    },
+  };
+}
