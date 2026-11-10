@@ -12,6 +12,7 @@
  * SERVER-ONLY, inherited from `lib/api/client.ts`.
  */
 
+import { cache } from "react";
 import { auth } from "@clerk/nextjs/server";
 import { apiSafe } from "@/lib/api/client";
 import type { components as IdentitySchemas } from "@/lib/api/generated/identity-tenant-service";
@@ -33,7 +34,8 @@ export async function myUserId(): Promise<string | null> {
  * The caller's full profile, or null when it cannot be loaded (gateway down, or the user row not
  * created yet right after sign-up).
  */
-export async function fetchMyProfile(): Promise<UserProfile | null> {
+/** Once per request: the app layout (the sidebar's agent tab) and a page can both ask. */
+export const fetchMyProfile = cache(async function fetchMyProfile(): Promise<UserProfile | null> {
   const me = await apiSafe<Partial<UserProfile> & { id: string }>("/users/me");
   if (me.ok) return normalizeProfile(me.data);
   if (me.error.status !== 404 && me.error.status !== 405) return null;
@@ -44,4 +46,4 @@ export async function fetchMyProfile(): Promise<UserProfile | null> {
   const ctx = await apiSafe<UserContext>(`/context/${id}`);
   if (!ctx.ok) return null;
   return normalizeProfile({ id, role: ctx.data.role, skills: ctx.data.skills });
-}
+});

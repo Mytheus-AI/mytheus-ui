@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Sidebar, type LiveCall } from "@/components/app/Sidebar";
+import { Sidebar, type LiveCall, type SidebarAgent } from "@/components/app/Sidebar";
 import { Topbar } from "@/components/app/Topbar";
 import { CommandPalette } from "@/components/app/CommandPalette";
 import { DoodleImageSync } from "@/components/app/DoodleImageSync";
@@ -28,8 +28,11 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), [tabi
 export function AppShell({
   children,
   liveCall = null,
+  agent = null,
 }: {
   children: React.ReactNode;
+  /** The signed-in person's agent, for the sidebar's agent tab. Null: the tab is drawn generic. */
+  agent?: SidebarAgent | null;
   /** A meeting the signed-in person is in, for the sidebar's in-call card. None is wired yet. */
   liveCall?: LiveCall | null;
 }) {
@@ -133,7 +136,7 @@ export function AppShell({
         // Below the drawer (z-50) and palette (z-80).
         className={`sb-slot relative z-40 hidden shrink-0 lg:block ${rail ? "w-[76px]" : "w-[252px]"}`}
       >
-        <Sidebar rail={rail} onToggleRail={toggleRail} liveCall={liveCall} />
+        <Sidebar rail={rail} onToggleRail={toggleRail} liveCall={liveCall} agent={agent} />
       </div>
 
       <AnimatePresence>
@@ -164,7 +167,7 @@ export function AppShell({
               exit={{ x: reduceMotion ? 0 : -260, opacity: reduceMotion ? 0 : 1 }}
               transition={drawerTransition}
             >
-              <Sidebar drawer liveCall={liveCall} onNavigate={() => setNavOpen(false)} onClose={() => setNavOpen(false)} />
+              <Sidebar drawer liveCall={liveCall} agent={agent} onNavigate={() => setNavOpen(false)} onClose={() => setNavOpen(false)} />
             </motion.div>
           </div>
         )}

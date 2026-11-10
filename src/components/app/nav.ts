@@ -7,6 +7,7 @@ import {
   Scales,
   Sparkle,
   ShieldCheck,
+  Smiley,
   TreeStructure,
   VideoCamera,
   CheckSquare,
@@ -38,6 +39,10 @@ export const NAV_SECTIONS: NavSection[] = [
   },
 ];
 
+/* Your agent has its own row under "New meeting", drawn with its face rather than an icon (see
+   Sidebar's AgentTab); this entry is what the topbar title and the command palette use. */
+export const AGENT_ITEM: NavItem = { href: "/agent", label: "Your agent", icon: Smiley };
+
 /* Account screens sit at the foot of the sidebar, apart from the work. */
 export const FOOT_ITEMS: NavItem[] = [
   { href: "/settings", label: "Settings", icon: GearSix },
@@ -62,7 +67,7 @@ export const NEW_MEETING_HREF = "/meetings?new=1";
 
 /** Every screen a signed-in person can jump to, for the palette and the topbar title. */
 export function allNavItems(isAdmin: boolean): NavItem[] {
-  return [...NAV_SECTIONS.flatMap((s) => s.items), ...FOOT_ITEMS, ...(isAdmin ? ADMIN_ITEMS : [])];
+  return [AGENT_ITEM, ...NAV_SECTIONS.flatMap((s) => s.items), ...FOOT_ITEMS, ...(isAdmin ? ADMIN_ITEMS : [])];
 }
 
 export function isActive(pathname: string | null, href: string): boolean {
