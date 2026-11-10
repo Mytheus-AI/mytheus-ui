@@ -8,7 +8,8 @@
  * the server, in the browser and under `node --test`.
  */
 
-import { defaultDoodleSeed, isDoodleSeed } from "../doodle.ts";
+import { isDoodleSeed } from "../doodle.ts";
+import { agentSeedFor } from "../realtime/agent-persona.ts";
 
 /* ---------------- shapes ---------------- */
 
@@ -242,7 +243,8 @@ export function agentDisplayName(agentName: string | null | undefined, personNam
 
 /** The agent's doodle: the chosen seed, else one derived from the person's `users.id`. */
 export function agentSeed(seed: string | null | undefined, userId: string): string {
-  return isDoodleSeed(seed) ? seed : defaultDoodleSeed(`agent:${userId}`);
+  // One definition of an agent's face for the whole app: the room draws it with this too.
+  return agentSeedFor(seed, userId);
 }
 
 /* ---------------- the five voices ---------------- */

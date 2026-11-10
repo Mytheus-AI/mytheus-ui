@@ -247,7 +247,13 @@ export interface paths {
         put?: never;
         /**
          * Create Meeting
-         * @description Create a meeting, its participants, its event and its audit record, atomically.
+         * @description Create a meeting, its participants, its agenda, its event and its audit record,
+         *     atomically.
+         *
+         *     ADR-0038 D5: exactly one host, `host_user_id` (default: the creator), which must be the
+         *     creator or one of `participant_ids`; the creator is always a participant (`attendee` when
+         *     not the host). Agenda owners must be participants. Every 422 below is raised before the
+         *     first write.
          */
         post: operations["create_meeting"];
         delete?: never;
@@ -263,7 +269,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Meeting */
+        /**
+         * Get Meeting
+         * @description The meeting, the meeting it follows up (`previous_meeting`) and its agenda ordered by
+         *     `position` (ADR-0038 D6). A client re-hydrates the live agenda panel from here.
+         */
         get: operations["get_meeting"];
         put?: never;
         post?: never;
@@ -272,6 +282,52 @@ export interface paths {
         head?: never;
         /** Update Meeting */
         patch: operations["update_meeting"];
+        trace?: never;
+    };
+    "/api/v1/meetings/{meeting_id}/agenda": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Replace Agenda
+         * @description Replace the agenda, host or creator only, and not once the meeting has ended (409).
+         *
+         *     Items sent with the `id` of an existing item of this meeting keep it, and its `status`,
+         *     `status_source` and `agent_note`; items without an `id` are new and `pending`; items left
+         *     out are deleted. Order is the order sent (`position` 0..n-1). The meeting row is locked for
+         *     the replace, so two concurrent PUTs apply one after the other, never interleaved.
+         */
+        put: operations["replace_agenda"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meetings/{meeting_id}/agenda/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Set Agenda Item Status
+         * @description The host marks an item (host or creator). Sets `status_source = 'host'`: from then on
+         *     the MeetingAgent's updates to this item are ignored (the host wins, ADR-0038 D7).
+         */
+        patch: operations["set_agenda_item_status"];
         trace?: never;
     };
     "/api/v1/meetings/{meeting_id}/candidates": {
@@ -289,6 +345,29 @@ export interface paths {
          *     stored but never served; the surface threshold is the tenant's, per agent.
          */
         get: operations["list_candidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meetings/{meeting_id}/carry-forward": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Carry Forward
+         * @description What the previous meeting left open (ADR-0038 D6): its confirmed decisions, its open
+         *     action items (confirmed, not done; proposed candidates and dismissed ones are not
+         *     commitments), and the CALLER's own suggestions saved from it. Empty when there is no link
+         *     or the linked meeting is gone.
+         */
+        get: operations["carry_forward"];
         put?: never;
         post?: never;
         delete?: never;
@@ -751,6 +830,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/internal/meetings/{meeting_id}/agenda": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Meeting Agenda */
+        get: operations["meeting_agenda"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/internal/meetings/{meeting_id}/participants": {
         parameters: {
             query?: never;
@@ -964,6 +1060,84 @@ export interface components {
             /** Status */
             status: string;
         };
+        /** AgendaItem */
+        AgendaItem: {
+            /** Agent Note */
+            agent_note: string | null;
+            /** Duration Minutes */
+            duration_minutes: number | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Owner User Id */
+            owner_user_id: string | null;
+            /** Position */
+            position: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "in_progress" | "covered" | "skipped";
+            /** Status Source */
+            status_source: ("agent" | "host") | null;
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * AgendaItemCreate
+         * @description One agenda item as a client writes it. `owner_user_id` must be a participant.
+         */
+        AgendaItemCreate: {
+            /** Duration Minutes */
+            duration_minutes?: number | null;
+            /** Owner User Id */
+            owner_user_id?: string | null;
+            /** Title */
+            title: string;
+        };
+        /**
+         * AgendaItemPut
+         * @description `PUT /meetings/{id}/agenda` entry. With the `id` of an existing item of this meeting it
+         *     keeps that item (and its status); without one it is a new `pending` item.
+         */
+        AgendaItemPut: {
+            /** Duration Minutes */
+            duration_minutes?: number | null;
+            /** Id */
+            id?: string | null;
+            /** Owner User Id */
+            owner_user_id?: string | null;
+            /** Title */
+            title: string;
+        };
+        /**
+         * AgendaItemStatusUpdate
+         * @description `PATCH /meetings/{id}/agenda/{item_id}`: the host marks an item. Sets
+         *     `status_source = 'host'`, after which the MeetingAgent never changes it.
+         */
+        AgendaItemStatusUpdate: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "in_progress" | "covered" | "skipped";
+        };
+        /**
+         * AgendaReplace
+         * @description `PUT /meetings/{id}/agenda` body: the whole agenda, in order. Items left out are
+         *     deleted; an empty list clears the agenda.
+         */
+        AgendaReplace: {
+            /** Items */
+            items: components["schemas"]["AgendaItemPut"][];
+        };
         /**
          * CandidateList
          * @description `GET /meetings/:id/candidates`: the proposed, surfaced candidates, oldest first.
@@ -973,6 +1147,54 @@ export interface components {
             actions: components["schemas"]["ActionItem"][];
             /** Decisions */
             decisions: components["schemas"]["Decision"][];
+        };
+        /**
+         * CarryForward
+         * @description `GET /meetings/{id}/carry-forward`: what the previous meeting left open. Empty lists and
+         *     `previous_meeting: null` when the meeting follows up nothing.
+         */
+        CarryForward: {
+            /** Decisions */
+            decisions: components["schemas"]["CarryForwardDecision"][];
+            /** Open Actions */
+            open_actions: components["schemas"]["CarryForwardAction"][];
+            previous_meeting: components["schemas"]["MeetingRef"] | null;
+            /** Saved Questions */
+            saved_questions: components["schemas"]["CarryForwardQuestion"][];
+        };
+        /** CarryForwardAction */
+        CarryForwardAction: {
+            /** Due Date */
+            due_date: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Owner User Id */
+            owner_user_id: string | null;
+            /** Title */
+            title: string;
+        };
+        /** CarryForwardDecision */
+        CarryForwardDecision: {
+            /** Content */
+            content: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+        };
+        /** CarryForwardQuestion */
+        CarryForwardQuestion: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Question */
+            question: string;
         };
         /** ChatMessage */
         ChatMessage: {
@@ -1299,6 +1521,45 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** InternalAgenda */
+        InternalAgenda: {
+            carry_forward: components["schemas"]["InternalCarryForward"];
+            /** Host User Id */
+            host_user_id: string | null;
+            /** Items */
+            items: components["schemas"]["InternalAgendaItem"][];
+            /** Previous Meeting Id */
+            previous_meeting_id: string | null;
+            /** Scheduled End */
+            scheduled_end: string | null;
+            /** Scheduled Start */
+            scheduled_start: string | null;
+        };
+        /** InternalAgendaItem */
+        InternalAgendaItem: {
+            /** Duration Minutes */
+            duration_minutes: number | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Position */
+            position: number;
+            /** Status */
+            status: string;
+            /** Status Source */
+            status_source: string | null;
+            /** Title */
+            title: string;
+        };
+        /** InternalCarryForward */
+        InternalCarryForward: {
+            /** Decisions */
+            decisions?: string[];
+            /** Open Actions */
+            open_actions?: string[];
+        };
         /** Meeting */
         Meeting: {
             /**
@@ -1308,6 +1569,8 @@ export interface components {
             created_at: string;
             /** Created By */
             created_by: string | null;
+            /** Host User Id */
+            host_user_id?: string | null;
             /**
              * Id
              * Format: uuid
@@ -1317,6 +1580,8 @@ export interface components {
             livekit_room: string | null;
             /** Participants */
             participants?: components["schemas"]["Participant"][];
+            /** Previous Meeting Id */
+            previous_meeting_id?: string | null;
             /** Scheduled End */
             scheduled_end: string | null;
             /** Scheduled Start */
@@ -1336,14 +1601,66 @@ export interface components {
         };
         /** MeetingCreate */
         MeetingCreate: {
+            /** Agenda */
+            agenda?: components["schemas"]["AgendaItemCreate"][];
+            /** Host User Id */
+            host_user_id?: string | null;
             /** Participant Ids */
             participant_ids?: string[];
+            /** Previous Meeting Id */
+            previous_meeting_id?: string | null;
             /** Scheduled End */
             scheduled_end?: string | null;
             /** Scheduled Start */
             scheduled_start?: string | null;
             /** Title */
             title: string;
+        };
+        /**
+         * MeetingDetail
+         * @description `GET /meetings/{id}` (and the create/PATCH responses): the meeting plus the meeting it
+         *     follows up and its agenda, ordered by `position`.
+         */
+        MeetingDetail: {
+            /** Agenda */
+            agenda?: components["schemas"]["AgendaItem"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string | null;
+            /** Host User Id */
+            host_user_id?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Livekit Room */
+            livekit_room: string | null;
+            /** Participants */
+            participants?: components["schemas"]["Participant"][];
+            previous_meeting?: components["schemas"]["MeetingRef"] | null;
+            /** Previous Meeting Id */
+            previous_meeting_id?: string | null;
+            /** Scheduled End */
+            scheduled_end: string | null;
+            /** Scheduled Start */
+            scheduled_start: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "scheduled" | "live" | "ended" | "cancelled";
+            /** Title */
+            title: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * MeetingPage
@@ -1375,6 +1692,21 @@ export interface components {
         MeetingParticipants: {
             /** Participants */
             participants: components["schemas"]["MeetingParticipant"][];
+        };
+        /**
+         * MeetingRef
+         * @description The earlier meeting a meeting follows up (ADR-0038 D6).
+         */
+        MeetingRef: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Scheduled Start */
+            scheduled_start: string | null;
+            /** Title */
+            title: string | null;
         };
         /** MeetingSpeaker */
         MeetingSpeaker: {
@@ -1426,6 +1758,10 @@ export interface components {
         };
         /** MeetingUpdate */
         MeetingUpdate: {
+            /** Host User Id */
+            host_user_id?: string | null;
+            /** Previous Meeting Id */
+            previous_meeting_id?: string | null;
             /** Scheduled End */
             scheduled_end?: string | null;
             /** Scheduled Start */
@@ -2700,7 +3036,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Meeting"];
+                    "application/json": components["schemas"]["MeetingDetail"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
@@ -2749,7 +3085,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Meeting"];
+                    "application/json": components["schemas"]["MeetingDetail"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
@@ -2805,7 +3141,120 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Meeting"];
+                    "application/json": components["schemas"]["MeetingDetail"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    replace_agenda: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgendaReplace"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgendaItem"][];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    set_agenda_item_status: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                meeting_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgendaItemStatusUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgendaItem"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
@@ -2855,6 +3304,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CandidateList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    carry_forward: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CarryForward"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
@@ -3909,6 +4407,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ActionStatus"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    meeting_agenda: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalAgenda"];
                 };
             };
             /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
