@@ -1,5 +1,9 @@
 # Mytheus Capture (Chrome extension)
 
+Two things, both off until you use them: Capture (below) and **Decisions that follow you**: a
+quiet note beside what you are writing in Google Docs, Gmail or Jira when it goes against a
+decision your team confirmed in a meeting.
+
 Brings calls held on Google Meet, Microsoft Teams (web) and the Zoom web client into Mytheus
 without a bot. It records the meeting tab's audio (everyone else) and your microphone (you),
 streams both to transcription-service's `/capture/audio`, and the call becomes an ordinary
@@ -55,3 +59,34 @@ minutes) and `session/status`. The audio wire contract is in mytheus-realtime
 
 Capture stops when you press Stop (popup or page bar), close the tab, leave the meeting page, or
 the tab stops sharing audio.
+
+## Decisions that follow you
+
+Off by default. In the popup, "Check what I write against decisions" is the master switch, with
+one switch per site (Google Docs, Gmail, Jira). While a site's switches are off, its content
+script (`src/decisions-content.ts`) only listens for the switches: no editor listener, nothing
+read, nothing sent. The background worker checks the switches again before any request leaves
+the browser (`src/lib/decisions-background.ts`).
+
+When on, it reads only the paragraph being written (at most 1500 characters): the Gmail compose
+body, Jira's ProseMirror editors and textareas, and in Google Docs the annotated-canvas lines when
+Docs exposes them, otherwise a rolling buffer of what you type in Docs' text-input frame. A check
+runs 1.5 s after you stop typing, only when the paragraph changed, one at a time, and backs off
+when the server says 429. The answer is a small pill in the margin ("Decided otherwise on 3 Oct");
+open it (click, or Alt+Shift+D) for the decision, why it conflicts and the owner, with
+**Open the decision**, **Reopen it** (asks the owner, who can schedule a revisit or add a
+follow-up; the Docs or Jira address goes with it, never a Gmail draft) and **Dismiss** (that
+sentence is never flagged against that decision again, remembered locally and in Mytheus).
+Esc collapses it; the close button hides it until the text changes.
+
+Dashboard routes (mytheus-ui `src/app/api/capture/decisions/`), with the same link token:
+`check` (core-api `POST /api/v1/decisions/check`, source `extension`, read-only), `dismiss`
+(`POST /api/v1/decisions/{id}/check-dismissals`) and `reopen`
+(`POST /api/v1/decisions/{id}/reopen-requests`). A link that ended shows "Connect the extension";
+a workspace without decision checks shows that once, quietly.
+
+| Piece | File | Job |
+| --- | --- | --- |
+| Margin note | `src/decisions-content.ts` | Reads the paragraph (only when allowed), the note |
+| Pure logic | `src/lib/decisions.ts` | Gating, paragraph selection, the checker, the wire, the copy |
+| Worker side | `src/lib/decisions-background.ts` | Re-gates, then calls the dashboard |
