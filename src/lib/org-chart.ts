@@ -2,8 +2,13 @@
    `/api/v1/teams/{id}/members`) and the workspace member list (`listMembers()`, which carries the
    Clerk names). Pure, so it can be tested without a session: no server or client imports here. */
 
-export type ApiDepartment = { id: string; name: string; parent_id: string | null };
-export type ApiTeam = { id: string; name: string; department_id: string | null };
+/* `description` is what the unit does and is responsible for (up to 1000 characters). Agents read
+   it through the company brain; an older core-api leaves it out, which reads as "none". */
+export type ApiDepartment = { id: string; name: string; parent_id: string | null; description?: string | null };
+export type ApiTeam = { id: string; name: string; department_id: string | null; description?: string | null };
+
+/** The most a description may hold (core-api's limit, also a database CHECK). */
+export const DESCRIPTION_MAX = 1000;
 export type ApiTeamMember = { team_id: string; user_id: string; role: string | null };
 
 /** The fields of a workspace member the chart needs. `listMembers()` rows satisfy it. */
@@ -24,6 +29,7 @@ export type OrgMember = ChartPerson & {
 export type OrgTeam = {
   id: string;
   name: string;
+  description: string | null;
   departmentId: string | null;
   members: OrgMember[];
 };
@@ -32,8 +38,12 @@ export type OrgDepartment = {
   /** null for the "No department" group of teams filed under none. */
   id: string | null;
   name: string;
+  description: string | null;
+  parentId: string | null;
   /** The parent department's name, for a nested department. */
   parentName: string | null;
+  /** How deep it is nested (0 for a top-level department). */
+  depth: number;
   teams: OrgTeam[];
 };
 
@@ -77,6 +87,7 @@ export function buildOrgChart(
   const toTeam = (t: ApiTeam): OrgTeam => ({
     id: t.id,
     name: t.name,
+    description: t.description?.trim() || null,
     departmentId: t.department_id && deptById.has(t.department_id) ? t.department_id : null,
     members: (membersByTeam.get(t.id) ?? []).sort(
       (a, b) => Number(b.lead) - Number(a.lead) || a.name.localeCompare(b.name),
@@ -91,33 +102,40 @@ export function buildOrgChart(
     const parent = d.parent_id && deptById.has(d.parent_id) && d.parent_id !== d.id ? d.parent_id : null;
     children.set(parent, [...(children.get(parent) ?? []), d]);
   }
-  const ordered: ApiDepartment[] = [];
+  const ordered: { d: ApiDepartment; depth: number }[] = [];
   const seen = new Set<string>();
-  const walk = (parent: string | null) => {
+  const walk = (parent: string | null, depth: number) => {
     for (const d of (children.get(parent) ?? []).sort(byName)) {
       if (seen.has(d.id)) continue;
       seen.add(d.id);
-      ordered.push(d);
-      walk(d.id);
+      ordered.push({ d, depth });
+      walk(d.id, depth + 1);
     }
   };
-  walk(null);
+  walk(null, 0);
   for (const d of [...departments].sort(byName)) {
     if (!seen.has(d.id)) {
       seen.add(d.id);
-      ordered.push(d);
-      walk(d.id);
+      ordered.push({ d, depth: 0 });
+      walk(d.id, 1);
     }
   }
 
-  const result: OrgDepartment[] = ordered.map((d) => ({
-    id: d.id,
-    name: d.name,
-    parentName: d.parent_id ? (deptById.get(d.parent_id)?.name ?? null) : null,
-    teams: allTeams.filter((t) => t.departmentId === d.id),
-  }));
+  const result: OrgDepartment[] = ordered.map(({ d, depth }) => {
+    const parentId = d.parent_id && deptById.has(d.parent_id) && d.parent_id !== d.id ? d.parent_id : null;
+    return {
+      id: d.id,
+      name: d.name,
+      description: d.description?.trim() || null,
+      parentId,
+      parentName: parentId ? (deptById.get(parentId)?.name ?? null) : null,
+      depth,
+      teams: allTeams.filter((t) => t.departmentId === d.id),
+    };
+  });
   const loose = allTeams.filter((t) => t.departmentId === null);
-  if (loose.length > 0) result.push({ id: null, name: NO_DEPARTMENT, parentName: null, teams: loose });
+  if (loose.length > 0)
+    result.push({ id: null, name: NO_DEPARTMENT, description: null, parentId: null, parentName: null, depth: 0, teams: loose });
 
   return {
     departments: result,
@@ -163,3 +181,23 @@ export function planRosterChanges(
   }
   return changes;
 }
+
+/** Every department below `id` (its children, their children...), for "move under" pickers: a
+    department cannot sit under itself or anything inside it. */
+export function descendantsOf(departments: { id: string; parent_id: string | null }[], id: string): Set<string> {
+  const out = new Set<string>();
+  const queue = [id];
+  while (queue.length) {
+    const at = queue.shift()!;
+    for (const d of departments) {
+      if (d.parent_id === at && !out.has(d.id) && d.id !== id) {
+        out.add(d.id);
+        queue.push(d.id);
+      }
+    }
+  }
+  return out;
+}
+
+/** "3 members", "1 member". */
+export const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;

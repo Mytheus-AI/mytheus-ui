@@ -11,6 +11,8 @@ import { FieldRow, InfoRow, InlineRow } from "../../../src/components/ui/Form";
 import { Input } from "../../../src/components/ui/Input";
 import { TextLink } from "../../../src/components/ui/TextLink";
 import { NewDepartmentButton, NewTeamButton } from "../../../src/components/org/OrgAdmin";
+import { PeopleBoard } from "../../../src/components/org/PeopleBoard";
+import { CHART as PEOPLE_CHART, CONTEXT as PEOPLE_CONTEXT, MEMBER_OPTIONS, PICK_DEPARTMENTS } from "../people-fixture";
 import { TasksView } from "../../../src/components/tasks/TasksView";
 import { PromiseLedger } from "../../../src/components/promises/ledger/PromiseLedger";
 import { StatusRequestsView } from "../../../src/components/status/StatusRequestsView";
@@ -114,63 +116,20 @@ const POSITIONS: StandingPosition[] = [
 ];
 
 /* ---- People (async server page): the page's own JSX, sample org ---- */
-const DEPTS = [
-  { name: "Engineering", teams: [{ name: "Platform", lead: "Raj Patel", people: ["Raj Patel", "Diego Alvarez", "Aiko Tanaka"] }, { name: "Product", lead: "Priya Shah", people: ["Priya Shah", "Maya Chen", "Sarah Kim"] }] },
-  { name: "Go to market", teams: [{ name: "Sales", lead: "Daniel Okafor", people: ["Daniel Okafor", "Tomas Ferreira", "Samar Rihan"] }, { name: "Marketing", lead: "Yash Maurya", people: ["Yash Maurya", "Sushan Shetty"] }] },
-];
-const mail = (n: string) => `${n.split(" ")[0].toLowerCase()}@example.com`;
-
 function PeoplePage() {
   return (
     <Page>
       <PageHead
         title="People"
-        context="2 departments, 4 teams, 11 people on a team. Your agents read this structure to tune notes to each role and to suggest missing stakeholders."
+        context={PEOPLE_CONTEXT}
         action={
-          <div className="flex flex-wrap gap-2">
-            <NewDepartmentButton departments={[]} />
-            <NewTeamButton departments={[]} people={[]} />
-          </div>
+          <>
+            <NewDepartmentButton departments={PICK_DEPARTMENTS} />
+            <NewTeamButton departments={PICK_DEPARTMENTS} people={[]} />
+          </>
         }
       />
-      <div className="flex flex-col gap-10">
-        {DEPTS.map((dep) => (
-          <section key={dep.name}>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <h2 className="display text-[22px] text-ink-display">{dep.name}</h2>
-              <Chip>{dep.teams.length} teams</Chip>
-            </div>
-            <div className="mt-4 grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
-              {dep.teams.map((team) => (
-                <Card key={team.name} as="article" flush>
-                  <CardHead
-                    as="h3"
-                    title={team.name}
-                    description={`${team.people.length} members, led by ${team.lead}`}
-                    right={<span className="grid h-10 w-10 shrink-0 place-items-center rounded-ctl" />}
-                  />
-                  <ul className="divide-y divide-line border-t border-line">
-                    {team.people.map((p) => (
-                      <li key={p}>
-                        <div className="group flex items-center gap-3 px-4 py-3 sm:px-[22px]">
-                          <Avatar name={p} id={mail(p)} size="md" />
-                          <span className="min-w-0 flex-1">
-                            <span className="flex min-w-0 items-center gap-2">
-                              <span className="truncate text-[15px] font-semibold text-ink">{p}</span>
-                            </span>
-                            <span className="block truncate text-[14px] text-ink-3">{mail(p)}</span>
-                          </span>
-                          <span className="flex shrink-0 flex-wrap justify-end gap-1.5">{p === team.lead ? <Chip tone="accent">Lead</Chip> : null}</span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </Card>
-              ))}
-            </div>
-          </section>
-        ))}
-      </div>
+      <PeopleBoard chart={PEOPLE_CHART} departments={PICK_DEPARTMENTS} members={MEMBER_OPTIONS} canEdit />
     </Page>
   );
 }
