@@ -13,6 +13,11 @@ import { fetchDecisionLineage, type LineageDecision } from "@/lib/api/lineage";
 import { loadDecisionReach } from "@/lib/api/decision-reach";
 import { resolveOrgContext } from "@/lib/api/org-context";
 import { DecisionReach } from "@/components/decisions/DecisionReach";
+import { DecisionWhySection } from "@/components/decision-why/DecisionWhySection";
+import { ReopenedChip, isReopened } from "@/components/decision-why/ReopenedChip";
+import { BlastRadiusSection } from "@/components/blast-radius/BlastRadiusSection";
+import { fetchDecisionWhy } from "@/lib/api/decision-why";
+import { fetchBlastRadius } from "@/lib/api/blast-radius";
 
 export const metadata: Metadata = { title: "Decision lineage | Mytheus" };
 
@@ -80,10 +85,12 @@ export default async function DecisionLineagePage({
 }: {
   params: { meetingId: string; decisionId: string };
 }) {
-  const [chain, reach, org] = await Promise.all([
+  const [chain, reach, org, why, blast] = await Promise.all([
     loadChain(params.meetingId, params.decisionId),
     loadDecisionReach(params.decisionId).catch(() => null),
     resolveOrgContext(),
+    fetchDecisionWhy(params.decisionId),
+    fetchBlastRadius(params.decisionId),
   ]);
   const openMeeting = (
     <LinkButton href={`/meetings/${params.meetingId}`} variant="outline">
@@ -119,7 +126,9 @@ export default async function DecisionLineagePage({
         title={title}
         action={openMeeting}
         context={
-          superseded ? (
+          isReopened(why) ? (
+            <ReopenedChip why={why} />
+          ) : superseded ? (
             <Chip tone="medium" icon={<ClockCounterClockwise size={14} weight="bold" />}>
               Superseded
             </Chip>
@@ -150,6 +159,7 @@ export default async function DecisionLineagePage({
           </div>
         }
       >
+        <DecisionWhySection decisionId={params.decisionId} initial={why} />
         <SectionCard
           title="Lineage"
           description={
@@ -218,6 +228,7 @@ export default async function DecisionLineagePage({
             })}
           </ol>
         </SectionCard>
+        <BlastRadiusSection decisionId={params.decisionId} initial={blast} />
       </PageColumns>
     </Page>
   );
