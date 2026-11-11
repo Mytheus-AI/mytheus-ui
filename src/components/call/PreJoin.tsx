@@ -36,6 +36,11 @@ import type { RoomSessionInfo } from "@/components/meeting/MeetingRoom";
    level meter, device pickers, the meeting card, what your agent will do, and the recording
    consent that unlocks Join.
 
+   Layout (meeting-call.css, "pre-join"): the preview and devices on the left, the meeting card
+   and the agent's brief as the right rail, both columns ending on one line, then the notice with
+   the agree box and Join across the full width straight under the preview. The source order is
+   the phone's reading order: preview, devices, consent and Join, then the meeting and the agent.
+
    Consent is real (polish program, Phase 0; ADR-0018). The notice says exactly what is stored
    (components/call/consent.tsx). Agreeing and pressing Join sends the acknowledgment with the
    token request, and meeting-service records when you agreed and to which notice version. It is
@@ -393,6 +398,80 @@ export function PreJoin({ meeting, session = null }: { meeting: CallMeeting; ses
               </section>
             </div>
 
+            <section className="pj-card pj-consent" aria-labelledby="pj-consent-h">
+              <div className="pj-consent-head">
+                <span className="pj-consent-ico" aria-hidden="true">
+                  <Record size={22} weight="fill" />
+                </span>
+                <div>
+                  <h2 id="pj-consent-h">
+                    {session?.recording ? "This meeting is recorded and transcribed" : "This meeting is transcribed"}
+                  </h2>
+                  <p>{alreadyAgreed ? "What is kept, as you agreed." : "Read this before you join. You need to agree to enter."}</p>
+                </div>
+              </div>
+              <ConsentTerms recording={session?.recording ?? null} />
+              <div className="pj-consent-foot">
+                {alreadyAgreed ? (
+                  <p className="pj-agreed" role="status">
+                    <Check size={16} weight="bold" aria-hidden />
+                    You agreed to this for this meeting on {consentedFormat.format(new Date(alreadyAgreed))}. You will not
+                    be asked again.
+                  </p>
+                ) : (
+                  <label className="pj-check">
+                    <input
+                      type="checkbox"
+                      checked={agreed}
+                      onChange={(e) => setAgreed(e.target.checked)}
+                      aria-describedby="pj-gate"
+                    />
+                    <span className="pj-box" aria-hidden="true">
+                      <Check size={14} weight="bold" />
+                    </span>
+                    <span className="pj-check-text">I have read this and agree to join on these terms</span>
+                  </label>
+                )}
+                <div className="pj-consent-act">
+                  <div className="pj-join">
+                    <LinkButton href={`/meetings/${meeting.id}`} variant="outline" size="lg">
+                      Cancel
+                    </LinkButton>
+                    <Button
+                      type="button"
+                      size="lg"
+                      className="w-full"
+                      disabled={!canJoin || joining}
+                      aria-describedby="pj-gate"
+                      onClick={() => void join()}
+                    >
+                      <VideoCamera size={18} weight="fill" aria-hidden />
+                      {joining ? "Joining..." : "Join meeting"}
+                    </Button>
+                  </div>
+                  {joinError ? (
+                    <p className="pj-join-error" role="alert">
+                      <WarningCircle size={16} weight="fill" aria-hidden />
+                      {joinError}
+                    </p>
+                  ) : null}
+                  <p className="pj-gate" id="pj-gate" aria-live="polite">
+                    {canJoin ? (
+                      <>
+                        <Check size={14} weight="bold" aria-hidden />
+                        Ready. Your mic and camera choices come with you.
+                      </>
+                    ) : (
+                      <>
+                        <LockSimple size={14} aria-hidden />
+                        Tick the box above to enable Join.
+                      </>
+                    )}
+                  </p>
+                </div>
+              </div>
+            </section>
+
             <div className="pj-right">
               <section className="pj-card pj-meet" aria-labelledby="pj-meet-h">
                 <span className={`mx-chip ${meeting.status === "live" ? "is-high" : meeting.status === "past" ? "" : "is-low"}`} suppressHydrationWarning>
@@ -443,75 +522,6 @@ export function PreJoin({ meeting, session = null }: { meeting: CallMeeting; ses
                 </p>
               </section>
 
-              <section className="pj-card pj-consent" aria-labelledby="pj-consent-h">
-                <div className="pj-consent-head">
-                  <span className="pj-consent-ico" aria-hidden="true">
-                    <Record size={22} weight="fill" />
-                  </span>
-                  <div>
-                    <h2 id="pj-consent-h">
-                      {session?.recording ? "This meeting is recorded and transcribed" : "This meeting is transcribed"}
-                    </h2>
-                    <p>{alreadyAgreed ? "What is kept, as you agreed." : "Read this before you join. You need to agree to enter."}</p>
-                  </div>
-                </div>
-                <ConsentTerms recording={session?.recording ?? null} />
-                {alreadyAgreed ? (
-                  <p className="pj-agreed" role="status">
-                    <Check size={16} weight="bold" aria-hidden />
-                    You agreed to this for this meeting on {consentedFormat.format(new Date(alreadyAgreed))}. You will not
-                    be asked again.
-                  </p>
-                ) : (
-                  <label className="pj-check">
-                    <input
-                      type="checkbox"
-                      checked={agreed}
-                      onChange={(e) => setAgreed(e.target.checked)}
-                      aria-describedby="pj-gate"
-                    />
-                    <span className="pj-box" aria-hidden="true">
-                      <Check size={14} weight="bold" />
-                    </span>
-                    <span className="pj-check-text">I have read this and agree to join on these terms</span>
-                  </label>
-                )}
-                <div className="pj-join">
-                  <LinkButton href={`/meetings/${meeting.id}`} variant="outline" size="lg">
-                    Cancel
-                  </LinkButton>
-                  <Button
-                    type="button"
-                    size="lg"
-                    className="w-full"
-                    disabled={!canJoin || joining}
-                    aria-describedby="pj-gate"
-                    onClick={() => void join()}
-                  >
-                    <VideoCamera size={18} weight="fill" aria-hidden />
-                    {joining ? "Joining..." : "Join meeting"}
-                  </Button>
-                </div>
-                {joinError ? (
-                  <p className="pj-join-error" role="alert">
-                    <WarningCircle size={16} weight="fill" aria-hidden />
-                    {joinError}
-                  </p>
-                ) : null}
-                <p className="pj-gate" id="pj-gate" aria-live="polite">
-                  {canJoin ? (
-                    <>
-                      <Check size={14} weight="bold" aria-hidden />
-                      Ready. Your mic and camera choices come with you.
-                    </>
-                  ) : (
-                    <>
-                      <LockSimple size={14} aria-hidden />
-                      Tick the box above to enable Join.
-                    </>
-                  )}
-                </p>
-              </section>
             </div>
           </div>
         </main>
