@@ -235,3 +235,72 @@ export async function askForStatusInstead(actionIds: string[]) {
 export async function saveDigestPreferences(prefs: { weekly_enabled: boolean; email_enabled: boolean }) {
   return { ok: true as const, prefs };
 }
+
+// Recording playback (wave 3): the Recording card's re-reads and clip writes, answered as
+// meeting-service and core-api would on success.
+const REC_URL = "https://recordings.test/segment.mp4";
+export async function loadRecording(meetingId: string) {
+  return {
+    ok: true as const,
+    data: {
+      meeting_id: meetingId,
+      status: "ready" as const,
+      reason: null,
+      duration_ms: 24_000,
+      url_expires_at: new Date(Date.now() + 600_000).toISOString(),
+      segments: [
+        { id: "s-1", status: "ready" as const, media_type: "video/mp4" as const, offset_ms: 0, duration_ms: 12_000, started_at: "2026-11-10T15:00:00Z", ended_at: null, url: `${REC_URL}?a` },
+        { id: "s-2", status: "ready" as const, media_type: "video/mp4" as const, offset_ms: 30_000, duration_ms: 12_000, started_at: "2026-11-10T15:00:30Z", ended_at: null, url: `${REC_URL}?b` },
+      ],
+    },
+  };
+}
+export async function loadClips() {
+  return { ok: true as const, data: { items: [], max_duration_ms: 600_000 } };
+}
+export async function createClip(meetingId: string, input: { title: string; startMs: number; endMs: number }) {
+  return {
+    ok: true as const,
+    clip: {
+      id: "c-new",
+      meeting_id: meetingId,
+      title: input.title,
+      start_ms: input.startMs,
+      end_ms: input.endMs,
+      duration_ms: input.endMs - input.startMs,
+      created_by: "u-sarah",
+      created_by_name: "Sarah Okafor",
+      created_at: "2026-11-11T09:00:00Z",
+      can_delete: true,
+      share_links: [],
+    },
+  };
+}
+export async function deleteClip() {
+  return { ok: true };
+}
+export async function shareClip(meetingId: string, clipId: string, input: { includeVideo: boolean }) {
+  return {
+    ok: true as const,
+    link: {
+      id: "l-new",
+      clip_id: clipId,
+      meeting_id: meetingId,
+      url: "https://app.example/s/clip-token-abc",
+      token: "clip-token-abc",
+      include_video: input.includeVideo,
+      created_by: "u-sarah",
+      created_by_name: "Sarah Okafor",
+      created_at: "2026-11-11T09:00:00Z",
+      expires_at: "2026-12-11T09:00:00Z",
+      revoked_at: null,
+      state: "active" as const,
+      view_count: 0,
+      last_viewed_at: null,
+      can_revoke: true,
+    },
+  };
+}
+export async function revokeClipLink() {
+  return { ok: true };
+}

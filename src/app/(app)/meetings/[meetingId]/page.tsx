@@ -46,11 +46,17 @@ import type { CallMeeting } from "@/lib/api/meetings";
 import { listMembers, type WorkspaceMemberView } from "@/lib/api/members";
 import { fetchFollowUp, fetchMinutes, fetchShareLinks } from "@/lib/api/minutes";
 import { MinutesSection } from "@/components/minutes/MinutesSection";
+import { RecordingSection } from "@/components/recording/RecordingSection";
+import type { Line } from "@/components/recording/recording-model";
+import type { OffRecordStateRow } from "@/app/actions/off-record";
+import { apiSafe } from "@/lib/api/client";
+import { fetchClips, fetchRecording } from "@/lib/api/recording";
 import { fetchTranscriptSurface, type TranscriptChunk } from "@/lib/api/transcript";
 import "@/styles/meeting-hub.css";
 import "@/styles/meeting-agenda.css";
 import "@/styles/meeting-brain.css";
 import "@/styles/meeting-minutes.css";
+import "@/styles/meeting-recording.css";
 
 export const metadata: Metadata = { title: "Meeting | Mytheus" };
 
@@ -536,7 +542,7 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
   // ADR-0039: the brief before and during it, the health card after (not for one that never
   // happened); goals name and pick an agenda item's goal. Each failing costs only its own card.
   const happened = ended && !meeting.missed;
-  const [transcript, members, carried, brief, health, goals, minutes, followUp, shareLinks] = await Promise.all([
+  const [transcript, members, carried, brief, health, goals, minutes, followUp, shareLinks, recording, clips, offRecord] = await Promise.all([
     fetchTranscriptSurface(meeting.id).catch(() => null),
     listMembers(),
     meeting.previousMeetingId ? fetchCarryForward(meeting.id) : Promise.resolve(null),
@@ -546,10 +552,32 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
     happened ? fetchMinutes(meeting.id) : Promise.resolve(null),
     happened ? fetchFollowUp(meeting.id) : Promise.resolve(null),
     happened ? fetchShareLinks(meeting.id) : Promise.resolve(null),
+    // Recording playback (wave 3): the recording, the clips, and where it was off the record.
+    happened ? fetchRecording(meeting.id) : Promise.resolve(null),
+    happened ? fetchClips(meeting.id) : Promise.resolve(null),
+    happened
+      ? apiSafe<OffRecordStateRow>(`/api/v1/meetings/${encodeURIComponent(meeting.id)}/off-record`)
+      : Promise.resolve(null),
   ]);
   // Older transcripts saved silence as empty lines.
   const chunks = (transcript?.chunks ?? []).filter((c) => c.text.trim().length > 0);
   const names = new Map((members ?? []).map((m) => [m.id, m.name]));
+  // The Recording card's transcript: a line's speaker id is the person's user id (each person's
+  // audio is transcribed on its own stream), or a diarized label the speaker map names.
+  const mapped = new Map((transcript?.speakers ?? []).filter((s) => s.user_id).map((s) => [s.speaker_id, s.user_id as string]));
+  const speakerOrder = new Map<string, number>();
+  const recordingLines: Line[] = chunks.map((c) => {
+    const name = names.get(c.speaker_id) ?? names.get(mapped.get(c.speaker_id) ?? "");
+    if (!name && !speakerOrder.has(c.speaker_id)) speakerOrder.set(c.speaker_id, speakerOrder.size + 1);
+    return {
+      id: c.id,
+      speakerId: c.speaker_id,
+      speaker: name ?? `Speaker ${speakerOrder.get(c.speaker_id)}`,
+      startMs: c.start_ms,
+      endMs: c.end_ms,
+      text: c.text.trim(),
+    };
+  });
   const list = people(meeting, members);
   const invitable: PickableMember[] | null =
     members
@@ -711,6 +739,23 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
           initial={minutes}
           followUp={followUp}
           links={shareLinks}
+          isHost={!!you && you.id === meeting.hostUserId}
+          confidential={!!meeting.confidential}
+        />
+      ) : null}
+
+      {recording && clips && mine ? (
+        <RecordingSection
+          meetingId={meeting.id}
+          meetingTitle={meeting.title}
+          initial={recording}
+          initialClips={clips}
+          lines={recordingLines}
+          offRecord={
+            offRecord?.ok
+              ? offRecord.data.segments.map((g) => ({ startMs: g.start_ms, endMs: g.end_ms, durationMs: g.duration_ms }))
+              : []
+          }
           isHost={!!you && you.id === meeting.hostUserId}
           confidential={!!meeting.confidential}
         />

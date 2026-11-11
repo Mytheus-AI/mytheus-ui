@@ -36,6 +36,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/meetings/{meeting_id}/recording": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A meeting's recording, for playback
+         * @description Participants only, deny-by-default: the recording's status and, when ready, a
+         *     short-lived presigned URL per segment (never a public URL). Each answer with URLs is
+         *     audited (`recording.playback_issued`). Off-the-record stretches are not in the recording:
+         *     they are the gaps between segments.
+         */
+        get: operations["get_recording"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/meetings/{meeting_id}/session": {
         parameters: {
             query?: never;
@@ -87,6 +110,91 @@ export interface paths {
         get: operations["healthz"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/meetings/{meeting_id}/clips/{clip_id}/video": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Clip Video
+         * @description The video of one shared clip (core-api checked the share and the clip). Only the clip's
+         *     own object is ever presigned; it is cut on first request (`rendering`) and served after.
+         */
+        post: operations["clip_video"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/meetings/{meeting_id}/recording/erase": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Erase Recording
+         * @description A meeting's data erasure (core-api `POST /api/v1/erasures`): delete every object under
+         *     the meeting's `{org_id}/{meeting_id}/` prefix (segments and rendered clips) and its
+         *     recording rows. Works on a meeting core-api has already soft-deleted. Idempotent.
+         */
+        post: operations["erase_recording"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/meetings/{meeting_id}/recording/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pause Recording
+         * @description Off the record began: stop the running egress so nothing from the stretch is kept.
+         *     Idempotent (nothing running is `changed: false`).
+         */
+        post: operations["pause_recording"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/meetings/{meeting_id}/recording/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resume Recording
+         * @description Back on the record: start a new segment when the room is live, recording is on, the
+         *     consent gate allows it and nothing is already recording. Idempotent.
+         */
+        post: operations["resume_recording"];
         delete?: never;
         options?: never;
         head?: never;
@@ -148,6 +256,33 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * ClipVideo
+         * @description Internal: the video for one clip, for a public clip share. Only ever the clip's own
+         *     rendered object (cut from the recording), never the whole recording.
+         */
+        ClipVideo: {
+            /** Expires At */
+            expires_at?: string | null;
+            /** Media Type */
+            media_type?: ("video/mp4" | "audio/ogg") | null;
+            /** Reason */
+            reason?: ("not_connected" | "no_recording" | "not_in_recording" | "renderer_not_installed" | "render_failed") | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ready" | "rendering" | "unavailable";
+            /** Url */
+            url?: string | null;
+        };
+        /** ClipVideoRequest */
+        ClipVideoRequest: {
+            /** End Ms */
+            end_ms: number;
+            /** Start Ms */
+            start_ms: number;
+        };
         /**
          * ConsentAck
          * @description The participant read the consent notice and agreed to join with it in force.
@@ -245,6 +380,127 @@ export interface components {
              * @description Stable error type URI.
              */
             type: string;
+        };
+        /**
+         * RecordingControlResult
+         * @description Internal: what pausing or resuming the recording for off the record did.
+         */
+        RecordingControlResult: {
+            /** Changed */
+            changed: boolean;
+            /** Detail */
+            detail: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+        };
+        /**
+         * RecordingErased
+         * @description Internal: a meeting's recording erased (data erasure, core-api's caller).
+         */
+        RecordingErased: {
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Objects Deleted */
+            objects_deleted: number;
+            /** Segments Deleted */
+            segments_deleted: number;
+            /**
+             * Status
+             * @description `not_connected`: no bucket credentials on this server, so only the recording rows were removed (there can be no objects LiveKit wrote with them).
+             * @enum {string}
+             */
+            status: "erased" | "not_connected";
+        };
+        /**
+         * RecordingSegment
+         * @description One continuous stretch of the recording (one LiveKit egress). A meeting taken off the
+         *     record has one segment per stretch that was recorded, with the gaps between them.
+         */
+        RecordingSegment: {
+            /**
+             * Duration Ms
+             * @description Known once the segment is ready.
+             */
+            duration_ms?: number | null;
+            /** Ended At */
+            ended_at?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Media Type
+             * @enum {string}
+             */
+            media_type: "video/mp4" | "audio/ogg";
+            /**
+             * Offset Ms
+             * @description Where the segment starts on the meeting's clock (the transcript's time origin). Null when the room clock is unknown.
+             */
+            offset_ms?: number | null;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "recording" | "processing" | "ready" | "failed";
+            /**
+             * Url
+             * @description A short-lived presigned GET for a ready segment; never stored, never public. Ask again for a fresh one when it expires.
+             */
+            url?: string | null;
+        };
+        /**
+         * RecordingState
+         * @description `GET /api/meetings/{meeting_id}/recording`: whether this meeting has a recording a
+         *     participant can play, and the playable segments.
+         *
+         *     - `not_enabled`: recording is off on this server (`reason` `storage_not_configured` when it
+         *       is on but the bucket credentials are missing);
+         *     - `none`: nothing was recorded (`reason` `consent_missing` when the consent gate refused
+         *       because someone had not agreed, `not_started` before the call, `not_recorded` otherwise);
+         *     - `recording`: the call is being recorded now;
+         *     - `processing`: the call ended and LiveKit is finishing the upload;
+         *     - `ready`: at least one segment can be played (`segments[].url`);
+         *     - `failed`: every segment failed to record or upload.
+         */
+        RecordingState: {
+            /**
+             * Duration Ms
+             * @description Total length of the ready segments.
+             * @default 0
+             */
+            duration_ms: number;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Reason */
+            reason?: ("storage_not_configured" | "consent_missing" | "not_recorded" | "not_started") | null;
+            /** Segments */
+            segments?: components["schemas"]["RecordingSegment"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "not_enabled" | "recording" | "processing" | "ready" | "failed" | "none";
+            /**
+             * Url Expires At
+             * @description When the presigned segment URLs stop working.
+             */
+            url_expires_at?: string | null;
         };
         /** RoomClosed */
         RoomClosed: {
@@ -358,6 +614,73 @@ export interface operations {
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_recording: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingState"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not a participant of this meeting. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description No such meeting in this workspace. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -508,6 +831,219 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    clip_video: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                meeting_id: string;
+                clip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClipVideoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClipVideo"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    erase_recording: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingErased"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    pause_recording: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingControlResult"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    resume_recording: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingControlResult"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Unhandled server error. Carries a `trace_id` and no internals. */

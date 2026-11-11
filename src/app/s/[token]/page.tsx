@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import {
   CalendarBlank,
   CheckCircle,
+  Clock,
+  Scissors,
   CheckSquare,
   LinkBreak,
   ListChecks,
@@ -25,12 +27,16 @@ import {
   type MeetingRecap,
   type PublicShare,
 } from "@/components/minutes/minutes-model";
-import { fetchPublicShare } from "@/lib/api/public-share";
+import { ClipPlayer } from "@/components/share/ClipPlayer";
+import { lengthLabel, type PublicClipShare } from "@/components/recording/recording-model";
+import { fetchPublicPage } from "@/lib/api/public-share";
 import "@/styles/app-theme.css";
 import "@/styles/share-page.css";
+import "@/styles/meeting-recording.css";
 
-/* A shared recap or decision record (`/s/{token}`), for anyone holding the link: no account, no
-   app chrome. Read on the server from the public share route (the signed token is the
+/* A shared recap, decision record or clip (`/s/{token}`), for anyone holding the link: no account,
+   no app chrome. A clip (recording playback, wave 3) shows its words always and its video only when
+   the sharer included it. Read on the server from the public share route (the signed token is the
    credential); nothing private is ever on it (the backend builds it from confirmed facts and the
    meeting's shared minutes only). Branded, readable, both themes, prints cleanly. */
 
@@ -38,7 +44,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Shared from Mytheus",
-  description: "A meeting recap or decision record shared from Mytheus.",
+  description: "A meeting recap, decision record or clip shared from Mytheus.",
   robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false } },
   referrer: "no-referrer",
 };
@@ -84,7 +90,8 @@ function Message({ icon, title, body }: { icon: ReactNode; title: string; body: 
 }
 
 export default async function SharePage({ params }: { params: { token: string } }) {
-  const read = await fetchPublicShare(params.token);
+  const page = await fetchPublicPage(params.token);
+  const read = page.read;
   if (read.kind === "gone") {
     return read.reason === "revoked" ? (
       <Message
@@ -118,7 +125,15 @@ export default async function SharePage({ params }: { params: { token: string } 
       />
     );
   }
-  const share = read.share;
+  if (page.type === "clip" && page.read.kind === "ok") {
+    return (
+      <Frame>
+        <ClipPage share={page.read.share} />
+      </Frame>
+    );
+  }
+  if (page.type !== "share" || page.read.kind !== "ok") return null;
+  const share = page.read.share;
   return (
     <Frame>
       {share.kind === "decision_record" && share.decision ? (
@@ -414,6 +429,45 @@ function DecisionPage({ share, record }: { share: PublicShare; record: DecisionR
         </div>
       </div>
       <SharedLine share={share} />
+    </article>
+  );
+}
+
+function ClipPage({ share }: { share: PublicClipShare }) {
+  const clip = share.clip;
+  return (
+    <article className="sh-doc" aria-labelledby="sh-title">
+      <header className="sh-hero">
+        <p className="kicker">Clip from a meeting</p>
+        <h1 className="sh-title" id="sh-title">
+          {clip.title}
+        </h1>
+        <ul className="sh-meta">
+          <li>
+            <UsersThree size={18} aria-hidden="true" />
+            From {clip.meeting_title}
+          </li>
+          {clip.meeting_start ? (
+            <li>
+              <CalendarBlank size={18} aria-hidden="true" />
+              <LocalTime iso={clip.meeting_start} />
+            </li>
+          ) : null}
+          <li>
+            <Clock size={18} aria-hidden="true" />
+            {lengthLabel(clip.duration_ms)}
+          </li>
+          <li>
+            <Scissors size={18} aria-hidden="true" />
+            {clip.video.status === "not_included" ? "Words only" : "Video and words"}
+          </li>
+        </ul>
+      </header>
+      <ClipPlayer clip={clip} />
+      <p className="sh-shared">
+        {share.shared_by_name ? `Shared by ${share.shared_by_name}. ` : "Shared from Mytheus. "}
+        This page is read-only, shows only this part of the meeting, and works until <LocalTime iso={share.expires_at} />.
+      </p>
     </article>
   );
 }

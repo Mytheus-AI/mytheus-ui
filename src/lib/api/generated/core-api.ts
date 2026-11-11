@@ -253,6 +253,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/clips/{clip_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a clip
+         * @description The clip's creator, the meeting's host, or a workspace admin. Its share links stop working at once. Another person's clip you may not delete is a 404.
+         */
+        delete: operations["delete_clip"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clips/{clip_id}/share-links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Share a clip
+         * @description A public page for one clip: its transcript lines, and its video when `include_video`.
+         */
+        post: operations["share_clip"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/commitments": {
         parameters: {
             query?: never;
@@ -979,6 +1019,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/meetings/{meeting_id}/clips": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List a meeting's clips */
+        get: operations["list_clips"];
+        put?: never;
+        /**
+         * Make a clip of a meeting
+         * @description A participant names a span of the meeting (at most 10 minutes). A span that crosses an
+         *     off-the-record stretch is refused: nothing from it was kept, so nothing can be clipped.
+         */
+        post: operations["create_clip"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/meetings/{meeting_id}/collaborations": {
         parameters: {
             query?: never;
@@ -1488,6 +1550,26 @@ export interface paths {
          * @description The host opens the 60-second wrap-up. Idempotent: the first start time stands.
          */
         post: operations["start_wrap_up"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/clips/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a shared clip
+         * @description No authentication: the signed token in the path is the credential. The clip's transcript lines always; its video (a short-lived presigned URL of the clip alone) only when the share includes it. 404 for a token that does not verify, a link that is not a clip, or a clip that is gone; 410 with `reason` `expired` or `revoked`. Each read increments the link's view count.
+         */
+        get: operations["read_clip_share"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2898,6 +2980,230 @@ export interface components {
             /** User Id */
             user_id?: string | null;
         };
+        /** Clip */
+        Clip: {
+            /**
+             * Can Delete
+             * @description Whether the caller may delete this clip.
+             */
+            can_delete: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Created By
+             * Format: uuid
+             */
+            created_by: string;
+            /** Created By Name */
+            created_by_name?: string | null;
+            /** Duration Ms */
+            duration_ms: number;
+            /** End Ms */
+            end_ms: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /**
+             * Share Links
+             * @description The clip's public links, newest first.
+             */
+            share_links?: components["schemas"]["ClipShareLink"][];
+            /** Start Ms */
+            start_ms: number;
+            /** Title */
+            title: string;
+        };
+        /** ClipCreate */
+        ClipCreate: {
+            /**
+             * End Ms
+             * @description End on the meeting's clock; at most 10 minutes on.
+             */
+            end_ms: number;
+            /**
+             * Start Ms
+             * @description Start on the meeting's clock (the transcript's).
+             */
+            start_ms: number;
+            /**
+             * Title
+             * @description What the clip shows.
+             */
+            title: string;
+        };
+        /** ClipLine */
+        ClipLine: {
+            /** End Offset Ms */
+            end_offset_ms: number;
+            /**
+             * Offset Ms
+             * @description When the line starts, from the clip's start.
+             */
+            offset_ms: number;
+            /**
+             * Speaker Name
+             * @description By name; null when unknown.
+             */
+            speaker_name?: string | null;
+            /** Text */
+            text: string;
+        };
+        /** ClipList */
+        ClipList: {
+            /** Items */
+            items: components["schemas"]["Clip"][];
+            /**
+             * Max Duration Ms
+             * @description The longest clip allowed.
+             * @default 600000
+             */
+            max_duration_ms: number;
+        };
+        /**
+         * ClipShare
+         * @description What a public clip page renders.
+         */
+        ClipShare: {
+            /**
+             * Clip Id
+             * Format: uuid
+             */
+            clip_id: string;
+            /** Duration Ms */
+            duration_ms: number;
+            /** End Ms */
+            end_ms: number;
+            /** Lines */
+            lines: components["schemas"]["ClipLine"][];
+            /** Meeting Start */
+            meeting_start?: string | null;
+            /** Meeting Title */
+            meeting_title: string;
+            /** Start Ms */
+            start_ms: number;
+            /** Title */
+            title: string;
+            video: components["schemas"]["ClipVideoView"];
+        };
+        /** ClipShareCreate */
+        ClipShareCreate: {
+            /**
+             * Confirm Confidential
+             * @description The host confirms publishing a clip of a confidential meeting. Required (409 `confidential_confirmation_required`) for a confidential meeting.
+             * @default false
+             */
+            confirm_confidential: boolean;
+            /**
+             * Expires In Days
+             * @description How long the link works, 1 to 365 days. Default 30.
+             * @default 30
+             */
+            expires_in_days: number;
+            /**
+             * Include Video
+             * @description Also show the clip's video on the public page (the clip alone, never the rest of the recording). Off: the page shows the clip's transcript lines only.
+             * @default false
+             */
+            include_video: boolean;
+        };
+        /**
+         * ClipShareLink
+         * @description A public link to one clip (`share_links` kind `meeting_clip`). Revoked like any share
+         *     link, with `DELETE /api/v1/share-links/{id}`.
+         */
+        ClipShareLink: {
+            /** Can Revoke */
+            can_revoke: boolean;
+            /**
+             * Clip Id
+             * Format: uuid
+             */
+            clip_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Created By
+             * Format: uuid
+             */
+            created_by: string;
+            /** Created By Name */
+            created_by_name?: string | null;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Include Video
+             * @description Whether the page shows the clip's video.
+             */
+            include_video: boolean;
+            /** Last Viewed At */
+            last_viewed_at?: string | null;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Revoked At */
+            revoked_at?: string | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "active" | "expired" | "revoked";
+            /** Token */
+            token: string;
+            /**
+             * Url
+             * @description The public page to send: `{APP_BASE_URL}/s/{token}`.
+             */
+            url: string;
+            /** View Count */
+            view_count: number;
+        };
+        /**
+         * ClipVideoView
+         * @description The clip's video on its public page. `not_included`: the sharer shared the words only.
+         *     `rendering`: being cut from the recording, ask again shortly. `unavailable`: there is no
+         *     recording to cut it from, or recording is not connected on this server (`reason`).
+         */
+        ClipVideoView: {
+            /** Expires At */
+            expires_at?: string | null;
+            /** Media Type */
+            media_type?: ("video/mp4" | "audio/ogg") | null;
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ready" | "rendering" | "unavailable" | "not_included";
+            /**
+             * Url
+             * @description Short-lived presigned GET of the clip alone, when ready.
+             */
+            url?: string | null;
+        };
         /** Collaboration */
         Collaboration: {
             /**
@@ -3585,6 +3891,8 @@ export interface components {
              * @description What the confirmation matched: an email or a meeting title.
              */
             label: string;
+            /** @description A meeting erasure's recording leg (meeting-service owns the bucket); null for a person erasure, which keeps meeting recordings as it keeps transcript words. */
+            recording?: components["schemas"]["RecordingErasure"] | null;
             /** Revoked Share Links */
             revoked_share_links: number;
             /**
@@ -4937,6 +5245,27 @@ export interface components {
             type: string;
         };
         /**
+         * PublicClipShare
+         * @description What a public clip page renders.
+         */
+        PublicClipShare: {
+            clip: components["schemas"]["ClipShare"];
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Shared At
+             * Format: date-time
+             */
+            shared_at: string;
+            /** Shared By Name */
+            shared_by_name?: string | null;
+            /** View Count */
+            view_count: number;
+        };
+        /**
          * PublicShare
          * @description What a share page renders. Exactly one of `recap` / `decision` is set, per `kind`.
          */
@@ -5054,6 +5383,23 @@ export interface components {
              * @enum {string}
              */
             status: "confirmed" | "superseded";
+        };
+        /**
+         * RecordingErasure
+         * @description What happened to the meeting's recording objects and clips' videos in the bucket.
+         */
+        RecordingErasure: {
+            /**
+             * Objects Deleted
+             * @default 0
+             */
+            objects_deleted: number;
+            /**
+             * Status
+             * @description `erased`: meeting-service deleted every object under the meeting's prefix and its recording rows. `not_connected`: recording storage is not connected on this server, so there are no objects to delete. `failed`: meeting-service could not be reached; run the erasure again (it is idempotent) to finish this leg.
+             * @enum {string}
+             */
+            status: "erased" | "not_connected" | "failed";
         };
         /** RecordsRequest */
         RecordsRequest: {
@@ -6851,6 +7197,136 @@ export interface operations {
             };
             /** @description Unhandled server error. Carries a `trace_id` and no internals. */
             500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    delete_clip: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    share_clip: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                clip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ClipShareCreate"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClipShareLink"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not a participant, or a confidential meeting you do not host. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description A confidential meeting's clip needs `confirm_confidential`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Share links are not configured on this server. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9038,6 +9514,138 @@ export interface operations {
             };
         };
     };
+    list_clips: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClipList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not a participant of this meeting. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    create_clip: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClipCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Clip"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not a participant of this meeting. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The span crosses a stretch that was off the record. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     list_collaborations: {
         parameters: {
             query?: {
@@ -10405,6 +11013,64 @@ export interface operations {
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    read_clip_share: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicClipShare"];
+                };
+            };
+            /** @description Unknown or invalid link. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The link expired or was revoked (`reason`). */
+            410: {
                 headers: {
                     [name: string]: unknown;
                 };
