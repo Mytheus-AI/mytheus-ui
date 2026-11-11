@@ -106,8 +106,8 @@ export function connectionSnippets(origin: string): Snippet[] {
     },
     {
       id: "claude-desktop",
-      title: "Claude Desktop",
-      description: "Add to claude_desktop_config.json (Settings, Developer, Edit config), paste your token, and restart Claude.",
+      title: "Other MCP clients",
+      description: "For a client configured with a JSON file, such as Cursor or an older Claude Desktop. Paste your token and restart the client.",
       language: "json",
       code: [
         "{",

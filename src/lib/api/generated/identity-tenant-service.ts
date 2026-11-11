@@ -12,6 +12,23 @@
  */
 
 export interface paths {
+    "/.well-known/oauth-authorization-server": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** OAuth authorization server metadata (RFC 8414) */
+        get: operations["authorization_server_metadata"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/agent-authz-scopes": {
         parameters: {
             query?: never;
@@ -106,6 +123,58 @@ export interface paths {
         post?: never;
         /** Revoke Api Token */
         delete: operations["revoke_api_token"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/oauth/consent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Consent */
+        get: operations["get_consent"];
+        put?: never;
+        /** Decide Consent */
+        post: operations["decide_consent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/oauth/grants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Connected Apps */
+        get: operations["list_connected_apps"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/oauth/grants/{grant_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke Connected App */
+        delete: operations["revoke_connected_app"];
         options?: never;
         head?: never;
         patch?: never;
@@ -481,6 +550,74 @@ export interface paths {
         put?: never;
         /** Change Tenant Status */
         post: operations["change_tenant_status"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/oauth/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Start an authorization (OAuth 2.1 code flow with PKCE) */
+        get: operations["authorize"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/oauth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dynamic Client Registration (RFC 7591) */
+        post: operations["register_client"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/oauth/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revoke a token (RFC 7009) */
+        post: operations["revoke"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/oauth/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Token endpoint: redeem a code (PKCE) or rotate a refresh token */
+        post: operations["token"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1000,12 +1137,213 @@ export interface components {
             /** Items */
             items: components["schemas"]["ApiToken"][];
         };
+        /** AuthorizationServerMetadata */
+        AuthorizationServerMetadata: {
+            /** Authorization Endpoint */
+            authorization_endpoint: string;
+            /** Authorization Response Iss Parameter Supported */
+            authorization_response_iss_parameter_supported: boolean;
+            /** Code Challenge Methods Supported */
+            code_challenge_methods_supported: string[];
+            /** Grant Types Supported */
+            grant_types_supported: string[];
+            /** Issuer */
+            issuer: string;
+            /** Registration Endpoint */
+            registration_endpoint: string;
+            /** Response Modes Supported */
+            response_modes_supported: string[];
+            /** Response Types Supported */
+            response_types_supported: string[];
+            /** Revocation Endpoint */
+            revocation_endpoint: string;
+            /** Revocation Endpoint Auth Methods Supported */
+            revocation_endpoint_auth_methods_supported: string[];
+            /** Scopes Supported */
+            scopes_supported: string[];
+            /** Service Documentation */
+            service_documentation: string;
+            /** Token Endpoint */
+            token_endpoint: string;
+            /** Token Endpoint Auth Methods Supported */
+            token_endpoint_auth_methods_supported: string[];
+        };
+        /**
+         * ClientInformation
+         * @description RFC 7591 section 3.2.1. A public client: no `client_secret`, ever.
+         */
+        ClientInformation: {
+            /** Client Id */
+            client_id: string;
+            /** Client Id Issued At */
+            client_id_issued_at: number;
+            /** Client Name */
+            client_name: string;
+            /** Client Uri */
+            client_uri?: string | null;
+            /** Grant Types */
+            grant_types: string[];
+            /** Redirect Uris */
+            redirect_uris: string[];
+            /** Response Types */
+            response_types: string[];
+            /** Scope */
+            scope: string;
+            /** Software Id */
+            software_id?: string | null;
+            /** Software Version */
+            software_version?: string | null;
+            /**
+             * Token Endpoint Auth Method
+             * @constant
+             */
+            token_endpoint_auth_method: "none";
+        };
         /** ConfidenceThresholds */
         ConfidenceThresholds: {
             /** Silent */
             silent: number;
             /** Surface */
             surface: number;
+        };
+        /** ConnectedApp */
+        ConnectedApp: {
+            /** Client Id */
+            client_id: string;
+            /** Client Name */
+            client_name: string;
+            /**
+             * Connected At
+             * Format: date-time
+             */
+            connected_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Last Refreshed At */
+            last_refreshed_at?: string | null;
+            /**
+             * Last Used At
+             * @description Last MCP request the gateway accepted from it.
+             */
+            last_used_at?: string | null;
+            /**
+             * Owner Email
+             * @description Present in the workspace-wide (`owner=all`) listing only.
+             */
+            owner_email?: string | null;
+            /** Redirect Host */
+            redirect_host: string;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "read" | "read_write";
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Verified Redirect */
+            verified_redirect: boolean;
+        };
+        /** ConnectedAppList */
+        ConnectedAppList: {
+            /** Items */
+            items: components["schemas"]["ConnectedApp"][];
+        };
+        /** ConsentClient */
+        ConsentClient: {
+            /** Client Id */
+            client_id: string;
+            /** Client Uri */
+            client_uri?: string | null;
+            /**
+             * Loopback Redirect
+             * @description The redirect goes to this computer (a desktop or command-line app).
+             */
+            loopback_redirect: boolean;
+            /**
+             * Name
+             * @description What the app calls itself at registration. Unverified.
+             */
+            name: string;
+            /**
+             * Redirect Host
+             * @description Where approving sends the browser. Show it.
+             */
+            redirect_host: string;
+            /** Redirect Uri */
+            redirect_uri: string;
+            /**
+             * Registered At
+             * Format: date-time
+             */
+            registered_at: string;
+            /**
+             * Verified Redirect
+             * @description The redirect goes to a host Mytheus recognises (Claude's callback).
+             */
+            verified_redirect: boolean;
+        };
+        /** ConsentDecision */
+        ConsentDecision: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "approve" | "deny";
+            /** Request */
+            request: string;
+            /**
+             * Scope
+             * @description Approve with less than was asked (`read`); never more.
+             */
+            scope?: ("read" | "read_write") | null;
+        };
+        /** ConsentRequest */
+        ConsentRequest: {
+            /** Account Email */
+            account_email?: string | null;
+            client: components["schemas"]["ConsentClient"];
+            /**
+             * Expires At
+             * Format: date-time
+             * @description Approve before this, or start again from the app.
+             */
+            expires_at: string;
+            /**
+             * Resource
+             * @description The MCP server the access is for.
+             */
+            resource: string;
+            /**
+             * Scope
+             * @description What the app asked for, as a token scope.
+             * @enum {string}
+             */
+            scope: "read" | "read_write";
+            workspace: components["schemas"]["ConsentWorkspace"];
+        };
+        /** ConsentResult */
+        ConsentResult: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "approve" | "deny";
+            /**
+             * Redirect To
+             * @description Send the browser here: the app's own callback.
+             */
+            redirect_to: string;
+        };
+        /** ConsentWorkspace */
+        ConsentWorkspace: {
+            /** Name */
+            name: string;
         };
         /** DepartmentRef */
         DepartmentRef: {
@@ -1192,6 +1530,13 @@ export interface components {
             placeholder: string;
             /** Token */
             token: string;
+        };
+        /** OAuthErrorBody */
+        OAuthErrorBody: {
+            /** Error */
+            error: string;
+            /** Error Description */
+            error_description?: string | null;
         };
         /**
          * OrgCreate
@@ -1592,6 +1937,31 @@ export interface components {
              */
             status: "active" | "suspended";
         };
+        /** TokenResponse */
+        TokenResponse: {
+            /**
+             * Access Token
+             * @description A `mytheus_pat_` bearer bound to the MCP server.
+             */
+            access_token: string;
+            /** Expires In */
+            expires_in: number;
+            /**
+             * Refresh Token
+             * @description Single use; every refresh returns a new one.
+             */
+            refresh_token: string;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "read" | "read_write";
+            /**
+             * Token Type
+             * @constant
+             */
+            token_type: "Bearer";
+        };
         /** TopicOwner */
         TopicOwner: {
             /**
@@ -1831,6 +2201,35 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    authorization_server_metadata: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthorizationServerMetadata"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     list_scopes: {
         parameters: {
             query?: never;
@@ -2143,6 +2542,206 @@ export interface operations {
             header?: never;
             path: {
                 token_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_consent: {
+        parameters: {
+            query: {
+                request: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsentRequest"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    decide_consent: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsentDecision"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsentResult"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_connected_apps: {
+        parameters: {
+            query?: {
+                /** @description `me` (default): your connected apps. `all`: everyone's (owner/admin). */
+                owner?: "me" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectedAppList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    revoke_connected_app: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                grant_id: string;
             };
             cookie?: never;
         };
@@ -3382,6 +3981,218 @@ export interface operations {
             };
             /** @description Validation Error */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    authorize: {
+        parameters: {
+            query?: {
+                response_type?: string | null;
+                client_id?: string | null;
+                redirect_uri?: string | null;
+                code_challenge?: string | null;
+                code_challenge_method?: string | null;
+                state?: string | null;
+                scope?: string | null;
+                resource?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description To the consent page, or back to the client with an error */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    register_client: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Client Name */
+                    client_name?: string | null;
+                    /** Client Uri */
+                    client_uri?: string | null;
+                    /** Grant Types */
+                    grant_types?: string[] | null;
+                    /** Redirect Uris */
+                    redirect_uris: string[];
+                    /** Response Types */
+                    response_types?: string[] | null;
+                    /** Scope */
+                    scope?: string | null;
+                    /** Software Id */
+                    software_id?: string | null;
+                    /** Software Version */
+                    software_version?: string | null;
+                    /** Token Endpoint Auth Method */
+                    token_endpoint_auth_method?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientInformation"];
+                };
+            };
+            /** @description OAuth error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Too many registrations from this address */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/x-www-form-urlencoded": {
+                    client_id?: string;
+                    token: string;
+                    /** @enum {string} */
+                    token_type_hint?: "access_token" | "refresh_token";
+                };
+            };
+        };
+        responses: {
+            /** @description Revoked, or the token was already unusable */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    token: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/x-www-form-urlencoded": {
+                    client_id: string;
+                    code?: string;
+                    code_verifier?: string;
+                    /** @enum {string} */
+                    grant_type: "authorization_code" | "refresh_token";
+                    redirect_uri?: string;
+                    refresh_token?: string;
+                    resource?: string;
+                    scope?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+            /** @description OAuth error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unknown or revoked client */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

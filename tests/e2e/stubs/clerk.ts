@@ -7,3 +7,7 @@ export function useAuth() {
     getToken: async () => `test-token-${++n}`,
   };
 }
+// The consent page's "Not you? Sign out".
+export function useClerk() {
+  return { signOut: async () => undefined };
+}
