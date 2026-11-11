@@ -1,10 +1,12 @@
-import { Terminal } from "@phosphor-icons/react/ssr";
+import { Plugs, Terminal } from "@phosphor-icons/react/ssr";
 import { CardHead, cardClass } from "@/components/ui/Card";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { connectionSnippets } from "@/lib/api-access";
+import { claudeConnectorSteps } from "@/lib/oauth-consent";
 
-/* "Use Mytheus from other tools": the MCP endpoint and copyable setups for Claude Code, Claude
-   Desktop and curl. Server component; only the Copy buttons are client islands. No snippet holds
+/* "Use Mytheus from other tools": Claude's custom connector first (claude.ai and Claude Desktop sign
+   in with Mytheus over OAuth: no token, no client ID), then the MCP endpoint and copyable setups
+   for Claude Code, other MCP clients and curl. Server component; only the Copy buttons are client islands. No snippet holds
    a token: each reads it from MYTHEUS_TOKEN (or has a placeholder to paste over), so copying one
    never leaks a secret into a chat or a repository. Code blocks scroll sideways inside their own
    box, never the page. */
@@ -17,8 +19,35 @@ export function ConnectToolsPanel({ origin }: { origin: string }) {
         id="connect-tools-heading"
         as="h3"
         title="Use Mytheus from other tools"
-        description="Ask about your meetings, look up decisions and see your tasks from Claude, an IDE or a script. Tools see exactly what you can see, through the token you give them."
+        description="Ask about your meetings, look up decisions and see your tasks from Claude, an IDE or a script. Tools see exactly what you can see, never more."
       />
+      <div className="grid min-w-0 gap-4 border-t border-line px-4 py-4 sm:px-[22px] md:py-[18px] lg:grid-cols-[minmax(220px,300px)_minmax(0,1fr)] lg:gap-6">
+        <div className="min-w-0">
+          <h4 id="claude-connector-heading" className="flex items-center gap-2 text-[15px] font-semibold text-ink">
+            <Plugs size={16} className="shrink-0 text-ink-3" aria-hidden />
+            Claude (claude.ai and Claude Desktop)
+          </h4>
+          <p className="mt-0.5 text-[14px] leading-snug text-ink-3">
+            Add Mytheus as a custom connector. You sign in with Mytheus and approve the access; no token or client ID is needed.
+          </p>
+        </div>
+        <div className="min-w-0">
+          <ol aria-labelledby="claude-connector-heading" className="grid gap-2.5">
+            {claudeConnectorSteps(mcp).map((step, i) => (
+              <li key={step} className="flex min-w-0 items-start gap-3 text-[14px] leading-relaxed text-ink-2">
+                <span aria-hidden="true" className="mt-px grid h-6 w-6 shrink-0 place-items-center rounded-full bg-bg-2 text-[12.5px] font-semibold text-ink-2">
+                  {i + 1}
+                </span>
+                <span className="min-w-0 [overflow-wrap:anywhere]">{step}</span>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-3 text-[13px] leading-relaxed text-ink-3">
+            On a Team or Enterprise plan, an owner adds the connector for the organization and each person then connects with their own Mytheus account. Approved
+            connections appear under Connected apps above.
+          </p>
+        </div>
+      </div>
       <div className="border-t border-line px-4 py-4 sm:px-[22px] md:py-[18px]">
         <p id="mcp-url-label" className="text-[14px] font-semibold text-ink">
           MCP server
@@ -34,7 +63,8 @@ export function ConnectToolsPanel({ origin }: { origin: string }) {
           <CopyButton value={mcp} label="Copy URL" />
         </div>
         <p className="mt-2 text-[14px] leading-relaxed text-ink-3">
-          Streamable HTTP. Send <code className="font-mono text-ink-2">Authorization: Bearer</code> with a personal access token from above.
+          Streamable HTTP. Claude signs in with Mytheus (OAuth); other clients send <code className="font-mono text-ink-2">Authorization: Bearer</code> with a personal access
+          token from above.
         </p>
       </div>
       <ul className="divide-y divide-line border-t border-line">

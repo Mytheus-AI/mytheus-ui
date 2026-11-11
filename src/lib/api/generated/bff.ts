@@ -12,6 +12,40 @@
  */
 
 export interface paths {
+    "/.well-known/oauth-protected-resource": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** OAuth protected resource metadata for the MCP server (RFC 9728) */
+        get: operations["protected_resource_metadata"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/.well-known/oauth-protected-resource/mcp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** OAuth protected resource metadata, path-suffixed form (RFC 9728 section 3.1) */
+        get: operations["protected_resource_metadata_for_mcp"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ask": {
         parameters: {
             query?: never;
@@ -232,7 +266,7 @@ export interface paths {
         put?: never;
         /**
          * MCP server (Streamable HTTP)
-         * @description Model Context Protocol endpoint. Point an MCP client at `{API}/mcp` with `Authorization: Bearer mytheus_pat_...`. Tools: search_meetings, ask_meetings, get_meeting_outcome, get_decision_record, list_my_open_actions, list_my_promises, create_action (read_write tokens). Resources: meeting summaries and decision records.
+         * @description Model Context Protocol endpoint. Point an MCP client at `{API}/mcp` with `Authorization: Bearer mytheus_pat_...`, or add it as a Claude custom connector (OAuth: discovery at `/.well-known/oauth-protected-resource`). Tools: search_meetings, ask_meetings, get_meeting_outcome, get_decision_record, list_my_open_actions, list_my_promises, create_action (read_write tokens). Resources: meeting summaries and decision records.
          */
         post: operations["mcp_post"];
         delete?: never;
@@ -1038,6 +1072,21 @@ export interface components {
              */
             type: string;
         };
+        /** ProtectedResourceMetadata */
+        ProtectedResourceMetadata: {
+            /** Authorization Servers */
+            authorization_servers: string[];
+            /** Bearer Methods Supported */
+            bearer_methods_supported: string[];
+            /** Resource */
+            resource: string;
+            /** Resource Documentation */
+            resource_documentation: string;
+            /** Resource Name */
+            resource_name: string;
+            /** Scopes Supported */
+            scopes_supported: string[];
+        };
         /** RecentMeeting */
         RecentMeeting: {
             /**
@@ -1186,6 +1235,64 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    protected_resource_metadata: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProtectedResourceMetadata"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    protected_resource_metadata_for_mcp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProtectedResourceMetadata"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     ask_route: {
         parameters: {
             query?: never;
