@@ -62,8 +62,8 @@ const ORG: Lay = {
 };
 const CTA: Lay = {
   open: "w-full justify-start gap-2.5 px-3",
-  rail: "mx-auto w-11 justify-center gap-0 px-0",
-  peek: "group-hover/sb:mx-0 group-hover/sb:w-full group-hover/sb:justify-start group-hover/sb:gap-2.5 group-hover/sb:px-3 group-has-[:focus-visible]/sb:mx-0 group-has-[:focus-visible]/sb:w-full group-has-[:focus-visible]/sb:justify-start group-has-[:focus-visible]/sb:gap-2.5 group-has-[:focus-visible]/sb:px-3",
+  rail: "mx-auto w-11 justify-center gap-0 !px-0",
+  peek: "group-hover/sb:mx-0 group-hover/sb:w-full group-hover/sb:justify-start group-hover/sb:gap-2.5 group-hover/sb:!px-3 group-has-[:focus-visible]/sb:mx-0 group-has-[:focus-visible]/sb:w-full group-has-[:focus-visible]/sb:justify-start group-has-[:focus-visible]/sb:gap-2.5 group-has-[:focus-visible]/sb:!px-3",
 };
 // Collapsed, a group title becomes a short hairline between groups (its text stays for screen
 // readers, just transparent); open, it is the label again.
@@ -262,7 +262,7 @@ export function Sidebar({
         aria-label="New meeting"
         className={`${buttonClass({ variant: "primary", size: "md" })} mb-3.5 !flex ${lay(CTA)}`}
       >
-        <Plus size={18} weight="bold" aria-hidden />
+        <Plus size={18} weight="bold" aria-hidden className="shrink-0" />
         <span className={`sb-fade ${label}`}>New meeting</span>
       </Link>
 
