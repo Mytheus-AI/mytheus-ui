@@ -12,6 +12,8 @@ import { fetchReopenRequests } from "@/lib/api/decision-challenges";
 import { reopenIdOf } from "@/lib/decision-challenges";
 import { fetchNotificationFeed } from "@/lib/api/notification-feed";
 import { fetchMyStatusRequests } from "@/lib/api/status-requests";
+import { fetchMyAgreementChecks, fetchMyLastWord } from "@/lib/api/room-signals";
+import { parseSignalEvent } from "@/lib/room-signals";
 import type { DashboardResponse } from "@/lib/api/types";
 import { describeNotification, type FeedItem } from "@/components/notifications/alert-copy";
 import { reversalIdOf } from "@/lib/reversals";
@@ -30,7 +32,7 @@ export async function loadInbox(nowMs = Date.now()): Promise<InboxRead> {
     fetchMyStatusRequests("pending").catch(() => null),
     apiSafe<DashboardResponse>("/bff/dashboard"),
   ]);
-  const notes = notifications ? await withReopens(await withReversals(notifications)) : null;
+  const notes = notifications ? await withRoomSignals(await withReopens(await withReversals(notifications))) : null;
   const reviewArm = dashboard.ok ? dashboard.data.needs_review : null;
   const reviewFailed = !reviewArm || reviewArm.status === "degraded";
   const failed: InboxArm[] = [];
@@ -68,5 +70,35 @@ async function withReopens(items: FeedItem[]): Promise<FeedItem[]> {
   return items.map((n) => {
     const id = reopenIdOf(n.sourceEventId);
     return id ? { ...n, reopen: byId.get(id) ?? null } : n;
+  });
+}
+
+/** A last-word nudge or an agreement check carries its own row (a3 room signals), so the Inbox can
+ *  settle it in place and shows where it stands when it was settled elsewhere. One read per kind,
+ *  and only when there is one; a failed read leaves the row with null (it still works). */
+async function withRoomSignals(items: FeedItem[]): Promise<FeedItem[]> {
+  const kinds = new Set(items.map((n) => parseSignalEvent(n.sourceEventId)?.kind));
+  const [nudges, checks] = await Promise.all([
+    kinds.has("lastword") ? fetchMyLastWord("all").catch(() => null) : Promise.resolve(null),
+    kinds.has("agreement") ? fetchMyAgreementChecks("all").catch(() => null) : Promise.resolve(null),
+  ]);
+  const nudgeById = new Map((nudges ?? []).map((r) => [r.id, r]));
+  const checkById = new Map((checks ?? []).map((r) => [r.id, r]));
+  return items.map((n) => {
+    const e = parseSignalEvent(n.sourceEventId);
+    if (e?.kind === "lastword") {
+      const nudge = nudgeById.get(e.nudgeId) ?? null;
+      return { ...n, lastWord: nudge, meetingId: nudge?.meeting_id ?? n.meetingId ?? null };
+    }
+    if (e?.kind === "agreement") {
+      const check = checkById.get(e.checkId) ?? null;
+      return {
+        ...n,
+        agreementCheck: check,
+        meetingId: check?.meeting_id ?? n.meetingId ?? null,
+        href: check ? `/meetings/${check.meeting_id}/decisions/${check.decision_id}` : n.href,
+      };
+    }
+    return n;
   });
 }

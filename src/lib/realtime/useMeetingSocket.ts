@@ -243,6 +243,12 @@ export interface MeetingSocketState {
   /** Live translation: the caption language this viewer chose and the translated finals. */
   translation: TranslationState;
   setCaptionLanguage: (language: CaptionLanguage | null) => Promise<RoomAck>;
+  /** Pick up where we stopped (a3): the latest room-wide change to the pinned open thread. */
+  resumeChange: { id: string; status: "continued" | "dismissed"; byUserId: string; at: string } | null;
+  /** After core-api stored a continue or set-aside: tell everyone (the gateway re-reads it). */
+  announceResumePoint: (resumePointId: string) => Promise<RoomAck>;
+  /** The last word (a3): a private floor attempt that was spoken over; never broadcast. */
+  sendFloorAttempt: (attempt: { startedAt: number; endedAt: number; overUserId: string | null; unmutedAt: number | null }) => Promise<RoomAck>;
 }
 
 interface JoinAck {
@@ -319,6 +325,7 @@ export function useMeetingSocket(
   const [offRecord, setOffRecord] = useState<OffRecordState>(initialOffRecord);
   const [offRecordRequests, setOffRecordRequests] = useState<OffRecordRequests>([]);
   const [translation, setTranslation] = useState<TranslationState>(initialTranslation);
+  const [resumeChange, setResumeChange] = useState<MeetingSocketState["resumeChange"]>(null);
   // The chosen caption language, re-sent on every (re)join: the gateway keeps it per socket, and
   // a reconnect is a new socket.
   const languageRef = useRef<CaptionLanguage | null>(null);
@@ -543,6 +550,14 @@ export function useMeetingSocket(
       mine<{ id?: string; userId?: string; reaction?: string }>((p) => setReactions((prev) => applyReaction(prev, p, Date.now()))),
     );
     socket.on("meeting-ended", mine<MeetingEnded>((p) => setEnded({ byUserId: p.byUserId, at: p.at })));
+    // Pick up where we stopped (a3): someone continued the pinned thread, or the host set it aside.
+    socket.on(
+      "resume-point",
+      mine<{ id?: string; status?: string; byUserId?: string; at?: string }>((p) => {
+        if (typeof p.id !== "string" || (p.status !== "continued" && p.status !== "dismissed")) return;
+        setResumeChange({ id: p.id, status: p.status, byUserId: typeof p.byUserId === "string" ? p.byUserId : "", at: p.at ?? "" });
+      }),
+    );
     // The host's close-out wrap-up (polish program): open with its deadline, or kept going.
     socket.on(
       "wrap-up",
@@ -718,6 +733,15 @@ export function useMeetingSocket(
   const react = useCallback((reaction: ReactionId) => emitAck("reaction", { reaction }), [emitAck]);
   const announceEnd = useCallback(() => emitAck("end-meeting", {}, true), [emitAck]);
   const announceWrapUp = useCallback(() => emitAck("wrap-up", {}, true), [emitAck]);
+  const announceResumePoint = useCallback(
+    (resumePointId: string) => emitAck("resume-point", { resumePointId }, true),
+    [emitAck],
+  );
+  const sendFloorAttempt = useCallback(
+    (a: { startedAt: number; endedAt: number; overUserId: string | null; unmutedAt: number | null }) =>
+      emitAck("floor-attempt", { startedAt: a.startedAt, endedAt: a.endedAt, overUserId: a.overUserId, unmutedAt: a.unmutedAt }),
+    [emitAck],
+  );
   const applyOffRecordState = useCallback((p: OffRecordWire) => setOffRecord((prev) => applyOffRecord(prev, p)), []);
   const requestOffRecord = useCallback(() => emitAck("off-record-request", {}), [emitAck]);
   const declineOffRecord = useCallback(
@@ -787,6 +811,9 @@ export function useMeetingSocket(
       settleOffRecordRequest,
       translation,
       setCaptionLanguage,
+      resumeChange,
+      announceResumePoint,
+      sendFloorAttempt,
     }),
     [
       status,
@@ -834,6 +861,9 @@ export function useMeetingSocket(
       settleOffRecordRequest,
       translation,
       setCaptionLanguage,
+      resumeChange,
+      announceResumePoint,
+      sendFloorAttempt,
     ],
   );
 }

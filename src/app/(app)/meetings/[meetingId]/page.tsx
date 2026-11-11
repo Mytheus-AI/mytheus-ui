@@ -46,6 +46,9 @@ import type { CallMeeting } from "@/lib/api/meetings";
 import { listMembers, type WorkspaceMemberView } from "@/lib/api/members";
 import { fetchFollowUp, fetchMinutes, fetchShareLinks } from "@/lib/api/minutes";
 import { MinutesSection } from "@/components/minutes/MinutesSection";
+import { AfterSignalsSection } from "@/components/room-signals/AfterSignalsSection";
+import { fetchAfterSignals } from "@/lib/api/room-signals";
+import type { MeetingCandidates } from "@/lib/api/candidates";
 import { RecordingSection } from "@/components/recording/RecordingSection";
 import type { Line } from "@/components/recording/recording-model";
 import type { OffRecordStateRow } from "@/app/actions/off-record";
@@ -559,6 +562,16 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
       ? apiSafe<OffRecordStateRow>(`/api/v1/meetings/${encodeURIComponent(meeting.id)}/off-record`)
       : Promise.resolve(null),
   ]);
+  // After the meeting (a3 room signals): late points, agreement reads, the thread saved for next
+  // time, with the meeting's decisions for their wording. Each failing costs only its own card.
+  const [afterSignals, meetingDecisions] = happened
+    ? await Promise.all([
+        fetchAfterSignals(meeting.id),
+        apiSafe<MeetingCandidates>(`/api/v1/meetings/${encodeURIComponent(meeting.id)}/candidates`, {
+          query: { include_resolved: true },
+        }),
+      ])
+    : [null, null];
   // Older transcripts saved silence as empty lines.
   const chunks = (transcript?.chunks ?? []).filter((c) => c.text.trim().length > 0);
   const names = new Map((members ?? []).map((m) => [m.id, m.name]));
@@ -741,6 +754,21 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
           links={shareLinks}
           isHost={!!you && you.id === meeting.hostUserId}
           confidential={!!meeting.confidential}
+        />
+      ) : null}
+
+      {afterSignals && mine ? (
+        <AfterSignalsSection
+          meetingId={meeting.id}
+          initial={afterSignals}
+          decisions={
+            meetingDecisions?.ok
+              ? meetingDecisions.data.decisions
+                  .filter((d) => d.status !== "dismissed")
+                  .map((d) => ({ id: d.id, content: d.content, status: d.status }))
+              : []
+          }
+          nowIso={new Date().toISOString()}
         />
       ) : null}
 
