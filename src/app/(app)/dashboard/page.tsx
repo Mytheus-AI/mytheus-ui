@@ -14,6 +14,7 @@ import { TodayTimeline } from "@/components/app/dashboard/TodayTimeline";
 import type { HomeMeeting } from "@/components/app/dashboard/types";
 import { Suspense } from "react";
 import { MeetingBriefCard } from "@/components/briefs/MeetingBriefCard";
+import { HomeBriefing } from "@/components/briefing/HomeBriefing";
 import { FirstRunChecklist } from "@/components/app/dashboard/FirstRunChecklist";
 import { CardSkeleton, Page } from "@/components/ui/Page";
 import { fetchMyProfile } from "@/lib/api/profile";
@@ -133,6 +134,10 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 items-start gap-6 min-[1101px]:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]">
         <div className="flex min-w-0 flex-col gap-7">
           <HeroUpNext next={next} after={after} calendarFailed={calendarFailed} nowMs={nowMs} />
+          {/* Beyond the meeting: the newest briefing from your agent, streamed in on its own. */}
+          <Suspense fallback={<CardSkeleton rows={2} />}>
+            <HomeBriefing />
+          </Suspense>
           <NeedsYou items={review.items} failed={review.failed} />
           <RecentMeetings meetings={recent.items} failed={recent.failed} />
           {/* The brief for your next meeting streams in last, at the foot of the column, with a

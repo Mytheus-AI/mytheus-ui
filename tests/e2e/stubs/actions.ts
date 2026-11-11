@@ -313,3 +313,20 @@ export async function decideAppConsent(input: { request: string; decision: "appr
 export async function disconnectConnectedApp() {
   return { ok: true as const };
 }
+// A briefing from your agent: Brief me answers a briefing being written, a poll answers it ready.
+import { BRIEFING as BRIEFING_READY, SETTINGS as BRIEFING_SETTINGS, WRITING as BRIEFING_WRITING } from "../briefing-fixture";
+export async function briefMe() {
+  return { ok: true as const, briefing: { ...BRIEFING_WRITING, status: "pending" as const } };
+}
+export async function pollBriefing() {
+  return { ok: true as const, briefing: BRIEFING_READY };
+}
+export async function markBriefingHeard() {
+  return { ok: true as const, briefing: { ...BRIEFING_READY, listened_at: "2026-11-11T10:05:00Z" } };
+}
+export async function briefingAudioUrl() {
+  return { ok: false as const, message: "No recorded voice in this test." };
+}
+export async function saveBriefingPreferences(prefs: Record<string, unknown>) {
+  return { ok: true as const, settings: { ...BRIEFING_SETTINGS, ...prefs } };
+}
