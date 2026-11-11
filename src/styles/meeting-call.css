@@ -322,9 +322,25 @@
 .mx-meet .cx-call .pj-head { padding: 8px 0 24px; }
 .mx-meet .cx-call .pj-head h1 { color: var(--ink-display); font-family: var(--font-display); font-size: clamp(28px, 3vw, 34px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.08; }
 .mx-meet .cx-call .pj-head p { margin-top: 8px; max-width: 62ch; color: var(--ink-3); font-size: 15px; }
-.mx-meet .cx-call .pj-grid { display: grid; grid-template-columns: minmax(0, 1fr) 408px; gap: 24px; align-items: start; }
+/* Two columns of equal height, then the consent across both. Left: your preview and devices.
+   Right: the meeting and what your agent will do. The last card of each column stretches so both
+   end on one line, and the notice, the agree box and Join sit straight under the preview. On a
+   phone everything is one column in source order: preview, devices, consent and Join, then the
+   meeting and the agent. */
+.mx-meet .cx-call .pj-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  grid-template-areas: "left right" "consent consent";
+  gap: 20px 24px;
+  align-items: stretch;
+}
+.mx-meet .cx-call .pj-left { grid-area: left; }
+.mx-meet .cx-call .pj-right { grid-area: right; }
+.mx-meet .cx-call .pj-consent { grid-area: consent; }
 .mx-meet .cx-call .pj-left,
 .mx-meet .cx-call .pj-right { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.mx-meet .cx-call .pj-left > :last-child,
+.mx-meet .cx-call .pj-right > :last-child { flex: 1 0 auto; }
 .mx-meet .cx-call .pj-card { padding: 22px; border-radius: var(--radius-card); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--sh-1); }
 .mx-meet .cx-call .pj-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
 .mx-meet .cx-call .pj-card-head h2 { color: var(--ink); font-size: 17px; font-weight: 650; }
@@ -333,7 +349,7 @@
 .mx-meet .cx-call .pv-stage {
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 9;
   max-height: calc(100dvh - 260px);
   min-height: 300px;
   overflow: hidden;
@@ -426,11 +442,14 @@
 .mx-meet .cx-call .pj-in { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 14px; }
 
 /* What your agent will do. */
+.mx-meet .cx-call .pj-agent { display: flex; flex-direction: column; }
+.mx-meet .cx-call .pj-agent .pj-foot { margin-top: auto; }
+.mx-meet .cx-call .pj-agent-list { margin-bottom: 12px; }
 .mx-meet .cx-call .pj-agent-list li { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; align-items: start; padding: 10px 0; }
 .mx-meet .cx-call .pj-agent-list li + li { border-top: 1px solid var(--line); }
 .mx-meet .cx-call .pj-agent-ico { width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--radius-pill); background: var(--bg-2); color: var(--ink-2); }
 .mx-meet .cx-call .pj-agent-list p { color: var(--ink-2); font-size: 15px; line-height: 1.5; padding-top: 6px; }
-.mx-meet .cx-call .pj-foot { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 14px; line-height: 1.5; }
+.mx-meet .cx-call .pj-foot { display: flex; align-items: flex-start; gap: 8px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 14px; line-height: 1.5; }
 .mx-meet .cx-call .pj-foot svg { flex-shrink: 0; margin-top: 2px; color: var(--signal-ink); }
 
 /* Consent: read it, tick it, then Join unlocks. */
@@ -475,6 +494,32 @@
 .mx-meet .cx-call .pj-join { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; margin-top: 16px; }
 .mx-meet .cx-call .pj-gate { display: flex; align-items: center; gap: 6px; min-height: 20px; margin-top: 10px; color: var(--ink-3); font-size: 12.5px; }
 
+/* The notice is compact where the card is wide: the seven terms in a grid of hairline cells (two
+   or three across, the last one across the full row), and the agree box beside Join. Every term
+   keeps its words; only the arrangement changes. */
+.mx-meet .cx-call .pj-consent { container-type: inline-size; }
+@container (min-width: 560px) {
+  .mx-meet .cx-call .pj-consent .pj-terms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--line); }
+  .mx-meet .cx-call .pj-consent .pj-terms li { background: var(--surface); }
+  .mx-meet .cx-call .pj-consent .pj-terms li + li { border-top: 0; }
+  .mx-meet .cx-call .pj-consent .pj-terms li:last-child { grid-column: 1 / -1; }
+}
+@container (min-width: 900px) {
+  .mx-meet .cx-call .pj-consent .pj-terms { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mx-meet .cx-call .pj-consent-foot {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 420px);
+    gap: 16px 20px;
+    align-items: start;
+    margin-top: 16px;
+  }
+  .mx-meet .cx-call .pj-consent-foot > .pj-check,
+  .mx-meet .cx-call .pj-consent-foot > .pj-agreed,
+  .mx-meet .cx-call .pj-consent-foot .pj-join { margin-top: 0; }
+  .mx-meet .cx-call .pj-consent-foot > .pj-check { min-height: 52px; align-items: center; }
+  .mx-meet .cx-call .pj-consent-foot > .pj-check input { top: 50%; transform: translateY(-50%); }
+}
+
 /* ================================================================ responsive */
 
 @media (max-width: 1240px) {
@@ -482,7 +527,7 @@
 }
 
 @media (max-width: 1100px) {
-  .mx-meet .cx-call .pj-grid { grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; }
+  .mx-meet .cx-call .pj-grid { grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; }
   .mx-meet .thumbs { width: 168px; }
 }
 
@@ -542,14 +587,13 @@
 
   /* Pre-join: one column, in the order you need it. */
   .mx-meet .cx-call .pj { padding: 0 16px 32px; }
-  .mx-meet .cx-call .pj-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .mx-meet .cx-call .pj-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: none; gap: 16px; }
+  .mx-meet .cx-call .pj-left,
+  .mx-meet .cx-call .pj-right,
+  .mx-meet .cx-call .pj-consent { grid-area: auto; }
   .mx-meet .cx-call .pj-left,
   .mx-meet .cx-call .pj-right { display: contents; }
-  .mx-meet .cx-call .pv-stage { order: 1; max-height: 56dvh; min-height: 0; }
-  .mx-meet .cx-call .pj-meet { order: 2; }
-  .mx-meet .cx-call .pj-devices { order: 3; }
-  .mx-meet .cx-call .pj-consent { order: 4; }
-  .mx-meet .cx-call .pj-agent { order: 5; }
+  .mx-meet .cx-call .pv-stage { aspect-ratio: 4 / 3; max-height: 56dvh; min-height: 0; }
   .mx-meet .cx-conn { top: 66px; }
 }
 
