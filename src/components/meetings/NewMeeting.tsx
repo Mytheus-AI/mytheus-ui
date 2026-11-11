@@ -523,7 +523,7 @@ export function NewMeeting({
                       </div>
                       {when === "now" ? (
                         <p className="nm-now-note">
-                          <span className="nm-live" aria-hidden="true" />
+                          <VideoCamera size={16} aria-hidden="true" className="nm-now-icon" />
                           Opens the call as soon as you create it. Invite people now or share the link inside.
                         </p>
                       ) : null}
@@ -535,7 +535,7 @@ export function NewMeeting({
                     <h3 id={`${ids}-who`} className="nm-sec-h">
                       <UsersThree size={16} aria-hidden="true" />
                       People
-                      <span className="nm-count" aria-live="polite">
+                      <span className="nm-count">
                         {invitees.length === 0 ? "Just you so far" : `You and ${invitees.length} invited`}
                       </span>
                     </h3>
