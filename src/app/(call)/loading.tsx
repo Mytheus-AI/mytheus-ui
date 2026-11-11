@@ -1,7 +1,10 @@
 import "@/components/room/room-polish.css";
 
-/* While a call page loads (the meeting, the members, your session): the room's own frame with a
-   quiet placeholder, so the screen does not flash blank or jump when the room arrives. */
+/* While a call page loads (the meeting, the members, your session): the room's own state frame
+   (the one the room's error and ended states use) with a quiet stage, so the screen does not flash
+   blank. The frame is busy and says once, politely, what is loading; the pulse runs only when
+   motion is allowed (room-polish.css). Pre-join and the room are too different to draw both, so
+   this stays the neutral stage both open from. */
 
 export default function CallLoading() {
   return (
@@ -11,7 +14,7 @@ export default function CallLoading() {
           <span className="call-state-pulse" />
         </div>
         <p role="status" className="call-state-text">
-          Getting the meeting ready
+          Loading the meeting
         </p>
       </main>
     </div>

@@ -4,7 +4,7 @@ import { useClerk } from "@clerk/nextjs";
 import type { ReactNode, TextareaHTMLAttributes } from "react";
 import { WarningCircle } from "@phosphor-icons/react";
 import { ChipInput } from "@/components/settings/ChipInput";
-import { Spinner, TextButton } from "@/components/auth/fields";
+import { TextButton } from "@/components/auth/fields";
 
 /* Onboarding form atoms in the auth look: label above, 12px corners, coral focus ring, an
    announced error tied to its field. They add the two controls the sign-up atoms lack, a
@@ -146,15 +146,5 @@ export function OnboardingAside({ email }: { email: string }) {
       {email ? <span className="hidden max-w-[24ch] truncate sm:inline">{email}</span> : null}
       <TextButton onClick={() => void clerk.signOut({ redirectUrl: "/sign-in" })}>Sign out</TextButton>
     </span>
-  );
-}
-
-/** What a step shows while its page loads. */
-export function StepLoading({ label }: { label: string }) {
-  return (
-    <div className="flex h-56 items-center justify-center text-ink-3" role="status">
-      <Spinner />
-      <span className="sr-only">{label}</span>
-    </div>
   );
 }

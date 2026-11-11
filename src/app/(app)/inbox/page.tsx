@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { InboxView } from "@/components/inbox/InboxView";
 import { loadInbox } from "@/lib/inbox-server";
-import { PageSkeleton } from "@/components/ui/Page";
+import InboxLoading from "./loading";
 
 export const metadata: Metadata = { title: "Inbox | Mytheus" };
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function InboxPage() {
   const { items, failed } = await loadInbox();
   return (
-    <Suspense fallback={<PageSkeleton label="Loading your inbox" layout="list" action />}>
+    <Suspense fallback={<InboxLoading />}>
       <InboxView initial={items} failed={failed} nowIso={new Date().toISOString()} />
     </Suspense>
   );

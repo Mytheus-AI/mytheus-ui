@@ -1,0 +1,25 @@
+/* The routes the admin skeleton group covers: the Workspace console, the company brain, the ops
+   console, onboarding and the call. */
+export const ADMIN_IDS = [
+  "workspace",
+  "members",
+  "billing",
+  "agents",
+  "data",
+  "support",
+  "brain",
+  "brain-about",
+  "brain-vocabulary",
+  "brain-owners",
+  "brain-goals",
+  "brain-meeting-types",
+  "brain-ground-rules",
+  "admin-root",
+  "ops",
+  "ops-audit",
+  "ops-costs",
+  "ops-flags",
+  "onboarding-profile",
+  "onboarding-agent",
+  "onboarding-workspace",
+];
