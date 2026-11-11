@@ -514,6 +514,13 @@ export interface components {
              */
             label?: string | null;
             /**
+             * Progress
+             * @description The erasure across every store: `completed` once each of `stores` has run.
+             * @default completed
+             * @enum {string}
+             */
+            progress: "in_progress" | "completed";
+            /**
              * Requested At
              * Format: date-time
              */
@@ -532,11 +539,11 @@ export interface components {
             revoked_tokens: number;
             /**
              * Status
-             * @description `completed` once every store in `stores` has finished.
+             * @description core-api applied the request (always `completed`; see `progress`).
              * @default completed
-             * @enum {string}
+             * @constant
              */
-            status: "in_progress" | "completed";
+            status: "completed";
             /**
              * Stores
              * @description Per-store progress: `core_api` (finished with the request), then `transcript_chunks`, `vectors`, `search_index` and `knowledge_graph`.

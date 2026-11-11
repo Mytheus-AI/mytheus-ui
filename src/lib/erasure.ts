@@ -62,7 +62,8 @@ export function erasureErrorMessage(kind: ErasureKind, status: number, reason: s
 
 /* Per-store progress (wave 3). core-api's share finishes inside the request; the other stores
    each report back when their service has run, so a new erasure reads "in progress" for a short
-   while. The server sends `status` and `stores`; these helpers name them for people. */
+   while. The server sends `progress` (`in_progress` | `completed`, across every store) and
+   `stores`; `status` stays `completed` (core-api applied the request). These helpers name them. */
 
 export type ErasureStoreRow = { store: string; status: "pending" | "completed"; completed_at?: string | null; counts?: Record<string, number> };
 
@@ -90,16 +91,16 @@ export function orderedStores(stores: ErasureStoreRow[] | undefined): ErasureSto
 }
 
 /** "3 of 5 stores done" / "Finished in every store". */
-export function erasureProgress(r: { status?: string; stores?: ErasureStoreRow[] }): { done: number; total: number; finished: boolean; label: string } {
+export function erasureProgress(r: { progress?: string; stores?: ErasureStoreRow[] }): { done: number; total: number; finished: boolean; label: string } {
   const stores = r.stores ?? [];
   const done = stores.filter((s) => s.status === "completed").length;
   const total = stores.length;
-  const finished = r.status !== "in_progress" && (total === 0 || done === total);
+  const finished = r.progress !== "in_progress" && (total === 0 || done === total);
   if (finished) return { done, total, finished, label: total > 1 ? "Finished in every store" : "Finished" };
   return { done, total, finished, label: `${done} of ${total} stores done` };
 }
 
 /** True when any listed erasure is still waiting on a store (the page then refreshes itself). */
-export function anyInProgress(rows: { status?: string }[]): boolean {
-  return rows.some((r) => r.status === "in_progress");
+export function anyInProgress(rows: { progress?: string }[]): boolean {
+  return rows.some((r) => r.progress === "in_progress");
 }

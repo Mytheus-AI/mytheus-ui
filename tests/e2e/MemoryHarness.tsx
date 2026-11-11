@@ -22,7 +22,7 @@ export function MemoryHarness({ theme = "light", empty = false }: { theme?: "lig
             <h2 className="mb-3 text-[17px] font-semibold text-ink">Erasure progress</h2>
             <ErasureStores
               id="erasure-1"
-              status="in_progress"
+              progress="in_progress"
               stores={[
                 { store: "core_api", status: "completed", completed_at: "2026-11-11T10:00:00Z", counts: { notes: 3 } },
                 { store: "transcript_chunks", status: "completed", completed_at: "2026-11-11T10:00:04Z" },
