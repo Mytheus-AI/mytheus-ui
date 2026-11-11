@@ -8,6 +8,7 @@ import { MemberPicker, type MemberOption } from "@/components/ui/MemberPicker";
 import { FieldMsg, fieldClass } from "@/components/ui/Form";
 import { Note } from "@/components/ui/Note";
 import { notifySuccess } from "@/lib/toast";
+import { CapacityNote, useCapacityCheck, useViewerZone } from "@/components/promises/ledger/CapacityNote";
 
 /* New task: a title (required), an optional due date and an optional assignee (you by default,
    the server's default too; anyone in the workspace through the member picker). A modal dialog: focus moves to the title on open, Tab stays inside, Escape or
@@ -37,6 +38,11 @@ export function NewTaskDialog({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<{ message: string; field?: "content" | "due_date" } | null>(null);
   const [notConnected, setNotConnected] = useState(false);
+  // Promise ledger: before you take a task with a date, your agent checks that day of your week.
+  // Only your own week: when the owner is someone else, their agent warns them when it lands.
+  const forMe = !assignee || assignee === me;
+  const tz = useViewerZone();
+  const { check, checking } = useCapacityCheck(open && forMe ? due : "", tz);
   const panel = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLInputElement>(null);
   const opener = useRef<HTMLElement | null>(null);
@@ -209,6 +215,11 @@ export function NewTaskDialog({
                   You by default. Someone else gets it on their own task list.
                 </p>
               </div>
+            ) : null}
+            {forMe ? (
+              <CapacityNote check={check} checking={checking} onUseSuggested={setDue} />
+            ) : due ? (
+              <p className="text-[13px] text-ink-3">Their own agent checks their week when the task lands. Their load stays private to them.</p>
             ) : null}
             {error && !error.field ? <FieldMsg id={`${uid}-msg`} error={error.message} /> : null}
             <div className="mt-1 flex flex-wrap justify-end gap-2">

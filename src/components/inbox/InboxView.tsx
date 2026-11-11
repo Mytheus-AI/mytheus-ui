@@ -31,6 +31,7 @@ import { StatusAnswerRow } from "@/components/status/StatusAnswerRow";
 import { useStatusAnswers } from "@/components/status/useStatusAnswers";
 import { dismissAlert, markAlertRead } from "@/app/actions/notifications";
 import { confirmCandidate, dismissCandidate } from "@/app/actions/candidates";
+import { warnAfterAccept } from "@/components/promises/ledger/accept-warning";
 import { graceful, undoLast } from "@/lib/toast";
 import { onPrefsChange, shortcutsOn } from "@/lib/prefs";
 import {
@@ -199,6 +200,8 @@ export function InboxView({ initial, failed, nowIso }: { initial: InboxItem[]; f
       commit: async () => {
         const res = await (verb === "confirm" ? confirmCandidate : dismissCandidate)(item.review.kind, item.id);
         if (res.ok) router.refresh();
+        // Promise ledger: a task you just took on, checked against your week.
+        if (res.ok && verb === "confirm" && item.review.kind === "action") void warnAfterAccept(item.id, (href) => router.push(href));
         return res.ok ? { ok: true } : { ok: false, message: res.message, gone: res.gone };
       },
     });

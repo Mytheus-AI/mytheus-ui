@@ -75,7 +75,7 @@ export const FOOT_ITEMS: NavItem[] = [{ href: "/settings", label: "Settings", ic
 /** My work: everything you owe, in one view with three tabs. */
 export const WORK_TABS: NavItem[] = [
   { href: "/work/tasks", label: "Tasks", icon: CheckSquare, keywords: "action items to do" },
-  { href: "/work/promises", label: "Promises", icon: Handshake, keywords: "commitments" },
+  { href: "/work/promises", label: "Promise ledger", icon: Handshake, keywords: "promises commitments capacity renegotiate hand off" },
   { href: "/work/updates", label: "Updates I owe", icon: ChatCircleDots, keywords: "status requests" },
 ];
 

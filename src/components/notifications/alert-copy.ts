@@ -175,6 +175,23 @@ export function describeNotification(row: FeedRowInput): FeedItem {
     };
   }
 
+  // The promise ledger's notices (core-api): the capacity warning when something lands on a full
+  // day, a date someone asks to move, their answer, promises your agent found, a hand-off.
+  const ledger = promiseLedgerNotice(sourceEventId);
+  if (ledger) {
+    return {
+      ...base,
+      kind: "reminder",
+      priority: ledger.priority,
+      sourceEventId,
+      title: row.title || ledger.title,
+      body: row.body,
+      quote: null,
+      href: safeLink(row.link) ?? "/work/promises",
+      linkLabel: ledger.label,
+    };
+  }
+
   const isAlert = row.source === "agent_alert";
   return {
     ...base,
@@ -185,4 +202,27 @@ export function describeNotification(row: FeedRowInput): FeedItem {
     href: safeLink(row.link) ?? meetingHref,
     linkLabel: ["/status-requests", "/work/updates"].includes(safeLink(row.link) ?? "") ? "Answer it" : "Open",
   };
+}
+
+/** The promise ledger's notification kinds, from `source_event_id`: `capacity:{kind}:{id}:{due}`,
+    `promise-date:{proposal}:asked|accepted|declined`, `promise-found:{channel}:{ref}`,
+    `promise-handoff:{id}`. Null for anything else. */
+export function promiseLedgerNotice(
+  sourceEventId: string | null,
+): { label: string; title: string; priority: 1 | 2 | 3 } | null {
+  const parts = (sourceEventId ?? "").split(":");
+  switch (parts[0]) {
+    case "capacity":
+      return { label: "Offer another date", title: "That day is already full", priority: 2 };
+    case "promise-date":
+      return parts[2] === "asked"
+        ? { label: "Answer the request", title: "Someone asks to move a date", priority: 2 }
+        : { label: "Open the promise", title: "Your new date was answered", priority: 3 };
+    case "promise-found":
+      return { label: "Review them", title: "Your agent found a promise", priority: 3 };
+    case "promise-handoff":
+      return { label: "Review it", title: "A promise was handed to you", priority: 2 };
+    default:
+      return null;
+  }
 }
