@@ -56,8 +56,17 @@ screen-shaped `bff` endpoint (or resource endpoint) each swaps to.
 | `/people/[id]` | RSC | `GET /bff/people/{user_id}` (real for a uuid; mock for org-chart name slugs) | done |
 | `/meetings/[id]/decisions/[decisionId]` | RSC | decision lineage template via `bff` -> `knowledge-graph-service` | done (mock) |
 | `/meetings/[id]/collaborations` | RSC | `GET /api/v1/meetings/:id/collaborations` (`agent_collaborations`) | done (mock) |
+| `/meetings/listening` | RSC + client islands (`ListeningWeekView`, `RulesPanel`, `InterruptionList`) | core-api `/api/v1/listening/week`, `/rules`, `/interruptions`, `/digests` (In every meeting at once: attend / agent listens / skip per meeting, rules, the evening digest, what the agent raised) | done |
+| `/settings/listening` | RSC + client `ListeningSettings`, `PositionsEditor` | core-api `/api/v1/listening/preferences`, `/positions` (interruptions, quiet hours, focus blocks, evening digest, the lines your agent may hold) | done |
 | `/tenant` | RSC, admin-gated | `admin-ops-service` `/admin/tenant/*` | done (mock); request buttons disabled until the service exists |
 | `/tenant/usage` | RSC, admin-gated | `billing-metering-service` `/usage` | done (mock) |
+
+In every meeting at once also adds, outside those two routes: the app-wide live interruption toast
+(`components/listening/LiveInterruptions`, mounted in `(app)/layout.tsx`, its own Socket.io link that
+emits `listen` and handles `agent-interrupt` / `view-status`), the Inbox's `interrupt:` and
+`evening-digest:` rows, the evening digest card on Home, the per-meeting choice card on
+`/meetings/[id]`, and in the room the "N agents listening" chip and the host's views tray (`listeners`
+and `meeting-view` room events).
 
 `/tenant` deviates from doc 20, which files it under `(admin)`: it is a workspace admin's
 console, so it lives in the app shell; `(admin)` stays the platform-staff surface. The gate is

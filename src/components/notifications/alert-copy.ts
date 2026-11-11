@@ -18,10 +18,26 @@ export type FeedKind =
   | "reminder"
   | "decision_changed"
   | "promise_drift"
-  | "weekly_digest";
+  | "weekly_digest"
+  | "decision_challenged"
+  | "reopen_requested"
+  | "reopen_resolved"
+  | "last_word"
+  | "agreement_check"
+  | "late_contribution"
+  | "interruption"
+  | "evening_digest";
 
 import type { DecisionReversal } from "../../lib/api/only-mytheus-types";
 import { parseSourceEvent } from "../../lib/reversals.ts";
+import type { ReopenRequest } from "../../lib/api/decision-challenges-types";
+import { parseFollowEvent } from "../../lib/decision-challenges.ts";
+import type { AgreementCheck, LastWordNudge } from "../../lib/api/room-signals-types";
+import { parseSignalEvent } from "../../lib/room-signals.ts";
+import { newNotificationLabel } from "../../lib/settlements.ts";
+import { eveningDigestIdOf, interruptionIdOf } from "../../lib/listening.ts";
+import type { Interruption } from "../../lib/api/listening-types";
+import { parseBetSource } from "../../lib/bets.ts";
 
 export interface FeedRowInput {
   id: string;
@@ -56,6 +72,19 @@ export interface FeedItem {
   /** A decision reversal's own row, joined on the server so the Inbox can settle it in place;
    *  null when it could not be read (the row still offers the three choices). */
   reversal?: DecisionReversal | null;
+  /** A reopen request's own row (decisions that follow you), joined on the server so the owner can
+   *  answer it in place; null when it could not be read. */
+  reopen?: ReopenRequest | null;
+  /** The meeting the notification is about (the row's own, or the payload's), when known. */
+  meetingId?: string | null;
+  /** A last-word nudge's own row (a3 room signals), joined on the server so the Inbox can settle it
+   *  in place; null when it could not be read. */
+  lastWord?: LastWordNudge | null;
+  /** An agreement check's own row, joined the same way. */
+  agreementCheck?: AgreementCheck | null;
+  /** In every meeting at once: an `interrupt:{id}` row's interruption, joined on the server so
+   *  the Inbox can offer Join now / Send a view / Hold the line in place; null when unread. */
+  interruption?: Interruption | null;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -132,6 +161,94 @@ export function describeNotification(row: FeedRowInput): FeedItem {
     };
   }
 
+  // Decisions that follow you: your decision was challenged somewhere people work, someone asked
+  // you to reopen it, or the owner answered your request. Title, body and link come from the
+  // server; the decision page is the fallback link.
+  const follow = parseFollowEvent(str(p.source_event_id));
+  if (follow) {
+    const own = { ...base, sourceEventId: str(p.source_event_id), body: row.body, linkLabel: "Open the decision" };
+    const fallback = safeLink(row.link) ?? "/decisions";
+    if (follow.kind === "decision-challenge") {
+      const quote = clip(str(p.quote), 240);
+      const place = str(p.place_label);
+      return {
+        ...own,
+        kind: "decision_challenged",
+        // Attention, amber: something went against a decision you own.
+        priority: 2,
+        title: row.title || (place ? `Your decision was challenged in ${place}` : "Your decision was challenged"),
+        quote: quote || null,
+        href: fallback,
+      };
+    }
+    if (follow.kind === "decision-reopen") {
+      return {
+        ...own,
+        kind: "reopen_requested",
+        // A choice waits on you: amber.
+        priority: 2,
+        title: row.title || "Someone asked to reopen your decision",
+        quote: null,
+        href: fallback,
+        linkLabel: "See the request",
+      };
+    }
+    return {
+      ...own,
+      kind: "reopen_resolved",
+      // Informs, blue.
+      priority: 3,
+      title: row.title || "Your request to reopen a decision was answered",
+      quote: null,
+      href: fallback,
+    };
+  }
+
+  // The room-signals jobs (a3): the last word, the private agreement check, a late point the host
+  // hears about. Title, body and link come from the server; the row settles the first two in place.
+  const signal = parseSignalEvent(str(p.source_event_id));
+  if (signal) {
+    const own = {
+      ...base,
+      sourceEventId: str(p.source_event_id),
+      meetingId: UUID.test(meetingId) ? meetingId : null,
+      body: row.body,
+      quote: null,
+    };
+    if (signal.kind === "lastword") {
+      return {
+        ...own,
+        kind: "last_word",
+        // An invitation, not a demand: it informs, blue.
+        priority: 3,
+        title: row.title || "You didn't get to finish your point. Want to add it?",
+        href: safeLink(row.link) ?? (meetingHref ? `${meetingHref}#last-word` : null),
+        linkLabel: "Open the meeting",
+      };
+    }
+    if (signal.kind === "agreement") {
+      return {
+        ...own,
+        kind: "agreement_check",
+        // A question waiting on you: attention, amber.
+        priority: 2,
+        title: row.title || "Where do you stand on a decision?",
+        // The server links to the Inbox (where it is answered); inside the Inbox the row links to
+        // the decision instead, once the check is joined (`lib/inbox-server.ts`).
+        href: safeLink(row.link) === "/inbox" ? null : safeLink(row.link),
+        linkLabel: "Open the decision",
+      };
+    }
+    return {
+      ...own,
+      kind: "late_contribution",
+      priority: 3,
+      title: row.title || "Someone added a late point to your meeting",
+      href: safeLink(row.link) ?? (meetingHref ? `${meetingHref}#late` : null),
+      linkLabel: "Read it",
+    };
+  }
+
   // The only-Mytheus jobs: a decision changed under your task, a promise past due with its Jira
   // ticket still open, the weekly digest. Their title, body and link come from the server.
   const sourceEventId = str(p.source_event_id) || null;
@@ -175,6 +292,69 @@ export function describeNotification(row: FeedRowInput): FeedItem {
     };
   }
 
+  // The promise ledger's notices (core-api): the capacity warning when something lands on a full
+  // day, a date someone asks to move, their answer, promises your agent found, a hand-off.
+  const ledger = promiseLedgerNotice(sourceEventId);
+  if (ledger) {
+    return {
+      ...base,
+      kind: "reminder",
+      priority: ledger.priority,
+      sourceEventId,
+      title: row.title || ledger.title,
+      body: row.body,
+      quote: null,
+      href: safeLink(row.link) ?? "/work/promises",
+      linkLabel: ledger.label,
+    };
+  }
+
+  // In every meeting at once: a live interruption from your agent, and the evening digest.
+  const interruptionId = interruptionIdOf(sourceEventId);
+  if (interruptionId) {
+    return {
+      ...base,
+      sourceEventId,
+      kind: "interruption",
+      // Something in a live meeting needs you now: red.
+      priority: 1,
+      title: row.title || "Something in a live meeting needs you",
+      body: row.body,
+      quote: null,
+      href: "/meetings/listening",
+      linkLabel: "See what your agent raised",
+    };
+  }
+  if (eveningDigestIdOf(sourceEventId)) {
+    return {
+      ...base,
+      sourceEventId,
+      kind: "evening_digest",
+      priority: 3,
+      title: row.title || "What your agent heard today",
+      body: row.body,
+      quote: null,
+      href: safeLink(row.link) ?? "/meetings/listening",
+      linkLabel: "Read the digest",
+    };
+  }
+
+  // Decisions as bets: a bet whose check date came (score it), or one your agent suggested.
+  const bet = parseBetSource(sourceEventId);
+  if (bet) {
+    return {
+      ...base,
+      kind: "reminder",
+      sourceEventId,
+      priority: bet.stage === "due" ? 2 : 3,
+      title: row.title || (bet.stage === "due" ? "Time to score a bet" : "Your agent heard an expected outcome"),
+      body: row.body,
+      quote: null,
+      href: safeLink(row.link) ?? "/decisions/calls",
+      linkLabel: bet.stage === "due" ? "Score the bet" : "Review it",
+    };
+  }
+
   const isAlert = row.source === "agent_alert";
   return {
     ...base,
@@ -183,6 +363,31 @@ export function describeNotification(row: FeedRowInput): FeedItem {
     body: row.body,
     quote: null,
     href: safeLink(row.link) ?? meetingHref,
-    linkLabel: ["/status-requests", "/work/updates"].includes(safeLink(row.link) ?? "") ? "Answer it" : "Open",
+    linkLabel:
+      newNotificationLabel(sourceEventId, safeLink(row.link)) ??
+      (["/status-requests", "/work/updates"].includes(safeLink(row.link) ?? "") ? "Answer it" : "Open"),
   };
+}
+
+/** The promise ledger's notification kinds, from `source_event_id`: `capacity:{kind}:{id}:{due}`,
+    `promise-date:{proposal}:asked|accepted|declined`, `promise-found:{channel}:{ref}`,
+    `promise-handoff:{id}`. Null for anything else. */
+export function promiseLedgerNotice(
+  sourceEventId: string | null,
+): { label: string; title: string; priority: 1 | 2 | 3 } | null {
+  const parts = (sourceEventId ?? "").split(":");
+  switch (parts[0]) {
+    case "capacity":
+      return { label: "Offer another date", title: "That day is already full", priority: 2 };
+    case "promise-date":
+      return parts[2] === "asked"
+        ? { label: "Answer the request", title: "Someone asks to move a date", priority: 2 }
+        : { label: "Open the promise", title: "Your new date was answered", priority: 3 };
+    case "promise-found":
+      return { label: "Review them", title: "Your agent found a promise", priority: 3 };
+    case "promise-handoff":
+      return { label: "Review it", title: "A promise was handed to you", priority: 2 };
+    default:
+      return null;
+  }
 }

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type MutableRefObject, type ReactNode } from "react";
 import {
   ArrowClockwise,
+  ChatTeardropDots,
   CheckCircle,
   HandHeart,
   LockSimple,
@@ -14,8 +15,10 @@ import {
 import { loadFollowUp, loadMinutes } from "@/app/actions/minutes";
 import { Chip } from "@/components/meetings/Chip";
 import type { Read } from "@/lib/api/minutes";
+import type { LateContribution } from "@/lib/api/room-signals-types";
 import { FollowUpComposer } from "./FollowUpComposer";
 import { ShareRecap } from "./ShareRecap";
+import { BlastChip } from "@/components/blast-radius/BlastChip";
 import {
   MINUTES_POLL_MS,
   decisionStatus,
@@ -266,7 +269,7 @@ function Ready({
             For everyone
           </h3>
           <p className="mn-panel-note">The same for everyone in the meeting. This is what a shared recap shows.</p>
-          <MinutesBody minutes={view.shared ?? null} scope="shared" />
+          <MinutesBody minutes={view.shared ?? null} scope="shared" late={lateOf(view)} />
         </div>
         <div
           role="tabpanel"
@@ -286,8 +289,38 @@ function Ready({
   );
 }
 
-function MinutesBody({ minutes, scope }: { minutes: MeetingMinutes | null; scope: Tab }) {
+/** Late contributions (a3 room signals): additive on the minutes view, absent from older servers. */
+function lateOf(view: MinutesView): LateContribution[] {
+  const raw = (view as MinutesView & { late_contributions?: unknown }).late_contributions;
+  return Array.isArray(raw) ? (raw as LateContribution[]) : [];
+}
+
+function LateGroup({ late }: { late: LateContribution[] }) {
+  if (late.length === 0) return null;
+  return (
+    <Group icon={ChatTeardropDots} title="Added after the meeting" count={late.length}>
+      {late.map((c) => (
+        <li key={c.id} className="mn-row is-stack">
+          <span className="mn-row-text">{c.body ?? "A recorded point"}</span>
+          <span className="mn-row-meta">
+            {c.mine ? "You" : c.author_name}
+            {c.has_audio ? ", with a recording" : ""}
+          </span>
+        </li>
+      ))}
+    </Group>
+  );
+}
+
+function MinutesBody({ minutes, scope, late = [] }: { minutes: MeetingMinutes | null; scope: Tab; late?: LateContribution[] }) {
   if (!minutes || !hasContent(minutes)) {
+    if (late.length > 0) {
+      return (
+        <div className="mn-content">
+          <LateGroup late={late} />
+        </div>
+      );
+    }
     return (
       <p className="mn-empty-line">
         {scope === "mine"
@@ -309,7 +342,10 @@ function MinutesBody({ minutes, scope }: { minutes: MeetingMinutes | null; scope
             const st = decisionStatus(d.status);
             return (
               <li key={`d${i}`} className="mn-row">
-                <span className="mn-row-text">{d.text}</span>
+                <span className="mn-row-text">
+                  {d.text}
+                  {d.decision_id ? <BlastChip decisionId={d.decision_id} /> : null}
+                </span>
                 <Chip tone={st.tone}>{st.label}</Chip>
               </li>
             );
@@ -339,6 +375,7 @@ function MinutesBody({ minutes, scope }: { minutes: MeetingMinutes | null; scope
           ))}
         </Group>
       ) : null}
+      <LateGroup late={late} />
       {promises.length > 0 ? (
         <Group icon={HandHeart} title="Your promises" count={promises.length} privateNote>
           {promises.map((p, i) => {

@@ -20,6 +20,8 @@
 
 import { CaptureApiError, endSession, refreshSession, startSession } from "./lib/api.ts";
 import { DASHBOARD_ORIGIN } from "./lib/config.ts";
+import { isDecisionMessage } from "./lib/decisions.ts";
+import { handleDecisionMessage } from "./lib/decisions-background.ts";
 import { detectMeeting, SOURCE_LABELS } from "./lib/meeting-url.ts";
 import {
   IDLE_STATE,
@@ -261,6 +263,9 @@ chrome.runtime.onMessage.addListener((raw: unknown, sender, sendResponse) => {
     );
     return true; // async response
   };
+
+  // Decision checks ("Decisions that follow you"): re-gated in the handler before anything is sent.
+  if (isDecisionMessage(raw)) return reply(handleDecisionMessage(raw, sender));
 
   switch (msg.type) {
     case "start":

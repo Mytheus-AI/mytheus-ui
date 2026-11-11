@@ -4,6 +4,14 @@
  */
 
 import { connectUrl } from "./lib/api.ts";
+import {
+  SETTINGS_KEY,
+  SITES,
+  SITE_LABELS,
+  readSettings,
+  type DecisionCheckSettings,
+  type Site,
+} from "./lib/decisions.ts";
 import { detectMeeting, titleFromTab, type DetectedMeeting } from "./lib/meeting-url.ts";
 import {
   CONSENT_NOTICE,
@@ -45,6 +53,7 @@ let consentChecked = false;
 let busy = false;
 let flash: string | null = null;
 let timer: ReturnType<typeof setInterval> | null = null;
+let checks: DecisionCheckSettings = readSettings(null);
 
 async function send(message: BackgroundMessage): Promise<{ ok: boolean; error?: string }> {
   try {
@@ -355,6 +364,49 @@ function viewError(): HTMLElement {
   );
 }
 
+async function saveChecks(next: DecisionCheckSettings): Promise<void> {
+  checks = next;
+  render();
+  await chrome.storage.local.set({ [SETTINGS_KEY]: next });
+}
+
+/** "Decisions that follow you": the privacy switches. Off by default; while off nothing is read. */
+function viewDecisionChecks(): HTMLElement {
+  const master = h("input", {
+    id: "checks-on",
+    type: "checkbox",
+    role: "switch",
+    "aria-describedby": "checks-note",
+  });
+  master.checked = checks.enabled;
+  master.addEventListener("change", () => void saveChecks({ ...checks, enabled: master.checked }));
+  const siteRow = (site: Site) => {
+    const box = h("input", { id: `checks-${site}`, type: "checkbox", disabled: !checks.enabled });
+    box.checked = checks.sites[site];
+    box.addEventListener("change", () => void saveChecks({ ...checks, sites: { ...checks.sites, [site]: box.checked } }));
+    return h("li", {}, box, h("label", { for: `checks-${site}` }, SITE_LABELS[site]));
+  };
+  return h(
+    "section",
+    { class: "checks", "aria-labelledby": "checks-title" },
+    h("h2", { id: "checks-title" }, "Decisions that follow you"),
+    h(
+      "div",
+      { class: "switch-row" },
+      h("label", { for: "checks-on" }, "Check what I write against decisions"),
+      master,
+    ),
+    h(
+      "p",
+      { class: "fine", id: "checks-note" },
+      checks.enabled
+        ? "On the sites below, Mytheus reads only the paragraph you are writing, after you pause, and shows a quiet note if it goes against a decision your team confirmed. Nothing is saved unless you choose Reopen it or Dismiss."
+        : "Off. While it is off, nothing you type is read or sent.",
+    ),
+    h("ul", { class: "sites", "aria-label": "Check on these sites" }, ...SITES.map(siteRow)),
+  );
+}
+
 function render(): void {
   if (timer && state.phase !== "recording") {
     clearInterval(timer);
@@ -367,15 +419,17 @@ function render(): void {
   else if (!link) view = viewConnect();
   else if (!meeting) view = viewNoMeeting();
   else view = viewReady(meeting);
-  root.replaceChildren(header(), view, footer() ?? "");
+  const recording = state.phase === "starting" || state.phase === "recording" || state.phase === "stopping";
+  root.replaceChildren(header(), view, link && !recording ? viewDecisionChecks() : "", footer() ?? "");
 }
 
 async function load(): Promise<void> {
   const [tabs, session, local] = await Promise.all([
     chrome.tabs.query({ active: true, currentWindow: true }),
     chrome.storage.session.get(STATE_KEY),
-    chrome.storage.local.get(LINK_KEY),
+    chrome.storage.local.get([LINK_KEY, SETTINGS_KEY]),
   ]);
+  checks = readSettings(local[SETTINGS_KEY]);
   tab = tabs[0] ?? null;
   meeting = detectMeeting(tab?.url);
   state = { ...IDLE_STATE, ...(session[STATE_KEY] as Partial<CaptureState> | undefined) };
@@ -397,6 +451,10 @@ async function load(): Promise<void> {
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "session" && changes[STATE_KEY]) {
     state = { ...IDLE_STATE, ...(changes[STATE_KEY].newValue as Partial<CaptureState> | undefined) };
+    render();
+  }
+  if (area === "local" && changes[SETTINGS_KEY]) {
+    checks = readSettings(changes[SETTINGS_KEY].newValue);
     render();
   }
   if (area === "local" && changes[LINK_KEY]) {

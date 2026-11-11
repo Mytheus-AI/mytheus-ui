@@ -26,6 +26,8 @@ import { LinkButton } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { AgendaPerson } from "@/components/meetings/AgendaEditor";
 import { AttendanceCard } from "@/components/meetings/AttendanceCard";
+import { MeetingChoiceCard } from "@/components/listening/MeetingChoiceCard";
+import { fetchAttendanceChoice } from "@/lib/api/listening";
 import { CarryForwardCard } from "@/components/meetings/CarryForwardCard";
 import { PreApprovedAnswers } from "@/components/meetings/PreApprovedAnswers";
 import { WhatMyAgentSaid } from "@/components/meeting/WhatMyAgentSaid";
@@ -46,6 +48,12 @@ import type { CallMeeting } from "@/lib/api/meetings";
 import { listMembers, type WorkspaceMemberView } from "@/lib/api/members";
 import { fetchFollowUp, fetchMinutes, fetchShareLinks } from "@/lib/api/minutes";
 import { MinutesSection } from "@/components/minutes/MinutesSection";
+import { AfterSignalsSection } from "@/components/room-signals/AfterSignalsSection";
+import { fetchAfterSignals } from "@/lib/api/room-signals";
+import type { MeetingCandidates } from "@/lib/api/candidates";
+import { MeetingBriefingSection } from "@/components/briefing/MeetingBriefingSection";
+import { CardSkeleton } from "@/components/ui/Page";
+import { Suspense } from "react";
 import { RecordingSection } from "@/components/recording/RecordingSection";
 import type { Line } from "@/components/recording/recording-model";
 import type { OffRecordStateRow } from "@/app/actions/off-record";
@@ -132,6 +140,8 @@ type Plan = {
   goals: OrgGoal[];
   /** You sent your agent: the catch-up is yours. */
   sentAgent: boolean;
+  /** In every meeting at once: attend, my agent listens or skip, for a participant. */
+  choice: ComponentProps<typeof MeetingChoiceCard> | null;
 };
 type AgendaItemsProps = {
   meetingId: string;
@@ -326,6 +336,7 @@ function UpcomingDetail({
       <div className="md-pair">
         <div className="md-col">
           <WhenCard meeting={meeting} note={note} live={live} />
+          {plan.choice ? <MeetingChoiceCard {...plan.choice} /> : null}
           {plan.attendance ? <AttendanceCard {...plan.attendance} /> : null}
           {plan.attendance ? <PreApprovedAnswers meetingId={meeting.id} /> : null}
           {plan.brief ? <BriefSection brief={plan.brief} nameOf={plan.nameOf} goals={plan.goals} /> : null}
@@ -542,7 +553,7 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
   // ADR-0039: the brief before and during it, the health card after (not for one that never
   // happened); goals name and pick an agenda item's goal. Each failing costs only its own card.
   const happened = ended && !meeting.missed;
-  const [transcript, members, carried, brief, health, goals, minutes, followUp, shareLinks, recording, clips, offRecord] = await Promise.all([
+  const [transcript, members, carried, brief, health, goals, minutes, followUp, shareLinks, recording, clips, offRecord, choiceRead] = await Promise.all([
     fetchTranscriptSurface(meeting.id).catch(() => null),
     listMembers(),
     meeting.previousMeetingId ? fetchCarryForward(meeting.id) : Promise.resolve(null),
@@ -558,7 +569,19 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
     happened
       ? apiSafe<OffRecordStateRow>(`/api/v1/meetings/${encodeURIComponent(meeting.id)}/off-record`)
       : Promise.resolve(null),
+    // In every meeting at once: your choice for this meeting (a non-participant gets 403: no card).
+    ended ? Promise.resolve(null) : fetchAttendanceChoice(meeting.id),
   ]);
+  // After the meeting (a3 room signals): late points, agreement reads, the thread saved for next
+  // time, with the meeting's decisions for their wording. Each failing costs only its own card.
+  const [afterSignals, meetingDecisions] = happened
+    ? await Promise.all([
+        fetchAfterSignals(meeting.id),
+        apiSafe<MeetingCandidates>(`/api/v1/meetings/${encodeURIComponent(meeting.id)}/candidates`, {
+          query: { include_resolved: true },
+        }),
+      ])
+    : [null, null];
   // Older transcripts saved silence as empty lines.
   const chunks = (transcript?.chunks ?? []).filter((c) => c.text.trim().length > 0);
   const names = new Map((members ?? []).map((m) => [m.id, m.name]));
@@ -626,6 +649,16 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
     health,
     goals,
     sentAgent: mine?.attendance === "agent",
+    choice:
+      you && mine && !ended && choiceRead?.ok
+        ? {
+            meetingId: meeting.id,
+            title: meeting.title,
+            initial: choiceRead.data,
+            confidential: !!meeting.confidential,
+            editable: !ended,
+          }
+        : null,
   };
 
   return (
@@ -732,6 +765,13 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
         </div>
       </header>
 
+      {/* Beyond the meeting: your agent's briefing about it, once it has ended. */}
+      {ended && mine ? (
+        <Suspense fallback={<CardSkeleton rows={2} />}>
+          <MeetingBriefingSection meetingId={meeting.id} />
+        </Suspense>
+      ) : null}
+
       {minutes && followUp && shareLinks && mine ? (
         <MinutesSection
           meetingId={meeting.id}
@@ -741,6 +781,21 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
           links={shareLinks}
           isHost={!!you && you.id === meeting.hostUserId}
           confidential={!!meeting.confidential}
+        />
+      ) : null}
+
+      {afterSignals && mine ? (
+        <AfterSignalsSection
+          meetingId={meeting.id}
+          initial={afterSignals}
+          decisions={
+            meetingDecisions?.ok
+              ? meetingDecisions.data.decisions
+                  .filter((d) => d.status !== "dismissed")
+                  .map((d) => ({ id: d.id, content: d.content, status: d.status }))
+              : []
+          }
+          nowIso={new Date().toISOString()}
         />
       ) : null}
 

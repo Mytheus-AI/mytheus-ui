@@ -266,7 +266,7 @@ export interface paths {
         put?: never;
         /**
          * MCP server (Streamable HTTP)
-         * @description Model Context Protocol endpoint. Point an MCP client at `{API}/mcp` with `Authorization: Bearer mytheus_pat_...`, or add it as a Claude custom connector (OAuth: discovery at `/.well-known/oauth-protected-resource`). Tools: search_meetings, ask_meetings, get_meeting_outcome, get_decision_record, list_my_open_actions, list_my_promises, create_action (read_write tokens). Resources: meeting summaries and decision records.
+         * @description Model Context Protocol endpoint. Point an MCP client at `{API}/mcp` with `Authorization: Bearer mytheus_pat_...`, or add it as a Claude custom connector (OAuth: discovery at `/.well-known/oauth-protected-resource`). Tools: search_meetings, ask_meetings, get_meeting_outcome, get_decision_record, list_my_open_actions, list_my_promises, check_against_decisions, check_my_capacity, create_action and add_promise (read_write tokens). Resources: meeting summaries and decision records.
          */
         post: operations["mcp_post"];
         delete?: never;

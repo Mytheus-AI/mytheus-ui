@@ -9,6 +9,7 @@ import { ReturnToast } from "./ReturnToast";
 import { connectProvider, disconnectProvider } from "@/app/actions/integrations";
 import {
   cardState,
+  decisionChecksCopy,
   scopeLabel,
   trackerOptions,
   type CardState,
@@ -115,6 +116,17 @@ function Details({ item, people }: { item: IntegrationItem; people: Map<string, 
   );
 }
 
+function DecisionChecksLine({ item }: { item: IntegrationItem }) {
+  const copy = decisionChecksCopy(item.decision_checks);
+  if (!copy) return null;
+  return (
+    <div className="flex flex-col items-start gap-1.5">
+      <Chip tone={copy.tone}>{copy.label}</Chip>
+      <p className="text-[14px] leading-relaxed text-ink-3">{copy.text}</p>
+    </div>
+  );
+}
+
 function Actions({ provider, name, state, connectBlocked }: { provider: ProviderKey; name: string; state: CardState; connectBlocked?: string | null }) {
   if (state.kind === "connected") {
     return (
@@ -163,6 +175,7 @@ function ProviderCard({ meta, item, people }: { meta: CardMeta; item: Integratio
         <Note tone="warning">The connection is failing at {meta.name}. Disconnect and connect again to repair it.</Note>
       ) : null}
       {item && state.kind === "connected" ? <Details item={item} people={people} /> : null}
+      {item && state.kind === "connected" ? <DecisionChecksLine item={item} /> : null}
       <div className="mt-auto border-t border-line pt-4">
         <Actions provider={meta.key} name={meta.name} state={state} />
       </div>

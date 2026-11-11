@@ -4,6 +4,7 @@ import { listMeetings, toCallMeeting } from "@/lib/api/meetings";
 import { fetchActiveGoals, fetchMeetingTemplates } from "@/lib/api/meeting-brain";
 import { listMembers } from "@/lib/api/members";
 import { Page, PageHead } from "@/components/ui/Page";
+import { SectionTabs } from "@/components/app/SectionTabs";
 import "@/styles/meeting-hub.css";
 import "@/styles/meeting-agenda.css";
 import "@/styles/meeting-brain.css";
@@ -48,6 +49,7 @@ export default async function MeetingsPage() {
         context="Every call on your calendar, what your agent captured, and where to pick it up."
         action={<NewMeeting members={invitable} openFromLink recent={recent} me={me} templates={templates} goals={goals} />}
       />
+      <SectionTabs section="meetings" label="Meetings sections" exact={["/meetings"]} className="mb-5" />
       <MeetingsHub
         meetings={meetings}
         people={people}

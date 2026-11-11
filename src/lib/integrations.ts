@@ -25,7 +25,12 @@ export interface IntegrationItem {
   installed_by: string | null;
   installed_at: string | null;
   last_synced_at: string | null;
+  /** Slack only (decisions that follow you): checking channel messages against decisions is on,
+   *  or the install predates the message-reading permissions and must be reconnected. */
+  decision_checks?: DecisionChecks | null;
 }
+
+export type DecisionChecks = "on" | "needs_reconnect";
 
 export const PROVIDERS: readonly ProviderKey[] = ["google_calendar", "slack", "jira", "linear", "hubspot", "notion", "confluence"];
 export const CONNECTABLE: readonly ProviderKey[] = ["google_calendar", "slack", "jira", "hubspot", "notion", "confluence"];
@@ -88,6 +93,7 @@ export function normalizeIntegrations(raw: unknown): Map<ProviderKey, Integratio
       installed_by: str(o.installed_by),
       installed_at: str(o.installed_at),
       last_synced_at: str(o.last_synced_at),
+      decision_checks: o.decision_checks === "on" || o.decision_checks === "needs_reconnect" ? o.decision_checks : null,
     });
   }
   return out;
@@ -203,6 +209,9 @@ export function scopeLabel(scope: string): string {
     "users:read": "See people",
     "users:read.email": "See email addresses",
     "im:write": "Open direct messages",
+    "channels:history": "Read messages in public channels it is in",
+    "groups:history": "Read messages in private channels it is in",
+    commands: "Add shortcuts",
     "https://www.googleapis.com/auth/calendar.readonly": "Read calendars",
     "https://www.googleapis.com/auth/calendar.events.readonly": "Read events",
     "read:jira-work": "Read issues",
@@ -280,4 +289,23 @@ export function callbackOutcome(
   // A bare 502 without `reason` may be the gateway failing to reach the service, so it does not
   // claim the connection was saved: it stays a generic failure.
   return `${BACK}?error=${key}`;
+}
+
+/** The Slack card's line about decision checks; null when the server says nothing about them. */
+export function decisionChecksCopy(value: DecisionChecks | null | undefined): { tone: "ok" | "medium"; label: string; text: string } | null {
+  if (value === "on") {
+    return {
+      tone: "ok",
+      label: "Decision checks on",
+      text: "Decision checks are on in channels Mytheus is in. When a message goes against a decision, only its writer is told first, in the thread.",
+    };
+  }
+  if (value === "needs_reconnect") {
+    return {
+      tone: "medium",
+      label: "Reconnect for decision checks",
+      text: "Reconnect Slack to let Mytheus check messages against decisions. The new install asks to read messages in the channels Mytheus is in.",
+    };
+  }
+  return null;
 }

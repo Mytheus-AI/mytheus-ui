@@ -42,13 +42,17 @@ const MEETING_MATCHES = [
   "https://*.zoom.us/wc/*",
 ];
 
+// Decisions that follow you: where the margin note can appear. The script does nothing on these
+// pages until the person switches checks on for that site in the popup.
+const WRITING_MATCHES = ["https://docs.google.com/document/*", "https://mail.google.com/*", "https://*.atlassian.net/*"];
+
 const manifest = {
   manifest_version: 3,
   name: "Mytheus Capture",
   short_name: "Mytheus",
   version: pkg.version,
   description:
-    "Transcribe calls on Google Meet, Microsoft Teams and Zoom (web) into Mytheus, with no bot joining.",
+    "Transcribe calls on Google Meet, Microsoft Teams and Zoom (web) into Mytheus, with no bot joining, and see when what you write goes against a decision.",
   key: publicKey,
   minimum_chrome_version: "116",
   icons: { 16: "icons/icon-16.png", 32: "icons/icon-32.png", 48: "icons/icon-48.png", 128: "icons/icon-128.png" },
@@ -60,7 +64,10 @@ const manifest = {
   background: { service_worker: "background.js" },
   permissions: ["tabCapture", "offscreen", "storage", "activeTab"],
   host_permissions: [...MEETING_MATCHES, `${origin}/*`],
-  content_scripts: [{ matches: MEETING_MATCHES, js: ["content.js"], run_at: "document_idle" }],
+  content_scripts: [
+    { matches: MEETING_MATCHES, js: ["content.js"], run_at: "document_idle" },
+    { matches: WRITING_MATCHES, js: ["decisions-content.js"], run_at: "document_idle" },
+  ],
   // Only the dashboard's capture pages can hand the extension a link token.
   externally_connectable: { matches: [`${origin}/capture/*`] },
 };
@@ -69,7 +76,7 @@ await rm(join(root, "dist"), { recursive: true, force: true });
 await mkdir(out, { recursive: true });
 
 await build({
-  entryPoints: ["background", "offscreen", "popup", "content", "permissions", "worklet"].map((name) =>
+  entryPoints: ["background", "offscreen", "popup", "content", "decisions-content", "permissions", "worklet"].map((name) =>
     join(root, "src", `${name}.ts`),
   ),
   outdir: out,

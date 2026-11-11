@@ -6,15 +6,22 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight,
   ArrowsClockwise,
+  ArrowsCounterClockwise,
   Bell,
+  ChatCircleText,
+  ChatTeardropDots,
   Binoculars,
   Check,
   CheckSquare,
   Checks,
   Gavel,
   Hourglass,
+  Moon,
   Newspaper,
+  Robot,
   Scales,
+  ShieldWarning,
+  UsersThree,
   Warning,
   X,
 } from "@phosphor-icons/react";
@@ -27,10 +34,17 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { textLinkClass } from "@/components/ui/TextLink";
 import { LocalWhen } from "@/components/status/LocalWhen";
 import { ReversalActions, taskOf } from "@/components/reversals/ReversalActions";
+import { ReopenAnswer, ReopenOutcomeLine } from "@/components/decisions/ReopenRequests";
 import { StatusAnswerRow } from "@/components/status/StatusAnswerRow";
+import { AgreementAsk } from "@/components/room-signals/AgreementAsk";
+import { LastWordActions } from "@/components/room-signals/LastWordActions";
+import { parseSignalEvent } from "@/lib/room-signals";
+import { InboxInterruption } from "@/components/listening/InboxInterruption";
+import { interruptionIdOf } from "@/lib/listening";
 import { useStatusAnswers } from "@/components/status/useStatusAnswers";
 import { dismissAlert, markAlertRead } from "@/app/actions/notifications";
 import { confirmCandidate, dismissCandidate } from "@/app/actions/candidates";
+import { warnAfterAccept } from "@/components/promises/ledger/accept-warning";
 import { graceful, undoLast } from "@/lib/toast";
 import { onPrefsChange, shortcutsOn } from "@/lib/prefs";
 import {
@@ -43,6 +57,7 @@ import {
 } from "@/lib/inbox";
 import type { InboxArm } from "@/lib/inbox-server";
 import type { StatusRequestView } from "@/lib/api/personal-types";
+import type { FeedItem } from "@/components/notifications/alert-copy";
 
 /* The Inbox: notifications, the updates you owe and your agents' detections waiting for review,
    in one list ordered by what needs you first (lib/inbox.ts). Filter chips narrow it by kind.
@@ -84,6 +99,14 @@ const NOTE_ICON = {
   decision_changed: ArrowsClockwise,
   promise_drift: Hourglass,
   weekly_digest: Newspaper,
+  decision_challenged: ShieldWarning,
+  reopen_requested: ArrowsCounterClockwise,
+  reopen_resolved: ArrowsCounterClockwise,
+  last_word: ChatCircleText,
+  agreement_check: UsersThree,
+  late_contribution: ChatTeardropDots,
+  interruption: Robot,
+  evening_digest: Moon,
 } as const;
 const NOTE_LABEL = {
   topic_watch: "Topic you watch",
@@ -93,6 +116,14 @@ const NOTE_LABEL = {
   decision_changed: "Decision changed",
   promise_drift: "Promise past due",
   weekly_digest: "Weekly digest",
+  decision_challenged: "Decision challenged",
+  reopen_requested: "Reopen request",
+  reopen_resolved: "Reopen request answered",
+  last_word: "Your last word",
+  agreement_check: "Private question",
+  late_contribution: "Late contribution",
+  interruption: "Your agent, from a live meeting",
+  evening_digest: "Evening digest",
 } as const;
 
 function asFilter(v: string | null): InboxFilter {
@@ -142,6 +173,33 @@ export function InboxView({ initial, failed, nowIso }: { initial: InboxItem[]; f
   useEffect(() => {
     setActive((a) => Math.min(Math.max(a, 0), Math.max(rows.length - 1, 0)));
   }, [rows.length]);
+
+  // A refresh (a live interruption arrived, say) brings rows this list has not seen: add them
+  // without undoing anything the person is in the middle of.
+  useEffect(() => {
+    setItems((list) => {
+      const known = new Set(list.map((i) => i.key));
+      const fresh = initial.filter((i) => !known.has(i.key));
+      return fresh.length ? [...fresh, ...list] : list;
+    });
+  }, [initial]);
+
+  // `?interruption={id}` (the link on a live interruption's notification and push): that row is
+  // the active one, in view and focused, once.
+  const target = params.get("interruption");
+  const targeted = useRef(false);
+  useEffect(() => {
+    if (!target || targeted.current) return;
+    const i = rows.findIndex((r) => r.kind === "notification" && interruptionIdOf(r.notification.sourceEventId) === target.toLowerCase());
+    if (i < 0) return;
+    targeted.current = true;
+    setActive(i);
+    requestAnimationFrame(() => {
+      const el = list.current?.querySelector<HTMLElement>(`[data-index="${i}"]`);
+      el?.scrollIntoView({ block: "center", behavior: "auto" });
+      el?.focus({ preventScroll: true });
+    });
+  }, [target, rows]);
 
   const setFilter = (f: InboxFilter) => {
     setFilterState(f);
@@ -199,6 +257,8 @@ export function InboxView({ initial, failed, nowIso }: { initial: InboxItem[]; f
       commit: async () => {
         const res = await (verb === "confirm" ? confirmCandidate : dismissCandidate)(item.review.kind, item.id);
         if (res.ok) router.refresh();
+        // Promise ledger: a task you just took on, checked against your week.
+        if (res.ok && verb === "confirm" && item.review.kind === "action") void warnAfterAccept(item.id, (href) => router.push(href));
         return res.ok ? { ok: true } : { ok: false, message: res.message, gone: res.gone };
       },
     });
@@ -419,7 +479,7 @@ function rowHref(item: InboxItem | undefined): string | null {
 
 function GroupHead({ label, n }: { label: string; n: number }) {
   return (
-    <li role="presentation" className="flex items-center gap-2.5 bg-surface-2 px-4 py-2.5 sm:px-[22px]">
+    <li className="flex items-center gap-2.5 bg-surface-2 px-4 py-2.5 sm:px-[22px]">
       <span className="text-[14px] font-semibold text-ink">{label}</span>
       <Chip className="tabular-nums">{n}</Chip>
     </li>
@@ -469,6 +529,9 @@ function NotificationRow({
             </Link>
           ) : null}
         </div>
+        {n.kind === "last_word" ? <LastWordRow n={n} notificationId={item.id} /> : null}
+        {n.kind === "agreement_check" ? <AgreementRow n={n} notificationId={item.id} /> : null}
+        {n.kind === "interruption" ? <InboxInterruption interruption={n.interruption ?? null} /> : null}
         {n.kind === "decision_changed" && n.sourceEventId ? (
           <ReversalActions
             reversalId={n.reversal?.id ?? n.sourceEventId.slice("decision-reversal:".length)}
@@ -478,6 +541,10 @@ function NotificationRow({
             label={n.reversal?.action.content}
           />
         ) : null}
+        {n.kind === "reopen_requested" && n.reopen && n.reopen.viewer_role === "owner" ? (
+          <ReopenAnswer request={n.reopen} notificationId={item.id} />
+        ) : null}
+        {n.kind === "reopen_resolved" && n.reopen && n.reopen.status !== "pending" ? <ReopenOutcomeLine request={n.reopen} /> : null}
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-start">
         {n.unread ? (
@@ -571,5 +638,36 @@ function AnsweredLine({ req }: { req: StatusRequestView }) {
       <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-ink">{req.actionTitle}</span>
       {req.status_text ? <span className="w-full text-[14px] text-ink-3 sm:w-auto">{req.status_text}</span> : null}
     </div>
+  );
+}
+
+/* The room-signals rows (a3): settled in place, like a decision reversal. */
+
+function LastWordRow({ n, notificationId }: { n: FeedItem; notificationId: string }) {
+  const e = parseSignalEvent(n.sourceEventId);
+  const meetingId = n.lastWord?.meeting_id ?? n.meetingId ?? null;
+  if (e?.kind !== "lastword" || !meetingId) return null;
+  return <LastWordActions nudge={n.lastWord ?? null} nudgeId={e.nudgeId} meetingId={meetingId} notificationId={notificationId} />;
+}
+
+function AgreementRow({ n, notificationId }: { n: FeedItem; notificationId: string }) {
+  const e = parseSignalEvent(n.sourceEventId);
+  if (e?.kind !== "agreement") return null;
+  return (
+    <>
+      {n.agreementCheck ? (
+        <p className="mt-2 max-w-[75ch] rounded-ctl bg-bg-2 px-3.5 py-2.5 font-display text-[15px] italic leading-snug text-ink-2">
+          <span className="sr-only">The decision: </span>
+          {n.agreementCheck.decision_content}
+          <span className="mt-1 block font-sans text-[12.5px] not-italic text-ink-3">From {n.agreementCheck.meeting_title}</span>
+        </p>
+      ) : null}
+      <AgreementAsk
+        check={n.agreementCheck ?? null}
+        checkId={e.checkId}
+        notificationId={notificationId}
+        decisionLabel={n.agreementCheck?.decision_content}
+      />
+    </>
   );
 }

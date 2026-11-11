@@ -15,6 +15,7 @@ import {
   Lifebuoy,
   Lock,
   PaintBrush,
+  Lightning,
   PlugsConnected,
   Scales,
   ShieldCheck,
@@ -29,6 +30,11 @@ import {
   Notebook,
   Broadcast,
   Newspaper,
+  SpeakerHigh,
+  Headphones,
+  BellSimpleZ,
+  ClockCounterClockwise,
+  Target,
 } from "@phosphor-icons/react/ssr";
 
 /* The app's information architecture, in one place. One list feeds the sidebar, the topbar
@@ -75,8 +81,15 @@ export const FOOT_ITEMS: NavItem[] = [{ href: "/settings", label: "Settings", ic
 /** My work: everything you owe, in one view with three tabs. */
 export const WORK_TABS: NavItem[] = [
   { href: "/work/tasks", label: "Tasks", icon: CheckSquare, keywords: "action items to do" },
-  { href: "/work/promises", label: "Promises", icon: Handshake, keywords: "commitments" },
+  { href: "/work/promises", label: "Promise ledger", icon: Handshake, keywords: "promises commitments capacity renegotiate hand off" },
   { href: "/work/updates", label: "Updates I owe", icon: ChatCircleDots, keywords: "status requests" },
+  { href: "/work/settle", label: "To settle", icon: Lightning, keywords: "clash conflict decisions other team settle" },
+];
+
+/** Meetings: the hub, and what your agent listens to for you (In every meeting at once). */
+export const MEETINGS_TABS: NavItem[] = [
+  { href: "/meetings", label: "All meetings", icon: VideoCamera, keywords: "calendar calls" },
+  { href: "/meetings/listening", label: "Listening", icon: Headphones, keywords: "agent listens attend skip week rules evening digest interruptions" },
 ];
 
 /** The Workspace console's tabs (admins). The company brain keeps its sections as a secondary nav
@@ -95,7 +108,9 @@ export const WORKSPACE_TABS: NavItem[] = [
 export const SETTINGS_TABS: NavItem[] = [
   { href: "/settings/profile", label: "Profile", icon: UserCircle, keywords: "name role" },
   { href: "/settings/notifications", label: "Notifications", icon: Bell, keywords: "email alerts" },
+  { href: "/settings/listening", label: "Listening", icon: BellSimpleZ, keywords: "interruptions quiet hours focus blocks evening digest lines positions hold the line" },
   { href: "/settings/memory", label: "Agent memory", icon: Notebook, keywords: "what your agent remembers topics questions forget learning calibration" },
+  { href: "/settings/briefings", label: "Briefings", icon: SpeakerHigh, keywords: "briefing voice speak listen auto-play length language" },
   { href: "/settings/integrations", label: "Integrations", icon: PlugsConnected, keywords: "calendar slack jira hubspot notion confluence" },
   { href: "/settings/api", label: "API access", icon: Key, keywords: "personal access token mcp claude api curl" },
   { href: "/settings/appearance", label: "Appearance", icon: PaintBrush, keywords: "theme dark light shortcuts" },
@@ -106,6 +121,10 @@ export const LINKED_ITEMS: NavItem[] = [
   { href: "/search", label: "Ask Mytheus", icon: Sparkle, keywords: "search question" },
   { href: "/welcome", label: "Welcome brief", icon: Compass, keywords: "new joiner" },
   { href: "/digest", label: "Weekly digest", icon: Newspaper, keywords: "what changed this week summary" },
+  { href: "/briefings", label: "Your briefings", icon: SpeakerHigh, keywords: "brief me briefing listen agent voice" },
+  // Beyond the meeting, Layer 3: under Decisions (the Decisions row stays active on them).
+  { href: "/decisions/time-machine", label: "Time machine", icon: ClockCounterClockwise, keywords: "history as of date compare what changed topic timeline rewind" },
+  { href: "/decisions/calls", label: "How good are our calls", icon: Target, keywords: "bets expected outcome calibration track record lessons hit rate" },
 ];
 
 /* Platform-staff consoles (every tenant, ops). Not in the workspace nav: staff status is only
@@ -129,6 +148,7 @@ export function allNavItems(isAdmin: boolean): NavItem[] {
     AGENT_ITEM,
     ...MAIN_ITEMS,
     ...WORK_TABS,
+    ...MEETINGS_TABS.filter((t) => t.href !== "/meetings"),
     ...LINKED_ITEMS,
     ...FOOT_ITEMS,
     ...SETTINGS_TABS,

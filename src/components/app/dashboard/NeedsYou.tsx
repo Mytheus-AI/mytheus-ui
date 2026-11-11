@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { TextLink } from "@/components/ui/TextLink";
 import { confirmCandidate, dismissCandidate } from "@/app/actions/candidates";
+import { warnAfterAccept } from "@/components/promises/ledger/accept-warning";
 import { graceful } from "@/lib/toast";
 import type { DashboardReviewItem } from "@/lib/api/types";
 
@@ -42,6 +43,8 @@ export function NeedsYou({ items, failed }: { items: DashboardReviewItem[]; fail
       commit: async () => {
         const result = await (verb === "confirm" ? confirmCandidate : dismissCandidate)(item.kind, item.id);
         if (result.ok || result.gone) startTransition(() => router.refresh());
+        // Promise ledger: a task you just took on, checked against your week.
+        if (result.ok && verb === "confirm" && item.kind === "action") void warnAfterAccept(item.id, (href) => router.push(href));
         return result.ok ? { ok: true } : { ok: false, message: result.message, gone: result.gone };
       },
     });

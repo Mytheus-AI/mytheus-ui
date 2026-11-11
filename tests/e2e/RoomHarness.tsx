@@ -75,12 +75,19 @@ export function RoomHarness({
   theme = "light",
   asHost = true,
   emptyAgenda = false,
+  passiveListener = false,
 }: {
   theme?: "light" | "dark";
   asHost?: boolean;
   /** A meeting with no agenda at all: the calm empty state. */
   emptyAgenda?: boolean;
+  /** In every meeting at once: Priya's agent listens for her (no update, no questions). */
+  passiveListener?: boolean;
 }) {
+  const base = emptyAgenda ? { ...meeting, agenda: [] } : meeting;
+  const shown = passiveListener
+    ? { ...base, participants: base.participants.map((p) => (p.id === "u-priya" ? { ...p, attendance: "agent" as const } : p)) }
+    : base;
   return (
     <OrgProvider
       value={{
@@ -90,7 +97,7 @@ export function RoomHarness({
     >
       <div className="mx-app mx-meet min-h-dvh bg-bg" data-theme={theme}>
         <MeetingRoom
-          meeting={emptyAgenda ? { ...meeting, agenda: [] } : meeting}
+          meeting={shown}
           names={names}
           me={{ id: "u-maya", name: "Maya Chen", agentName: "Juniper", agentSeed: null, personality: null, steers: asHost }}
           session={{ consentRequired: false, consentedAt: "2026-11-11T09:59:00Z", recording: false, startedAt: OPENED }}

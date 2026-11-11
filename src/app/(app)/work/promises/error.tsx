@@ -8,5 +8,5 @@ export default function SegmentError({ error, reset }: { error: Error & { digest
   useEffect(() => {
     console.error(error);
   }, [error]);
-  return <ErrorState title="We could not load your promises" onRetry={reset} digest={error.digest} />;
+  return <ErrorState title="We could not load your promise ledger" onRetry={reset} digest={error.digest} />;
 }

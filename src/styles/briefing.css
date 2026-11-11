@@ -1,0 +1,64 @@
+/* A briefing from your agent (components/briefing). Tokens only, both themes.
+   The one motion is the ring around the agent's face while it speaks; it is still under
+   reduced motion. The word being said is underlined with the coral line; the point being said
+   sits on a soft wash. */
+
+.brf-ring {
+  border: 2px solid var(--signal-line);
+  opacity: 0;
+  transform: scale(0.94);
+  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+}
+.brf-face.is-speaking .brf-ring {
+  opacity: 1;
+  transform: scale(1);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .brf-face.is-speaking .brf-ring {
+    animation: brf-breathe 1.8s var(--ease-out) infinite;
+  }
+}
+@keyframes brf-breathe {
+  0%,
+  100% {
+    transform: scale(0.96);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+}
+
+.brf-word {
+  background: transparent;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--signal-line);
+  text-decoration-thickness: 3px;
+  text-underline-offset: 5px;
+}
+
+.brf-seg {
+  transition: background-color 150ms var(--ease-out);
+}
+.brf-seg.is-active {
+  background: var(--signal-soft);
+}
+.brf-seg.is-active .brf-seg-text span:last-child {
+  color: var(--ink);
+}
+.brf-seg-text:focus-visible,
+.brf-bead:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+.brf-bead[aria-current="step"] > span {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px var(--line-2);
+}
+@media (prefers-reduced-motion: reduce) {
+  .brf-seg,
+  .brf-ring {
+    transition: none;
+  }
+}

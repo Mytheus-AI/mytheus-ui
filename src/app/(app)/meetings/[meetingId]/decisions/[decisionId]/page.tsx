@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { ArrowRight, CheckCircle, ClockCounterClockwise, GitCommit, Scales, VideoCamera } from "@phosphor-icons/react/dist/ssr";
+import { ArrowRight, ChatCircleText, CheckCircle, ClockCounterClockwise, GitCommit, Scales, VideoCamera } from "@phosphor-icons/react/dist/ssr";
 import { Chip } from "@/components/ui/Chip";
 import { LinkButton } from "@/components/ui/Button";
 import { Note } from "@/components/ui/Note";
@@ -13,6 +14,18 @@ import { fetchDecisionLineage, type LineageDecision } from "@/lib/api/lineage";
 import { loadDecisionReach } from "@/lib/api/decision-reach";
 import { resolveOrgContext } from "@/lib/api/org-context";
 import { DecisionReach } from "@/components/decisions/DecisionReach";
+import { ChallengesSection } from "@/components/decisions/ChallengesSection";
+import { ChallengesSkeleton } from "@/components/decisions/ChallengesStates";
+import { AgreementCard } from "@/components/room-signals/AgreementCard";
+import { fetchAfterSignals, fetchDecisionAgreement } from "@/lib/api/room-signals";
+import { lateLabel, strengthChip } from "@/lib/room-signals";
+import { DecisionWhySection } from "@/components/decision-why/DecisionWhySection";
+import { ReopenedChip, isReopened } from "@/components/decision-why/ReopenedChip";
+import { BlastRadiusSection } from "@/components/blast-radius/BlastRadiusSection";
+import { fetchDecisionWhy } from "@/lib/api/decision-why";
+import { fetchBlastRadius } from "@/lib/api/blast-radius";
+import { DecisionBet } from "@/components/bets/DecisionBet";
+import { fetchDecisionBet } from "@/lib/api/bets";
 
 export const metadata: Metadata = { title: "Decision lineage | Mytheus" };
 
@@ -25,7 +38,12 @@ export const metadata: Metadata = { title: "Decision lineage | Mytheus" };
 
    Phase 4 reach: the aside shares the record (Copy share link, Export to Notion, Confluence or
    Slack). Every export and share carries this same lineage, built by the server as the person
-   may see it. */
+   may see it.
+
+   Decisions that follow you (Beyond the meeting, Layer 2): under the lineage, "Challenged in N
+   places" lists where people wrote something that goes against the decision, and the requests to
+   reopen it, streamed on its own so the lineage never waits. `?reopen=<id>` (the Inbox link)
+   focuses one request. */
 
 type ChainNode = {
   id: string;
@@ -77,14 +95,28 @@ async function loadChain(meetingId: string, decisionId: string): Promise<ChainNo
 
 export default async function DecisionLineagePage({
   params,
+  searchParams,
 }: {
   params: { meetingId: string; decisionId: string };
+  searchParams?: { reopen?: string | string[] };
 }) {
-  const [chain, reach, org] = await Promise.all([
+  const focusReopenId = typeof searchParams?.reopen === "string" ? searchParams.reopen : null;
+  const [chain, reach, org, agreement, after, why, blast, bet] = await Promise.all([
     loadChain(params.meetingId, params.decisionId),
     loadDecisionReach(params.decisionId).catch(() => null),
     resolveOrgContext(),
+    // a3 room signals: how strongly the room agreed, and late points while the decision is new.
+    fetchDecisionAgreement(params.decisionId).catch(() => ({ ok: false as const, reason: "error" as const })),
+    fetchAfterSignals(params.meetingId).catch(() => ({ ok: false as const, reason: "error" as const })),
+    // a4: why we decided, and what a change would ripple into.
+    fetchDecisionWhy(params.decisionId),
+    fetchBlastRadius(params.decisionId),
+    // b1: what this decision bets on.
+    fetchDecisionBet(params.decisionId).catch(() => null),
   ]);
+  const signal = after.ok ? after.data.decisions.find((d) => d.decision_id === params.decisionId) ?? null : null;
+  const weak = strengthChip(agreement.ok ? agreement.data.strength : signal?.agreement);
+  const lateInWindow = signal && signal.in_window && signal.late_contribution_count > 0 ? signal.late_contribution_count : 0;
   const openMeeting = (
     <LinkButton href={`/meetings/${params.meetingId}`} variant="outline">
       <VideoCamera size={16} aria-hidden />
@@ -119,15 +151,31 @@ export default async function DecisionLineagePage({
         title={title}
         action={openMeeting}
         context={
-          superseded ? (
-            <Chip tone="medium" icon={<ClockCounterClockwise size={14} weight="bold" />}>
-              Superseded
-            </Chip>
-          ) : (
-            <Chip tone="ok" icon={<CheckCircle size={14} weight="fill" />}>
-              Confirmed{subject.confirmedAt ? ` ${dateTime.format(new Date(subject.confirmedAt))} UTC` : ""}
-            </Chip>
-          )
+          <span className="inline-flex flex-wrap items-center gap-2">
+            {isReopened(why) ? (
+              <ReopenedChip why={why} />
+            ) : superseded ? (
+              <Chip tone="medium" icon={<ClockCounterClockwise size={14} weight="bold" />}>
+                Superseded
+              </Chip>
+            ) : (
+              <Chip tone="ok" icon={<CheckCircle size={14} weight="fill" />}>
+                Confirmed{subject.confirmedAt ? ` ${dateTime.format(new Date(subject.confirmedAt))} UTC` : ""}
+              </Chip>
+            )}
+            {weak ? (
+              <Chip tone={weak.tone} title={weak.hint}>
+                {weak.label}
+              </Chip>
+            ) : null}
+            {lateInWindow ? (
+              <Link href={`/meetings/${params.meetingId}#late`} className="rounded-full">
+                <Chip tone="accent" icon={<ChatCircleText size={14} />}>
+                  {lateLabel(lateInWindow)}
+                </Chip>
+              </Link>
+            ) : null}
+          </span>
         }
       />
 
@@ -150,6 +198,7 @@ export default async function DecisionLineagePage({
           </div>
         }
       >
+        <DecisionWhySection decisionId={params.decisionId} initial={why} />
         <SectionCard
           title="Lineage"
           description={
@@ -218,6 +267,25 @@ export default async function DecisionLineagePage({
             })}
           </ol>
         </SectionCard>
+        <DecisionBet
+          initial={bet}
+          decisionId={params.decisionId}
+          meetingId={params.meetingId}
+          decisionContent={title}
+          today={new Date().toISOString().slice(0, 10)}
+        />
+        {/* The column's space-y spaces the sections, so an absent one (no agreement read yet)
+            leaves no gap behind. */}
+        <AgreementCard read={agreement} />
+        <Suspense fallback={<ChallengesSkeleton />}>
+          <ChallengesSection
+            decisionId={params.decisionId}
+            meetingId={params.meetingId}
+            superseded={superseded}
+            focusReopenId={focusReopenId}
+          />
+        </Suspense>
+        <BlastRadiusSection decisionId={params.decisionId} initial={blast} />
       </PageColumns>
     </Page>
   );
