@@ -593,3 +593,10 @@
 @media (max-width: 959px) {
   .mx-meet .cx-call .nv-chat-label { display: none; }
 }
+
+/* In every meeting at once: "3 agents listening", a button beside the in-call chip that opens
+   whose agents. Coral soft, so it reads as the agents' own, never as an alarm. */
+.mx-meet .cx-call .cx-listening { border: 0; cursor: pointer; background: var(--signal-soft); color: var(--signal-ink); }
+.mx-meet .cx-call .cx-listening svg { color: var(--signal-ink); }
+.mx-meet .cx-call .cx-listening:hover { filter: brightness(0.97); }
+.mx-meet .cx-call .cx-listening:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }

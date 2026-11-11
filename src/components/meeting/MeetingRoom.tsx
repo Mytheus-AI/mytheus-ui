@@ -29,6 +29,8 @@ import { endOffRecord, startOffRecord } from "@/app/actions/off-record";
 import { StageBar } from "@/components/room/StageBar";
 import { AgendaQuickAdd } from "@/components/room/AgendaQuickAdd";
 import { StandInDialog, StandInQuestions } from "@/components/room/StandIn";
+import { ListeningChip } from "@/components/room/ListeningChip";
+import { ViewsTray } from "@/components/room/ViewsTray";
 import { WrapUpSheet, WrappingBanner } from "@/components/room/WrapUp";
 import { cancelWrapUp, startWrapUp } from "@/components/room/stage-actions";
 import { SteadyRoomGrid, type RoomLayout, type RoomTile } from "@/components/room/RoomGrid";
@@ -679,6 +681,9 @@ function Room({
     () =>
       proxies
         .filter((p) => !here.has(p.userId) && p.userId !== myUserId && p.userId !== me?.id)
+        // In every meeting at once: an agent that only listens (no update, no questions) is
+        // counted in the "agents listening" chip, not given a tile of its own.
+        .filter((p) => Boolean(p.update?.trim()) || (meeting.participants.find((x) => x.id === p.userId)?.proxyQuestions.length ?? 0) > 0)
         .map((p) => {
           const person = names[p.userId];
           const name = person?.name ?? "A teammate";
@@ -692,8 +697,17 @@ function Room({
             proxy: { forName: name, update: p.update, onOpen: () => setStandInFor(p.userId) },
           };
         }),
-    [proxies, here, myUserId, me?.id, names],
+    [proxies, here, myUserId, me?.id, names, meeting.participants],
   );
+
+  // "N agents listening": live from the room's "listeners" event, else from the participant list
+  // (whoever chose "my agent listens" and is not in the call).
+  const listening = useMemo(() => {
+    const ids = socket.listeners ? socket.listeners.userIds : proxies.map((p) => p.userId);
+    const away = ids.filter((id) => !here.has(id));
+    const count = socket.listeners ? Math.max(0, socket.listeners.count - (ids.length - away.length)) : away.length;
+    return { count, names: away.map((id) => names[id]?.name ?? "A teammate") };
+  }, [socket.listeners, proxies, here, names]);
 
   const pin = (id: string | null) => {
     setPinnedId(id);
@@ -1011,6 +1025,7 @@ function Room({
             mode,
             onMode: switchMode,
             shortcutsOn,
+            extra: <ListeningChip count={listening.count} names={listening.names} />,
           }}
         />
         {live.status !== "consent" ? (
@@ -1033,6 +1048,7 @@ function Room({
                 onDone={(key) => setQuestionsDone((d) => ({ ...d, [key]: true }))}
               />
             ) : null}
+            {me?.steers ? <ViewsTray meetingId={meeting.id} live={socket.incomingViews} onShare={socket.sendChat} /> : null}
           </StageBar>
         ) : null}
         {live.status !== "consent" ? (

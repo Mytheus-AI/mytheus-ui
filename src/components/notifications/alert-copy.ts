@@ -18,10 +18,14 @@ export type FeedKind =
   | "reminder"
   | "decision_changed"
   | "promise_drift"
-  | "weekly_digest";
+  | "weekly_digest"
+  | "interruption"
+  | "evening_digest";
 
 import type { DecisionReversal } from "../../lib/api/only-mytheus-types";
 import { parseSourceEvent } from "../../lib/reversals.ts";
+import { eveningDigestIdOf, interruptionIdOf } from "../../lib/listening.ts";
+import type { Interruption } from "../../lib/api/listening-types";
 
 export interface FeedRowInput {
   id: string;
@@ -56,6 +60,9 @@ export interface FeedItem {
   /** A decision reversal's own row, joined on the server so the Inbox can settle it in place;
    *  null when it could not be read (the row still offers the three choices). */
   reversal?: DecisionReversal | null;
+  /** In every meeting at once: an `interrupt:{id}` row's interruption, joined on the server so
+   *  the Inbox can offer Join now / Send a view / Hold the line in place; null when unread. */
+  interruption?: Interruption | null;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -172,6 +179,36 @@ export function describeNotification(row: FeedRowInput): FeedItem {
       title: row.title || "What changed for you this week",
       href: safeLink(row.link) ?? "/digest",
       linkLabel: "Read your digest",
+    };
+  }
+
+  // In every meeting at once: a live interruption from your agent, and the evening digest.
+  const interruptionId = interruptionIdOf(sourceEventId);
+  if (interruptionId) {
+    return {
+      ...base,
+      sourceEventId,
+      kind: "interruption",
+      // Something in a live meeting needs you now: red.
+      priority: 1,
+      title: row.title || "Something in a live meeting needs you",
+      body: row.body,
+      quote: null,
+      href: "/meetings/listening",
+      linkLabel: "See what your agent raised",
+    };
+  }
+  if (eveningDigestIdOf(sourceEventId)) {
+    return {
+      ...base,
+      sourceEventId,
+      kind: "evening_digest",
+      priority: 3,
+      title: row.title || "What your agent heard today",
+      body: row.body,
+      quote: null,
+      href: safeLink(row.link) ?? "/meetings/listening",
+      linkLabel: "Read the digest",
     };
   }
 

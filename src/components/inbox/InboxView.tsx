@@ -13,7 +13,9 @@ import {
   Checks,
   Gavel,
   Hourglass,
+  Moon,
   Newspaper,
+  Robot,
   Scales,
   Warning,
   X,
@@ -28,6 +30,8 @@ import { textLinkClass } from "@/components/ui/TextLink";
 import { LocalWhen } from "@/components/status/LocalWhen";
 import { ReversalActions, taskOf } from "@/components/reversals/ReversalActions";
 import { StatusAnswerRow } from "@/components/status/StatusAnswerRow";
+import { InboxInterruption } from "@/components/listening/InboxInterruption";
+import { interruptionIdOf } from "@/lib/listening";
 import { useStatusAnswers } from "@/components/status/useStatusAnswers";
 import { dismissAlert, markAlertRead } from "@/app/actions/notifications";
 import { confirmCandidate, dismissCandidate } from "@/app/actions/candidates";
@@ -84,6 +88,8 @@ const NOTE_ICON = {
   decision_changed: ArrowsClockwise,
   promise_drift: Hourglass,
   weekly_digest: Newspaper,
+  interruption: Robot,
+  evening_digest: Moon,
 } as const;
 const NOTE_LABEL = {
   topic_watch: "Topic you watch",
@@ -93,6 +99,8 @@ const NOTE_LABEL = {
   decision_changed: "Decision changed",
   promise_drift: "Promise past due",
   weekly_digest: "Weekly digest",
+  interruption: "Your agent, from a live meeting",
+  evening_digest: "Evening digest",
 } as const;
 
 function asFilter(v: string | null): InboxFilter {
@@ -142,6 +150,33 @@ export function InboxView({ initial, failed, nowIso }: { initial: InboxItem[]; f
   useEffect(() => {
     setActive((a) => Math.min(Math.max(a, 0), Math.max(rows.length - 1, 0)));
   }, [rows.length]);
+
+  // A refresh (a live interruption arrived, say) brings rows this list has not seen: add them
+  // without undoing anything the person is in the middle of.
+  useEffect(() => {
+    setItems((list) => {
+      const known = new Set(list.map((i) => i.key));
+      const fresh = initial.filter((i) => !known.has(i.key));
+      return fresh.length ? [...fresh, ...list] : list;
+    });
+  }, [initial]);
+
+  // `?interruption={id}` (the link on a live interruption's notification and push): that row is
+  // the active one, in view and focused, once.
+  const target = params.get("interruption");
+  const targeted = useRef(false);
+  useEffect(() => {
+    if (!target || targeted.current) return;
+    const i = rows.findIndex((r) => r.kind === "notification" && interruptionIdOf(r.notification.sourceEventId) === target.toLowerCase());
+    if (i < 0) return;
+    targeted.current = true;
+    setActive(i);
+    requestAnimationFrame(() => {
+      const el = list.current?.querySelector<HTMLElement>(`[data-index="${i}"]`);
+      el?.scrollIntoView({ block: "center", behavior: "auto" });
+      el?.focus({ preventScroll: true });
+    });
+  }, [target, rows]);
 
   const setFilter = (f: InboxFilter) => {
     setFilterState(f);
@@ -469,6 +504,7 @@ function NotificationRow({
             </Link>
           ) : null}
         </div>
+        {n.kind === "interruption" ? <InboxInterruption interruption={n.interruption ?? null} /> : null}
         {n.kind === "decision_changed" && n.sourceEventId ? (
           <ReversalActions
             reversalId={n.reversal?.id ?? n.sourceEventId.slice("decision-reversal:".length)}

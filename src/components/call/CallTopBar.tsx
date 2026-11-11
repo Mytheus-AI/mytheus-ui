@@ -24,6 +24,8 @@ export type CallTopBarRoom = {
   onMode?: (mode: "call" | "notes") => void;
   /** Keyboard shortcuts are on: name their keys in the tooltips. */
   shortcutsOn?: boolean;
+  /** Beside the in-call chip: "3 agents listening" (In every meeting at once). */
+  extra?: ReactNode;
 };
 
 export function CallTopBar({ room, end }: { room?: CallTopBarRoom; end?: ReactNode }) {
@@ -59,6 +61,7 @@ export function CallTopBar({ room, end }: { room?: CallTopBarRoom; end?: ReactNo
                 </span>
               ) : null}
             </span>
+            {room.extra}
           </div>
 
           {room.mode && room.onMode ? (

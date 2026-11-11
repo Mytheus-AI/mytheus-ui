@@ -14,6 +14,8 @@ import type { DashboardResponse } from "@/lib/api/types";
 import { describeNotification, type FeedItem } from "@/components/notifications/alert-copy";
 import { reversalIdOf } from "@/lib/reversals";
 import { toInboxItems, type InboxItem } from "@/lib/inbox";
+import { fetchInterruptions } from "@/lib/api/listening";
+import { interruptionIdOf } from "@/lib/listening";
 
 export type InboxArm = "notifications" | "updates" | "review";
 
@@ -28,7 +30,7 @@ export async function loadInbox(nowMs = Date.now()): Promise<InboxRead> {
     fetchMyStatusRequests("pending").catch(() => null),
     apiSafe<DashboardResponse>("/bff/dashboard"),
   ]);
-  const notes = notifications ? await withReversals(notifications) : null;
+  const notes = notifications ? await withInterruptions(await withReversals(notifications)) : null;
   const reviewArm = dashboard.ok ? dashboard.data.needs_review : null;
   const reviewFailed = !reviewArm || reviewArm.status === "degraded";
   const failed: InboxArm[] = [];
@@ -53,5 +55,18 @@ async function withReversals(items: FeedItem[]): Promise<FeedItem[]> {
   return items.map((n) => {
     const id = reversalIdOf(n.sourceEventId);
     return id ? { ...n, reversal: byId.get(id) ?? null } : n;
+  });
+}
+
+/** An `interrupt:{id}` notification carries its interruption (In every meeting at once), so the
+ *  row offers Join now, Send a view and Hold the line while the meeting is live, and shows what
+ *  happened after. One read, and only when there is one. */
+async function withInterruptions(items: FeedItem[]): Promise<FeedItem[]> {
+  if (!items.some((n) => interruptionIdOf(n.sourceEventId))) return items;
+  const res = await fetchInterruptions(100);
+  const byId = new Map((res.ok ? res.data.items : []).map((i) => [i.id, i]));
+  return items.map((n) => {
+    const id = interruptionIdOf(n.sourceEventId);
+    return id ? { ...n, interruption: byId.get(id) ?? null } : n;
   });
 }
