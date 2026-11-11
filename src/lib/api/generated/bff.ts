@@ -559,6 +559,12 @@ export interface components {
             id: string;
             /** Livekit Room */
             livekit_room: string | null;
+            /**
+             * Recorded In Person
+             * @description Held in a room and recorded on a phone: no call or room to join (wave 3).
+             * @default false
+             */
+            recorded_in_person: boolean;
             /** Scheduled End */
             scheduled_end: string | null;
             /** Scheduled Start */

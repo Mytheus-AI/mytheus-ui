@@ -105,14 +105,14 @@ test("erasure progress per store", () => {
     { store: "search_index", status: "pending" as const },
   ];
   assert.deepEqual(orderedStores(stores).map((s) => s.store), ["core_api", "transcript_chunks", "vectors", "search_index", "knowledge_graph"]);
-  assert.deepEqual(erasureProgress({ status: "in_progress", stores }), { done: 2, total: 5, finished: false, label: "2 of 5 stores done" });
+  assert.deepEqual(erasureProgress({ progress: "in_progress", stores }), { done: 2, total: 5, finished: false, label: "2 of 5 stores done" });
   const all = stores.map((s) => ({ ...s, status: "completed" as const }));
-  assert.equal(erasureProgress({ status: "completed", stores: all }).label, "Finished in every store");
-  assert.equal(erasureProgress({ status: "completed", stores: [stores[1]] }).label, "Finished");
+  assert.equal(erasureProgress({ progress: "completed", stores: all }).label, "Finished in every store");
+  assert.equal(erasureProgress({ progress: "completed", stores: [stores[1]] }).label, "Finished");
   assert.equal(storeLabel("transcript_chunks").name, "Transcripts");
   assert.equal(storeLabel("new_store").name, "new store");
-  assert.equal(anyInProgress([{ status: "completed" }, { status: "in_progress" }]), true);
-  assert.equal(anyInProgress([{ status: "completed" }]), false);
+  assert.equal(anyInProgress([{ progress: "completed" }, { progress: "in_progress" }]), true);
+  assert.equal(anyInProgress([{ progress: "completed" }]), false);
 });
 
 test("ask citations: transcript seconds and document passages", () => {

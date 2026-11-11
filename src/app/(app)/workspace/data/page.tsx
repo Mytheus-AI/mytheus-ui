@@ -216,7 +216,7 @@ export default async function DataExportPage() {
                         {erasureSummary(r)}
                       </td>
                       <td data-label="Progress" className="py-3 pl-5 pr-[22px] align-top">
-                        <ErasureStores id={`erasure-${r.id}`} status={r.status} stores={r.stores} />
+                        <ErasureStores id={`erasure-${r.id}`} progress={r.progress} stores={r.stores} />
                       </td>
                     </tr>
                   ))}

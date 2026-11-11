@@ -9,9 +9,9 @@ import { erasureProgress, orderedStores, storeLabel, type ErasureStoreRow } from
 const time = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 const at = (iso: string | null | undefined) => (iso && !Number.isNaN(Date.parse(iso)) ? time.format(new Date(iso)) : null);
 
-export function ErasureStores({ id, status, stores }: { id: string; status?: string; stores?: ErasureStoreRow[] }) {
+export function ErasureStores({ id, progress: state, stores }: { id: string; progress?: string; stores?: ErasureStoreRow[] }) {
   const rows = orderedStores(stores);
-  const progress = erasureProgress({ status, stores });
+  const progress = erasureProgress({ progress: state, stores });
   if (rows.length === 0) return null;
   return (
     <div>

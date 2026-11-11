@@ -69,6 +69,7 @@ export default async function DashboardPage() {
   const meetings: HomeMeeting[] = (meetingsArm?.items ?? []).map((m, i) => ({
     ...toMeetingView(m),
     endTime: meetingsArm?.items[i]?.scheduled_end ?? undefined,
+    inPerson: meetingsArm?.items[i]?.recorded_in_person === true,
   }));
   // A failed fetch and a server-reported degraded arm are the same thing to a panel.
   const arm = <K extends keyof DashboardResponse>(key: K) => {

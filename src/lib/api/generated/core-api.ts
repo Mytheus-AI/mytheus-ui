@@ -3552,6 +3552,12 @@ export interface components {
             participants?: components["schemas"]["Participant"][];
             /** Previous Meeting Id */
             previous_meeting_id?: string | null;
+            /**
+             * Recorded In Person
+             * @description True for a meeting held in a room and recorded on a phone: it has no call and no Mytheus room to join (its `source` is `mytheus`).
+             * @default false
+             */
+            recorded_in_person: boolean;
             /** Scheduled End */
             scheduled_end: string | null;
             /** Scheduled Start */
@@ -3561,7 +3567,7 @@ export interface components {
              * @default mytheus
              * @enum {string}
              */
-            source: "mytheus" | "meet" | "teams" | "zoom" | "in_person";
+            source: "mytheus" | "meet" | "teams" | "zoom";
             /**
              * Status
              * @enum {string}
@@ -3642,6 +3648,12 @@ export interface components {
             previous_meeting?: components["schemas"]["MeetingRef"] | null;
             /** Previous Meeting Id */
             previous_meeting_id?: string | null;
+            /**
+             * Recorded In Person
+             * @description True for a meeting held in a room and recorded on a phone: it has no call and no Mytheus room to join (its `source` is `mytheus`).
+             * @default false
+             */
+            recorded_in_person: boolean;
             /** Scheduled End */
             scheduled_end: string | null;
             /** Scheduled Start */
@@ -3651,7 +3663,7 @@ export interface components {
              * @default mytheus
              * @enum {string}
              */
-            source: "mytheus" | "meet" | "teams" | "zoom" | "in_person";
+            source: "mytheus" | "meet" | "teams" | "zoom";
             /**
              * Status
              * @enum {string}

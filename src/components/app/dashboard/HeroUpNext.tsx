@@ -132,7 +132,7 @@ export function HeroUpNext({
           {live ? (
             <Chip tone="high">
               <Broadcast size={14} weight="fill" aria-hidden />
-              Live now
+              {next.inPerson ? "Recording in person" : "Live now"}
             </Chip>
           ) : (
             <Chip tone="solid">
@@ -157,7 +157,7 @@ export function HeroUpNext({
       <p className="text-[14px] font-medium text-ink-2">{meta}</p>
 
       <div className="mt-[22px] flex flex-wrap gap-2.5">
-        {live ? (
+        {live && !next.inPerson ? (
           <>
             <LinkButton href={`/meetings/${next.id}/room`} variant="primary" size="lg" className={btn}>
               <VideoCamera size={18} weight="bold" aria-hidden />

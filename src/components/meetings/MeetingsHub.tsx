@@ -450,7 +450,8 @@ function Row({ m, now, people }: { m: HubMeeting; now: Date; people: Record<stri
   const live = m.status === "live";
   const past = m.status === "past";
   const soon = m.status === "upcoming" && until >= 0 && until <= SOON_MS;
-  const joinable = live || soon;
+  // A meeting recorded on a phone in a room has no call to join; it opens like any other.
+  const joinable = (live || soon) && !m.recordedInPerson;
 
   const host = m.participants.find((p) => p.role === "host");
   const hostPerson = host ? people[host.id] : undefined;
@@ -461,8 +462,10 @@ function Row({ m, now, people }: { m: HubMeeting; now: Date; people: Record<stri
   const chip = live ? (
     <Chip tone="high">
       <span className="mx-live-dot" aria-hidden="true" />
-      Live
+      {m.recordedInPerson ? "Recording in person" : "Live"}
     </Chip>
+  ) : m.recordedInPerson && past ? (
+    <Chip>Recorded in person</Chip>
   ) : soon ? (
     <Chip tone="accent">Starts in {Math.max(1, Math.ceil(until / 60_000))} min</Chip>
   ) : past ? (
