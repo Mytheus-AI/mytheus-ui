@@ -43,6 +43,8 @@ import { openSuggestions, savedSuggestions } from "@/lib/realtime/suggestions";
 import { visibleContextFills } from "@/lib/realtime/contextFills";
 import { orderedAlerts } from "@/lib/realtime/alerts";
 import { useMeetingSocket } from "@/lib/realtime/useMeetingSocket";
+import { useFloorAttempts } from "@/lib/realtime/useFloorAttempts";
+import { ResumePointPin } from "@/components/room-signals/ResumePointPin";
 import { roomConnection } from "@/lib/realtime/connection";
 import { elapsedSeconds } from "@/lib/realtime/meeting-clock";
 import {
@@ -481,6 +483,15 @@ function Room({
   // Your hand comes down by itself once you have been talking for a few seconds (the floor is
   // yours); a cough or a word does not count. Asked once per raise.
   const localSpeaking = Boolean(micOn && live.participants.find((p) => p.isLocal)?.isSpeaking);
+  // The last word (a3): an unmute the room talked over is kept privately for after the call.
+  const otherSpeakerId = live.participants.find((p) => !p.isLocal && p.isSpeaking)?.identity ?? null;
+  useFloorAttempts({
+    enabled: joined && liveRoom !== null,
+    micOn,
+    speaking: localSpeaking,
+    otherSpeakerId,
+    send: (a) => void socket.sendFloorAttempt(a),
+  });
   const speech = useRef<SpeechRun>(quietSpeech);
   const spokeLowered = useRef(false);
   useEffect(() => {
@@ -1023,6 +1034,16 @@ function Room({
             standInIds={standInIds}
             onAddAgenda={me?.steers ? () => setAddAgendaOpen(true) : undefined}
           >
+            {joined ? (
+              <ResumePointPin
+                meetingId={meeting.id}
+                steers={Boolean(me?.steers)}
+                nameOf={nameOfPerson}
+                change={socket.resumeChange}
+                onAnnounce={socket.announceResumePoint}
+                toast={toast}
+              />
+            ) : null}
             {lateJoin ? <CatchUpLine meetingId={meeting.id} nameOf={nameOfPerson} onClose={() => setLateJoin(false)} /> : null}
             {me?.steers ? (
               <StandInQuestions
