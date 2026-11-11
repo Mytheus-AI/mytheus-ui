@@ -737,3 +737,7 @@ export async function loadDiff(from: string, to: string, topic?: string) {
 export async function loadTimeline(topic: string) {
   return { ok: true as const, data: { ...TIMELINE, topic } };
 }
+export * from "./actions-skel-home";
+export * from "./actions-skel-meet";
+export * from "./actions-skel-people";
+export * from "./actions-skel-work";

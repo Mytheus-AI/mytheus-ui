@@ -9,6 +9,9 @@ import { defineConfig, devices } from "@playwright/experimental-ct-react";
    an SFU. Run: npm run test:a11y */
 
 const root = path.resolve(__dirname, "../..");
+// CT_PORT lets two runs share a checkout (each gets its own port, build cache and output folder).
+const port = Number(process.env.CT_PORT ?? 3197);
+const tag = process.env.CT_PORT ? `-${port}` : "";
 const stub = (name: string) => path.resolve(__dirname, "stubs", name);
 
 export default defineConfig({
@@ -20,11 +23,11 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never", outputFolder: path.resolve(root, "playwright-report") }]] : "list",
-  outputDir: path.resolve(root, "test-results"),
+  outputDir: path.resolve(root, `test-results${tag}`),
   use: {
     ctTemplateDir: "./playwright",
-    ctCacheDir: path.resolve(root, "node_modules/.cache/playwright-ct"),
-    ctPort: 3197,
+    ctCacheDir: path.resolve(root, `node_modules/.cache/playwright-ct${tag}`),
+    ctPort: port,
     viewport: { width: 1440, height: 900 },
     ctViteConfig: {
       define: {
@@ -39,6 +42,7 @@ export default defineConfig({
           { find: /^@\/components\/room\/actions$/, replacement: stub("room-actions.ts") },
           { find: /^@\/components\/room\/stage-actions$/, replacement: stub("stage-actions.ts") },
           { find: /^@\/app\/actions\/.*$/, replacement: stub("actions.ts") },
+          { find: /^@\/lib\/fonts$/, replacement: stub("fonts.ts") },
           { find: /^@\//, replacement: `${path.resolve(root, "src")}/` },
         ],
       },
