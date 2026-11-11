@@ -1,6 +1,6 @@
 {
   "name": "mytheus-capture",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Mytheus Capture: brings calls on Google Meet, Microsoft Teams and Zoom (web) into Mytheus, without a bot.",
   "type": "module",

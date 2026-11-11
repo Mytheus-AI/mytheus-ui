@@ -4,6 +4,7 @@
  */
 
 import { connectUrl } from "./lib/api.ts";
+import { EXTENSION_VERSION } from "./lib/config.ts";
 import {
   SETTINGS_KEY,
   SITES,
@@ -14,6 +15,7 @@ import {
 } from "./lib/decisions.ts";
 import {
   detectMeeting,
+  MEETING_URL_PATTERNS,
   pickMeetingTab,
   titleFromTab,
   type DetectedMeeting,
@@ -120,7 +122,12 @@ function footer(): HTMLElement | null {
   return h(
     "footer",
     { class: "foot" },
-    h("span", { class: "who" }, `${link.account.email}`, h("span", { class: "org" }, link.account.organization)),
+    h(
+      "span",
+      { class: "who" },
+      `${link.account.email}`,
+      h("span", { class: "org" }, `${link.account.organization} · v${EXTENSION_VERSION}`),
+    ),
     state.phase === "idle" || state.phase === "done" || state.phase === "error"
       ? h(
           "button",
@@ -168,7 +175,7 @@ function viewNoMeeting(): HTMLElement {
     h(
       "p",
       { class: "lead" },
-      "Join a call on Google Meet, Microsoft Teams or the Zoom web client in this tab, then click the Mytheus icon again.",
+      "Join a call on Google Meet, Microsoft Teams or the Zoom web client in any tab, then click the Mytheus icon again.",
     ),
   );
 }
@@ -429,18 +436,27 @@ function render(): void {
 }
 
 /**
- * Every tab of the normal browser windows, with the last-focused window's active tab marked.
+ * Every tab the extension can see, with the last-focused window's active tab marked.
  * Not "the current window": when the browser opens the action popup as its own window, that
- * window is the popup, and the meeting tab is in another one.
+ * window is the popup, and the meeting tab is in another one. No window-type filter either:
+ * Chromium browsers such as Arc and Dia do not always report their windows as "normal". The
+ * URL query is a second net that matches meeting tabs by the host permissions alone.
  */
 async function meetingTabCandidates(): Promise<(chrome.tabs.Tab & { focused: boolean })[]> {
-  const [windows, focusedWindow] = await Promise.all([
-    chrome.windows.getAll({ populate: true, windowTypes: ["normal"] }),
-    chrome.windows.getLastFocused({ windowTypes: ["normal"] }).catch(() => null),
+  const [all, byUrl, focusedWindow] = await Promise.all([
+    chrome.tabs.query({}).catch(() => [] as chrome.tabs.Tab[]),
+    chrome.tabs.query({ url: MEETING_URL_PATTERNS }).catch(() => [] as chrome.tabs.Tab[]),
+    chrome.windows.getLastFocused().catch(() => null),
   ]);
-  return windows.flatMap((w) =>
-    (w.tabs ?? []).map((t) => ({ ...t, focused: Boolean(t.active && w.id === focusedWindow?.id) })),
-  );
+  const ownWindow = await chrome.windows.getCurrent().catch(() => null);
+  const seen = new Map<number | string, chrome.tabs.Tab>();
+  for (const t of [...byUrl, ...all]) seen.set(t.id ?? `${t.windowId}:${t.index}`, t);
+  return [...seen.values()]
+    .filter((t) => !t.url?.startsWith(`chrome-extension://${chrome.runtime.id}/`))
+    .map((t) => ({
+      ...t,
+      focused: Boolean(t.active && t.windowId === focusedWindow?.id && t.windowId !== ownWindow?.id),
+    }));
 }
 
 async function load(): Promise<void> {
