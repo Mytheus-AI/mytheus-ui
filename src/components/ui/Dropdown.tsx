@@ -103,6 +103,8 @@ export type DropdownProps<T extends string> = {
 };
 
 const SHEET_QUERY = "(max-width: 639.98px)";
+// Placement must land before paint in the browser; on the server there is nothing to place.
+const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 const TYPE_RESET_MS = 600;
 
 function supportsPopover(el: HTMLElement | null): el is HTMLElement & { showPopover: () => void; hidePopover: () => void } {
@@ -215,7 +217,7 @@ export function Dropdown<T extends string>({
     );
   }, [sheet, align, matchWidth, panelMinWidth, close]);
 
-  useLayoutEffect(() => {
+  useBrowserLayoutEffect(() => {
     if (!open) return;
     const p = panel.current;
     if (p && supportsPopover(p)) {
