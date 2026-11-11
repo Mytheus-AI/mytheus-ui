@@ -640,3 +640,72 @@ export async function readSettleSlot() {
 export async function bookSettleMeeting() {
   return { ok: true as const, data: { meeting_id: "99999999-9999-4999-8999-999999999999", start: WB_SLOT.start, end: WB_SLOT.end, title: "Settle: SSO vendor" } };
 }
+
+// In every meeting at once (src/app/actions/listening.ts), answered as core-api would.
+const LISTEN_POSITIONS = [
+  { id: "a1b2c3d4-0000-4000-8000-000000000001", topic: "Pricing", text: "No discount above 10% for SMB without finance.", created_at: "2026-11-01T09:00:00Z", updated_at: "2026-11-01T09:00:00Z" },
+  { id: "a1b2c3d4-0000-4000-8000-000000000002", topic: "Hiring", text: "No new contractors this quarter.", created_at: "2026-11-01T09:00:00Z", updated_at: "2026-11-01T09:00:00Z" },
+  { id: "a1b2c3d4-0000-4000-8000-000000000003", topic: null, text: "Our pricing page stays public.", created_at: "2026-11-01T09:00:00Z", updated_at: "2026-11-01T09:00:00Z" },
+];
+const LISTEN_VIEW = {
+  id: "b1b2c3d4-0000-4000-8000-000000000009",
+  meeting_id: "8a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+  user_id: "u-priya",
+  author_name: "Priya Nair",
+  kind: "view",
+  text: "Keep SMB at 10% off. 15% breaks the margin model.",
+  status: "pending",
+  decided_at: null,
+  created_at: "2026-11-11T10:12:00Z",
+  chat_text: "Priya's view: Keep SMB at 10% off. 15% breaks the margin model.",
+};
+const choiceOf = (meetingId: string, choice: string, source = "manual") => ({
+  meeting_id: meetingId,
+  choice,
+  source,
+  rule_id: null,
+  attendance: choice === "agent_listens" ? "agent" : "live",
+  agents_listening: choice === "agent_listens" ? 1 : 0,
+});
+export async function setAttendanceChoice(meetingId: string, choice: string) {
+  return { ok: true as const, data: choiceOf(meetingId, choice) };
+}
+export async function clearAttendanceChoice(meetingId: string) {
+  return { ok: true as const, data: choiceOf(meetingId, "attend", "default") };
+}
+export async function saveAttendanceRule(_id: string | null, input: Record<string, unknown>) {
+  return { ok: true as const, data: { applied: 3, rule: { id: "r-new", position: 0, created_at: "", updated_at: "", template_name: null, ...input } } };
+}
+export async function deleteAttendanceRule() {
+  return { ok: true as const, data: null };
+}
+export async function saveListeningPreferences(input: Record<string, unknown>) {
+  return { ok: true as const, data: { ...input, interruptible_now: true, quiet_reason: null, quiet_until: null } };
+}
+export async function listPositions() {
+  return { ok: true as const, data: LISTEN_POSITIONS };
+}
+export async function savePosition(id: string | null, input: { topic: string | null; text: string }) {
+  return { ok: true as const, data: { id: id ?? `p-${Date.now()}`, created_at: "", updated_at: "", ...input } };
+}
+export async function deletePosition() {
+  return { ok: true as const, data: null };
+}
+export async function joinFromInterruption(id: string) {
+  return { ok: true as const, data: { id, join_url: "/meetings/x/room", response: "joined", can_respond: false } };
+}
+export async function dismissInterruption(id: string) {
+  return { ok: true as const, data: { id, response: "dismissed" } };
+}
+export async function sendView(_id: string, text: string) {
+  return { ok: true as const, data: { ...LISTEN_VIEW, text } };
+}
+export async function holdTheLine() {
+  return { ok: true as const, data: { ...LISTEN_VIEW, kind: "hold_line" } };
+}
+export async function loadMeetingViews() {
+  return { ok: true as const, data: { items: [LISTEN_VIEW], is_host: true } };
+}
+export async function decideMeetingView(_m: string, viewId: string, verdict: string) {
+  return { ok: true as const, data: { ...LISTEN_VIEW, id: viewId, status: verdict === "share" ? "shared" : "dismissed" } };
+}

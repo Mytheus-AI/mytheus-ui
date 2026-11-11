@@ -31,6 +31,8 @@ import {
   Broadcast,
   Newspaper,
   SpeakerHigh,
+  Headphones,
+  BellSimpleZ,
 } from "@phosphor-icons/react/ssr";
 
 /* The app's information architecture, in one place. One list feeds the sidebar, the topbar
@@ -82,6 +84,12 @@ export const WORK_TABS: NavItem[] = [
   { href: "/work/settle", label: "To settle", icon: Lightning, keywords: "clash conflict decisions other team settle" },
 ];
 
+/** Meetings: the hub, and what your agent listens to for you (In every meeting at once). */
+export const MEETINGS_TABS: NavItem[] = [
+  { href: "/meetings", label: "All meetings", icon: VideoCamera, keywords: "calendar calls" },
+  { href: "/meetings/listening", label: "Listening", icon: Headphones, keywords: "agent listens attend skip week rules evening digest interruptions" },
+];
+
 /** The Workspace console's tabs (admins). The company brain keeps its sections as a secondary nav
     inside its own tab. */
 export const WORKSPACE_TABS: NavItem[] = [
@@ -98,6 +106,7 @@ export const WORKSPACE_TABS: NavItem[] = [
 export const SETTINGS_TABS: NavItem[] = [
   { href: "/settings/profile", label: "Profile", icon: UserCircle, keywords: "name role" },
   { href: "/settings/notifications", label: "Notifications", icon: Bell, keywords: "email alerts" },
+  { href: "/settings/listening", label: "Listening", icon: BellSimpleZ, keywords: "interruptions quiet hours focus blocks evening digest lines positions hold the line" },
   { href: "/settings/memory", label: "Agent memory", icon: Notebook, keywords: "what your agent remembers topics questions forget learning calibration" },
   { href: "/settings/briefings", label: "Briefings", icon: SpeakerHigh, keywords: "briefing voice speak listen auto-play length language" },
   { href: "/settings/integrations", label: "Integrations", icon: PlugsConnected, keywords: "calendar slack jira hubspot notion confluence" },
@@ -134,6 +143,7 @@ export function allNavItems(isAdmin: boolean): NavItem[] {
     AGENT_ITEM,
     ...MAIN_ITEMS,
     ...WORK_TABS,
+    ...MEETINGS_TABS.filter((t) => t.href !== "/meetings"),
     ...LINKED_ITEMS,
     ...FOOT_ITEMS,
     ...SETTINGS_TABS,

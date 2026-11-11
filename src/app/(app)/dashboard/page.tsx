@@ -15,6 +15,7 @@ import type { HomeMeeting } from "@/components/app/dashboard/types";
 import { Suspense } from "react";
 import { MeetingBriefCard } from "@/components/briefs/MeetingBriefCard";
 import { HomeBriefing } from "@/components/briefing/HomeBriefing";
+import { HomeDigestCard } from "@/components/listening/HomeDigestCard";
 import { FirstRunChecklist } from "@/components/app/dashboard/FirstRunChecklist";
 import { CardSkeleton, Page } from "@/components/ui/Page";
 import { fetchMyProfile } from "@/lib/api/profile";
@@ -139,6 +140,10 @@ export default async function DashboardPage() {
             <HomeBriefing />
           </Suspense>
           <NeedsYou items={review.items} failed={review.failed} />
+          {/* In every meeting at once: what your agent heard for you, streamed on its own. */}
+          <Suspense fallback={null}>
+            <HomeDigestCard />
+          </Suspense>
           <RecentMeetings meetings={recent.items} failed={recent.failed} />
           {/* The brief for your next meeting streams in last, at the foot of the column, with a
               skeleton that holds its place, so it never pushes anything down when it arrives. */}

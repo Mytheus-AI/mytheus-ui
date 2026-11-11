@@ -125,6 +125,8 @@ import {
   type ReactionId,
 } from "./room-live";
 import { MAX_RECONNECT_ATTEMPTS, backoffMs, type LiveLink } from "./connection";
+import { mergeViews, parseListeners } from "../listening";
+import type { ListenersPayload, MeetingView } from "../api/listening-types";
 import { applyWrapUp, initialWrapUp, type WrapUpState } from "./stage";
 import {
   applyOffRecord,
@@ -158,6 +160,11 @@ export interface MeetingEnded {
 
 export interface MeetingSocketState {
   status: SocketStatus;
+  /** In every meeting at once: the room's "listeners" event (how many agents listen here, and
+   *  whose); null until the first one, so the room falls back to the participant list. */
+  listeners: ListenersPayload | null;
+  /** Views and held lines posted for the host (`meeting-view`, host only), newest last. */
+  incomingViews: MeetingView[];
   /** This socket has been joined at least once (a later drop is a reconnect, not a first connect). */
   everJoined: boolean;
   /** Start over after the room gave up reconnecting. */
@@ -326,6 +333,8 @@ export function useMeetingSocket(
   const [offRecordRequests, setOffRecordRequests] = useState<OffRecordRequests>([]);
   const [translation, setTranslation] = useState<TranslationState>(initialTranslation);
   const [resumeChange, setResumeChange] = useState<MeetingSocketState["resumeChange"]>(null);
+  const [listeners, setListeners] = useState<ListenersPayload | null>(null);
+  const [incomingViews, setIncomingViews] = useState<MeetingView[]>([]);
   // The chosen caption language, re-sent on every (re)join: the gateway keeps it per socket, and
   // a reconnect is a new socket.
   const languageRef = useRef<CaptionLanguage | null>(null);
@@ -558,6 +567,16 @@ export function useMeetingSocket(
         setResumeChange({ id: p.id, status: p.status, byUserId: typeof p.byUserId === "string" ? p.byUserId : "", at: p.at ?? "" });
       }),
     );
+    // In every meeting at once: how many agents listen here (everyone), and a view or held line
+    // for the host (the gateway sends it to the host only).
+    socket.on(
+      "listeners",
+      mine<unknown>((p) => {
+        const next = parseListeners(p);
+        if (next) setListeners(next);
+      }),
+    );
+    socket.on("meeting-view", mine<MeetingView>((p) => setIncomingViews((prev) => mergeViews(prev, [p]))));
     // The host's close-out wrap-up (polish program): open with its deadline, or kept going.
     socket.on(
       "wrap-up",
@@ -766,6 +785,8 @@ export function useMeetingSocket(
   return useMemo(
     () => ({
       status,
+      listeners,
+      incomingViews,
       everJoined,
       retry,
       captions,
@@ -817,6 +838,8 @@ export function useMeetingSocket(
     }),
     [
       status,
+      listeners,
+      incomingViews,
       everJoined,
       retry,
       captions,

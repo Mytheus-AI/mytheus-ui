@@ -16,7 +16,9 @@ import {
   Checks,
   Gavel,
   Hourglass,
+  Moon,
   Newspaper,
+  Robot,
   Scales,
   ShieldWarning,
   UsersThree,
@@ -37,6 +39,8 @@ import { StatusAnswerRow } from "@/components/status/StatusAnswerRow";
 import { AgreementAsk } from "@/components/room-signals/AgreementAsk";
 import { LastWordActions } from "@/components/room-signals/LastWordActions";
 import { parseSignalEvent } from "@/lib/room-signals";
+import { InboxInterruption } from "@/components/listening/InboxInterruption";
+import { interruptionIdOf } from "@/lib/listening";
 import { useStatusAnswers } from "@/components/status/useStatusAnswers";
 import { dismissAlert, markAlertRead } from "@/app/actions/notifications";
 import { confirmCandidate, dismissCandidate } from "@/app/actions/candidates";
@@ -101,6 +105,8 @@ const NOTE_ICON = {
   last_word: ChatCircleText,
   agreement_check: UsersThree,
   late_contribution: ChatTeardropDots,
+  interruption: Robot,
+  evening_digest: Moon,
 } as const;
 const NOTE_LABEL = {
   topic_watch: "Topic you watch",
@@ -116,6 +122,8 @@ const NOTE_LABEL = {
   last_word: "Your last word",
   agreement_check: "Private question",
   late_contribution: "Late contribution",
+  interruption: "Your agent, from a live meeting",
+  evening_digest: "Evening digest",
 } as const;
 
 function asFilter(v: string | null): InboxFilter {
@@ -165,6 +173,33 @@ export function InboxView({ initial, failed, nowIso }: { initial: InboxItem[]; f
   useEffect(() => {
     setActive((a) => Math.min(Math.max(a, 0), Math.max(rows.length - 1, 0)));
   }, [rows.length]);
+
+  // A refresh (a live interruption arrived, say) brings rows this list has not seen: add them
+  // without undoing anything the person is in the middle of.
+  useEffect(() => {
+    setItems((list) => {
+      const known = new Set(list.map((i) => i.key));
+      const fresh = initial.filter((i) => !known.has(i.key));
+      return fresh.length ? [...fresh, ...list] : list;
+    });
+  }, [initial]);
+
+  // `?interruption={id}` (the link on a live interruption's notification and push): that row is
+  // the active one, in view and focused, once.
+  const target = params.get("interruption");
+  const targeted = useRef(false);
+  useEffect(() => {
+    if (!target || targeted.current) return;
+    const i = rows.findIndex((r) => r.kind === "notification" && interruptionIdOf(r.notification.sourceEventId) === target.toLowerCase());
+    if (i < 0) return;
+    targeted.current = true;
+    setActive(i);
+    requestAnimationFrame(() => {
+      const el = list.current?.querySelector<HTMLElement>(`[data-index="${i}"]`);
+      el?.scrollIntoView({ block: "center", behavior: "auto" });
+      el?.focus({ preventScroll: true });
+    });
+  }, [target, rows]);
 
   const setFilter = (f: InboxFilter) => {
     setFilterState(f);
@@ -496,6 +531,7 @@ function NotificationRow({
         </div>
         {n.kind === "last_word" ? <LastWordRow n={n} notificationId={item.id} /> : null}
         {n.kind === "agreement_check" ? <AgreementRow n={n} notificationId={item.id} /> : null}
+        {n.kind === "interruption" ? <InboxInterruption interruption={n.interruption ?? null} /> : null}
         {n.kind === "decision_changed" && n.sourceEventId ? (
           <ReversalActions
             reversalId={n.reversal?.id ?? n.sourceEventId.slice("decision-reversal:".length)}
