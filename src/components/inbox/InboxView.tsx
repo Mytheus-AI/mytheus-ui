@@ -7,6 +7,8 @@ import {
   ArrowRight,
   ArrowsClockwise,
   Bell,
+  ChatCircleText,
+  ChatTeardropDots,
   Binoculars,
   Check,
   CheckSquare,
@@ -15,6 +17,7 @@ import {
   Hourglass,
   Newspaper,
   Scales,
+  UsersThree,
   Warning,
   X,
 } from "@phosphor-icons/react";
@@ -28,6 +31,9 @@ import { textLinkClass } from "@/components/ui/TextLink";
 import { LocalWhen } from "@/components/status/LocalWhen";
 import { ReversalActions, taskOf } from "@/components/reversals/ReversalActions";
 import { StatusAnswerRow } from "@/components/status/StatusAnswerRow";
+import { AgreementAsk } from "@/components/room-signals/AgreementAsk";
+import { LastWordActions } from "@/components/room-signals/LastWordActions";
+import { parseSignalEvent } from "@/lib/room-signals";
 import { useStatusAnswers } from "@/components/status/useStatusAnswers";
 import { dismissAlert, markAlertRead } from "@/app/actions/notifications";
 import { confirmCandidate, dismissCandidate } from "@/app/actions/candidates";
@@ -43,6 +49,7 @@ import {
 } from "@/lib/inbox";
 import type { InboxArm } from "@/lib/inbox-server";
 import type { StatusRequestView } from "@/lib/api/personal-types";
+import type { FeedItem } from "@/components/notifications/alert-copy";
 
 /* The Inbox: notifications, the updates you owe and your agents' detections waiting for review,
    in one list ordered by what needs you first (lib/inbox.ts). Filter chips narrow it by kind.
@@ -84,6 +91,9 @@ const NOTE_ICON = {
   decision_changed: ArrowsClockwise,
   promise_drift: Hourglass,
   weekly_digest: Newspaper,
+  last_word: ChatCircleText,
+  agreement_check: UsersThree,
+  late_contribution: ChatTeardropDots,
 } as const;
 const NOTE_LABEL = {
   topic_watch: "Topic you watch",
@@ -93,6 +103,9 @@ const NOTE_LABEL = {
   decision_changed: "Decision changed",
   promise_drift: "Promise past due",
   weekly_digest: "Weekly digest",
+  last_word: "Your last word",
+  agreement_check: "Private question",
+  late_contribution: "Late contribution",
 } as const;
 
 function asFilter(v: string | null): InboxFilter {
@@ -419,7 +432,7 @@ function rowHref(item: InboxItem | undefined): string | null {
 
 function GroupHead({ label, n }: { label: string; n: number }) {
   return (
-    <li role="presentation" className="flex items-center gap-2.5 bg-surface-2 px-4 py-2.5 sm:px-[22px]">
+    <li className="flex items-center gap-2.5 bg-surface-2 px-4 py-2.5 sm:px-[22px]">
       <span className="text-[14px] font-semibold text-ink">{label}</span>
       <Chip className="tabular-nums">{n}</Chip>
     </li>
@@ -469,6 +482,8 @@ function NotificationRow({
             </Link>
           ) : null}
         </div>
+        {n.kind === "last_word" ? <LastWordRow n={n} notificationId={item.id} /> : null}
+        {n.kind === "agreement_check" ? <AgreementRow n={n} notificationId={item.id} /> : null}
         {n.kind === "decision_changed" && n.sourceEventId ? (
           <ReversalActions
             reversalId={n.reversal?.id ?? n.sourceEventId.slice("decision-reversal:".length)}
@@ -571,5 +586,36 @@ function AnsweredLine({ req }: { req: StatusRequestView }) {
       <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-ink">{req.actionTitle}</span>
       {req.status_text ? <span className="w-full text-[14px] text-ink-3 sm:w-auto">{req.status_text}</span> : null}
     </div>
+  );
+}
+
+/* The room-signals rows (a3): settled in place, like a decision reversal. */
+
+function LastWordRow({ n, notificationId }: { n: FeedItem; notificationId: string }) {
+  const e = parseSignalEvent(n.sourceEventId);
+  const meetingId = n.lastWord?.meeting_id ?? n.meetingId ?? null;
+  if (e?.kind !== "lastword" || !meetingId) return null;
+  return <LastWordActions nudge={n.lastWord ?? null} nudgeId={e.nudgeId} meetingId={meetingId} notificationId={notificationId} />;
+}
+
+function AgreementRow({ n, notificationId }: { n: FeedItem; notificationId: string }) {
+  const e = parseSignalEvent(n.sourceEventId);
+  if (e?.kind !== "agreement") return null;
+  return (
+    <>
+      {n.agreementCheck ? (
+        <p className="mt-2 max-w-[75ch] rounded-ctl bg-bg-2 px-3.5 py-2.5 font-display text-[15px] italic leading-snug text-ink-2">
+          <span className="sr-only">The decision: </span>
+          {n.agreementCheck.decision_content}
+          <span className="mt-1 block font-sans text-[12.5px] not-italic text-ink-3">From {n.agreementCheck.meeting_title}</span>
+        </p>
+      ) : null}
+      <AgreementAsk
+        check={n.agreementCheck ?? null}
+        checkId={e.checkId}
+        notificationId={notificationId}
+        decisionLabel={n.agreementCheck?.decision_content}
+      />
+    </>
   );
 }

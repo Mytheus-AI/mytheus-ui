@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import {
+  ChatTeardropDots,
   CalendarBlank,
   CheckCircle,
   Clock,
@@ -30,6 +31,7 @@ import {
 import { ClipPlayer } from "@/components/share/ClipPlayer";
 import { lengthLabel, type PublicClipShare } from "@/components/recording/recording-model";
 import { fetchPublicPage } from "@/lib/api/public-share";
+import type { PublicLateContribution } from "@/lib/api/room-signals-types";
 import "@/styles/app-theme.css";
 import "@/styles/share-page.css";
 import "@/styles/meeting-recording.css";
@@ -183,11 +185,24 @@ function Section({
   );
 }
 
+function publicLate(share: PublicShare, recap: MeetingRecap): PublicLateContribution[] {
+  const raw =
+    (share as PublicShare & { late_contributions?: unknown }).late_contributions ??
+    (recap as MeetingRecap & { late_contributions?: unknown }).late_contributions;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (c): c is PublicLateContribution =>
+      !!c && typeof c === "object" && typeof (c as PublicLateContribution).body === "string" && (c as PublicLateContribution).body.trim() !== "",
+  );
+}
+
 function RecapPage({ share, recap }: { share: PublicShare; recap: MeetingRecap }) {
   const m = recap.minutes ?? null;
   const minutesDecisions = m?.decisions ?? [];
   const confirmed = recap.decisions;
   const people = recap.participant_names;
+  // a3 room signals: points people added after the call (text only), additive on the share or recap.
+  const late = publicLate(share, recap);
   return (
     <article className="sh-doc" aria-labelledby="sh-title">
       <header className="sh-hero">
@@ -218,7 +233,7 @@ function RecapPage({ share, recap }: { share: PublicShare; recap: MeetingRecap }
         {m?.summary ? <p className="sh-summary">{m.summary}</p> : null}
       </header>
 
-      {recapIsEmpty(recap) ? (
+      {recapIsEmpty(recap) && late.length === 0 ? (
         <p className="sh-empty">Nothing was decided or confirmed in this meeting, and no minutes were written for it.</p>
       ) : (
         <div className="sh-grid">
@@ -294,6 +309,18 @@ function RecapPage({ share, recap }: { share: PublicShare; recap: MeetingRecap }
                     <li key={i} className="sh-item is-stack">
                       <span className="sh-item-text">{q.text}</span>
                       {q.asked_by_name ? <span className="sh-item-meta">Asked by {q.asked_by_name}</span> : null}
+                    </li>
+                  ))}
+                </ul>
+              </Section>
+            ) : null}
+            {late.length > 0 ? (
+              <Section id="sh-late" icon={<ChatTeardropDots size={20} />} title="Added after the meeting" count={late.length}>
+                <ul className="sh-list">
+                  {late.map((c, i) => (
+                    <li key={i} className="sh-item is-stack">
+                      <span className="sh-item-text">{c.body}</span>
+                      <span className="sh-item-meta">{c.author_name}</span>
                     </li>
                   ))}
                 </ul>

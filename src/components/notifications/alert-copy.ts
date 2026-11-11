@@ -18,10 +18,15 @@ export type FeedKind =
   | "reminder"
   | "decision_changed"
   | "promise_drift"
-  | "weekly_digest";
+  | "weekly_digest"
+  | "last_word"
+  | "agreement_check"
+  | "late_contribution";
 
 import type { DecisionReversal } from "../../lib/api/only-mytheus-types";
 import { parseSourceEvent } from "../../lib/reversals.ts";
+import type { AgreementCheck, LastWordNudge } from "../../lib/api/room-signals-types";
+import { parseSignalEvent } from "../../lib/room-signals.ts";
 
 export interface FeedRowInput {
   id: string;
@@ -56,6 +61,13 @@ export interface FeedItem {
   /** A decision reversal's own row, joined on the server so the Inbox can settle it in place;
    *  null when it could not be read (the row still offers the three choices). */
   reversal?: DecisionReversal | null;
+  /** The meeting the notification is about (the row's own, or the payload's), when known. */
+  meetingId?: string | null;
+  /** A last-word nudge's own row (a3 room signals), joined on the server so the Inbox can settle it
+   *  in place; null when it could not be read. */
+  lastWord?: LastWordNudge | null;
+  /** An agreement check's own row, joined the same way. */
+  agreementCheck?: AgreementCheck | null;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -129,6 +141,51 @@ export function describeNotification(row: FeedRowInput): FeedItem {
       // the lineage page (which is keyed by that meeting) is reachable only through a server link.
       href: safeLink(row.link) ?? "/decisions",
       linkLabel: "See the decision",
+    };
+  }
+
+  // The room-signals jobs (a3): the last word, the private agreement check, a late point the host
+  // hears about. Title, body and link come from the server; the row settles the first two in place.
+  const signal = parseSignalEvent(str(p.source_event_id));
+  if (signal) {
+    const own = {
+      ...base,
+      sourceEventId: str(p.source_event_id),
+      meetingId: UUID.test(meetingId) ? meetingId : null,
+      body: row.body,
+      quote: null,
+    };
+    if (signal.kind === "lastword") {
+      return {
+        ...own,
+        kind: "last_word",
+        // An invitation, not a demand: it informs, blue.
+        priority: 3,
+        title: row.title || "You didn't get to finish your point. Want to add it?",
+        href: safeLink(row.link) ?? (meetingHref ? `${meetingHref}#last-word` : null),
+        linkLabel: "Open the meeting",
+      };
+    }
+    if (signal.kind === "agreement") {
+      return {
+        ...own,
+        kind: "agreement_check",
+        // A question waiting on you: attention, amber.
+        priority: 2,
+        title: row.title || "Where do you stand on a decision?",
+        // The server links to the Inbox (where it is answered); inside the Inbox the row links to
+        // the decision instead, once the check is joined (`lib/inbox-server.ts`).
+        href: safeLink(row.link) === "/inbox" ? null : safeLink(row.link),
+        linkLabel: "Open the decision",
+      };
+    }
+    return {
+      ...own,
+      kind: "late_contribution",
+      priority: 3,
+      title: row.title || "Someone added a late point to your meeting",
+      href: safeLink(row.link) ?? (meetingHref ? `${meetingHref}#late` : null),
+      linkLabel: "Read it",
     };
   }
 

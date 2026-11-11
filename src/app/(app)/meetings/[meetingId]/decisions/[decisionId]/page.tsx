@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, CheckCircle, ClockCounterClockwise, GitCommit, Scales, VideoCamera } from "@phosphor-icons/react/dist/ssr";
+import { ArrowRight, ChatCircleText, CheckCircle, ClockCounterClockwise, GitCommit, Scales, VideoCamera } from "@phosphor-icons/react/dist/ssr";
 import { Chip } from "@/components/ui/Chip";
 import { LinkButton } from "@/components/ui/Button";
 import { Note } from "@/components/ui/Note";
@@ -13,6 +13,9 @@ import { fetchDecisionLineage, type LineageDecision } from "@/lib/api/lineage";
 import { loadDecisionReach } from "@/lib/api/decision-reach";
 import { resolveOrgContext } from "@/lib/api/org-context";
 import { DecisionReach } from "@/components/decisions/DecisionReach";
+import { AgreementCard } from "@/components/room-signals/AgreementCard";
+import { fetchAfterSignals, fetchDecisionAgreement } from "@/lib/api/room-signals";
+import { lateLabel, strengthChip } from "@/lib/room-signals";
 
 export const metadata: Metadata = { title: "Decision lineage | Mytheus" };
 
@@ -80,11 +83,17 @@ export default async function DecisionLineagePage({
 }: {
   params: { meetingId: string; decisionId: string };
 }) {
-  const [chain, reach, org] = await Promise.all([
+  const [chain, reach, org, agreement, after] = await Promise.all([
     loadChain(params.meetingId, params.decisionId),
     loadDecisionReach(params.decisionId).catch(() => null),
     resolveOrgContext(),
+    // a3 room signals: how strongly the room agreed, and late points while the decision is new.
+    fetchDecisionAgreement(params.decisionId).catch(() => ({ ok: false as const, reason: "error" as const })),
+    fetchAfterSignals(params.meetingId).catch(() => ({ ok: false as const, reason: "error" as const })),
   ]);
+  const signal = after.ok ? after.data.decisions.find((d) => d.decision_id === params.decisionId) ?? null : null;
+  const weak = strengthChip(agreement.ok ? agreement.data.strength : signal?.agreement);
+  const lateInWindow = signal && signal.in_window && signal.late_contribution_count > 0 ? signal.late_contribution_count : 0;
   const openMeeting = (
     <LinkButton href={`/meetings/${params.meetingId}`} variant="outline">
       <VideoCamera size={16} aria-hidden />
@@ -119,15 +128,29 @@ export default async function DecisionLineagePage({
         title={title}
         action={openMeeting}
         context={
-          superseded ? (
-            <Chip tone="medium" icon={<ClockCounterClockwise size={14} weight="bold" />}>
-              Superseded
-            </Chip>
-          ) : (
-            <Chip tone="ok" icon={<CheckCircle size={14} weight="fill" />}>
-              Confirmed{subject.confirmedAt ? ` ${dateTime.format(new Date(subject.confirmedAt))} UTC` : ""}
-            </Chip>
-          )
+          <span className="inline-flex flex-wrap items-center gap-2">
+            {superseded ? (
+              <Chip tone="medium" icon={<ClockCounterClockwise size={14} weight="bold" />}>
+                Superseded
+              </Chip>
+            ) : (
+              <Chip tone="ok" icon={<CheckCircle size={14} weight="fill" />}>
+                Confirmed{subject.confirmedAt ? ` ${dateTime.format(new Date(subject.confirmedAt))} UTC` : ""}
+              </Chip>
+            )}
+            {weak ? (
+              <Chip tone={weak.tone} title={weak.hint}>
+                {weak.label}
+              </Chip>
+            ) : null}
+            {lateInWindow ? (
+              <Link href={`/meetings/${params.meetingId}#late`} className="rounded-full">
+                <Chip tone="accent" icon={<ChatCircleText size={14} />}>
+                  {lateLabel(lateInWindow)}
+                </Chip>
+              </Link>
+            ) : null}
+          </span>
         }
       />
 
@@ -218,6 +241,9 @@ export default async function DecisionLineagePage({
             })}
           </ol>
         </SectionCard>
+        <div className="mt-5">
+          <AgreementCard read={agreement} />
+        </div>
       </PageColumns>
     </Page>
   );
