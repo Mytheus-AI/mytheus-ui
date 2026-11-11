@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { buildOrgChart, NO_DEPARTMENT, planRosterChanges } from "../src/lib/org-chart.ts";
+import { buildOrgChart, descendantsOf, NO_DEPARTMENT, planRosterChanges } from "../src/lib/org-chart.ts";
 
 const person = (id: string, name: string, isYou = false) => ({
   id,
@@ -140,4 +140,42 @@ test("roster plan: nothing to send when nothing changed", () => {
 
 test("roster plan: a lead outside the selection is ignored", () => {
   assert.deepEqual(planRosterChanges([], ["u1"], "u9"), [{ kind: "put", userId: "u1", role: "member" }]);
+});
+
+test("descriptions come through trimmed, blank reads as none, depth follows nesting", () => {
+  const chart = buildOrgChart(
+    [
+      { id: "d1", name: "Engineering", parent_id: null, description: "  Builds the product.  " },
+      { id: "d2", name: "Security", parent_id: "d1", description: "   " },
+    ],
+    [
+      { id: "t1", name: "Platform", department_id: "d1", description: "Owns deploys." },
+      { id: "t2", name: "Loose", department_id: null },
+    ],
+    [],
+    people,
+  );
+  const [eng, sec, none] = chart.departments;
+  assert.equal(eng.description, "Builds the product.");
+  assert.equal(eng.depth, 0);
+  assert.equal(sec.description, null);
+  assert.equal(sec.depth, 1);
+  assert.equal(sec.parentId, "d1");
+  assert.equal(eng.teams[0].description, "Owns deploys.");
+  assert.equal(none.id, null);
+  assert.equal(none.teams[0].description, null);
+});
+
+test("descendantsOf finds every department below one, and survives a loop", () => {
+  const deps = [
+    { id: "a", parent_id: null },
+    { id: "b", parent_id: "a" },
+    { id: "c", parent_id: "b" },
+    { id: "d", parent_id: null },
+    { id: "x", parent_id: "y" },
+    { id: "y", parent_id: "x" },
+  ];
+  assert.deepEqual([...descendantsOf(deps, "a")].sort(), ["b", "c"]);
+  assert.deepEqual([...descendantsOf(deps, "d")], []);
+  assert.deepEqual([...descendantsOf(deps, "x")], ["y"]);
 });
