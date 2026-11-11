@@ -2,8 +2,27 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { CalendarPlus, LockSimple, Sparkle, X } from "@phosphor-icons/react";
+import {
+  ArrowBendDownRight,
+  CalendarBlank,
+  CalendarCheck,
+  CalendarPlus,
+  Clock,
+  Crown,
+  Lightning,
+  ListChecks,
+  LockSimple,
+  NotePencil,
+  Shapes,
+  Sparkle,
+  Timer,
+  UsersThree,
+  VideoCamera,
+  WarningCircle,
+  X,
+} from "@phosphor-icons/react";
 import { createMeeting, draftAgenda } from "@/app/actions/meetings";
+import { Dropdown } from "@/components/ui/Dropdown";
 import type { MeetingTemplate, OrgGoal } from "@/lib/api/meeting-brain-types";
 import { AgendaEditor, type AgendaPerson } from "./AgendaEditor";
 import {
@@ -29,7 +48,13 @@ import { useDialogKeys } from "./useDialogKeys";
    ADR-0039 adds: a meeting type (fills the length, the agenda and Confidential), a Confidential
    switch, "Draft the agenda" from the type and the meeting this follows up (each drafted item
    says where it came from), and a company goal on each agenda item when the workspace has goals.
-   Nothing is saved until Create. On a wide screen the details and the agenda sit side by side. */
+   Nothing is saved until Create.
+
+   The window (UI polish pass): one popup with a fixed head and foot and a scrolling body. On a
+   wide screen two columns, what and when (and the optional agenda) on the left, people, host and
+   follow-up on the right, staying in view; one flowing column on a phone. The foot always shows a
+   one-line summary of what will happen and the one primary action, named for the mode: Start now
+   or Schedule. Every choice from a list is the shared Dropdown. */
 
 /** An earlier meeting the new one can follow up. */
 export type FollowUpOption = { id: string; title: string; startTime: string };
@@ -283,6 +308,30 @@ export function NewMeeting({
     router.refresh();
   };
 
+  const participantCount = 1 + invitees.length;
+  const hostName = hostId ? inMeeting.find((p) => p.id === hostId)?.name ?? "Invited member" : "you";
+  const whenLine = when === "now" ? "Starts now" : scheduledLine(date, time);
+  const summary = `${whenLine}, ${lengthLabel(duration)}, ${
+    participantCount === 1 ? "just you" : `${participantCount} people`
+  }${hostId ? `, ${hostName} hosts` : ""}${confidential ? ", confidential" : ""}`;
+  const typeOptions = [
+    {
+      value: "",
+      label: templates === null ? "Couldn't load meeting types" : templates.length === 0 ? "No meeting types yet" : "No type",
+      description: templates && templates.length > 0 ? "Set everything by hand" : undefined,
+    },
+    ...(templates ?? []).map((t) => ({ value: t.id, label: t.name, description: t.description || typeFills(t) })),
+  ];
+  const hostOptions = [
+    { value: "", label: me ? `${me.name} (you)` : "You" },
+    ...inMeeting.filter((p) => p.id !== me?.id).map((p) => ({ value: p.id, label: p.name })),
+  ];
+  const followOptions = [
+    { value: "", label: recent.length === 0 ? "No earlier meetings" : "Not a follow-up" },
+    ...recent.map((m) => ({ value: m.id, label: m.title, description: followDate.format(new Date(m.startTime)) })),
+  ];
+  const titleMissing = error === "Give the meeting a title.";
+
   return (
     <>
       <button ref={openerRef} type="button" className="mx-btn tap" onClick={show}>
@@ -291,209 +340,274 @@ export function NewMeeting({
       </button>
 
       {open && (
-        <div className="mh-new-layer">
+        <div className="mh-new-layer nm-layer">
           <button type="button" className="mh-new-scrim" aria-label="Close" onClick={close} tabIndex={-1} />
-          <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={`${ids}-h`} className="mh-new is-wide is-brain">
-            <form onSubmit={submit} noValidate>
-              <div className="mh-new-head">
-                <h2 id={`${ids}-h`}>New meeting</h2>
-                <button type="button" className="cx-icon-btn sm tap" aria-label="Close" onClick={close}>
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`${ids}-h`}
+            aria-describedby={`${ids}-lead`}
+            className="mh-new nm-win"
+          >
+            <form onSubmit={submit} noValidate className="nm-form" aria-busy={busy || undefined}>
+              <header className="nm-head">
+                <div className="nm-head-text">
+                  <h2 id={`${ids}-h`}>New meeting</h2>
+                  <p id={`${ids}-lead`}>Set it up once. Your agent takes notes, tracks the agenda and follows up.</p>
+                </div>
+                <button type="button" className="cx-icon-btn sm tap" aria-label="Close" onClick={close} disabled={busy}>
                   <X size={18} weight="bold" aria-hidden="true" />
                 </button>
-              </div>
+              </header>
 
-              <div className="mh-new-body nm-body">
-                <div className="nm-col">
-                  <label className="mh-new-field" htmlFor={`${ids}-title`}>
-                    <span>Title</span>
-                    <input
-                      ref={titleRef}
-                      id={`${ids}-title`}
-                      value={title}
-                      maxLength={500}
-                      placeholder="Weekly product standup"
-                      autoComplete="off"
-                      aria-invalid={error === "Give the meeting a title." ? true : undefined}
-                      onChange={(e) => setTitle(e.target.value)}
+              <div className="nm-scroll">
+                <div className="nm-grid">
+                  {/* What: the title, the type that fills the rest, and Confidential. */}
+                  <section className="nm-sec nm-what" aria-labelledby={`${ids}-what`}>
+                    <h3 id={`${ids}-what`} className="nm-sec-h">
+                      <NotePencil size={16} aria-hidden="true" />
+                      What
+                    </h3>
+                    <div className="nm-field">
+                      <label htmlFor={`${ids}-title`} className="nm-label">
+                        Title
+                      </label>
+                      <input
+                        ref={titleRef}
+                        id={`${ids}-title`}
+                        className="nm-input nm-title"
+                        value={title}
+                        maxLength={500}
+                        placeholder="Weekly product standup"
+                        autoComplete="off"
+                        aria-invalid={titleMissing ? true : undefined}
+                        aria-describedby={titleMissing ? `${ids}-err` : undefined}
+                        disabled={busy}
+                        onChange={(e) => {
+                          setTitle(e.target.value);
+                          if (titleMissing) setError(null);
+                        }}
+                      />
+                    </div>
+                    <div className="nm-field">
+                      <label htmlFor={`${ids}-type`} className="nm-label">
+                        Meeting type <small className="mh-new-hint">Optional</small>
+                      </label>
+                      <Dropdown
+                        id={`${ids}-type`}
+                        label="Meeting type"
+                        value={templateId}
+                        options={typeOptions}
+                        disabled={!templates || templates.length === 0 || busy}
+                        describedBy={`${ids}-type-note`}
+                        icon={<Shapes size={16} />}
+                        onChange={pickTemplate}
+                      />
+                      <small id={`${ids}-type-note`} className={`mh-new-hint${templates === null ? " is-warn" : ""}`}>
+                        {templates === null
+                          ? "Meeting types couldn't be loaded. You can still set everything by hand."
+                          : templates.length === 0
+                            ? "A workspace admin can add types, like a weekly sync, in Company brain."
+                            : template
+                              ? typeFills(template)
+                              : "A type fills the length, the agenda and whether it is confidential."}
+                      </small>
+                    </div>
+                    <div className="nm-conf">
+                      <button
+                        id={`${ids}-conf`}
+                        type="button"
+                        role="switch"
+                        aria-checked={confidential}
+                        aria-describedby={`${ids}-conf-note`}
+                        className="nm-switch tap"
+                        disabled={busy}
+                        onClick={() => setConfidential((v) => !v)}
+                      >
+                        <span className="nm-switch-track" aria-hidden="true">
+                          <span className="nm-switch-knob" />
+                        </span>
+                        <span className="nm-switch-label">
+                          <LockSimple size={15} aria-hidden="true" />
+                          Confidential
+                        </span>
+                      </button>
+                      <small id={`${ids}-conf-note`} className="mh-new-hint">
+                        Kept out of topic watch, and never shown in other meetings to people who weren&rsquo;t in this one.
+                      </small>
+                    </div>
+                    <MeetingPrecheckHint
+                      title={title}
+                      agenda={agenda.map((r) => r.title)}
+                      participantIds={[...(me ? [me.id] : []), ...invitees]}
                     />
-                  </label>
+                  </section>
 
-                  <label className="mh-new-field" htmlFor={`${ids}-type`}>
-                    <span>
-                      Meeting type <small className="mh-new-hint">Optional</small>
-                    </span>
-                    <select
-                      id={`${ids}-type`}
-                      value={templateId}
-                      disabled={!templates || templates.length === 0 || busy}
-                      aria-describedby={`${ids}-type-note`}
-                      onChange={(e) => pickTemplate(e.target.value)}
-                    >
-                      <option value="">
-                        {templates === null ? "Couldn't load meeting types" : templates.length === 0 ? "No meeting types yet" : "No type"}
-                      </option>
-                      {(templates ?? []).map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name}
-                        </option>
-                      ))}
-                    </select>
-                    <small id={`${ids}-type-note`} className="mh-new-hint">
-                      {templates === null
-                        ? "Meeting types couldn't be loaded. You can still set everything by hand."
-                        : templates.length === 0
-                          ? "A workspace admin can add types, like a weekly sync, in Company brain."
-                          : template
-                            ? [template.description, typeFills(template)].filter(Boolean).join(" ")
-                            : "A type fills the length, the agenda and whether it is confidential."}
-                    </small>
-                  </label>
-
-                  <fieldset className="mh-new-when">
-                    <legend>When</legend>
-                    <div className="mh-new-seg" role="radiogroup" aria-label="When">
+                  {/* When: start now or schedule, and the length. */}
+                  <section className="nm-sec nm-when" aria-labelledby={`${ids}-when`}>
+                    <h3 id={`${ids}-when`} className="nm-sec-h">
+                      <Clock size={16} aria-hidden="true" />
+                      When
+                    </h3>
+                    <div className="mh-new-seg nm-seg" role="radiogroup" aria-labelledby={`${ids}-when`}>
                       {(["now", "later"] as const).map((w) => (
                         <button
                           key={w}
                           type="button"
                           role="radio"
                           aria-checked={when === w}
+                          tabIndex={when === w ? 0 : -1}
                           className="mh-new-seg-opt tap"
+                          disabled={busy}
                           onClick={() => setWhen(w)}
+                          onKeyDown={(e) => {
+                            if (e.key === "ArrowRight" || e.key === "ArrowLeft" || e.key === "ArrowDown" || e.key === "ArrowUp") {
+                              e.preventDefault();
+                              const next = when === "now" ? "later" : "now";
+                              setWhen(next);
+                              (e.currentTarget.parentElement?.querySelector<HTMLElement>(`[data-when="${next}"]`))?.focus();
+                            }
+                          }}
+                          data-when={w}
                         >
+                          {w === "now" ? <Lightning size={16} aria-hidden="true" /> : <CalendarBlank size={16} aria-hidden="true" />}
                           {w === "now" ? "Start now" : "Schedule"}
                         </button>
                       ))}
                     </div>
-                  </fieldset>
-
-                  <div className={`mh-new-row${when === "later" ? " is-three" : ""}`}>
-                    {when === "later" && (
-                      <>
-                        <label className="mh-new-field" htmlFor={`${ids}-date`}>
-                          <span>Date</span>
-                          <input id={`${ids}-date`} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-                        </label>
-                        <label className="mh-new-field" htmlFor={`${ids}-time`}>
-                          <span>Time</span>
-                          <input id={`${ids}-time`} type="time" value={time} onChange={(e) => setTime(e.target.value)} />
-                        </label>
-                      </>
-                    )}
-                    <label className="mh-new-field" htmlFor={`${ids}-len`}>
-                      <span>Length</span>
-                      <select id={`${ids}-len`} value={duration} onChange={(e) => setDuration(Number(e.target.value))}>
-                        {lengths.map((d) => (
-                          <option key={d} value={d}>
-                            {lengthLabel(d)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-
-                  <div className="mh-new-field">
-                    <span>
-                      Invite
-                      {invitees.length > 0 ? <small className="mh-new-hint">{invitees.length} selected</small> : null}
-                    </span>
-                    <MemberPicker members={members} selected={invitees} onChange={setInvitees} />
-                  </div>
-
-                  <div className="mh-new-row ag-new-pair">
-                    <label className="mh-new-field" htmlFor={`${ids}-host`}>
-                      <span>Host</span>
-                      <select id={`${ids}-host`} value={hostId} onChange={(e) => setHostId(e.target.value)}>
-                        <option value="">{me ? `${me.name} (you)` : "You"}</option>
-                        {inMeeting
-                          .filter((p) => p.id !== me?.id)
-                          .map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.name}
-                            </option>
-                          ))}
-                      </select>
-                    </label>
-                    <label className="mh-new-field" htmlFor={`${ids}-prev`}>
-                      <span>
-                        Follow-up to <small className="mh-new-hint">Optional</small>
-                      </span>
-                      <select
-                        id={`${ids}-prev`}
-                        value={previousId}
-                        disabled={recent.length === 0}
-                        aria-describedby={recent.length === 0 ? `${ids}-prev-note` : undefined}
-                        onChange={(e) => setPreviousId(e.target.value)}
-                      >
-                        <option value="">{recent.length === 0 ? "No earlier meetings" : "Not a follow-up"}</option>
-                        {recent.map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.title}, {followDate.format(new Date(m.startTime))}
-                          </option>
-                        ))}
-                      </select>
-                      {recent.length === 0 ? (
-                        <small id={`${ids}-prev-note`} className="mh-new-hint">
-                          Meetings you have had show here.
-                        </small>
+                    <div className={`nm-when-row${when === "later" ? " is-later" : ""}`}>
+                      {when === "later" ? (
+                        <>
+                          <div className="nm-field">
+                            <label htmlFor={`${ids}-date`} className="nm-label">
+                              Date
+                            </label>
+                            <input
+                              id={`${ids}-date`}
+                              className="nm-input"
+                              type="date"
+                              value={date}
+                              disabled={busy}
+                              onChange={(e) => setDate(e.target.value)}
+                            />
+                          </div>
+                          <div className="nm-field">
+                            <label htmlFor={`${ids}-time`} className="nm-label">
+                              Time
+                            </label>
+                            <input
+                              id={`${ids}-time`}
+                              className="nm-input"
+                              type="time"
+                              value={time}
+                              disabled={busy}
+                              onChange={(e) => setTime(e.target.value)}
+                            />
+                          </div>
+                        </>
                       ) : null}
-                    </label>
-                  </div>
+                      <div className="nm-field">
+                        <label htmlFor={`${ids}-len`} className="nm-label">
+                          Length
+                        </label>
+                        <Dropdown
+                          id={`${ids}-len`}
+                          label="Length"
+                          value={String(duration)}
+                          disabled={busy}
+                          icon={<Timer size={16} />}
+                          options={lengths.map((d) => ({ value: String(d), label: lengthLabel(d) }))}
+                          onChange={(v) => setDuration(Number(v))}
+                        />
+                      </div>
+                      {when === "now" ? (
+                        <p className="nm-now-note">
+                          <span className="nm-live" aria-hidden="true" />
+                          Opens the call as soon as you create it. Invite people now or share the link inside.
+                        </p>
+                      ) : null}
+                    </div>
+                  </section>
 
-                  <div className="nm-conf">
-                    <button
-                      id={`${ids}-conf`}
-                      type="button"
-                      role="switch"
-                      aria-checked={confidential}
-                      aria-describedby={`${ids}-conf-note`}
-                      className="nm-switch tap"
-                      disabled={busy}
-                      onClick={() => setConfidential((v) => !v)}
-                    >
-                      <span className="nm-switch-track" aria-hidden="true">
-                        <span className="nm-switch-knob" />
+                  {/* Who: invitees with faces and search, the host, and what this follows up. */}
+                  <section className="nm-sec nm-people" aria-labelledby={`${ids}-who`}>
+                    <h3 id={`${ids}-who`} className="nm-sec-h">
+                      <UsersThree size={16} aria-hidden="true" />
+                      People
+                      <span className="nm-count" aria-live="polite">
+                        {invitees.length === 0 ? "Just you so far" : `You and ${invitees.length} invited`}
                       </span>
-                      <span className="nm-switch-label">
-                        <LockSimple size={15} aria-hidden="true" />
-                        Confidential
-                      </span>
-                    </button>
-                    <small id={`${ids}-conf-note`} className="mh-new-hint">
-                      Kept out of topic watch, and never shown in other meetings to people who weren&rsquo;t in this one.
-                    </small>
-                  </div>
-                </div>
+                    </h3>
+                    <MemberPicker members={members} selected={invitees} onChange={setInvitees} disabled={busy} />
+                    <div className="nm-pair">
+                      <div className="nm-field">
+                        <label htmlFor={`${ids}-host`} className="nm-label">
+                          Host
+                        </label>
+                        <Dropdown
+                          id={`${ids}-host`}
+                          label="Host"
+                          value={hostId}
+                          disabled={busy}
+                          icon={<Crown size={16} />}
+                          describedBy={`${ids}-host-note`}
+                          options={hostOptions}
+                          onChange={setHostId}
+                        />
+                        <small id={`${ids}-host-note`} className="mh-new-hint">
+                          The host runs the agenda and can end it for everyone.
+                        </small>
+                      </div>
+                      <div className="nm-field">
+                        <label htmlFor={`${ids}-prev`} className="nm-label">
+                          Follow-up to <small className="mh-new-hint">Optional</small>
+                        </label>
+                        <Dropdown
+                          id={`${ids}-prev`}
+                          label="Follow-up to"
+                          value={previousId}
+                          disabled={recent.length === 0 || busy}
+                          describedBy={`${ids}-prev-note`}
+                          icon={<ArrowBendDownRight size={16} />}
+                          options={followOptions}
+                          onChange={setPreviousId}
+                        />
+                        <small id={`${ids}-prev-note`} className="mh-new-hint">
+                          {recent.length === 0
+                            ? "Meetings you have had show here."
+                            : "Carries over what the earlier meeting left open."}
+                        </small>
+                      </div>
+                    </div>
+                  </section>
 
-                <div className="nm-col nm-agenda">
-                  <MeetingPrecheckHint
-                    title={title}
-                    agenda={agenda.map((r) => r.title)}
-                    participantIds={[...(me ? [me.id] : []), ...invitees]}
-                  />
-                  <fieldset className="mh-new-when ag-new-agenda">
-                    <legend>
-                      Agenda <small className="mh-new-hint">Optional, up to 20 items</small>
-                    </legend>
-                    <div className="nm-draft">
+                  {/* The agenda: optional, drafted or typed. */}
+                  <section className="nm-sec nm-agenda" aria-labelledby={`${ids}-ag`}>
+                    <div className="nm-sec-row">
+                      <h3 id={`${ids}-ag`} className="nm-sec-h">
+                        <ListChecks size={16} aria-hidden="true" />
+                        Agenda <small className="mh-new-hint">Optional, up to 20 items</small>
+                      </h3>
                       <button
                         type="button"
                         className="mx-btn is-outline is-sm tap"
                         disabled={!canDraft || drafting || busy}
                         aria-describedby={`${ids}-draft-note`}
+                        aria-busy={drafting || undefined}
                         onClick={() => void draft()}
                       >
                         <Sparkle size={16} aria-hidden="true" />
                         {drafting ? "Drafting..." : "Draft the agenda"}
                       </button>
-                      <small id={`${ids}-draft-note`} className="mh-new-hint">
-                        {canDraft
-                          ? `From ${[template ? "the meeting type" : null, previousId ? "what the earlier meeting left open" : null]
-                              .filter(Boolean)
-                              .join(" and ")}. Nothing is saved until you create the meeting.`
-                          : "Pick a meeting type or a meeting this follows up, and your agent drafts it."}
-                      </small>
                     </div>
+                    <small id={`${ids}-draft-note`} className="mh-new-hint">
+                      {canDraft
+                        ? `From ${[template ? "the meeting type" : null, previousId ? "what the earlier meeting left open" : null]
+                            .filter(Boolean)
+                            .join(" and ")}. Nothing is saved until you create the meeting.`
+                        : "Pick a meeting type or a meeting this follows up, and your agent drafts it."}
+                    </small>
                     {notice ? (
                       <p className={`nm-notice${notice.tone === "error" ? " is-error" : ""}`} role={notice.tone === "error" ? "alert" : "status"}>
                         {notice.text}
@@ -508,28 +622,52 @@ export function NewMeeting({
                       disabled={busy || drafting}
                       goals={goals}
                     />
-                  </fieldset>
+                  </section>
                 </div>
-
-                {error && (
-                  <p className="mh-new-error" role="alert">
-                    {error}
-                  </p>
-                )}
               </div>
 
-              <div className="mh-new-acts">
-                <button type="button" className="mx-btn is-outline tap" onClick={close} disabled={busy}>
-                  Cancel
-                </button>
-                <button type="submit" className="mx-btn tap" disabled={busy}>
-                  {busy ? "Creating..." : when === "now" ? "Create and join" : "Schedule meeting"}
-                </button>
-              </div>
+              <footer className="nm-foot">
+                <div className="nm-foot-text">
+                  {error ? (
+                    <p id={`${ids}-err`} className="nm-error" role="alert">
+                      <WarningCircle size={16} weight="fill" aria-hidden="true" />
+                      {error}
+                    </p>
+                  ) : (
+                    <p className="nm-summary" aria-live="polite">
+                      {summary}
+                    </p>
+                  )}
+                </div>
+                <div className="nm-foot-acts">
+                  <button type="button" className="mx-btn is-ghost tap" onClick={close} disabled={busy}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="mx-btn tap nm-primary" disabled={busy} aria-busy={busy || undefined}>
+                    {busy ? (
+                      <span className="nm-spin" aria-hidden="true" />
+                    ) : when === "now" ? (
+                      <VideoCamera size={18} weight="fill" aria-hidden="true" />
+                    ) : (
+                      <CalendarCheck size={18} weight="fill" aria-hidden="true" />
+                    )}
+                    {busy ? (when === "now" ? "Starting..." : "Scheduling...") : when === "now" ? "Start now" : "Schedule"}
+                  </button>
+                </div>
+              </footer>
             </form>
           </div>
         </div>
       )}
     </>
   );
+}
+
+/** "Thu 13 Nov at 10:30" from the date and time inputs, or a nudge when they are not set. */
+function scheduledLine(date: string, time: string): string {
+  const d = new Date(`${date}T${time}`);
+  if (!date || !time || Number.isNaN(d.getTime())) return "Pick a date and a time";
+  const day = d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+  const at = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return `${day} at ${at}`;
 }

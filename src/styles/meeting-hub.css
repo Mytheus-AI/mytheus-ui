@@ -199,27 +199,52 @@
 .mx-meet .mh-pick-search:focus-within { border-color: var(--signal); box-shadow: 0 0 0 3px var(--signal-soft); }
 .mx-meet .mh-pick-search input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ink); font-size: 15px; }
 .mx-meet .mh-pick-search input:focus-visible { outline: none; }
-.mx-meet .mh-pick-list { max-height: 232px; overflow-y: auto; border-radius: var(--radius-pill); border: 1px solid var(--line); }
-.mx-meet .mh-pick-list > li + li { border-top: 1px solid var(--line); }
-.mx-meet .mh-pick-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 8px 14px; text-align: left; }
-.mx-meet .mh-pick-row:hover { background: var(--surface-2); }
+.mx-meet .mh-pick-search input::-webkit-search-cancel-button { display: none; }
+.mx-meet .mh-pick-list { max-height: 300px; overflow-y: auto; overscroll-behavior: contain; padding: 4px; border-radius: var(--radius-card); border: 1px solid var(--line); background: var(--surface); }
+.mx-meet .mh-pick-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 6px 10px; border-radius: var(--radius-pill); text-align: left; }
+.mx-meet .mh-pick-row:hover:not(:disabled) { background: var(--bg-2); }
+.mx-meet .mh-pick-row.is-on { background: color-mix(in srgb, var(--signal-soft) 70%, var(--surface)); }
+.mx-meet .mh-pick-row:disabled { opacity: 0.6; }
 .mx-meet .mh-pick-row:focus-visible { outline-offset: -2px; }
+.mx-meet .mh-pick-face { display: inline-flex; flex-shrink: 0; }
 .mx-meet .mh-pick-box {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
   width: 20px;
   height: 20px;
-  flex-shrink: 0;
-  display: inline-grid;
-  place-items: center;
-  border-radius: var(--radius-pill);
-  border: 2px solid var(--ink-4);
+  margin-left: auto;
+  border-radius: 50%;
+  border: 1.5px solid var(--line-2);
   background: var(--surface);
   color: var(--pill-on);
+  transition: background-color 0.15s, border-color 0.15s;
 }
 .mx-meet .mh-pick-row.is-on .mh-pick-box { background: var(--pill); border-color: var(--pill); }
 .mx-meet .mh-pick-who { display: flex; flex-direction: column; min-width: 0; }
 .mx-meet .mh-pick-who strong { color: var(--ink); font-size: 15px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mx-meet .mh-pick-who small { color: var(--ink-3); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mx-meet .mh-pick-note { color: var(--ink-3); font-size: 14px; line-height: 1.5; }
+.mx-meet .mh-pick-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.mx-meet .mh-pick-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px 0 4px;
+  border-radius: 999px;
+  background: var(--bg-2);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.mx-meet .mh-pick-chip:hover:not(:disabled) { background: var(--bg-3); }
+.mx-meet .mh-pick-chip svg { color: var(--ink-3); }
+.mx-meet .mh-pick-note { display: flex; align-items: flex-start; gap: 8px; color: var(--ink-3); font-size: 14px; line-height: 1.5; }
+.mx-meet .mh-pick-note > svg { flex-shrink: 0; margin-top: 3px; }
+.mx-meet .mh-pick-note.is-error,
+.mx-meet .mh-pick-note.is-empty { padding: 12px 14px; border-radius: var(--radius-pill); background: var(--surface-2); border: 1px dashed var(--line-2); }
+.mx-meet .mh-pick-note.is-error { color: var(--ink-2); }
+.mx-meet .mh-pick-note.is-error > svg { color: var(--priority-high); }
 .mx-meet .mh-pick-list .mh-pick-note { padding: 12px 14px; }
 .mx-meet .mh-pick-link { color: var(--signal-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 
