@@ -29,6 +29,7 @@ import {
   Notebook,
   Broadcast,
   Newspaper,
+  SpeakerHigh,
 } from "@phosphor-icons/react/ssr";
 
 /* The app's information architecture, in one place. One list feeds the sidebar, the topbar
@@ -96,6 +97,7 @@ export const SETTINGS_TABS: NavItem[] = [
   { href: "/settings/profile", label: "Profile", icon: UserCircle, keywords: "name role" },
   { href: "/settings/notifications", label: "Notifications", icon: Bell, keywords: "email alerts" },
   { href: "/settings/memory", label: "Agent memory", icon: Notebook, keywords: "what your agent remembers topics questions forget learning calibration" },
+  { href: "/settings/briefings", label: "Briefings", icon: SpeakerHigh, keywords: "briefing voice speak listen auto-play length language" },
   { href: "/settings/integrations", label: "Integrations", icon: PlugsConnected, keywords: "calendar slack jira hubspot notion confluence" },
   { href: "/settings/api", label: "API access", icon: Key, keywords: "personal access token mcp claude api curl" },
   { href: "/settings/appearance", label: "Appearance", icon: PaintBrush, keywords: "theme dark light shortcuts" },
@@ -106,6 +108,7 @@ export const LINKED_ITEMS: NavItem[] = [
   { href: "/search", label: "Ask Mytheus", icon: Sparkle, keywords: "search question" },
   { href: "/welcome", label: "Welcome brief", icon: Compass, keywords: "new joiner" },
   { href: "/digest", label: "Weekly digest", icon: Newspaper, keywords: "what changed this week summary" },
+  { href: "/briefings", label: "Your briefings", icon: SpeakerHigh, keywords: "brief me briefing listen agent voice" },
 ];
 
 /* Platform-staff consoles (every tenant, ops). Not in the workspace nav: staff status is only

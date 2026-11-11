@@ -2,6 +2,7 @@ import { applyUpdate, forgotten, type MemoryUpdate, type PersonMemory } from "..
 import { MEMORY_FIXTURE } from "../memory-fixture";
 import { CAPACITY, CHECK_FULL, LEDGER, TODAY } from "../ledger-fixture";
 import { addDays, type LedgerPromise } from "../../../src/lib/promises/ledger";
+import { BRIEFING as BRIEFING_READY, SETTINGS as BRIEFING_SETTINGS, WRITING as BRIEFING_WRITING } from "../briefing-fixture";
 
 // The server actions the room calls, answered as core-api would on success.
 const row = (id: string) => ({ id, content: "Ship the beta on 2 December", status: "confirmed", confirmed_by: "u-maya" });
@@ -537,4 +538,20 @@ export async function decideProposal(id: string, verb: string) {
 }
 export async function saveCapturePreferences(prefs: { slack_enabled: boolean; email_enabled: boolean }) {
   return { ok: true as const, capture: { ...prefs, email_connected: false } };
+}
+// A briefing from your agent: Brief me answers a briefing being written, a poll answers it ready.
+export async function briefMe() {
+  return { ok: true as const, briefing: { ...BRIEFING_WRITING, status: "pending" as const } };
+}
+export async function pollBriefing() {
+  return { ok: true as const, briefing: BRIEFING_READY };
+}
+export async function markBriefingHeard() {
+  return { ok: true as const, briefing: { ...BRIEFING_READY, listened_at: "2026-11-11T10:05:00Z" } };
+}
+export async function briefingAudioUrl() {
+  return { ok: false as const, message: "No recorded voice in this test." };
+}
+export async function saveBriefingPreferences(prefs: Record<string, unknown>) {
+  return { ok: true as const, settings: { ...BRIEFING_SETTINGS, ...prefs } };
 }

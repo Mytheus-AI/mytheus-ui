@@ -49,6 +49,9 @@ import { MinutesSection } from "@/components/minutes/MinutesSection";
 import { AfterSignalsSection } from "@/components/room-signals/AfterSignalsSection";
 import { fetchAfterSignals } from "@/lib/api/room-signals";
 import type { MeetingCandidates } from "@/lib/api/candidates";
+import { MeetingBriefingSection } from "@/components/briefing/MeetingBriefingSection";
+import { CardSkeleton } from "@/components/ui/Page";
+import { Suspense } from "react";
 import { RecordingSection } from "@/components/recording/RecordingSection";
 import type { Line } from "@/components/recording/recording-model";
 import type { OffRecordStateRow } from "@/app/actions/off-record";
@@ -744,6 +747,13 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
           )}
         </div>
       </header>
+
+      {/* Beyond the meeting: your agent's briefing about it, once it has ended. */}
+      {ended && mine ? (
+        <Suspense fallback={<CardSkeleton rows={2} />}>
+          <MeetingBriefingSection meetingId={meeting.id} />
+        </Suspense>
+      ) : null}
 
       {minutes && followUp && shareLinks && mine ? (
         <MinutesSection
