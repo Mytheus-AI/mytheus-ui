@@ -19,6 +19,11 @@ import { ChallengesSkeleton } from "@/components/decisions/ChallengesStates";
 import { AgreementCard } from "@/components/room-signals/AgreementCard";
 import { fetchAfterSignals, fetchDecisionAgreement } from "@/lib/api/room-signals";
 import { lateLabel, strengthChip } from "@/lib/room-signals";
+import { DecisionWhySection } from "@/components/decision-why/DecisionWhySection";
+import { ReopenedChip, isReopened } from "@/components/decision-why/ReopenedChip";
+import { BlastRadiusSection } from "@/components/blast-radius/BlastRadiusSection";
+import { fetchDecisionWhy } from "@/lib/api/decision-why";
+import { fetchBlastRadius } from "@/lib/api/blast-radius";
 
 export const metadata: Metadata = { title: "Decision lineage | Mytheus" };
 
@@ -94,13 +99,16 @@ export default async function DecisionLineagePage({
   searchParams?: { reopen?: string | string[] };
 }) {
   const focusReopenId = typeof searchParams?.reopen === "string" ? searchParams.reopen : null;
-  const [chain, reach, org, agreement, after] = await Promise.all([
+  const [chain, reach, org, agreement, after, why, blast] = await Promise.all([
     loadChain(params.meetingId, params.decisionId),
     loadDecisionReach(params.decisionId).catch(() => null),
     resolveOrgContext(),
     // a3 room signals: how strongly the room agreed, and late points while the decision is new.
     fetchDecisionAgreement(params.decisionId).catch(() => ({ ok: false as const, reason: "error" as const })),
     fetchAfterSignals(params.meetingId).catch(() => ({ ok: false as const, reason: "error" as const })),
+    // a4: why we decided, and what a change would ripple into.
+    fetchDecisionWhy(params.decisionId),
+    fetchBlastRadius(params.decisionId),
   ]);
   const signal = after.ok ? after.data.decisions.find((d) => d.decision_id === params.decisionId) ?? null : null;
   const weak = strengthChip(agreement.ok ? agreement.data.strength : signal?.agreement);
@@ -140,7 +148,9 @@ export default async function DecisionLineagePage({
         action={openMeeting}
         context={
           <span className="inline-flex flex-wrap items-center gap-2">
-            {superseded ? (
+            {isReopened(why) ? (
+              <ReopenedChip why={why} />
+            ) : superseded ? (
               <Chip tone="medium" icon={<ClockCounterClockwise size={14} weight="bold" />}>
                 Superseded
               </Chip>
@@ -184,6 +194,7 @@ export default async function DecisionLineagePage({
           </div>
         }
       >
+        <DecisionWhySection decisionId={params.decisionId} initial={why} />
         <SectionCard
           title="Lineage"
           description={
@@ -252,19 +263,18 @@ export default async function DecisionLineagePage({
             })}
           </ol>
         </SectionCard>
-        <div className="mt-5">
-          <AgreementCard read={agreement} />
-        </div>
-        <div className="mt-5">
-          <Suspense fallback={<ChallengesSkeleton />}>
-            <ChallengesSection
-              decisionId={params.decisionId}
-              meetingId={params.meetingId}
-              superseded={superseded}
-              focusReopenId={focusReopenId}
-            />
-          </Suspense>
-        </div>
+        {/* The column's space-y spaces the sections, so an absent one (no agreement read yet)
+            leaves no gap behind. */}
+        <AgreementCard read={agreement} />
+        <Suspense fallback={<ChallengesSkeleton />}>
+          <ChallengesSection
+            decisionId={params.decisionId}
+            meetingId={params.meetingId}
+            superseded={superseded}
+            focusReopenId={focusReopenId}
+          />
+        </Suspense>
+        <BlastRadiusSection decisionId={params.decisionId} initial={blast} />
       </PageColumns>
     </Page>
   );

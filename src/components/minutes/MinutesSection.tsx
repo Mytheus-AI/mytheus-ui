@@ -18,6 +18,7 @@ import type { Read } from "@/lib/api/minutes";
 import type { LateContribution } from "@/lib/api/room-signals-types";
 import { FollowUpComposer } from "./FollowUpComposer";
 import { ShareRecap } from "./ShareRecap";
+import { BlastChip } from "@/components/blast-radius/BlastChip";
 import {
   MINUTES_POLL_MS,
   decisionStatus,
@@ -341,7 +342,10 @@ function MinutesBody({ minutes, scope, late = [] }: { minutes: MeetingMinutes | 
             const st = decisionStatus(d.status);
             return (
               <li key={`d${i}`} className="mn-row">
-                <span className="mn-row-text">{d.text}</span>
+                <span className="mn-row-text">
+                  {d.text}
+                  {d.decision_id ? <BlastChip decisionId={d.decision_id} /> : null}
+                </span>
                 <Chip tone={st.tone}>{st.label}</Chip>
               </li>
             );

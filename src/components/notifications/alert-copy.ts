@@ -32,6 +32,7 @@ import type { ReopenRequest } from "../../lib/api/decision-challenges-types";
 import { parseFollowEvent } from "../../lib/decision-challenges.ts";
 import type { AgreementCheck, LastWordNudge } from "../../lib/api/room-signals-types";
 import { parseSignalEvent } from "../../lib/room-signals.ts";
+import { newNotificationLabel } from "../../lib/settlements.ts";
 
 export interface FeedRowInput {
   id: string;
@@ -308,7 +309,9 @@ export function describeNotification(row: FeedRowInput): FeedItem {
     body: row.body,
     quote: null,
     href: safeLink(row.link) ?? meetingHref,
-    linkLabel: ["/status-requests", "/work/updates"].includes(safeLink(row.link) ?? "") ? "Answer it" : "Open",
+    linkLabel:
+      newNotificationLabel(sourceEventId, safeLink(row.link)) ??
+      (["/status-requests", "/work/updates"].includes(safeLink(row.link) ?? "") ? "Answer it" : "Open"),
   };
 }
 

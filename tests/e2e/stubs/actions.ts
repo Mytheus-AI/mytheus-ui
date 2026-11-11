@@ -3,6 +3,15 @@ import { MEMORY_FIXTURE } from "../memory-fixture";
 import { CAPACITY, CHECK_FULL, LEDGER, TODAY } from "../ledger-fixture";
 import { addDays, type LedgerPromise } from "../../../src/lib/promises/ledger";
 import { BRIEFING as BRIEFING_READY, SETTINGS as BRIEFING_SETTINGS, WRITING as BRIEFING_WRITING } from "../briefing-fixture";
+import {
+  BLAST as WB_BLAST,
+  MEETING_BLAST as WB_MEETING_BLAST,
+  MEMBERS as WB_MEMBERS,
+  SETTLEMENT as WB_SETTLEMENT,
+  SLOT as WB_SLOT,
+  WHY as WB_WHY,
+} from "../why-blast-fixture";
+import type { Assumption as WbAssumption, Settlement as WbSettlement } from "../../../src/lib/api/why-blast-types";
 
 // The server actions the room calls, answered as core-api would on success.
 const row = (id: string) => ({ id, content: "Ship the beta on 2 December", status: "confirmed", confirmed_by: "u-maya" });
@@ -554,4 +563,80 @@ export async function briefingAudioUrl() {
 }
 export async function saveBriefingPreferences(prefs: Record<string, unknown>) {
   return { ok: true as const, settings: { ...BRIEFING_SETTINGS, ...prefs } };
+}
+// "Decisions that know why", blast radius and settle threads (a4): answered as core-api would.
+export async function readDecisionWhy() {
+  return { ok: true as const, data: WB_WHY };
+}
+type WbDraft = { kind: WbAssumption["kind"]; statement: string; quote: string; statedBy: string | null };
+const wbFrom = (id: string, d: WbDraft): WbAssumption => ({
+  ...WB_WHY.assumptions[1],
+  id,
+  kind: d.kind,
+  statement: d.statement.trim(),
+  quote: d.quote.trim() || null,
+  stated_by: d.statedBy ? { user_id: d.statedBy, name: WB_MEMBERS.find((m) => m.id === d.statedBy)?.name ?? "Someone" } : null,
+  source: "owner",
+});
+export async function addAssumption(_decisionId: string, d: WbDraft) {
+  return { ok: true as const, data: wbFrom("a9999999-9999-4999-8999-999999999999", d) };
+}
+export async function editAssumption(id: string, d: WbDraft) {
+  return { ok: true as const, data: wbFrom(id, d) };
+}
+export async function removeAssumption() {
+  return { ok: true as const };
+}
+export async function reconfirmAssumption(id: string, note: string) {
+  const a = WB_WHY.assumptions.find((x) => x.id === id)!;
+  return { ok: true as const, data: { ...a, status: "watching" as const, open_break: null, reconfirmed_at: "2026-11-11T10:00:00Z", reconfirm_note: note } };
+}
+export async function reopenDecision() {
+  return { ok: true as const, data: { ...WB_WHY, reopened: { at: "2026-11-11T10:00:00Z", by: WB_WHY.owner, note: null } } };
+}
+export async function readRevisitSlot() {
+  return { ok: true as const, data: WB_SLOT };
+}
+export async function bookRevisit() {
+  return { ok: true as const, data: { meeting_id: "99999999-9999-4999-8999-999999999999", start: WB_SLOT.start, end: WB_SLOT.end, title: WB_SLOT.title } };
+}
+export async function loadWhyMembers() {
+  return { ok: true as const, data: WB_MEMBERS };
+}
+export async function readBlastRadius() {
+  return { ok: true as const, data: WB_BLAST };
+}
+export async function readMeetingBlastRadius() {
+  return { ok: true as const, data: WB_MEETING_BLAST };
+}
+let wbThread: WbSettlement = WB_SETTLEMENT;
+export async function readSettlement() {
+  return { ok: true as const, data: wbThread };
+}
+export async function sendSettleMessage(_id: string, body: string) {
+  wbThread = { ...wbThread, messages: [...wbThread.messages, { id: `m${wbThread.messages.length + 1}`, author: { user_id: "u-sarah", name: "Sarah Okafor" }, mine: true, body, created_at: "2026-11-11T10:00:00Z" }] };
+  return { ok: true as const, data: wbThread };
+}
+export async function shareSettleWording() {
+  wbThread = { ...wbThread, mine: { ...wbThread.mine, shared: true } };
+  return { ok: true as const, data: wbThread };
+}
+export async function keepBothDecisions(_id: string, note: string) {
+  return { ok: true as const, data: { ...wbThread, status: "kept_both" as const, resolution: { by: { user_id: "u-sarah", name: "Sarah Okafor" }, at: "2026-11-11T10:00:00Z", note, winner_decision_id: null, meeting_id: null } } };
+}
+export async function supersedeDecision(_id: string, winner: string) {
+  if (winner === wbThread.mine.decision_id) return { ok: true as const, data: { ...wbThread, proposal: { winner_decision_id: winner, by_me: true, at: "2026-11-11T10:00:00Z" } } };
+  return { ok: true as const, data: { ...wbThread, status: "superseded" as const, resolution: { by: { user_id: "u-sarah", name: "Sarah Okafor" }, at: "2026-11-11T10:00:00Z", note: null, winner_decision_id: winner, meeting_id: null } } };
+}
+export async function acceptSettleProposal() {
+  return { ok: true as const, data: { ...wbThread, status: "superseded" as const, proposal: null, resolution: { by: { user_id: "u-sarah", name: "Sarah Okafor" }, at: "2026-11-11T10:00:00Z", note: null, winner_decision_id: wbThread.theirs.decision_id, meeting_id: null } } };
+}
+export async function declineSettleProposal() {
+  return { ok: true as const, data: { ...wbThread, proposal: null } };
+}
+export async function readSettleSlot() {
+  return { ok: true as const, data: { ...WB_SLOT, title: "Settle: SSO vendor and Northwind's login" } };
+}
+export async function bookSettleMeeting() {
+  return { ok: true as const, data: { meeting_id: "99999999-9999-4999-8999-999999999999", start: WB_SLOT.start, end: WB_SLOT.end, title: "Settle: SSO vendor" } };
 }

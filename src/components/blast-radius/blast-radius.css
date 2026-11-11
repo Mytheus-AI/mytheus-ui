@@ -1,0 +1,17 @@
+/* Blast radius: the ripple map needs room. The section measures its own width, not the window's
+   (the decision page's main column is narrow beside the side column on a laptop), so the map and
+   the ring-by-ring list switch on a container query: the map from 600px of section, the list
+   below. Both are server-rendered; only one is displayed, and a hidden one is neither focusable
+   nor read. */
+.br-wrap { container-type: inline-size; }
+.br-map { display: none; }
+.br-stack { display: block; }
+@container (min-width: 600px) {
+  .br-map { display: block; }
+  .br-stack { display: none; }
+}
+
+/* The rings: hairlines in the coral line's colour, drawn once (`.mx-draw`, which already honours
+   reduced motion). */
+.br-ring { fill: none; stroke: color-mix(in srgb, var(--signal-line) 50%, transparent); stroke-width: 1.5; }
+.br-ring.is-outer { stroke: color-mix(in srgb, var(--signal-line) 32%, transparent); }

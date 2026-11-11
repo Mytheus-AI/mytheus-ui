@@ -18,6 +18,7 @@ import { initials, toneOf } from "@/components/room/tone";
 import type { CaptionLine } from "@/lib/realtime/captions";
 import type { LiveNote } from "@/lib/realtime/notes";
 import type { Decided } from "@/lib/realtime/candidates";
+import { BlastChip } from "@/components/blast-radius/BlastChip";
 import { useRoomName } from "@/lib/realtime/room-names";
 
 /* The room's Notes mode: the same live meeting as a living document. People stay visible as
@@ -277,6 +278,7 @@ export function NotesView({
                     <p>{d.content}</p>
                     {d.rationale ? <p className="nv-decided-why">{d.rationale}</p> : null}
                     {d.confirmedBy ? <small>Confirmed by {nameOf(d.confirmedBy, "a participant")}</small> : null}
+                    <BlastChip decisionId={d.id} />
                   </li>
                 ))}
               </ul>
