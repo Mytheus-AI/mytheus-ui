@@ -430,7 +430,7 @@ export function checkDraft(d: AssumptionDraft): DraftCheck {
   const jira = d.jiraKey.trim().toUpperCase();
   if (jira && !/^[A-Z][A-Z0-9_]{0,15}-\d{1,7}$/.test(jira)) return { ok: false, field: "jiraKey", message: "Use a Jira key such as SSO-142." };
   const deal = d.dealId.trim();
-  if (deal.length > 64) return { ok: false, field: "dealId", message: "That deal id is too long." };
+  if (deal && !/^\d{1,30}$/.test(deal)) return { ok: false, field: "dealId", message: "A HubSpot deal id is a number, such as 9021345." };
   return {
     ok: true,
     body: {
