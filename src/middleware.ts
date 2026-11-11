@@ -68,6 +68,8 @@ const isPublicRoute = createRouteMatcher([
   // itself with the signed link token and the Clerk session behind it, and fails closed
   // (src/app/api/capture/_lib/session.ts).
   "/api/capture/session(.*)",
+  // The same extension's decision checks ("Decisions that follow you"), authenticated the same way.
+  "/api/capture/decisions(.*)",
   // Shared recaps and decision records (minutes for everyone). Opened by people who may not be
   // users at all; the signed token in the path is the credential, checked by core-api's public
   // share route, and the page reads nothing else.

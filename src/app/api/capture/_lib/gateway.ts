@@ -10,11 +10,17 @@
 export class GatewayError extends Error {
   readonly status: number;
   readonly code: string;
-  constructor(status: number, code: string) {
+  /** The RFC 7807 `reason` extension, when the service sent one (e.g. `check_not_connected`). */
+  readonly reason: string | null;
+  /** `Retry-After` seconds on a 429. */
+  readonly retryAfter: number | null;
+  constructor(status: number, code: string, reason: string | null = null, retryAfter: number | null = null) {
     super(`api-gateway ${status} ${code}`);
     this.name = "GatewayError";
     this.status = status;
     this.code = code;
+    this.reason = reason;
+    this.retryAfter = retryAfter;
   }
 }
 
@@ -47,13 +53,16 @@ export async function gateway<T>(
   }
   if (!response.ok) {
     let code = response.status === 404 ? "NOT_FOUND" : response.status === 401 ? "AUTH_REQUIRED" : "INTERNAL";
+    let reason: string | null = null;
     try {
-      const body = (await response.json()) as { code?: unknown };
+      const body = (await response.json()) as { code?: unknown; reason?: unknown };
       if (typeof body.code === "string") code = body.code;
+      if (typeof body.reason === "string") reason = body.reason;
     } catch {
       // keep the status-derived code
     }
-    throw new GatewayError(response.status, code);
+    const retry = Number(response.headers.get("Retry-After"));
+    throw new GatewayError(response.status, code, reason, Number.isFinite(retry) && retry > 0 ? retry : null);
   }
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
