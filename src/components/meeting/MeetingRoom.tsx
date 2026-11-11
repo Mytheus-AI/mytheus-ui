@@ -20,12 +20,14 @@ import { ConnectionPill } from "@/components/room/ConnectionPill";
 import { ControlBar } from "@/components/room/ControlBar";
 import { NotesView } from "@/components/room/NotesView";
 import { PeoplePanel } from "@/components/room/PeoplePanel";
+import { HandsQueue } from "@/components/room/HandsQueue";
 import { ReactionLayer } from "@/components/room/ReactionLayer";
 import { RoomClock } from "@/components/room/RoomClock";
 import { CatchUpLine } from "@/components/room/CatchUpLine";
 import { OffRecordAsks, OffRecordBanner, WhatIsRecorded } from "@/components/room/OffRecord";
 import { endOffRecord, startOffRecord } from "@/app/actions/off-record";
 import { StageBar } from "@/components/room/StageBar";
+import { AgendaQuickAdd } from "@/components/room/AgendaQuickAdd";
 import { StandInDialog, StandInQuestions } from "@/components/room/StandIn";
 import { WrapUpSheet, WrappingBanner } from "@/components/room/WrapUp";
 import { cancelWrapUp, startWrapUp } from "@/components/room/stage-actions";
@@ -43,7 +45,17 @@ import { orderedAlerts } from "@/lib/realtime/alerts";
 import { useMeetingSocket } from "@/lib/realtime/useMeetingSocket";
 import { roomConnection } from "@/lib/realtime/connection";
 import { elapsedSeconds } from "@/lib/realtime/meeting-clock";
-import { peopleGroups } from "@/lib/realtime/room-live";
+import {
+  handAnnouncement,
+  handPlace,
+  handQueue,
+  ordinal,
+  peopleGroups,
+  quietSpeech,
+  spokeLongEnough,
+  stepSpeech,
+  type SpeechRun,
+} from "@/lib/realtime/room-live";
 import { keyTargetOf, loadShortcutsEnabled, saveShortcutsEnabled, shortcutFor } from "@/lib/realtime/shortcuts";
 import { unreadCount } from "@/lib/realtime/chat";
 import { agentFace, agentSeedFor, type AgentFace } from "@/lib/realtime/agent-persona";
@@ -195,6 +207,7 @@ function Room({
   const [offBusy, setOffBusy] = useState(false);
   const [askedAt, setAskedAt] = useState<number | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
+  const [addAgendaOpen, setAddAgendaOpen] = useState(false);
   useEffect(() => {
     setShortcutsOn(loadShortcutsEnabled());
     try {
@@ -401,13 +414,95 @@ function Room({
 
   const onAttention = useCallback((a: AgentAttention) => setAttention(a), []);
 
+  /* Raise hand (UI polish pass): your control shows your place in the queue; the stage and the
+     People tab show the ordered queue; the host calls on someone or lowers a hand; your hand comes
+     down by itself once you have been speaking for a few seconds; every change is said once in a
+     polite live region, and the people it concerns get a gentle toast. */
   const handUp = Boolean(meId && socket.hands.raised[meId]);
+  const myPlace = handPlace(socket.hands, meId);
+  const hands = socket.hands;
   const toggleHand = useCallback(() => {
-    void socket.setHand(!handUp).then((ack) => {
-      if (!ack.ok) toast("Could not reach the meeting to raise your hand. Try again in a moment.", "error");
-      else toast(handUp ? "Hand lowered" : "Hand raised. The host sees you are waiting.", "success");
+    const raising = !handUp;
+    void socket.setHand(raising).then((ack) => {
+      if (!ack.ok) {
+        toast(`Could not reach the meeting to ${raising ? "raise" : "lower"} your hand. Try again in a moment.`, "error");
+        return;
+      }
+      if (!raising) return toast("Hand lowered", "success");
+      const at = typeof ack.raisedAt === "string" ? ack.raisedAt : new Date().toISOString();
+      const ahead = Object.entries(hands.raised).filter(([id, t]) => id !== meId && t < at).length;
+      toast(
+        ahead === 0 ? "Hand raised. You are first in line." : `Hand raised. You are ${ordinal(ahead + 1)} in line.`,
+        "success",
+      );
     });
-  }, [socket, handUp, toast]);
+  }, [socket, handUp, hands, meId, toast]);
+  const lowerHandOf = useCallback(
+    (userId: string, reason: "lowered" | "called") => {
+      void socket.lowerHandOf(userId, reason).then((ack) => {
+        if (ack.ok) return;
+        toast(
+          ack.error === "NOT_HOST"
+            ? "Only the host can lower someone's hand."
+            : "Could not reach the meeting just now. Try again in a moment.",
+          "error",
+        );
+      });
+    },
+    [socket, toast],
+  );
+  const handsActions = useMemo(
+    () => ({
+      steers: Boolean(me?.steers),
+      onCallOn: (userId: string) => lowerHandOf(userId, "called"),
+      onLower: (userId: string) => lowerHandOf(userId, "lowered"),
+      onLowerMine: () => {
+        if (handUp) toggleHand();
+      },
+    }),
+    [me?.steers, lowerHandOf, handUp, toggleHand],
+  );
+  // Said once per change, politely, for everyone; the toast only for whom it concerns.
+  const [handNote, setHandNote] = useState("");
+  const handChange = socket.handChange;
+  useEffect(() => {
+    if (!handChange) return;
+    const said = handAnnouncement(handChange, {
+      meId,
+      steers: Boolean(me?.steers),
+      place: handPlace(hands, handChange.userId),
+      count: Object.keys(hands.raised).length,
+      nameOf: (id) => names[id]?.name ?? "A teammate",
+    });
+    setHandNote(said.live);
+    if (said.toast) toast(said.toast.text, said.toast.tone);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per change, read with the hands it produced
+  }, [handChange]);
+  // Your hand comes down by itself once you have been talking for a few seconds (the floor is
+  // yours); a cough or a word does not count. Asked once per raise.
+  const localSpeaking = Boolean(micOn && live.participants.find((p) => p.isLocal)?.isSpeaking);
+  const speech = useRef<SpeechRun>(quietSpeech);
+  const spokeLowered = useRef(false);
+  useEffect(() => {
+    speech.current = stepSpeech(speech.current, localSpeaking, Date.now());
+  }, [localSpeaking]);
+  useEffect(() => {
+    if (!handUp) {
+      spokeLowered.current = false;
+      return;
+    }
+    const t = window.setInterval(() => {
+      const now = Date.now();
+      speech.current = stepSpeech(speech.current, localSpeaking, now);
+      if (spokeLowered.current || !spokeLongEnough(speech.current, now)) return;
+      spokeLowered.current = true;
+      void socket.setHand(false, "spoke").then((ack) => {
+        if (ack.ok) toast("You started speaking, so your hand went down", "info");
+        else spokeLowered.current = false;
+      });
+    }, 500);
+    return () => window.clearInterval(t);
+  }, [handUp, localSpeaking, socket, toast]);
 
   /* Off the record (wave 3). The host or creator starts and ends it through core-api (which sets
      the flag every pipeline enforces and tells the room); anyone else asks the host through the
@@ -559,9 +654,15 @@ function Room({
         const who = tilePerson(t.id, me?.id);
         if (!who) return t;
         const hand = Boolean(socket.hands.raised[who]);
-        if (me && who === me.id && myFace) return { ...t, agent: myFace, handUp: hand };
+        const place = handPlace(socket.hands, who);
+        if (me && who === me.id && myFace) return { ...t, agent: myFace, handUp: hand, handPlace: place };
         const person = names[who];
-        return { ...t, handUp: hand, agent: agentFace(who, person?.name ?? t.name, person?.agentName, person?.agentSeed) };
+        return {
+          ...t,
+          handUp: hand,
+          handPlace: place,
+          agent: agentFace(who, person?.name ?? t.name, person?.agentName, person?.agentSeed),
+        };
       }),
     [me, myFace, names, socket.hands],
   );
@@ -658,7 +759,23 @@ function Room({
   /* Drawn inside the video frame, over the picture. */
   const overlay = (
     <>
-      <RoomClock startedAt={startedAt} />
+      <div className="stage-top">
+        <RoomClock startedAt={startedAt} />
+        {joined ? (
+          <HandsQueue
+            queue={handQueue(socket.hands).map((id) => ({
+              userId: id,
+              name: id === meId ? user.name : names[id]?.name ?? "A teammate",
+              at: socket.hands.raised[id],
+              isMe: id === meId,
+            }))}
+            steers={handsActions.steers}
+            onCallOn={handsActions.onCallOn}
+            onLower={handsActions.onLower}
+            onLowerMine={handsActions.onLowerMine}
+          />
+        ) : null}
+      </div>
       <ReactionLayer reactions={socket.reactions} meId={meId} />
 
       {/* Live captions: the real `caption` stream while the meeting link is joined. */}
@@ -685,6 +802,7 @@ function Room({
         screenOn={screenOn}
         onScreen={connectedRoom ? () => setScreenOn((v) => !v) : undefined}
         handUp={handUp}
+        handPlace={myPlace}
         onHand={joined ? toggleHand : undefined}
         onReact={
           joined
@@ -878,6 +996,9 @@ function Room({
         onRetry={(what) => (what === "call" ? live.retry() : socket.retry())}
       />
       <DeviceNote note={deviceNote} />
+      <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {handNote}
+      </p>
       <div className="cx-shell">
         <CallTopBar
           room={{
@@ -900,6 +1021,7 @@ function Room({
             steers={Boolean(me?.steers)}
             nameOf={nameOfPerson}
             standInIds={standInIds}
+            onAddAgenda={me?.steers ? () => setAddAgendaOpen(true) : undefined}
           >
             {lateJoin ? <CatchUpLine meetingId={meeting.id} nameOf={nameOfPerson} onClose={() => setLateJoin(false)} /> : null}
             {me?.steers ? (
@@ -991,6 +1113,7 @@ function Room({
                   groups={groups}
                   id={SECTION_IDS.people}
                   agentSeedOf={(id) => agentSeedFor(names[id]?.agentSeed, id)}
+                  hands={joined ? handsActions : undefined}
                 />
               }
               chat={chatPanel(panelTab === "chat")}
@@ -1011,6 +1134,14 @@ function Room({
           agendaHost={socket.agendaHost}
           onKeepGoing={keepGoing}
           onClosed={onClosed}
+        />
+      ) : null}
+      {me?.steers ? (
+        <AgendaQuickAdd
+          open={addAgendaOpen}
+          onClose={() => setAddAgendaOpen(false)}
+          meetingId={meeting.id}
+          host={socket.agendaHost}
         />
       ) : null}
       <WhatIsRecorded

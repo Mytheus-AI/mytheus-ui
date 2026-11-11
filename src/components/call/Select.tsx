@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { CaretDown, Check } from "@phosphor-icons/react";
+import { useId } from "react";
+import { Dropdown } from "@/components/ui/Dropdown";
 
-/* The call's device dropdown (styled in meeting-call.css). Options carry a value (a device id) and a label. With a single
-   option or `disabled` it renders as a read-only field rather than an empty menu. */
+/* The pre-join's device field: a visible label over the shared Dropdown. Options carry a value (a
+   device id) and a label. With a single option or `disabled` it is a read-only field rather than
+   an empty menu. `openUp` is kept for callers; the dropdown now flips by itself. */
 
 export type SelectOption = { value: string; label: string };
 
@@ -13,7 +14,6 @@ export function Select({
   options,
   value,
   onChange,
-  openUp = false,
   disabled = false,
 }: {
   label: string;
@@ -23,65 +23,23 @@ export function Select({
   openUp?: boolean;
   disabled?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
+  const id = useId();
   const selected = options.find((o) => o.value === value) ?? options[0];
   const inert = disabled || options.length < 2;
-
-  useEffect(() => {
-    if (!open) return;
-    function onDocDown(e: MouseEvent) {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", onDocDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDocDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
   return (
-    <div className={`select${open ? " is-open" : ""}`} ref={rootRef}>
-      <span className="select-label">{label}</span>
-      <button
-        type="button"
-        className="select-btn tap"
-        aria-haspopup={inert ? undefined : "listbox"}
-        aria-expanded={inert ? undefined : open}
-        aria-label={`${label}: ${selected?.label ?? "none"}`}
+    <div className="select">
+      <label className="select-label" htmlFor={id}>
+        {label}
+      </label>
+      <Dropdown
+        id={id}
+        label={label}
+        value={selected?.value ?? null}
+        onChange={(v) => onChange?.(v)}
+        options={options}
         disabled={inert}
-        onClick={() => setOpen((v) => !v)}
-      >
-        <span>{selected?.label ?? "None"}</span>
-        {inert ? null : <CaretDown size={16} className="select-chev" aria-hidden />}
-      </button>
-      {open && !inert ? (
-        <div className={`select-pop${openUp ? " is-up" : ""}`} role="listbox" aria-label={label}>
-          {options.map((option) => {
-            const isSel = option.value === selected?.value;
-            return (
-              <button
-                type="button"
-                role="option"
-                aria-selected={isSel}
-                key={option.value}
-                className={`select-opt${isSel ? " is-selected" : ""}`}
-                onClick={() => {
-                  onChange?.(option.value);
-                  setOpen(false);
-                }}
-              >
-                {option.label}
-                {isSel ? <Check size={14} weight="bold" aria-hidden /> : null}
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
+        placeholder="None"
+      />
     </div>
   );
 }

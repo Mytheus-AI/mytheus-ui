@@ -132,17 +132,7 @@
 .mx-meet .more-item strong { font-size: 14px; font-weight: 650; }
 .mx-meet .more-item small { color: var(--ink-3); font-size: 12.5px; }
 
-.mx-meet .more-select { display: grid; gap: 4px; color: var(--ink); font-size: 14px; font-weight: 650; }
-.mx-meet .more-select select {
-  height: 40px;
-  padding: 0 10px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--line-2);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 500;
-}
+.mx-meet .more-select { display: grid; gap: 6px; color: var(--ink); font-size: 14px; font-weight: 650; }
 
 /* ---------------------------------------------------------------- captions */
 

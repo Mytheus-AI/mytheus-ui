@@ -71,7 +71,16 @@ const names = {
   "u-priya": { name: "Priya Nair", imageUrl: null },
 };
 
-export function RoomHarness({ theme = "light", asHost = true }: { theme?: "light" | "dark"; asHost?: boolean }) {
+export function RoomHarness({
+  theme = "light",
+  asHost = true,
+  emptyAgenda = false,
+}: {
+  theme?: "light" | "dark";
+  asHost?: boolean;
+  /** A meeting with no agenda at all: the calm empty state. */
+  emptyAgenda?: boolean;
+}) {
   return (
     <OrgProvider
       value={{
@@ -81,7 +90,7 @@ export function RoomHarness({ theme = "light", asHost = true }: { theme?: "light
     >
       <div className="mx-app mx-meet min-h-dvh bg-bg" data-theme={theme}>
         <MeetingRoom
-          meeting={meeting}
+          meeting={emptyAgenda ? { ...meeting, agenda: [] } : meeting}
           names={names}
           me={{ id: "u-maya", name: "Maya Chen", agentName: "Juniper", agentSeed: null, personality: null, steers: asHost }}
           session={{ consentRequired: false, consentedAt: "2026-11-11T09:59:00Z", recording: false, startedAt: OPENED }}

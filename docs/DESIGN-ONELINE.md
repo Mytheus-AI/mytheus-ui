@@ -77,6 +77,12 @@ use tokens, never `text-white`/`bg-white`/`text-black` (use `text-pill-on` on `b
   `danger`; `secondary` is an alias of primary), `Badge` (chips, frozen tones), `Card`, `Input`,
   `Select`, `Modal`, `EmptyState` (draws a small line), `Avatar`. These are FROZEN for page agents:
   restyle around them, do not edit them. If one truly needs a change, say so in your report.
+- Every choice from a list is `Dropdown` (`src/components/ui/Dropdown.tsx`; `Select` is its pill
+  wrapper for toolbars). Never a native `<select>`: ESLint and `tests/no-native-select.test.ts`
+  fail on one. Pass `label` (always), `id` for a visible `<label htmlFor>`, `name` inside a form,
+  `size` (`sm` 36, `md` 40, `lg` 44 for form fields), `tone`, `shape="round"` for pills; options
+  take `description`, `icon`, `group`, `disabled`. It opens as a bottom sheet on phones.
+- Scrollbars are global and thin (`globals.css`, "scrollbars"); do not restyle them per screen.
 - `src/components/site/*` (marketing): `Wrap`, `Section` (`cross` lets the page line cross at its
   top edge), `SectionHead` (serif title left, lead right), `Stage` (peach or ochre wash, optional
   glow), `Win` + `WinBar` (product window), `Chip`, `Live`, `Loop` (the hero loop; once per page),

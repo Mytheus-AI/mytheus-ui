@@ -6,6 +6,7 @@ import { CheckCircle, Gavel, HourglassMedium, ListChecks, SignOut, UserCircle, X
 import { confirmCandidate, dismissCandidate } from "@/app/actions/candidates";
 import { setAgendaItemStatus } from "@/app/actions/agenda";
 import { useCallToast } from "@/components/call/CallToast";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { RoomDialog } from "@/components/room/RoomDialog";
 import { assignActionCard, closeMeeting, loadWrapUp } from "@/components/room/stage-actions";
 import type { AgendaItem } from "@/lib/api/meeting-agenda-types";
@@ -264,22 +265,17 @@ export function WrapUpSheet({
                             <label htmlFor={`${uid}-a-${card.id}`} className="wu-owner-label">
                               No owner yet
                             </label>
-                            <select
+                            <Dropdown
                               id={`${uid}-a-${card.id}`}
+                              label={`Assign: ${card.content}`}
+                              size="sm"
                               className="wu-select"
-                              defaultValue=""
+                              value={null}
+                              placeholder="Assign to..."
                               disabled={isBusy}
-                              onChange={(e) => void assign(card, e.target.value)}
-                            >
-                              <option value="" disabled>
-                                Assign to...
-                              </option>
-                              {participantIds.map((id) => (
-                                <option key={id} value={id}>
-                                  {id === meId ? "Me" : nameOf(id)}
-                                </option>
-                              ))}
-                            </select>
+                              options={participantIds.map((id) => ({ value: id, label: id === meId ? "Me" : nameOf(id) }))}
+                              onChange={(v) => void assign(card, v)}
+                            />
                           </>
                         ) : (
                           <span>{card.assignee_id ? nameOf(card.assignee_id) : "No owner"}</span>
@@ -354,13 +350,16 @@ export function WrapUpSheet({
           <label htmlFor={`${uid}-owner`} className="wu-foot-label">
             Leftover cards go to
           </label>
-          <select id={`${uid}-owner`} className="wu-select" value={owner} onChange={(e) => setOwner(e.target.value)} disabled={closing !== null}>
-            {participantIds.map((id) => (
-              <option key={id} value={id}>
-                {id === meId ? "Me" : nameOf(id)}
-              </option>
-            ))}
-          </select>
+          <Dropdown
+            id={`${uid}-owner`}
+            label="Leftover cards go to"
+            size="sm"
+            className="wu-select"
+            value={owner}
+            disabled={closing !== null}
+            options={participantIds.map((id) => ({ value: id, label: id === meId ? "Me" : nameOf(id) }))}
+            onChange={setOwner}
+          />
         </div>
 
         <div className="room-dialog-acts">

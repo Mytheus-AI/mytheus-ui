@@ -18,11 +18,13 @@ import {
   VideoCamera,
   VideoCameraSlash,
 } from "@phosphor-icons/react";
+import { useId } from "react";
 import { Popover } from "@/components/room/Popover";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { DeviceMenu } from "@/components/room/DeviceMenu";
 import { CaptionLanguagePicker } from "@/components/room/CaptionLanguage";
 import { CAPTION_LANGUAGES, isCaptionLanguage, type CaptionLanguage } from "@/lib/realtime/privacy";
-import { REACTIONS, type ReactionId } from "@/lib/realtime/room-live";
+import { REACTIONS, ordinal, type ReactionId } from "@/lib/realtime/room-live";
 import { SHORTCUTS } from "@/lib/realtime/shortcuts";
 
 /* The dark control bar, floating at the bottom of the stage. It keeps only the controls the room
@@ -53,6 +55,7 @@ export function ControlBar({
   screenOn = false,
   onScreen,
   handUp = false,
+  handPlace = 0,
   onHand,
   onReact,
   room = null,
@@ -79,6 +82,8 @@ export function ControlBar({
   /** Present only when a real call is connected. */
   onScreen?: () => void;
   handUp?: boolean;
+  /** Your place in the hands queue while your hand is up, from 1. */
+  handPlace?: number;
   /** Present only while the meeting link is joined. */
   onHand?: () => void;
   onReact?: (reaction: ReactionId) => void;
@@ -99,6 +104,7 @@ export function ControlBar({
   onWhatIsRecorded?: () => void;
 }) {
   const key = (k: string) => (shortcutsOn ? ` (${k})` : "");
+  const uid = useId();
 
   return (
     <div className="controls" role="toolbar" aria-label="Call controls">
@@ -139,14 +145,22 @@ export function ControlBar({
       {onHand ? (
         <button
           type="button"
-          className={`ctl tap${handUp ? " is-active" : ""}`}
-          data-tip={handUp ? `Lower hand${key("H")}` : `Raise hand${key("H")}`}
+          className={`ctl tap${handUp ? " is-hand" : ""}`}
+          data-tip={handUp ? `Lower hand${key("H")}${handPlace ? `, ${ordinal(handPlace)} in line` : ""}` : `Raise hand${key("H")}`}
           aria-label="Raise hand"
           aria-pressed={handUp}
+          aria-describedby={handUp && handPlace ? `${uid}-hand` : undefined}
           aria-keyshortcuts={shortcutsOn ? "H" : undefined}
           onClick={onHand}
         >
           <HandPalm size={20} weight={handUp ? "fill" : "regular"} aria-hidden />
+          {handUp && handPlace ? (
+            <span className="ctl-badge" id={`${uid}-hand`}>
+              <span className="sr-only">Your hand is up, </span>
+              {handPlace}
+              <span className="sr-only"> in line</span>
+            </span>
+          ) : null}
         </button>
       ) : null}
       {onReact ? (
@@ -260,20 +274,20 @@ export function ControlBar({
                 ) : null}
                 {room ? <DeviceMenu room={room} onPicked={onDevicePicked} /> : null}
                 {onCaptions && captionLanguage ? (
-                  <label className="more-select">
-                    <span>Caption language</span>
-                    <select
+                  <div className="more-select">
+                    <span id={`${uid}-lang`}>Caption language</span>
+                    <Dropdown
+                      label="Caption language"
+                      labelledBy={`${uid}-lang`}
+                      size="md"
                       value={captionLanguage.value ?? ""}
-                      onChange={(e) => captionLanguage.onChange(isCaptionLanguage(e.target.value) ? e.target.value : null)}
-                    >
-                      <option value="">As spoken</option>
-                      {CAPTION_LANGUAGES.map((l) => (
-                        <option key={l.code} value={l.code}>
-                          {l.name} ({l.native})
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                      options={[
+                        { value: "", label: "As spoken", description: "No translation" },
+                        ...CAPTION_LANGUAGES.map((l) => ({ value: l.code, label: l.name, description: l.native })),
+                      ]}
+                      onChange={(v) => captionLanguage.onChange(isCaptionLanguage(v) ? v : null)}
+                    />
+                  </div>
                 ) : null}
                 {offRecord ? (
                   <button

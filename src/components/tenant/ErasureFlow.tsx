@@ -6,6 +6,7 @@ import { Trash, User, VideoCamera } from "@phosphor-icons/react";
 import { eraseData } from "@/app/actions/tenant-admin";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { FieldMsg, fieldClass } from "@/components/ui/Form";
 import { MemberPicker, type MemberOption } from "@/components/ui/MemberPicker";
 import { Note } from "@/components/ui/Note";
@@ -207,23 +208,23 @@ function ErasureDialog({
             ) : meetings.length === 0 ? (
               <Note>There are no meetings to erase.</Note>
             ) : (
-              <select
+              <Dropdown
                 id={`${uid}-meeting`}
-                value={meetingId}
-                onChange={(e) => {
-                  setMeetingId(e.target.value);
+                label="Meeting"
+                value={meetingId || null}
+                placeholder="Pick a meeting"
+                options={meetings.map((m) => ({
+                  value: m.id,
+                  label: m.title?.trim() || "Untitled meeting",
+                  description: [m.when, m.live ? "Live now" : null].filter(Boolean).join(", ") || undefined,
+                  icon: <VideoCamera size={16} />,
+                }))}
+                onChange={(v) => {
+                  setMeetingId(v);
                   setTyped("");
                   setError(null);
                 }}
-                className={fieldClass}
-              >
-                <option value="">Pick a meeting</option>
-                {meetings.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {(m.title?.trim() || "Untitled meeting") + (m.when ? `, ${m.when}` : "") + (m.live ? " (live)" : "")}
-                  </option>
-                ))}
-              </select>
+              />
             )}
           </div>
         )}

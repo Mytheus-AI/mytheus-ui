@@ -103,19 +103,10 @@
 .mx-meet .ag-note svg { flex-shrink: 0; margin-top: 4px; color: var(--signal-ink); }
 .mx-meet .ag-src { color: var(--ink-3); font-size: 12.5px; }
 .mx-meet .ag-status { padding-top: 1px; }
-.mx-meet .ag-status-pick select {
-  height: 34px;
-  padding: 0 10px;
-  border-radius: 999px;
-  border: 1px solid var(--line-2);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 12.5px;
-  font-weight: 600;
-}
-.mx-meet .ag-status-pick select.is-accent { background: var(--signal-soft); border-color: transparent; color: var(--signal-ink); }
-.mx-meet .ag-status-pick select.is-ok { background: var(--ok-soft); border-color: transparent; color: var(--ok); }
-.mx-meet .ag-status-pick select:focus-visible { outline: none; border-color: var(--signal); box-shadow: 0 0 0 3px var(--signal-soft); }
+.mx-meet .ag-status-pick .dd-trigger { width: auto; height: 34px; gap: 6px; padding: 0 10px 0 12px; font-size: 12.5px; font-weight: 600; }
+.mx-meet .ag-status-pick.is-accent .dd-trigger { background: var(--signal-soft); border-color: transparent; color: var(--signal-ink); }
+.mx-meet .ag-status-pick.is-ok .dd-trigger { background: var(--ok-soft); border-color: transparent; color: var(--ok); }
+.mx-meet .ag-status-pick:is(.is-accent, .is-ok) .dd-caret { color: inherit; }
 .mx-meet .ag-msg { margin-top: 10px; color: var(--priority-high); font-size: 14px; font-weight: 600; }
 .mx-meet .ag-edit-acts { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
 

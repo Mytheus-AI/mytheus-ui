@@ -118,7 +118,9 @@ import {
   applyRoomHands,
   emptyHandsState,
   expireReactions,
+  handChangeOf,
   type FloatingReaction,
+  type HandChange,
   type HandsState,
   type ReactionId,
 } from "./room-live";
@@ -198,6 +200,10 @@ export interface MeetingSocketState {
     applyRows: (rows: AgendaItem[]) => void;
     /** After core-api stored a change to several items ("Start next"): tell everyone. */
     announceMany: (itemIds: string[]) => Promise<RoomAck>;
+    /** The host replaced the whole agenda (PUT): take the stored rows as they are. */
+    replaceAll: (rows: AgendaItem[]) => void;
+    /** ... and tell everyone, who take the stored agenda whole. */
+    announceReplaced: (itemIds: string[]) => Promise<RoomAck>;
   };
   nudges: NudgeState;
   dismissNudge: (id: string) => void;
@@ -205,7 +211,12 @@ export interface MeetingSocketState {
   sendChat: (content: string) => void;
   markChatSeen: () => void;
   hands: HandsState;
-  setHand: (raised: boolean) => Promise<RoomAck>;
+  /** Your own hand; lowering may say why ("spoke": you started talking). */
+  setHand: (raised: boolean, reason?: "lowered" | "spoke") => Promise<RoomAck>;
+  /** The host (or creator) lowers someone's hand, or calls on them. The gateway checks it. */
+  lowerHandOf: (userId: string, reason: "lowered" | "called") => Promise<RoomAck>;
+  /** The latest change to anyone's hand, for the room's announcements. */
+  handChange: HandChange | null;
   reactions: FloatingReaction[];
   react: (reaction: ReactionId) => Promise<RoomAck>;
   /** The host ended the meeting for everyone. */
@@ -299,6 +310,8 @@ export function useMeetingSocket(
   const [nudges, setNudges] = useState<NudgeState>(emptyNudgeState);
   const [chat, setChat] = useState<ChatState>(emptyChatState);
   const [hands, setHands] = useState<HandsState>(emptyHandsState);
+  const [handChange, setHandChange] = useState<HandChange | null>(null);
+  const handSeq = useRef(0);
   const [reactions, setReactions] = useState<FloatingReaction[]>([]);
   const [ended, setEnded] = useState<MeetingEnded | null>(null);
   const [wrapUp, setWrapUp] = useState<WrapUpState | null>(() => initialWrapUp(options.initialWrapUpStartedAt));
@@ -499,8 +512,13 @@ export function useMeetingSocket(
     socket.on("candidate-lock", mine<LockPayload>((p) => setCandidates((prev) => applyLock(prev, p))));
     socket.on(
       "agenda-status",
-      mine<{ item?: AgendaItem; items?: AgendaItem[] }>((p) =>
-        setAgenda((prev) => applyHostAgendaRows(prev, Array.isArray(p.items) ? p.items : [p.item])),
+      mine<{ item?: AgendaItem; items?: AgendaItem[]; replaced?: boolean }>((p) =>
+        setAgenda((prev) =>
+          // The host replaced the whole agenda: the stored rows are the agenda now.
+          p.replaced === true && Array.isArray(p.items)
+            ? hydrateAgenda(prev, p.items)
+            : applyHostAgendaRows(prev, Array.isArray(p.items) ? p.items : [p.item]),
+        ),
       ),
     );
     socket.on(
@@ -512,7 +530,14 @@ export function useMeetingSocket(
         },
       ),
     );
-    socket.on("hand", mine<{ userId?: string; raised?: boolean; at?: string }>((p) => setHands((prev) => applyHand(prev, p))));
+    socket.on(
+      "hand",
+      mine<{ userId?: string; raised?: boolean; at?: string; raisedAt?: string; byUserId?: string; reason?: string }>((p) => {
+        setHands((prev) => applyHand(prev, p));
+        const change = handChangeOf(p, ++handSeq.current);
+        if (change) setHandChange(change);
+      }),
+    );
     socket.on(
       "reaction",
       mine<{ id?: string; userId?: string; reaction?: string }>((p) => setReactions((prev) => applyReaction(prev, p, Date.now()))),
@@ -647,6 +672,8 @@ export function useMeetingSocket(
       announce: (itemId: string) => emitAck("agenda-status", { itemId }, true),
       applyRows: (rows: AgendaItem[]) => setAgenda((prev) => applyServerRows(prev, rows)),
       announceMany: (itemIds: string[]) => emitAck("agenda-status", { itemIds }, true),
+      replaceAll: (rows: AgendaItem[]) => setAgenda((prev) => hydrateAgenda(prev, rows)),
+      announceReplaced: (itemIds: string[]) => emitAck("agenda-status", { itemIds, replaced: true }, true),
     }),
     [emitAck],
   );
@@ -680,7 +707,14 @@ export function useMeetingSocket(
   );
   const markChatSeen = useCallback(() => setChat((prev) => markChatSeenIn(prev)), []);
 
-  const setHand = useCallback((raised: boolean) => emitAck("hand", { raised }), [emitAck]);
+  const setHand = useCallback(
+    (raised: boolean, reason?: "lowered" | "spoke") => emitAck("hand", reason ? { raised, reason } : { raised }),
+    [emitAck],
+  );
+  const lowerHandOf = useCallback(
+    (userId: string, reason: "lowered" | "called") => emitAck("hand", { raised: false, userId, reason }, true),
+    [emitAck],
+  );
   const react = useCallback((reaction: ReactionId) => emitAck("reaction", { reaction }), [emitAck]);
   const announceEnd = useCallback(() => emitAck("end-meeting", {}, true), [emitAck]);
   const announceWrapUp = useCallback(() => emitAck("wrap-up", {}, true), [emitAck]);
@@ -736,6 +770,8 @@ export function useMeetingSocket(
       markChatSeen,
       hands,
       setHand,
+      lowerHandOf,
+      handChange,
       reactions,
       react,
       ended,
@@ -782,6 +818,8 @@ export function useMeetingSocket(
       markChatSeen,
       hands,
       setHand,
+      lowerHandOf,
+      handChange,
       reactions,
       react,
       ended,

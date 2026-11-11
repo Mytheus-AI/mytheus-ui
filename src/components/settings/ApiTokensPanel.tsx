@@ -9,6 +9,7 @@ import { CardHead, cardClass } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { Dialog } from "@/components/ui/Dialog";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FieldMsg, fieldClass } from "@/components/ui/Form";
 import { Note } from "@/components/ui/Note";
@@ -306,13 +307,14 @@ function CreateTokenDialog({ open, onClose, onCreated }: { open: boolean; onClos
           <label htmlFor={`${uid}-expiry`} className="mb-1.5 block text-[14px] font-semibold text-ink">
             Expires after
           </label>
-          <select id={`${uid}-expiry`} value={days} onChange={(e) => setDays(Number(e.target.value))} className={`${fieldClass} sm:max-w-[240px]`}>
-            {EXPIRY_OPTIONS.map((o) => (
-              <option key={o.days} value={o.days}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+          <Dropdown
+            id={`${uid}-expiry`}
+            label="Expires after"
+            className="sm:max-w-[240px]"
+            value={String(days)}
+            options={EXPIRY_OPTIONS.map((o) => ({ value: String(o.days), label: o.label }))}
+            onChange={(v) => setDays(Number(v))}
+          />
           <p className="mt-1.5 text-[12.5px] text-ink-3">Every token expires. Create a new one when it does.</p>
         </div>
 

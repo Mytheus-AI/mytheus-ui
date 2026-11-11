@@ -145,7 +145,8 @@ const states: State[] = [
         await page.getByRole("radio", { name: /Spanish/ }).click();
       } else {
         await page.getByRole("button", { name: "More options" }).click();
-        await page.getByLabel("Caption language").selectOption("es");
+        await page.getByRole("combobox", { name: "Caption language" }).click();
+        await page.getByRole("option", { name: /Spanish/ }).click();
         await page.keyboard.press("Escape");
       }
       await push(page, "caption-translation", { chunkId: "c3", language: "es", status: "translated", text: "Y enviaré la presentación de precios el viernes." });

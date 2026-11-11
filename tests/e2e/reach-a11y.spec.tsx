@@ -46,7 +46,9 @@ for (const theme of ["light", "dark"] as const) {
     await page.getByRole("button", { name: "Start erasure" }).click();
     const dialog = page.getByRole("dialog", { name: "Erase data" });
     await dialog.getByText("One meeting's data").click();
-    await dialog.getByLabel("Meeting", { exact: true }).selectOption({ label: "Pricing review, Nov 3, 2026" });
+    await dialog.getByRole("combobox", { name: "Meeting" }).click();
+    await dialog.getByRole("option", { name: /Pricing review/ }).click();
+    await expect(dialog.getByRole("combobox", { name: "Meeting" })).toHaveText(/Pricing review/);
     const erase = dialog.getByRole("button", { name: "Erase meeting data" });
     await expect(erase).toBeDisabled();
     await dialog.getByLabel(/to confirm/).fill("pricing REVIEW ");

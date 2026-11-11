@@ -1,9 +1,10 @@
 "use client";
 
-import { Crown, HandPalm, Microphone, MicrophoneSlash, Robot } from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
+import { Crown, HandPalm, Megaphone, Microphone, MicrophoneSlash, Robot, X } from "@phosphor-icons/react";
 import { initials, toneOf } from "@/components/room/tone";
 import { Doodle } from "@/components/ui/Doodle";
-import type { PeopleGroups } from "@/lib/realtime/room-live";
+import { handWait, ordinal, type PeopleGroups } from "@/lib/realtime/room-live";
 
 /* Who is here, the People tab of the room's panel (polish program, Phase 0): three groups.
 
@@ -27,12 +28,22 @@ export function PeoplePanel({
   groups,
   id,
   agentSeedOf,
+  hands,
 }: {
   groups: PeopleGroups;
   id?: string;
   agentSeedOf: (userId: string) => string;
+  /** The queue's actions: the host calls on or lowers a hand; anyone lowers their own. */
+  hands?: { steers: boolean; onCallOn: (userId: string) => void; onLower: (userId: string) => void; onLowerMine: () => void };
 }) {
   const handOrder = groups.inCall.filter((p) => p.handAt).map((p) => p.id);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (handOrder.length === 0) return;
+    setNow(Date.now());
+    const t = window.setInterval(() => setNow(Date.now()), 15_000);
+    return () => window.clearInterval(t);
+  }, [handOrder.length]);
   return (
     <div className="ppl" id={id}>
       <div className="side-sec">
@@ -61,14 +72,33 @@ export function PeoplePanel({
                 <span className="ppl-name">
                   <strong>{p.name}</strong>
                   <small>
-                    {[p.isLocal ? "You" : null, p.host ? "Host" : null].filter(Boolean).join(", ") || null}
+                    {[p.isLocal ? "You" : null, p.host ? "Host" : null, p.handAt ? `Hand up ${handWait(p.handAt, now) === "just now" ? "just now" : `for ${handWait(p.handAt, now)}`}` : null]
+                      .filter(Boolean)
+                      .join(", ") || null}
                   </small>
                 </span>
                 {p.handAt ? (
-                  <span className="ppl-hand" role="img" aria-label={`Hand raised, number ${place} in line`}>
+                  <span className="ppl-hand" role="img" aria-label={`Hand raised, ${ordinal(place)} in line`}>
                     <HandPalm size={16} weight="fill" aria-hidden />
                     {place}
                   </span>
+                ) : null}
+                {p.handAt && hands ? (
+                  hands.steers && !p.isLocal ? (
+                    <span className="ppl-hand-acts">
+                      <button type="button" className="hq-btn is-primary tap" onClick={() => hands.onCallOn(p.id)} aria-label={`Call on ${p.name}`}>
+                        <Megaphone size={14} aria-hidden />
+                        <span>Call on</span>
+                      </button>
+                      <button type="button" className="hq-btn is-icon tap" onClick={() => hands.onLower(p.id)} aria-label={`Lower ${p.name}'s hand`}>
+                        <X size={14} weight="bold" aria-hidden />
+                      </button>
+                    </span>
+                  ) : p.isLocal ? (
+                    <button type="button" className="hq-btn tap" onClick={hands.onLowerMine}>
+                      Lower
+                    </button>
+                  ) : null
                 ) : null}
                 {p.host ? <Crown size={15} weight="fill" className="ppl-host" aria-hidden /> : null}
                 {p.speaking && p.micOn ? (

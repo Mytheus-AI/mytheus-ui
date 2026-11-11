@@ -75,7 +75,7 @@
 /* ---------------------------------------------------------------- people */
 
 .mx-meet .ppl .side-sec + .ppl-list { margin-bottom: 14px; }
-.mx-meet .ppl-row.has-hand { background: var(--priority-medium-soft); margin: 0 -10px; padding: 8px 10px; border-radius: var(--radius-pill); }
+.mx-meet .ppl-row.has-hand { background: var(--priority-medium-soft); margin: 0 -10px; padding: 8px 10px; border-radius: var(--radius-pill); gap: 10px; }
 .mx-meet .ppl-hand {
   display: inline-flex;
   align-items: center;
@@ -90,20 +90,170 @@
 
 /* ---------------------------------------------------------------- stage: hands and reactions */
 
+/* A raised hand on a tile: amber, with the person's place in the queue. */
 .mx-meet .thumb-hand {
   position: absolute;
   z-index: 2;
   top: 8px;
   left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 28px;
+  min-width: 28px;
+  padding: 0 8px 0 7px;
+  border-radius: 999px;
+  background: var(--priority-medium);
+  color: var(--pill-on);
+  box-shadow: var(--sh-2);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.mx-meet .thumb.has-hand { box-shadow: inset 0 0 0 2px var(--priority-medium); }
+.mx-meet .cx-hand { display: inline-flex; align-items: center; gap: 2px; color: var(--mx-medium-ink); font-weight: 700; }
+.mx-meet .hand-n { font-size: 12.5px; line-height: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  .mx-meet .thumb-hand { animation: hand-up 0.24s var(--ease-out) both; transform-origin: 30% 100%; }
+}
+@keyframes hand-up { from { opacity: 0; transform: translateY(4px) scale(0.9); } }
+
+/* Your own hand on the control bar: amber, with your place as a small badge. */
+.mx-meet .ctl.is-hand { background: var(--priority-medium); color: var(--pill-on); }
+.mx-meet .ctl.is-hand:hover { background: color-mix(in srgb, var(--priority-medium) 86%, var(--pill-on)); }
+.mx-meet .ctl-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
   display: grid;
   place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--pill-on);
+  color: var(--pill);
+  box-shadow: 0 0 0 2px var(--pill);
+  font-size: 11.5px;
+  font-weight: 750;
+  line-height: 1;
+}
+
+/* The clock and the hands chip share the stage's top-left corner (top-right in spotlight, where
+   the main speaker's name takes the left). */
+.mx-meet .stage-top {
+  position: absolute;
+  z-index: 6;
+  top: 16px;
+  left: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: calc(100% - 32px);
+}
+.mx-meet .stage-top .timer-pill { position: static; flex-shrink: 0; }
+.mx-meet .main-video:has(> .name-pill) .stage-top { left: auto; right: 16px; flex-direction: row-reverse; }
+
+/* The hands queue: a chip that opens the ordered list. */
+/* The list hangs from the corner the clock and chip share, so it stays inside the stage on a
+   phone. */
+.mx-meet .hq { min-width: 0; }
+.mx-meet .hq-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  max-width: 220px;
+  padding: 0 10px 0 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  color: var(--ink);
+  box-shadow: var(--sh-2);
+  font-size: 14px;
+  font-weight: 650;
+  backdrop-filter: blur(6px);
+}
+.mx-meet .hq-ico {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
   width: 26px;
   height: 26px;
   border-radius: 50%;
   background: var(--priority-medium);
-  color: var(--pill);
+  color: var(--pill-on);
 }
-.mx-meet .cx-hand { color: var(--priority-medium); }
+.mx-meet .hq-chip-text { display: inline-flex; align-items: baseline; gap: 5px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.mx-meet .hq-more { color: var(--mx-medium-ink); font-size: 12.5px; font-weight: 700; }
+.mx-meet .hq-caret { flex-shrink: 0; color: var(--ink-3); transition: transform 0.2s var(--ease-out); }
+.mx-meet .hq.is-open .hq-caret { transform: rotate(180deg); }
+.mx-meet .hq-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: min(340px, calc(100vw - 52px));
+  padding: 12px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  box-shadow: var(--sh-3);
+}
+.mx-meet .hq-panel[hidden] { display: none; }
+.mx-meet .main-video:has(> .name-pill) .hq-panel { left: auto; right: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .mx-meet .hq-panel:not([hidden]) { animation: dd-in 0.16s var(--ease-out) both; transform-origin: 0 0; }
+}
+.mx-meet .hq-head { display: flex; align-items: center; gap: 8px; padding: 2px 4px 8px; }
+.mx-meet .hq-title { color: var(--ink); font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+.mx-meet .hq-count {
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--priority-medium-soft);
+  color: var(--mx-medium-ink);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.mx-meet .hq-list { display: flex; flex-direction: column; gap: 2px; max-height: min(320px, 46vh); margin: 0; padding: 0; overflow-y: auto; list-style: none; }
+.mx-meet .hq-row { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 6px 6px 6px 4px; border-radius: var(--radius-pill); }
+.mx-meet .hq-row.is-next { background: var(--priority-medium-soft); }
+.mx-meet .hq-place { flex-shrink: 0; width: 18px; color: var(--mx-medium-ink); font-size: 13px; font-weight: 750; text-align: center; font-variant-numeric: tabular-nums; }
+.mx-meet .hq-av { flex-shrink: 0; width: 32px; height: 32px; font-size: 12.5px; }
+.mx-meet .hq-who { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+.mx-meet .hq-who strong { overflow: hidden; color: var(--ink); font-size: 14.5px; font-weight: 650; white-space: nowrap; text-overflow: ellipsis; }
+.mx-meet .hq-who small { color: var(--ink-3); font-size: 12.5px; }
+.mx-meet .hq-acts,
+.mx-meet .ppl-hand-acts { display: inline-flex; flex-shrink: 0; align-items: center; gap: 4px; }
+.mx-meet .hq-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.mx-meet .hq-btn:hover { background: var(--surface-2); }
+.mx-meet .hq-btn.is-primary { border-color: var(--pill); background: var(--pill); color: var(--pill-on); }
+.mx-meet .hq-btn.is-primary:hover { background: var(--pill-2); }
+.mx-meet .hq-btn.is-icon { width: 32px; padding: 0; color: var(--ink-3); }
+.mx-meet .hq-foot { margin-top: 8px; padding: 8px 4px 0; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 12.5px; line-height: 1.45; }
+@media (max-width: 719px) {
+  .mx-meet .stage-top { top: 10px; left: 10px; max-width: calc(100% - 20px); }
+  .mx-meet .hq-chip { height: 32px; max-width: 150px; }
+  .mx-meet .ppl-hand-acts .hq-btn span { display: none; }
+  .mx-meet .ppl-hand-acts .hq-btn.is-primary { width: 32px; padding: 0; }
+}
 
 .mx-meet .react-layer {
   position: absolute;
@@ -169,8 +319,8 @@
 .mx-meet .ctl-pop-panel[hidden] { display: none; }
 .mx-meet .ctl-pop-panel.is-leave,
 .mx-meet .ctl-pop-panel.is-more { left: auto; right: -8px; transform: none; }
-.mx-meet .ctl-pop-panel.is-devices,
 .mx-meet .ctl-pop-panel.is-more { width: min(320px, calc(100vw - 32px)); }
+.mx-meet .ctl-pop-panel.is-devices { width: min(340px, calc(100vw - 32px)); padding: 14px; }
 .mx-meet .pop-title { margin-bottom: 8px; color: var(--ink); font-size: 14px; font-weight: 650; }
 .mx-meet .pop-problem { margin-top: 8px; color: var(--priority-high); font-size: 12.5px; }
 
@@ -185,18 +335,9 @@
 }
 .mx-meet .react-btn:hover { background: var(--bg-2); }
 
-.mx-meet .dev-menu { display: flex; flex-direction: column; gap: 10px; }
-.mx-meet .dev-row { display: flex; flex-direction: column; gap: 4px; color: var(--ink-2); font-size: 12.5px; font-weight: 600; }
-.mx-meet .dev-row select {
-  height: 38px;
-  padding: 0 10px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--line-2);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 500;
-}
+.mx-meet .dev-menu { display: flex; flex-direction: column; gap: 12px; }
+.mx-meet .dev-row { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.mx-meet .dev-label { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-3); font-size: 12.5px; font-weight: 600; }
 
 .mx-meet .more-menu { display: flex; flex-direction: column; gap: 12px; }
 .mx-meet .more-toggles { display: flex; flex-direction: column; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }

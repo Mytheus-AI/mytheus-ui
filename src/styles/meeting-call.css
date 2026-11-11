@@ -22,8 +22,10 @@
 }
 .mx-meet .cx-call .cx-brand { display: inline-flex; align-items: center; flex-shrink: 0; color: var(--ink); }
 .mx-meet .cx-call .cx-top-sep { width: 1px; height: 26px; margin: 0 4px; flex-shrink: 0; background: var(--line-2); }
-.mx-meet .cx-call .cx-top-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mx-meet .cx-call .cx-top-title { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; }
 .mx-meet .cx-call .cx-top-title h1 {
+  flex: 0 1 auto;
+  min-width: 0;
   color: var(--ink-display);
   font-family: var(--font-display);
   font-size: 22px;
@@ -34,8 +36,29 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.mx-meet .cx-call .cx-top-title p { display: flex; align-items: center; gap: 6px; color: var(--ink-3); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mx-meet .cx-call .cx-top-title p svg { flex-shrink: 0; }
+/* Who is here: one chip on the title's line. It never shrinks; the title truncates first. */
+.mx-meet .cx-call .cx-incall {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 11px 0 9px;
+  border-radius: 999px;
+  background: var(--bg-2);
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.mx-meet .cx-call .cx-incall svg { flex-shrink: 0; color: var(--ink-3); }
+.mx-meet .cx-call .cx-incall-label { font-weight: 500; }
+.mx-meet .cx-call .cx-incall .cx-invited { margin-left: -5px; color: var(--ink-3); font-weight: 500; }
+@media (max-width: 1199px) {
+  .mx-meet .cx-call .cx-incall .cx-invited { display: none; }
+}
 .mx-meet .cx-call .cx-top-end { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
 /* Call / Notes: one segmented control. */
@@ -391,58 +414,9 @@
 .mx-meet .cx-call .pj-meter-state { min-width: 64px; text-align: right; color: var(--ink-3); font-size: 12.5px; font-weight: 600; }
 .mx-meet .cx-call .pj-help { margin-top: 8px; color: var(--ink-3); font-size: 12.5px; line-height: 1.5; }
 
-/* The custom device dropdown (components/call/Select). */
+/* The device fields (components/call/Select): a label over the shared dropdown (globals.css). */
 .mx-meet .cx-call .select { position: relative; min-width: 0; }
 .mx-meet .cx-call .select-label { display: block; margin-bottom: 8px; color: var(--ink); font-size: 14px; font-weight: 600; }
-.mx-meet .cx-call .select-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  height: 44px;
-  padding: 0 14px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--line-2);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 15px;
-  text-align: left;
-}
-.mx-meet .cx-call .select-btn span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mx-meet .cx-call .select-btn:hover:not(:disabled) { border-color: var(--ink-4); }
-.mx-meet .cx-call .select.is-open .select-btn { border-color: var(--signal); box-shadow: 0 0 0 3px var(--signal-soft); }
-.mx-meet .cx-call .select-btn:disabled { background: var(--surface-2); color: var(--ink-3); cursor: default; }
-.mx-meet .cx-call .select-chev { flex-shrink: 0; color: var(--ink-3); transition: transform 0.2s var(--ease-out); }
-.mx-meet .cx-call .select.is-open .select-chev { transform: rotate(180deg); }
-.mx-meet .cx-call .select-pop {
-  position: absolute;
-  z-index: 40;
-  left: 0;
-  right: 0;
-  top: calc(100% + 6px);
-  padding: 6px;
-  border-radius: var(--radius-pill);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  box-shadow: var(--sh-3);
-}
-.mx-meet .cx-call .select-pop.is-up { top: auto; bottom: calc(100% + 6px); }
-.mx-meet .cx-call .select-opt {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 40px;
-  padding: 8px 10px;
-  border-radius: var(--radius-pill);
-  color: var(--ink-2);
-  font-size: 14px;
-  text-align: left;
-}
-.mx-meet .cx-call .select-opt:hover { background: var(--surface-2); color: var(--ink); }
-.mx-meet .cx-call .select-opt.is-selected { background: var(--signal-soft); color: var(--signal-ink); font-weight: 600; }
 
 /* The meeting card. */
 .mx-meet .cx-call .pj-meet h2 { margin-top: 12px; color: var(--ink-display); font-family: var(--font-display); font-size: 22px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; overflow-wrap: anywhere; }
@@ -582,8 +556,12 @@
 @media (max-width: 719px) {
   .mx-meet .cx-call .cx-brand .wordmark { display: none; }
   .mx-meet .cx-call .cx-modes button { padding: 0 10px; }
-  .mx-meet .cx-call .cx-modes button span { display: none; }
-  .mx-meet .cx-call .cx-top-title p .cx-invited { display: none; }
+  /* Icon only on a phone; the word stays as the button's name for screen readers. */
+  .mx-meet .cx-call .cx-modes button span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .mx-meet .cx-call .cx-incall .cx-invited,
+  .mx-meet .cx-call .cx-incall-label { display: none; }
+  .mx-meet .cx-call .cx-incall { height: 26px; padding: 0 9px 0 8px; gap: 4px; }
+  .mx-meet .cx-call .cx-top-title { gap: 8px; }
   .mx-meet .captions { bottom: 62px; padding: 6px 10px; font-size: 12.5px; line-height: 1.35; gap: 1px; }
   .mx-meet .cap-line,
   .mx-meet .cap-interim { -webkit-line-clamp: 1; }
@@ -598,6 +576,13 @@
   .mx-meet .cx-call .pj-join { grid-template-columns: minmax(0, 1fr); }
   .mx-meet .cx-call .pj-join > :first-child { order: 2; }
   .mx-meet .cx-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* A small phone in the room: the title needs the logo's room more than the logo does. */
+@media (max-width: 479px) {
+  .mx-meet .cx-call.cx-room .cx-top .cx-brand { display: none; }
+  .mx-meet .cx-call .cx-top { gap: 6px; padding: 0 10px; }
+  .mx-meet .cx-call .cx-modes button { padding: 0 9px; }
 }
 
 @media (max-width: 420px) {
