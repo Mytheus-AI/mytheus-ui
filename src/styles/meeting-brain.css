@@ -113,7 +113,7 @@
 .mx-meet .nm-when-row { display: grid; grid-template-columns: minmax(0, 180px) minmax(0, 1fr); align-items: end; gap: 12px; }
 .mx-meet .nm-when-row.is-later { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr); }
 .mx-meet .nm-now-note { display: flex; align-items: flex-start; gap: 8px; padding-bottom: 12px; color: var(--ink-3); font-size: 13.5px; line-height: 1.45; }
-.mx-meet .nm-live { flex-shrink: 0; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: var(--priority-high); }
+.mx-meet .nm-now-icon { flex-shrink: 0; margin-top: 1px; color: var(--ink-4); }
 .mx-meet .nm-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
 .mx-meet .nm-pair .mh-new-hint,
 .mx-meet .nm-field > .mh-new-hint { line-height: 1.45; }
