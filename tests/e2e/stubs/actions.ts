@@ -313,3 +313,72 @@ export async function decideAppConsent(input: { request: string; decision: "appr
 export async function disconnectConnectedApp() {
   return { ok: true as const };
 }
+
+// a3 room signals: the last word, the agreement check and pick up where we stopped, answered as
+// core-api would. The room's resume point comes from `window.__resumeFixture` (set by a test with
+// addInitScript), so every other room test keeps a room with no pinned thread.
+type RoomSignalsWindow = { __resumeFixture?: unknown; __agreementFail?: boolean };
+const rsw = () => globalThis as unknown as RoomSignalsWindow;
+export async function dismissLastWord(id: string) {
+  return {
+    ok: true as const,
+    nudge: {
+      id,
+      meeting_id: "8a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+      meeting_title: "Pricing review",
+      kind: "cut_off" as const,
+      topic: "pricing",
+      prompt: "You started to say something about pricing. Want to add it?",
+      quote: null,
+      at_ms: 754_000,
+      end_ms: 757_000,
+      decision_id: null,
+      decision_content: null,
+      status: "dismissed" as const,
+      created_at: "2026-11-11T09:00:00Z",
+    },
+  };
+}
+export async function deleteLateContribution() {
+  return { ok: true as const };
+}
+export async function loadAfterSignals() {
+  return { ok: false as const, reason: "error" as const };
+}
+export async function answerAgreementCheck(id: string, answer: "support" | "concerns" | "object", fields: { note?: string; shareName?: boolean } = {}) {
+  if (rsw().__agreementFail) return { ok: false as const, message: "Couldn't send your answer just now. Try again in a moment." };
+  return {
+    ok: true as const,
+    check: {
+      id,
+      decision_id: "33333333-3333-4333-8333-333333333333",
+      decision_content: "Raise the team plan to 18 dollars a seat in January",
+      meeting_id: "8a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+      meeting_title: "Pricing review",
+      status: "answered" as const,
+      answer,
+      note: fields.note?.trim() || null,
+      share_name: Boolean(fields.shareName),
+      answered_at: "2026-11-11T10:00:00Z",
+      created_at: "2026-11-11T09:00:00Z",
+    },
+  };
+}
+export async function loadResumePoint() {
+  const p = rsw().__resumeFixture ?? null;
+  return { ok: true as const, data: { incoming: p, saved: null } };
+}
+export async function continueResumePoint(id: string, meetingId: string) {
+  const p = rsw().__resumeFixture as Record<string, unknown> | undefined;
+  return { ok: true as const, point: { ...(p ?? {}), id, status: "continued", continued_in_meeting_id: meetingId } };
+}
+export async function dismissResumePoint(id: string) {
+  const p = rsw().__resumeFixture as Record<string, unknown> | undefined;
+  return { ok: true as const, point: { ...(p ?? {}), id, status: "dismissed" } };
+}
+export async function loadReplay() {
+  return { ok: false as const, reason: "none" as const };
+}
+export async function answerStatusRequest() {
+  return { ok: false as const, message: "Not available in this test." };
+}
