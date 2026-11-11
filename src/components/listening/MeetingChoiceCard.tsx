@@ -54,8 +54,8 @@ export function MeetingChoiceCard({
   };
 
   return (
-    <section className="mx-card" aria-labelledby="md-choice-h">
-      <h2 id="md-choice-h" className="text-[17px] font-semibold text-ink">
+    <section className="mx-card mx-card-pad" aria-labelledby="md-choice-h">
+      <h2 id="md-choice-h" className="mx-card-title">
         Will you be there?
       </h2>
       <p className="mt-1 text-[14px] leading-relaxed text-ink-3">{CHOICE_HELP[choice]}</p>
