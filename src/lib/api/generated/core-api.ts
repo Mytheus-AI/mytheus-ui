@@ -155,6 +155,116 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/agreement-checks/{check_id}/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Say where you really stand on a decision
+         * @description Anonymous unless `share_name`. Answering again replaces your answer.
+         */
+        post: operations["answer_check"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assumptions/{assumption_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Assumption */
+        delete: operations["remove_assumption"];
+        options?: never;
+        head?: never;
+        /** Edit Assumption */
+        patch: operations["edit_assumption"];
+        trace?: never;
+    };
+    "/api/v1/assumptions/{assumption_id}/book-revisit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Book Revisit */
+        post: operations["book_revisit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assumptions/{assumption_id}/reconfirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reconfirm */
+        post: operations["reconfirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assumptions/{assumption_id}/reopen-decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reopen Decision
+         * @description Reopen the decision this reason belongs to. Idempotent: a reopened decision stays
+         *     reopened and its task owners are asked once (`decision_reversals` is unique per task).
+         */
+        post: operations["reopen_decision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assumptions/{assumption_id}/revisit-slot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Revisit Slot */
+        get: operations["revisit_slot"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/bets/calibration": {
         parameters: {
             query?: never;
@@ -312,26 +422,6 @@ export interface paths {
         put?: never;
         /** Mark Listened */
         post: operations["mark_listened"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/agreement-checks/{check_id}/answer": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Say where you really stand on a decision
-         * @description Anonymous unless `share_name`. Answering again replaces your answer.
-         */
-        post: operations["answer_check"];
         delete?: never;
         options?: never;
         head?: never;
@@ -536,6 +626,128 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/decision-challenges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Challenges to the decisions you own */
+        get: operations["my_challenges"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/decision-challenges/{challenge_id}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dismiss a challenge */
+        post: operations["dismiss_challenge_route"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/decision-reopen-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reopen requests you own or made */
+        get: operations["list_reopen_requests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/decision-reopen-requests/{request_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One reopen request */
+        get: operations["get_reopen_request"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/decision-reopen-requests/{request_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept a reopen request
+         * @description The decision's owner schedules a revisit (a new meeting with the person who asked, the decision on its agenda) or creates a follow-up task for themselves. The decision itself stays confirmed until a new decision replaces it.
+         */
+        post: operations["accept_reopen"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/decision-reopen-requests/{request_id}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decline a reopen request */
+        post: operations["decline_reopen"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/decision-reopen-requests/{request_id}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Withdraw your reopen request */
+        post: operations["withdraw_reopen"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/decision-reversals": {
         parameters: {
             query?: never;
@@ -610,6 +822,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/decisions/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check text against your decisions
+         * @description Find the confirmed decisions, from meetings you took part in, that a piece of text contradicts or reopens: the decision, the conflicting quote, the meeting, the date, the owner, a confidence and a short reason. Read-only (allowed for `read` API tokens); the text is not stored. Rate-limited per person (429 with `Retry-After`). 503 with `reason: check_not_connected` until checks are wired on the server.
+         */
+        post: operations["check_text"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/decisions/{decision_id}": {
         parameters: {
             query?: never;
@@ -625,6 +857,43 @@ export interface paths {
         head?: never;
         /** Update Decision */
         patch: operations["update_decision"];
+        trace?: never;
+    };
+    "/api/v1/decisions/{decision_id}/agreement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * How strongly a decision was agreed
+         * @description Everyone in the meeting sees the strength. The decision's owner also sees the aggregate and the notes (named only when their author chose so; unsigned ones once at least three people answered). Never anyone's individual stance.
+         */
+        get: operations["decision_agreement"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/decisions/{decision_id}/assumptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Assumption */
+        post: operations["add_assumption"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/decisions/{decision_id}/bet": {
@@ -734,20 +1003,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/decisions/{decision_id}/agreement": {
+    "/api/v1/decisions/{decision_id}/blast-radius": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * How strongly a decision was agreed
-         * @description Everyone in the meeting sees the strength. The decision's owner also sees the aggregate and the notes (named only when their author chose so; unsigned ones once at least three people answered). Never anyone's individual stance.
-         */
-        get: operations["decision_agreement"];
+        /** Decision Blast Radius */
+        get: operations["decision_blast_radius"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/decisions/{decision_id}/challenges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Where a decision was challenged */
+        get: operations["decision_challenges"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/decisions/{decision_id}/check-dismissals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dismiss a flagged sentence
+         * @description This sentence does not conflict with this decision: it is not flagged to you again. Only a fingerprint of the sentence is kept.
+         */
+        post: operations["dismiss_check"];
         delete?: never;
         options?: never;
         head?: never;
@@ -815,6 +1118,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/decisions/{decision_id}/reopen-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask to reopen a decision
+         * @description The decision's owner is asked; nothing about the decision changes until they act. 200 with your existing request when you already have a pending one. 409 when the decision was already replaced.
+         */
+        post: operations["request_reopen"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/decisions/{decision_id}/share-links": {
         parameters: {
             query?: never;
@@ -827,6 +1150,23 @@ export interface paths {
         put?: never;
         /** Share a decision record */
         post: operations["create_decision_link"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/decisions/{decision_id}/why": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Why */
+        get: operations["get_why"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -951,6 +1291,57 @@ export interface paths {
          * @description authz: admin. Erase core-api's data for one person or one meeting (module docstring).
          */
         post: operations["apply_erasure"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/last-word/{nudge_id}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Nothing to add: close your last-word nudge */
+        post: operations["dismiss_nudge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/late-contributions/{contribution_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove your late point */
+        delete: operations["delete_late_contribution"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/late-contributions/{contribution_id}/audio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Play a recorded late point */
+        get: operations["late_contribution_audio"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1244,57 +1635,6 @@ export interface paths {
         };
         /** Whoami */
         get: operations["whoami"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/last-word/{nudge_id}/dismiss": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Nothing to add: close your last-word nudge */
-        post: operations["dismiss_nudge"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/late-contributions/{contribution_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Remove your late point */
-        delete: operations["delete_late_contribution"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/late-contributions/{contribution_id}/audio": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Play a recorded late point */
-        get: operations["late_contribution_audio"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1610,6 +1950,23 @@ export interface paths {
         post?: never;
         /** Delete Attendance Choice */
         delete: operations["delete_attendance_choice"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meetings/{meeting_id}/blast-radius": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Meeting Blast Radius */
+        get: operations["meeting_blast_radius"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2388,6 +2745,269 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/promises": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My promise ledger
+         * @description Every promise you made, from every channel (meetings, phone recordings, Slack, email,
+         *     added by hand), with its source and any date you asked to move. Only you see it.
+         */
+        get: operations["list_promises"];
+        put?: never;
+        /**
+         * Add a promise
+         * @description Write down a promise you made anywhere (a call, a hallway, a message). It is yours at
+         *     once (you said so); the answer carries the capacity check for its date. Honours
+         *     `Idempotency-Key`. Needs a session or a `read_write` token.
+         */
+        post: operations["create_promise"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/promises/capacity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My capacity
+         * @description Your days: what is due (promises and actions), meeting and focus time, and how full each
+         *     day is. Private to you.
+         */
+        get: operations["get_capacity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/promises/capacity/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Check my capacity
+         * @description What one more thing due on `due_date` does to that day, before you say yes: "That's your
+         *     seventh promise due Friday. Offer Monday instead?" `exclude_*` leaves out the item being
+         *     accepted when it is already stored.
+         */
+        get: operations["check_capacity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/promises/capture-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Where my agent looks
+         * @description Whether your agent may look for promises in your own Slack messages and email.
+         */
+        get: operations["get_capture_preferences"];
+        /**
+         * Set where my agent looks
+         * @description Turn promise capture from Slack or email on or off, for you only.
+         */
+        put: operations["put_capture_preferences"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/promises/date-proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Date proposals
+         * @description `incoming`: what people who owe you something asked to move. `outgoing`: what you
+         *     asked.
+         */
+        get: operations["list_proposals"];
+        put?: never;
+        /**
+         * Renegotiate a date
+         * @description Offer another date for something you owe. When a colleague asked for it (the person you
+         *     promised it to, or who assigned you the action) they are asked, with one notification, and
+         *     decide; a new proposal replaces a pending one. Otherwise the date moves at once.
+         */
+        post: operations["renegotiate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/promises/date-proposals/{proposal_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept a date
+         * @description The person who asked accepts the new date; it applies and the proposer is told.
+         */
+        post: operations["accept_proposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/promises/date-proposals/{proposal_id}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decline a date
+         * @description The person who asked keeps the original date; the proposer is told.
+         */
+        post: operations["decline_proposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/promises/date-proposals/{proposal_id}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Withdraw a date proposal
+         * @description The proposer's undo, while the other person has not decided.
+         */
+        post: operations["withdraw_proposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/promises/{promise_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update a promise
+         * @description Kept (`done`), dropped (`dismissed`), back to `open` (the undo of either), or an edit.
+         *     Owner only. A promise you handed off is reopened through the hand-off undo.
+         */
+        patch: operations["update_promise"];
+        trace?: never;
+    };
+    "/api/v1/promises/{promise_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm a promise
+         * @description A promise your agent found (or a colleague handed you) becomes yours. Idempotent.
+         */
+        post: operations["confirm_promise"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/promises/{promise_id}/hand-off": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hand off a promise
+         * @description Give an open promise to a colleague. They get it to confirm or dismiss (agents propose,
+         *     people decide); yours closes as handed off. Undo while they have not confirmed it.
+         */
+        post: operations["hand_off"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/promises/{promise_id}/hand-off/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Take a promise back
+         * @description Take back a promise you handed off, while the colleague has not confirmed it yet.
+         */
+        post: operations["undo_hand_off"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/clips/{token}": {
         parameters: {
             query?: never;
@@ -2473,6 +3093,176 @@ export interface paths {
         get: operations["search"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settlements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Settlements */
+        get: operations["list_settlements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settlements/{settlement_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Settlement */
+        get: operations["get_settlement"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settlements/{settlement_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept */
+        post: operations["accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settlements/{settlement_id}/book": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Book */
+        post: operations["book"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settlements/{settlement_id}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decline */
+        post: operations["decline"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settlements/{settlement_id}/keep-both": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Keep Both */
+        post: operations["keep_both"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settlements/{settlement_id}/meeting-slot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Meeting Slot */
+        get: operations["meeting_slot"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settlements/{settlement_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Message */
+        post: operations["post_message"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settlements/{settlement_id}/share": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Share Wording */
+        post: operations["share_wording"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settlements/{settlement_id}/supersede": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Supersede */
+        post: operations["supersede"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2882,6 +3672,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/internal/assumptions/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Open Assumptions */
+        get: operations["open_assumptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/assumptions/watch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Watch List */
+        get: operations["watch_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/assumptions/watch-results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Watch Results */
+        post: operations["watch_results"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/internal/bets/due": {
         parameters: {
             query?: never;
@@ -2950,6 +3791,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/internal/decision-challenges/{challenge_id}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Slack Dismiss */
+        post: operations["slack_dismiss"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/decision-challenges/{challenge_id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Slack Reopen */
+        post: operations["slack_reopen"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/decisions/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Slack Check */
+        post: operations["slack_check"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/internal/decisions/{decision_id}/record": {
         parameters: {
             query?: never;
@@ -2959,6 +3851,23 @@ export interface paths {
         };
         /** Decision Record */
         get: operations["decision_record_internal_decisions__decision_id__record_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/decisions/{decision_id}/why-source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Why Source */
+        get: operations["why_source"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3322,6 +4231,57 @@ export interface paths {
         put?: never;
         /** Nudge */
         post: operations["nudge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/promises/capture-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Capture Check */
+        post: operations["capture_check"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/promises/captured": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Captured */
+        post: operations["captured"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/retrieval/decisions/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Lexical Decisions */
+        post: operations["lexical_decisions"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3710,96 +4670,6 @@ export interface components {
                 };
             };
         };
-        /** AttendanceChoiceUpdate */
-        AttendanceChoiceUpdate: {
-            /**
-             * Choice
-             * @enum {string}
-             */
-            choice: "attend" | "agent_listens" | "skip";
-        };
-        /** AttendanceRule */
-        AttendanceRule: {
-            /**
-             * Choice
-             * @enum {string}
-             */
-            choice: "attend" | "agent_listens" | "skip";
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Include Hosted
-             * @default false
-             */
-            include_hosted: boolean;
-            /**
-             * Position
-             * @default 0
-             */
-            position: number;
-            /**
-             * Recurring Only
-             * @default false
-             */
-            recurring_only: boolean;
-            /** Template Id */
-            template_id?: string | null;
-            /** Template Name */
-            template_name?: string | null;
-            /** Title Contains */
-            title_contains?: string | null;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-        };
-        /** AttendanceRuleList */
-        AttendanceRuleList: {
-            /** Items */
-            items: components["schemas"]["AttendanceRule"][];
-        };
-        /** AttendanceRuleResult */
-        AttendanceRuleResult: {
-            /**
-             * Applied
-             * @description Upcoming meetings that now follow this rule.
-             */
-            applied: number;
-            rule: components["schemas"]["AttendanceRule"];
-        };
-        /** AttendanceRuleWrite */
-        AttendanceRuleWrite: {
-            /**
-             * Choice
-             * @enum {string}
-             */
-            choice: "attend" | "agent_listens" | "skip";
-            /**
-             * Include Hosted
-             * @default false
-             */
-            include_hosted: boolean;
-            /** Position */
-            position?: number | null;
-            /**
-             * Recurring Only
-             * @default false
-             */
-            recurring_only: boolean;
-            /** Template Id */
-            template_id?: string | null;
-            /** Title Contains */
-            title_contains?: string | null;
-        };
         /** AgreementAnswerIn */
         AgreementAnswerIn: {
             /**
@@ -3891,6 +4761,171 @@ export interface components {
             /** Support */
             support: number;
         };
+        /** Assumption */
+        Assumption: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Decision Id
+             * Format: uuid
+             */
+            decision_id: string;
+            /** History */
+            history?: components["schemas"]["Evidence"][];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "price" | "date" | "metric" | "dependency" | "person" | "other";
+            /** Last Checked At */
+            last_checked_at?: string | null;
+            open_break?: components["schemas"]["Evidence"] | null;
+            /** Quote */
+            quote?: string | null;
+            /** Reconfirm Note */
+            reconfirm_note?: string | null;
+            /** Reconfirmed At */
+            reconfirmed_at?: string | null;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "agent" | "owner";
+            stated_by?: components["schemas"]["services__core_api__decision_why__Person"] | null;
+            /** Statement */
+            statement: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "watching" | "broken";
+            watch: components["schemas"]["Watch"];
+        };
+        /** AssumptionCreate */
+        AssumptionCreate: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "price" | "date" | "metric" | "dependency" | "person" | "other";
+            /** Quote */
+            quote?: string | null;
+            /** Stated By User Id */
+            stated_by_user_id?: string | null;
+            /** Statement */
+            statement: string;
+            watch?: components["schemas"]["WatchInput"] | null;
+        };
+        /** AssumptionUpdate */
+        AssumptionUpdate: {
+            /** Kind */
+            kind?: ("price" | "date" | "metric" | "dependency" | "person" | "other") | null;
+            /** Quote */
+            quote?: string | null;
+            /** Stated By User Id */
+            stated_by_user_id?: string | null;
+            /** Statement */
+            statement?: string | null;
+            watch?: components["schemas"]["WatchInput"] | null;
+        };
+        /** AttendanceChoiceUpdate */
+        AttendanceChoiceUpdate: {
+            /**
+             * Choice
+             * @enum {string}
+             */
+            choice: "attend" | "agent_listens" | "skip";
+        };
+        /** AttendanceRule */
+        AttendanceRule: {
+            /**
+             * Choice
+             * @enum {string}
+             */
+            choice: "attend" | "agent_listens" | "skip";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Include Hosted
+             * @default false
+             */
+            include_hosted: boolean;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
+            /**
+             * Recurring Only
+             * @default false
+             */
+            recurring_only: boolean;
+            /** Template Id */
+            template_id?: string | null;
+            /** Template Name */
+            template_name?: string | null;
+            /** Title Contains */
+            title_contains?: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AttendanceRuleList */
+        AttendanceRuleList: {
+            /** Items */
+            items: components["schemas"]["AttendanceRule"][];
+        };
+        /** AttendanceRuleResult */
+        AttendanceRuleResult: {
+            /**
+             * Applied
+             * @description Upcoming meetings that now follow this rule.
+             */
+            applied: number;
+            rule: components["schemas"]["AttendanceRule"];
+        };
+        /** AttendanceRuleWrite */
+        AttendanceRuleWrite: {
+            /**
+             * Choice
+             * @enum {string}
+             */
+            choice: "attend" | "agent_listens" | "skip";
+            /**
+             * Include Hosted
+             * @default false
+             */
+            include_hosted: boolean;
+            /** Position */
+            position?: number | null;
+            /**
+             * Recurring Only
+             * @default false
+             */
+            recurring_only: boolean;
+            /** Template Id */
+            template_id?: string | null;
+            /** Title Contains */
+            title_contains?: string | null;
+        };
         /**
          * AttendanceUpdate
          * @description `PUT /meetings/{id}/attendance` (ADR-0039 B5): the caller's own attendance. A PUT, so an
@@ -3906,6 +4941,18 @@ export interface components {
             proxy_questions?: string[];
             /** Proxy Update */
             proxy_update?: string | null;
+        };
+        /** AudioIn */
+        AudioIn: {
+            /** Data Base64 */
+            data_base64: string;
+            /** Duration Ms */
+            duration_ms: number;
+            /**
+             * Mime
+             * @enum {string}
+             */
+            mime: "audio/webm" | "audio/ogg" | "audio/mp4" | "audio/mpeg";
         };
         /** Bet */
         Bet: {
@@ -4180,43 +5227,56 @@ export interface components {
             /** Unit */
             unit?: string | null;
         };
-        /** Calibration */
-        Calibration: {
-            /** Buckets */
-            buckets: components["schemas"]["CalibrationBucket"][];
-            /** By Category */
-            by_category: components["schemas"]["GroupRecord"][];
-            /** By Team */
-            by_team: components["schemas"]["GroupRecord"][];
-            /** Failing Assumptions */
-            failing_assumptions: components["schemas"]["FailingAssumption"][];
-            /** Lessons */
-            lessons: components["schemas"]["PublicLesson"][];
+        /** BlastRadius */
+        BlastRadius: {
+            /** Content */
+            content: string;
+            counts: components["schemas"]["Counts"];
+            crm: components["schemas"]["Crm"];
             /**
-             * Min Team Resolved
-             * @default 3
+             * Decision Id
+             * Format: uuid
              */
-            min_team_resolved: number;
-            /** Months */
-            months: components["schemas"]["MonthPoint"][];
-            /** Teams Below Threshold */
-            teams_below_threshold: number;
-            totals: components["schemas"]["Totals"];
+            decision_id: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Rings */
+            rings: components["schemas"]["Ring"][];
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "pending" | "ready";
+            /** Summary */
+            summary: string;
         };
-        /** CalibrationBucket */
-        CalibrationBucket: {
-            /** Actual */
-            actual: number;
-            /** Count */
-            count: number;
-            /** High */
-            high: number;
-            /** Label */
-            label: string;
-            /** Low */
-            low: number;
-            /** Stated */
-            stated: number;
+        /** BookRequest */
+        BookRequest: {
+            /** Start */
+            start?: string | null;
+        };
+        /** Booked */
+        Booked: {
+            /**
+             * End
+             * Format: date-time
+             */
+            end: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /**
+             * Start
+             * Format: date-time
+             */
+            start: string;
+            /** Title */
+            title: string;
         };
         /** BriefMe */
         BriefMe: {
@@ -4524,7 +5584,7 @@ export interface components {
              * @enum {string}
              */
             length: "short" | "standard";
-            meeting?: components["schemas"]["SourceMeeting"] | null;
+            meeting?: components["schemas"]["services__core_api__briefings__SourceMeeting"] | null;
             minutes?: components["schemas"]["SourceMinutes"] | null;
             person: components["schemas"]["SourcePerson"];
             /** Promises */
@@ -4553,17 +5613,43 @@ export interface components {
             /** Waiting */
             waiting: components["schemas"]["SourceItem"][];
         };
-        /** AudioIn */
-        AudioIn: {
-            /** Data Base64 */
-            data_base64: string;
-            /** Duration Ms */
-            duration_ms: number;
+        /** Calibration */
+        Calibration: {
+            /** Buckets */
+            buckets: components["schemas"]["CalibrationBucket"][];
+            /** By Category */
+            by_category: components["schemas"]["GroupRecord"][];
+            /** By Team */
+            by_team: components["schemas"]["GroupRecord"][];
+            /** Failing Assumptions */
+            failing_assumptions: components["schemas"]["FailingAssumption"][];
+            /** Lessons */
+            lessons: components["schemas"]["PublicLesson"][];
             /**
-             * Mime
-             * @enum {string}
+             * Min Team Resolved
+             * @default 3
              */
-            mime: "audio/webm" | "audio/ogg" | "audio/mp4" | "audio/mpeg";
+            min_team_resolved: number;
+            /** Months */
+            months: components["schemas"]["MonthPoint"][];
+            /** Teams Below Threshold */
+            teams_below_threshold: number;
+            totals: components["schemas"]["Totals"];
+        };
+        /** CalibrationBucket */
+        CalibrationBucket: {
+            /** Actual */
+            actual: number;
+            /** Count */
+            count: number;
+            /** High */
+            high: number;
+            /** Label */
+            label: string;
+            /** Low */
+            low: number;
+            /** Stated */
+            stated: number;
         };
         /** CalibrationDetail */
         CalibrationDetail: {
@@ -4582,6 +5668,24 @@ export interface components {
              * @description The calibrated surface threshold; null below the minimum
              */
             surface?: number | null;
+        };
+        /** CandidateAction */
+        CandidateAction: {
+            /** Content */
+            content: string;
+            /** Customer */
+            customer: boolean;
+            /** Due Date */
+            due_date?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Meeting Id */
+            meeting_id?: string | null;
+            /** Meeting Title */
+            meeting_title?: string | null;
         };
         /**
          * CandidateList
@@ -4641,6 +5745,121 @@ export interface components {
             /** Why */
             why?: string | null;
         };
+        /** Capacity */
+        Capacity: {
+            /**
+             * Calendar Synced
+             * @description True when this person's Google Calendar events reach Mytheus.
+             */
+            calendar_synced: boolean;
+            /** Days */
+            days: components["schemas"]["CapacityDay"][];
+            /** Item Minutes */
+            item_minutes: number;
+            /** Overdue */
+            overdue: number;
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * Today
+             * Format: date
+             */
+            today: string;
+            /** Tz */
+            tz: string;
+            /** Undated */
+            undated: number;
+            /** Workday Minutes */
+            workday_minutes: number;
+        };
+        /** CapacityCheck */
+        CapacityCheck: {
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /** Due Label */
+            due_label: string;
+            /**
+             * Items On Day
+             * @description Things due that day, counting this one.
+             */
+            items_on_day: number;
+            /**
+             * Level
+             * @description The day with this one more thing on it.
+             * @enum {string}
+             */
+            level: "ok" | "tight" | "over" | "off";
+            /** Meeting Minutes */
+            meeting_minutes: number;
+            /**
+             * Message
+             * @description What your agent says, in one or two sentences.
+             */
+            message: string;
+            /** Suggested Date */
+            suggested_date: string | null;
+            /** Suggested Label */
+            suggested_label: string | null;
+            /**
+             * Warn
+             * @description True when your agent suggests offering another date.
+             */
+            warn: boolean;
+        };
+        /** CapacityDay */
+        CapacityDay: {
+            /** Actions */
+            actions: number;
+            /** Away */
+            away: boolean;
+            /** Capacity Minutes */
+            capacity_minutes: number;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Focus Minutes */
+            focus_minutes: number;
+            /** Items */
+            items: number;
+            /** Label */
+            label: string;
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "ok" | "tight" | "over" | "off";
+            /** Load Minutes */
+            load_minutes: number;
+            /** Meeting Minutes */
+            meeting_minutes: number;
+            /** Promises */
+            promises: number;
+        };
+        /** CaptureCheck */
+        CaptureCheck: {
+            /** Author Email */
+            author_email: string;
+            /**
+             * Channel
+             * @enum {string}
+             */
+            channel: "slack" | "email";
+        };
+        /** CaptureCheckResult */
+        CaptureCheckResult: {
+            /** Enabled */
+            enabled: boolean;
+            /** User Id */
+            user_id: string | null;
+        };
         /** CaptureEnded */
         CaptureEnded: {
             /**
@@ -4654,6 +5873,13 @@ export interface components {
              * @constant
              */
             status: "ended";
+        };
+        /** CapturePreferencesUpdate */
+        CapturePreferencesUpdate: {
+            /** Email Enabled */
+            email_enabled: boolean;
+            /** Slack Enabled */
+            slack_enabled: boolean;
         };
         /** CaptureRefresh */
         CaptureRefresh: {
@@ -4704,6 +5930,18 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** CaptureSettings */
+        CaptureSettings: {
+            /**
+             * Email Connected
+             * @description False: Mytheus has no mail-reading integration yet, so nothing is captured from email until one is connected.
+             */
+            email_connected: boolean;
+            /** Email Enabled */
+            email_enabled: boolean;
+            /** Slack Enabled */
+            slack_enabled: boolean;
+        };
         /** CaptureStart */
         CaptureStart: {
             /**
@@ -4726,6 +5964,50 @@ export interface components {
              * @description False until the server has a capture secret and URL.
              */
             configured: boolean;
+        };
+        /** Captured */
+        Captured: {
+            /** Author Email */
+            author_email: string;
+            /**
+             * Channel
+             * @enum {string}
+             */
+            channel: "slack" | "email";
+            /** Occurred At */
+            occurred_at?: string | null;
+            /** Promises */
+            promises: components["schemas"]["CapturedPromise"][];
+            /** Prompt Version */
+            prompt_version?: string | null;
+            /** Source Link */
+            source_link?: string | null;
+            /** Source Ref */
+            source_ref: string;
+        };
+        /** CapturedPromise */
+        CapturedPromise: {
+            /** Confidence */
+            confidence: number;
+            /** Content */
+            content: string;
+            /** Due Date */
+            due_date?: string | null;
+            /** Due Hint */
+            due_hint?: string | null;
+            /** Quote */
+            quote?: string | null;
+            /** Recipient Email */
+            recipient_email?: string | null;
+            /** Recipient Label */
+            recipient_label?: string | null;
+        };
+        /** CapturedResult */
+        CapturedResult: {
+            /** User Id */
+            user_id: string | null;
+            /** Written */
+            written: number;
         };
         /**
          * CarryForward
@@ -4893,6 +6175,11 @@ export interface components {
             /** Resolved */
             resolved: number;
         };
+        /** ChallengeList */
+        ChallengeList: {
+            /** Items */
+            items: components["schemas"]["DecisionChallenge"][];
+        };
         /**
          * ChatHistory
          * @description `GET /meetings/:id/chat`: the meeting's most recent chat messages, oldest first.
@@ -4938,15 +6225,26 @@ export interface components {
             /** User Id */
             user_id?: string | null;
         };
-        /** CheckRequest */
-        CheckRequest: {
+        /** CheckContext */
+        CheckContext: {
+            /** Author */
+            author?: string | null;
+            /** Channel */
+            channel?: string | null;
+            /** Place Label */
+            place_label?: string | null;
+            /** Topic */
+            topic?: string | null;
+        };
+        /** CheckDismissed */
+        CheckDismissed: {
             /**
-             * As Of
-             * Format: date
+             * Decision Id
+             * Format: uuid
              */
-            as_of: string;
-            jira?: components["schemas"]["JiraOutcome"] | null;
-            metric?: components["schemas"]["MetricReading"] | null;
+            decision_id: string;
+            /** Dismissed */
+            dismissed: boolean;
         };
         /** CheckResult */
         CheckResult: {
@@ -5351,6 +6649,17 @@ export interface components {
             /** Items */
             items: components["schemas"]["ContextFill"][];
         };
+        /** Counts */
+        Counts: {
+            /** Actions */
+            actions: number;
+            /** Customers */
+            customers: number;
+            /** Decisions */
+            decisions: number;
+            /** Goals */
+            goals: number;
+        };
         /** CreatedStatusRequest */
         CreatedStatusRequest: {
             /** Action Content */
@@ -5377,6 +6686,14 @@ export interface components {
         CreatedStatusRequests: {
             /** Requests */
             requests: components["schemas"]["CreatedStatusRequest"][];
+        };
+        /** Crm */
+        Crm: {
+            /**
+             * Hubspot
+             * @enum {string}
+             */
+            hubspot: "connected" | "not_connected" | "unknown";
         };
         /** CrmAction */
         CrmAction: {
@@ -5434,6 +6751,121 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** DateProposal */
+        DateProposal: {
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Current Due */
+            current_due: string | null;
+            /** Decided At */
+            decided_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Note */
+            note: string | null;
+            /**
+             * Proposed Due
+             * Format: date
+             */
+            proposed_due: string;
+            /**
+             * Proposer Id
+             * Format: uuid
+             */
+            proposer_id: string;
+            /** Proposer Name */
+            proposer_name: string | null;
+            /**
+             * Requester Id
+             * Format: uuid
+             */
+            requester_id: string;
+            /** Requester Name */
+            requester_name: string | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "pending" | "accepted" | "declined" | "withdrawn";
+            /**
+             * Target
+             * @enum {string}
+             */
+            target: "commitment" | "action";
+            /**
+             * Target Id
+             * Format: uuid
+             */
+            target_id: string;
+        };
+        /** DateProposalCreate */
+        DateProposalCreate: {
+            /** Note */
+            note?: string | null;
+            /**
+             * Proposed Due
+             * Format: date
+             */
+            proposed_due: string;
+            /**
+             * Target
+             * @enum {string}
+             */
+            target: "commitment" | "action";
+            /**
+             * Target Id
+             * Format: uuid
+             */
+            target_id: string;
+        };
+        /** DateProposalList */
+        DateProposalList: {
+            /** Items */
+            items: components["schemas"]["DateProposal"][];
+        };
+        /** Deal */
+        Deal: {
+            /** Amount */
+            amount?: number | null;
+            /** Close Date */
+            close_date?: string | null;
+            /**
+             * Closed Lost
+             * @default false
+             */
+            closed_lost: boolean;
+            /**
+             * Closed Won
+             * @default false
+             */
+            closed_won: boolean;
+            /** Id */
+            id: string;
+            /** Name */
+            name?: string | null;
+            /** Stage */
+            stage?: string | null;
+            /** Url */
+            url?: string | null;
+        };
+        /** DealDomains */
+        DealDomains: {
+            /**
+             * Decision Id
+             * Format: uuid
+             */
+            decision_id: string;
+            /** Domains */
+            domains: string[];
+        };
         /**
          * Decision
          * @description One `decisions` row. `proposed` until a participant confirms or dismisses it.
@@ -5481,6 +6913,29 @@ export interface components {
             supersedes?: string | null;
             /** Why */
             why?: string | null;
+        };
+        /** DecisionAgreement */
+        DecisionAgreement: {
+            /** Analyzed At */
+            analyzed_at?: string | null;
+            /**
+             * Decision Id
+             * Format: uuid
+             */
+            decision_id: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            my_check?: components["schemas"]["AgreementCheck"] | null;
+            /** Notes */
+            notes?: components["schemas"]["AgreementNote"][];
+            /** Strength */
+            strength?: ("strong" | "mixed" | "weak" | "unclear") | null;
+            summary?: components["schemas"]["AgreementSummary"] | null;
+            /** You Own */
+            you_own: boolean;
         };
         /** DecisionAtDate */
         DecisionAtDate: {
@@ -5533,28 +6988,106 @@ export interface components {
             /** Teams */
             teams?: components["schemas"]["TeamOption"][];
         };
-        /** DecisionAgreement */
-        DecisionAgreement: {
-            /** Analyzed At */
-            analyzed_at?: string | null;
+        /** DecisionChallenge */
+        DecisionChallenge: {
+            author?: components["schemas"]["services__core_api__decision_check__Person"] | null;
+            /** Confidence */
+            confidence: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decision Content */
+            decision_content: string;
             /**
              * Decision Id
              * Format: uuid
              */
             decision_id: string;
             /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Link */
+            link?: string | null;
+            /**
              * Meeting Id
              * Format: uuid
              */
             meeting_id: string;
-            my_check?: components["schemas"]["AgreementCheck"] | null;
-            /** Notes */
-            notes?: components["schemas"]["AgreementNote"][];
-            /** Strength */
-            strength?: ("strong" | "mixed" | "weak" | "unclear") | null;
-            summary?: components["schemas"]["AgreementSummary"] | null;
-            /** You Own */
-            you_own: boolean;
+            /** Place Label */
+            place_label?: string | null;
+            /** Quote */
+            quote: string;
+            /**
+             * Relation
+             * @enum {string}
+             */
+            relation: "contradicts" | "reopens";
+            /** Reopen Request Id */
+            reopen_request_id?: string | null;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "slack" | "extension" | "mcp" | "app";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "dismissed" | "reopened";
+            /**
+             * Viewer Can Dismiss
+             * @description True for the challenge's author and the decision's owner.
+             * @default false
+             */
+            viewer_can_dismiss: boolean;
+            /** Why */
+            why: string;
+        };
+        /** DecisionChallenges */
+        DecisionChallenges: {
+            /**
+             * Decision Id
+             * Format: uuid
+             */
+            decision_id: string;
+            /** Items */
+            items: components["schemas"]["DecisionChallenge"][];
+            /**
+             * Open Count
+             * @description Challenges still open.
+             */
+            open_count: number;
+            owner?: components["schemas"]["services__core_api__decision_check__Person"] | null;
+            /**
+             * Places
+             * @description Distinct places among open and reopened challenges.
+             */
+            places: number;
+            /** Reopen Requests */
+            reopen_requests: components["schemas"]["ReopenRequest"][];
+            /** Viewer Is Owner */
+            viewer_is_owner: boolean;
+        };
+        /** DecisionCheckResult */
+        DecisionCheckResult: {
+            /**
+             * Checked At
+             * Format: date-time
+             */
+            checked_at: string;
+            /** Conflicts */
+            conflicts: components["schemas"]["DecisionConflict"][];
+            /** Reason */
+            reason?: ("too_short" | "never_record" | "budget" | "no_candidates") | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "skipped" | "degraded";
         };
         /**
          * DecisionConfirm
@@ -5563,6 +7096,61 @@ export interface components {
         DecisionConfirm: {
             /** Supersedes */
             supersedes?: string | null;
+        };
+        /** DecisionConflict */
+        DecisionConflict: {
+            /**
+             * Challenge Id
+             * @description Set when the conflict was recorded (published text).
+             */
+            challenge_id?: string | null;
+            /** Confidence */
+            confidence: number;
+            /**
+             * Decided At
+             * @description When the decision was confirmed.
+             */
+            decided_at?: string | null;
+            /** Decision Content */
+            decision_content: string;
+            /**
+             * Decision Id
+             * Format: uuid
+             */
+            decision_id: string;
+            /**
+             * Link
+             * @description The decision page in the app.
+             */
+            link: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Meeting Title */
+            meeting_title?: string | null;
+            owner?: components["schemas"]["services__core_api__decision_check__Person"] | null;
+            /**
+             * Quote
+             * @description The part of the checked text that conflicts, verbatim.
+             */
+            quote: string;
+            /**
+             * Relation
+             * @enum {string}
+             */
+            relation: "contradicts" | "reopens";
+            /**
+             * Reopen Request Id
+             * @description The caller's own pending reopen request on this decision.
+             */
+            reopen_request_id?: string | null;
+            /**
+             * Why
+             * @description Why this conflicts, in one short sentence.
+             */
+            why: string;
         };
         /** DecisionLog */
         DecisionLog: {
@@ -5684,6 +7272,12 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /**
+             * Kind
+             * @default superseded
+             * @enum {string}
+             */
+            kind: "superseded" | "reopened";
             new_decision: components["schemas"]["ReversalDecision"];
             old_decision: components["schemas"]["ReversalDecision"];
             /** Resolved At */
@@ -5708,6 +7302,33 @@ export interface components {
             content?: string | null;
             /** Rationale */
             rationale?: string | null;
+        };
+        /** DecisionWhy */
+        DecisionWhy: {
+            /** Assumptions */
+            assumptions: components["schemas"]["Assumption"][];
+            /** Can Edit */
+            can_edit: boolean;
+            /** Content */
+            content: string;
+            /**
+             * Decision Id
+             * Format: uuid
+             */
+            decision_id: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            owner?: components["schemas"]["services__core_api__decision_why__Person"] | null;
+            reopened?: components["schemas"]["Reopened"] | null;
+            sources: components["schemas"]["WatchSources"];
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "pending" | "ready";
         };
         /** DelegatedAnswerEntry */
         DelegatedAnswerEntry: {
@@ -5991,6 +7612,24 @@ export interface components {
              */
             week_start: string;
         };
+        /** DismissCheck */
+        DismissCheck: {
+            /** Quote */
+            quote: string;
+            /**
+             * Source
+             * @default app
+             * @enum {string}
+             */
+            source: "slack" | "extension" | "mcp" | "app";
+        };
+        /** DomainDeals */
+        DomainDeals: {
+            /** Deals */
+            deals?: components["schemas"]["Deal"][];
+            /** Domain */
+            domain: string;
+        };
         /** DriftNudgeRequest */
         DriftNudgeRequest: {
             /**
@@ -6191,6 +7830,52 @@ export interface components {
             rules_applied: number;
             /** Skipped */
             skipped: number;
+        };
+        /** Evidence */
+        Evidence: {
+            /** Confidence */
+            confidence: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Quote */
+            quote?: string | null;
+            /** Rationale */
+            rationale: string;
+            /** Redacted */
+            redacted: boolean;
+            /** Resolution Note */
+            resolution_note?: string | null;
+            /** Resolved At */
+            resolved_at?: string | null;
+            resolved_by?: components["schemas"]["services__core_api__decision_why__Person"] | null;
+            /** Revisit Meeting Id */
+            revisit_meeting_id?: string | null;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "meeting" | "decision" | "jira" | "linear" | "hubspot";
+            /** Source Decision Id */
+            source_decision_id?: string | null;
+            source_meeting?: components["schemas"]["services__core_api__routes__decision_why__SourceMeeting"] | null;
+            /** Source Ref */
+            source_ref?: string | null;
+            /** Source Url */
+            source_url?: string | null;
+            speaker?: components["schemas"]["services__core_api__decision_why__Person"] | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "reconfirmed" | "reopened" | "revisit_booked";
         };
         /** ExternalStatus */
         ExternalStatus: {
@@ -6507,6 +8192,27 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HandOff */
+        HandOff: {
+            /** Note */
+            note?: string | null;
+            /**
+             * To User Id
+             * Format: uuid
+             */
+            to_user_id: string;
+        };
+        /** HandOffResult */
+        HandOffResult: {
+            /**
+             * Copy Id
+             * Format: uuid
+             */
+            copy_id: string;
+            /** Handed To Name */
+            handed_to_name: string | null;
+            promise: components["schemas"]["LedgerPromise"];
+        };
         /** HoldPost */
         HoldPost: {
             /** Position Ids */
@@ -6628,27 +8334,6 @@ export interface components {
             /** Text */
             text: string;
         };
-        /** JiraIssue */
-        JiraIssue: {
-            /**
-             * Action Id
-             * Format: uuid
-             */
-            action_id: string;
-            /** Issue Key */
-            issue_key: string;
-            /** Issue Url */
-            issue_url?: string | null;
-            /** Open */
-            open: boolean;
-        };
-        /** JiraOutcome */
-        JiraOutcome: {
-            /** Connected */
-            connected: boolean;
-            /** Issues */
-            issues?: components["schemas"]["JiraIssue"][];
-        };
         /** Interruption */
         Interruption: {
             /**
@@ -6762,6 +8447,47 @@ export interface components {
              * Format: uuid
              */
             user_id: string;
+        };
+        /** Issue */
+        Issue: {
+            /** Due Date */
+            due_date?: string | null;
+            /** Key */
+            key: string;
+            /** Status */
+            status?: string | null;
+            /** Status Category */
+            status_category?: string | null;
+            /** Summary */
+            summary?: string | null;
+            /** Url */
+            url?: string | null;
+        };
+        /** JiraIssue */
+        JiraIssue: {
+            /**
+             * Action Id
+             * Format: uuid
+             */
+            action_id: string;
+            /** Issue Key */
+            issue_key: string;
+            /** Issue Url */
+            issue_url?: string | null;
+            /** Open */
+            open: boolean;
+        };
+        /** JiraOutcome */
+        JiraOutcome: {
+            /** Connected */
+            connected: boolean;
+            /** Issues */
+            issues?: components["schemas"]["JiraIssue"][];
+        };
+        /** KeepBoth */
+        KeepBoth: {
+            /** Note */
+            note: string;
         };
         /** LastWordList */
         LastWordList: {
@@ -6884,6 +8610,70 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** LedgerPromise */
+        LedgerPromise: {
+            /** Action Item Id */
+            action_item_id: string | null;
+            /**
+             * Channel
+             * @enum {string}
+             */
+            channel: "meeting" | "in_person" | "slack" | "email" | "manual";
+            /** Confidence */
+            confidence: number | null;
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Done At */
+            done_at: string | null;
+            /** Due At */
+            due_at: string | null;
+            /** Due Hint */
+            due_hint: string | null;
+            /** Handed Off From */
+            handed_off_from: string | null;
+            /** Handed Off To */
+            handed_off_to: string | null;
+            /** Handed Off To Name */
+            handed_off_to_name: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Meeting Id */
+            meeting_id: string | null;
+            /** Moment Id */
+            moment_id: string | null;
+            pending_proposal: components["schemas"]["ProposalBrief"] | null;
+            /**
+             * Recipient Name
+             * @description Who it was promised to: a colleague's name or the label the source gave.
+             */
+            recipient_name: string | null;
+            /** Recipient User Id */
+            recipient_user_id: string | null;
+            /**
+             * Review State
+             * @enum {string}
+             */
+            review_state: "pending" | "confirmed";
+            source: components["schemas"]["PromiseSource"];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "done" | "dismissed";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /**
          * Lesson
          * @description A resolved bet's lesson, offered when a similar decision is being made.
@@ -6914,6 +8704,52 @@ export interface components {
             resolved_at: string;
             /** Statement */
             statement: string;
+        };
+        /** LexicalDecision */
+        LexicalDecision: {
+            /** Content */
+            content: string;
+            /**
+             * Decided At
+             * Format: date-time
+             */
+            decided_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Meeting Title */
+            meeting_title?: string | null;
+            /** Rank */
+            rank: number;
+            /** Rationale */
+            rationale?: string | null;
+        };
+        /** LexicalResult */
+        LexicalResult: {
+            /** Items */
+            items: components["schemas"]["LexicalDecision"][];
+        };
+        /** LexicalSearch */
+        LexicalSearch: {
+            /**
+             * Limit
+             * @default 10
+             */
+            limit: number;
+            /** Query */
+            query: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
         };
         /**
          * LineageStep
@@ -7195,6 +9031,29 @@ export interface components {
              * @enum {string}
              */
             source: "manual" | "rule" | "default";
+        };
+        /** MeetingBlast */
+        MeetingBlast: {
+            /** Items */
+            items: components["schemas"]["MeetingBlastItem"][];
+        };
+        /** MeetingBlastItem */
+        MeetingBlastItem: {
+            /** Content */
+            content: string;
+            counts: components["schemas"]["Counts"];
+            /**
+             * Decision Id
+             * Format: uuid
+             */
+            decision_id: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "pending" | "ready";
+            /** Summary */
+            summary: string;
         };
         /** MeetingBriefing */
         MeetingBriefing: {
@@ -7785,6 +9644,29 @@ export interface components {
              */
             weight: number;
         };
+        /** Message */
+        Message: {
+            author?: components["schemas"]["services__core_api__decision_why__Person"] | null;
+            /** Body */
+            body: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Mine */
+            mine: boolean;
+        };
+        /** MessageIn */
+        MessageIn: {
+            /** Body */
+            body: string;
+        };
         /** MetricReading */
         MetricReading: {
             /** Baseline Value */
@@ -7958,6 +9840,11 @@ export interface components {
             /** Items */
             items: components["schemas"]["MyTask"][];
         };
+        /** Note */
+        Note: {
+            /** Note */
+            note: string;
+        };
         /** NoteFeedback */
         NoteFeedback: {
             /**
@@ -8062,6 +9949,37 @@ export interface components {
              */
             total_ms: number;
         };
+        /** OpenAssumption */
+        OpenAssumption: {
+            /** Decision Content */
+            decision_content: string;
+            /**
+             * Decision Id
+             * Format: uuid
+             */
+            decision_id: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Quote */
+            quote?: string | null;
+            /** Statement */
+            statement: string;
+        };
+        /** OpenAssumptions */
+        OpenAssumptions: {
+            /** Items */
+            items: components["schemas"]["OpenAssumption"][];
+        };
         /** OpenIssue */
         OpenIssue: {
             /**
@@ -8073,6 +9991,11 @@ export interface components {
             issue_key: string;
             /** Issue Url */
             issue_url?: string | null;
+        };
+        /** OptionalNote */
+        OptionalNote: {
+            /** Note */
+            note?: string | null;
         };
         /** OwnerOption */
         OwnerOption: {
@@ -8287,6 +10210,149 @@ export interface components {
             on_time?: boolean | null;
             /** Owner Name */
             owner_name?: string | null;
+        };
+        /** PromiseConfirm */
+        PromiseConfirm: {
+            /**
+             * Due At
+             * @description Optionally set or correct the date.
+             */
+            due_at?: string | null;
+        };
+        /** PromiseCreate */
+        PromiseCreate: {
+            /**
+             * Content
+             * @description What you promised.
+             */
+            content: string;
+            /**
+             * Due At
+             * @description When it is due (YYYY-MM-DD).
+             */
+            due_at?: string | null;
+            /**
+             * Recipient Label
+             * @description Or who, in words (a customer, a team).
+             */
+            recipient_label?: string | null;
+            /**
+             * Recipient User Id
+             * @description A colleague in this workspace you promised it to.
+             */
+            recipient_user_id?: string | null;
+            /**
+             * Source Link
+             * @description Optional link to where you promised it.
+             */
+            source_link?: string | null;
+        };
+        /** PromiseLedger */
+        PromiseLedger: {
+            capture: components["schemas"]["CaptureSettings"];
+            /** Items */
+            items: components["schemas"]["LedgerPromise"][];
+            /** Pending Review */
+            pending_review: number;
+        };
+        /**
+         * PromiseSource
+         * @description Where the promise was made, as a chip: the meeting moment, the Slack message, the email,
+         *     or who added it.
+         */
+        PromiseSource: {
+            /**
+             * At
+             * @description When it was said or sent.
+             */
+            at?: string | null;
+            /**
+             * Channel
+             * @enum {string}
+             */
+            channel: "meeting" | "in_person" | "slack" | "email" | "manual";
+            /**
+             * External
+             * @description True when `link` leaves Mytheus (a Slack permalink).
+             */
+            external: boolean;
+            /**
+             * Label
+             * @description What the chip says: a meeting title, `Slack`, `Added by you`.
+             */
+            label: string;
+            /**
+             * Link
+             * @description The original moment or message: an app path (`/meetings/...`) or the provider's permalink. Null when there is nothing to open.
+             */
+            link?: string | null;
+            /**
+             * Quote
+             * @description The words the promise was made in.
+             */
+            quote?: string | null;
+        };
+        /** PromiseUpdate */
+        PromiseUpdate: {
+            /**
+             * Clear Due
+             * @description True removes the due date.
+             * @default false
+             */
+            clear_due: boolean;
+            /** Content */
+            content?: string | null;
+            /** Due At */
+            due_at?: string | null;
+            /** Recipient Label */
+            recipient_label?: string | null;
+            /** Recipient User Id */
+            recipient_user_id?: string | null;
+            /**
+             * Status
+             * @description `done` (kept), `dismissed` (dropped), `open` (undo either).
+             */
+            status?: ("open" | "done" | "dismissed") | null;
+        };
+        /** PromiseWithCapacity */
+        PromiseWithCapacity: {
+            capacity: components["schemas"]["CapacityCheck"] | null;
+            promise: components["schemas"]["LedgerPromise"];
+        };
+        /** Proposal */
+        Proposal: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** By Me */
+            by_me: boolean;
+            /**
+             * Winner Decision Id
+             * Format: uuid
+             */
+            winner_decision_id: string;
+        };
+        /** ProposalBrief */
+        ProposalBrief: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Proposed Due
+             * Format: date
+             */
+            proposed_due: string;
+            /** Requester Name */
+            requester_name: string | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "pending" | "accepted" | "declined" | "withdrawn";
         };
         /**
          * PublicClipShare
@@ -8507,6 +10573,160 @@ export interface components {
              */
             user_id: string;
         };
+        /** RenegotiateResult */
+        RenegotiateResult: {
+            /**
+             * Due At
+             * @description The date it carries now.
+             */
+            due_at: string | null;
+            /**
+             * Mode
+             * @description `proposed`: the requester was asked and decides. `applied`: nobody else asked for it, so the new date is set at once.
+             * @enum {string}
+             */
+            mode: "proposed" | "applied";
+            /** Previous Due */
+            previous_due: string | null;
+            proposal: components["schemas"]["DateProposal"] | null;
+            /**
+             * Target
+             * @enum {string}
+             */
+            target: "commitment" | "action";
+            /**
+             * Target Id
+             * Format: uuid
+             */
+            target_id: string;
+        };
+        /** ReopenAccept */
+        ReopenAccept: {
+            /**
+             * Due Date
+             * @description follow_up: default a week out.
+             */
+            due_date?: string | null;
+            /**
+             * Duration Minutes
+             * @default 30
+             */
+            duration_minutes: number;
+            /** Note */
+            note?: string | null;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "revisit" | "follow_up";
+            /**
+             * Scheduled Start
+             * @description revisit: default the next weekday, 10:00 UTC.
+             */
+            scheduled_start?: string | null;
+        };
+        /** ReopenCreate */
+        ReopenCreate: {
+            /** Challenge Id */
+            challenge_id?: string | null;
+            /** Link */
+            link?: string | null;
+            /** Place Label */
+            place_label?: string | null;
+            /** Quote */
+            quote?: string | null;
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Source
+             * @default app
+             * @enum {string}
+             */
+            source: "slack" | "extension" | "mcp" | "app";
+        };
+        /** ReopenNote */
+        ReopenNote: {
+            /** Note */
+            note?: string | null;
+        };
+        /** ReopenRequest */
+        ReopenRequest: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decision Content */
+            decision_content: string;
+            /**
+             * Decision Id
+             * Format: uuid
+             */
+            decision_id: string;
+            /** Follow Up Action Id */
+            follow_up_action_id?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Link */
+            link?: string | null;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Meeting Title */
+            meeting_title?: string | null;
+            /** Outcome */
+            outcome?: ("revisit" | "follow_up") | null;
+            owner?: components["schemas"]["services__core_api__decision_check__Person"] | null;
+            /** Place Label */
+            place_label?: string | null;
+            /** Quote */
+            quote?: string | null;
+            /** Reason */
+            reason?: string | null;
+            requested_by: components["schemas"]["services__core_api__decision_check__Person"];
+            /** Resolved At */
+            resolved_at?: string | null;
+            /** Response Note */
+            response_note?: string | null;
+            /** Revisit Meeting Id */
+            revisit_meeting_id?: string | null;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "slack" | "extension" | "mcp" | "app";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "accepted" | "declined" | "withdrawn";
+            /**
+             * Viewer Role
+             * @enum {string}
+             */
+            viewer_role: "owner" | "requester" | "viewer";
+        };
+        /** ReopenRequestList */
+        ReopenRequestList: {
+            /** Items */
+            items: components["schemas"]["ReopenRequest"][];
+        };
+        /** Reopened */
+        Reopened: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            by?: components["schemas"]["services__core_api__decision_why__Person"] | null;
+            /** Note */
+            note?: string | null;
+        };
         /** ReplacedAtDate */
         ReplacedAtDate: {
             /** Content */
@@ -8528,6 +10748,21 @@ export interface components {
              */
             replaced_at: string;
             replaced_by: components["schemas"]["DecisionRef"];
+        };
+        /** Resolution */
+        Resolution: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            by?: components["schemas"]["services__core_api__decision_why__Person"] | null;
+            /** Meeting Id */
+            meeting_id?: string | null;
+            /** Note */
+            note?: string | null;
+            /** Winner Decision Id */
+            winner_decision_id?: string | null;
         };
         /** ResultAccepted */
         ResultAccepted: {
@@ -8773,6 +11008,58 @@ export interface components {
              */
             resolution: "keep" | "rescope" | "close";
         };
+        /** Ring */
+        Ring: {
+            /** Items */
+            items: components["schemas"]["RippleItem"][];
+            /** Label */
+            label: string;
+            /**
+             * Ring
+             * @enum {integer}
+             */
+            ring: 1 | 2 | 3;
+        };
+        /** RippleItem */
+        RippleItem: {
+            /** Due */
+            due?: string | null;
+            /**
+             * Effect
+             * @enum {string}
+             */
+            effect: "changes" | "blocks" | "unblocks" | "advances" | "risks" | "contradicts" | "commits";
+            /** Href */
+            href?: string | null;
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "action" | "goal" | "decision" | "customer_action" | "deal";
+            /** Label */
+            label?: string | null;
+            owner?: components["schemas"]["services__core_api__decision_why__Person"] | null;
+            /**
+             * Redacted
+             * @default false
+             */
+            redacted: boolean;
+            /**
+             * Ring
+             * @enum {integer}
+             */
+            ring: 1 | 2 | 3;
+            /** Settlement Id */
+            settlement_id?: string | null;
+            /** Status */
+            status?: string | null;
+            /** Team */
+            team?: string | null;
+            /** Why */
+            why?: string | null;
+        };
         /** RoomSignalsSource */
         RoomSignalsSource: {
             /** Agenda */
@@ -8908,6 +11195,73 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+        };
+        /** SettleSide */
+        SettleSide: {
+            /** Content */
+            content?: string | null;
+            /**
+             * Decided At
+             * Format: date-time
+             */
+            decided_at: string;
+            /**
+             * Decision Id
+             * Format: uuid
+             */
+            decision_id: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Meeting Title */
+            meeting_title?: string | null;
+            /** Mine */
+            mine: boolean;
+            owner?: components["schemas"]["services__core_api__decision_why__Person"] | null;
+            /** Quote */
+            quote?: string | null;
+            quote_speaker?: components["schemas"]["services__core_api__decision_why__Person"] | null;
+            /** Shared */
+            shared: boolean;
+            /** Team */
+            team?: string | null;
+            /** Visible */
+            visible: boolean;
+        };
+        /** Settlement */
+        Settlement: {
+            /** Confidence */
+            confidence: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Messages */
+            messages: components["schemas"]["Message"][];
+            mine: components["schemas"]["SettleSide"];
+            proposal?: components["schemas"]["Proposal"] | null;
+            /** Rationale */
+            rationale: string;
+            resolution?: components["schemas"]["Resolution"] | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "kept_both" | "superseded" | "meeting_booked";
+            theirs: components["schemas"]["SettleSide"];
+        };
+        /** SettlementList */
+        SettlementList: {
+            /** Items */
+            items: components["schemas"]["Settlement"][];
         };
         /** ShareLink */
         ShareLink: {
@@ -9069,6 +11423,34 @@ export interface components {
              */
             user_id: string;
         };
+        /** SlackAct */
+        SlackAct: {
+            /** Acting Email */
+            acting_email: string;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** SlackCheck */
+        SlackCheck: {
+            /** Author Email */
+            author_email: string;
+            /** External Ref */
+            external_ref?: string | null;
+            /** Link */
+            link?: string | null;
+            /** Place Label */
+            place_label?: string | null;
+            /**
+             * Source
+             * @default slack
+             * @constant
+             */
+            source: "slack";
+            /** Text */
+            text: string;
+            /** Topic */
+            topic?: string | null;
+        };
         /** SlackDigest */
         SlackDigest: {
             /** Actions */
@@ -9088,6 +11470,23 @@ export interface components {
             status: string;
             /** Title */
             title: string | null;
+        };
+        /** SlotProposal */
+        SlotProposal: {
+            /**
+             * End
+             * Format: date-time
+             */
+            end: string;
+            /** People */
+            people: components["schemas"]["services__core_api__decision_why__Person"][];
+            /**
+             * Start
+             * Format: date-time
+             */
+            start: string;
+            /** Title */
+            title: string;
         };
         /** Snapshot */
         Snapshot: {
@@ -9214,18 +11613,6 @@ export interface components {
              */
             who?: string | null;
         };
-        /** SourceMeeting */
-        SourceMeeting: {
-            /** Ended At */
-            ended_at?: string | null;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Title */
-            title: string;
-        };
         /** SourceMinutes */
         SourceMinutes: {
             /** Decisions */
@@ -9266,6 +11653,27 @@ export interface components {
             start_ms: number;
             /** Text */
             text: string;
+        };
+        /** Sources */
+        Sources: {
+            /**
+             * Hubspot
+             * @default not_connected
+             * @enum {string}
+             */
+            hubspot: "connected" | "not_connected";
+            /**
+             * Jira
+             * @default not_connected
+             * @enum {string}
+             */
+            jira: "connected" | "not_connected";
+            /**
+             * Linear
+             * @default not_connected
+             * @enum {string}
+             */
+            linear: "connected" | "not_connected";
         };
         /** SpeakerAssign */
         SpeakerAssign: {
@@ -9538,6 +11946,14 @@ export interface components {
             /** Saved */
             saved: components["schemas"]["Suggestion"][];
         };
+        /** Supersede */
+        Supersede: {
+            /**
+             * Winner Decision Id
+             * Format: uuid
+             */
+            winner_decision_id: string;
+        };
         /**
          * Task
          * @description One of your action items, with or without a meeting behind it.
@@ -9777,6 +12193,125 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** Watch */
+        Watch: {
+            /** Comparator */
+            comparator?: ("lt" | "lte" | "gt" | "gte" | "eq") | null;
+            /** Date */
+            date?: string | null;
+            /** Deal Id */
+            deal_id?: string | null;
+            /** Jira Key */
+            jira_key?: string | null;
+            /** Unit */
+            unit?: string | null;
+            /** Value */
+            value?: number | null;
+        };
+        /** WatchApplied */
+        WatchApplied: {
+            /** Broken */
+            broken: number;
+            /** Checked */
+            checked: number;
+            /** Deals Linked */
+            deals_linked: number;
+        };
+        /** WatchInput */
+        WatchInput: {
+            /** Comparator */
+            comparator?: ("lt" | "lte" | "gt" | "gte" | "eq") | null;
+            /** Date */
+            date?: string | null;
+            /** Deal Id */
+            deal_id?: string | null;
+            /** Jira Key */
+            jira_key?: string | null;
+            /** Unit */
+            unit?: string | null;
+            /** Value */
+            value?: number | null;
+        };
+        /** WatchItem */
+        WatchItem: {
+            /**
+             * Assumption Id
+             * Format: uuid
+             */
+            assumption_id: string;
+            /** Comparator */
+            comparator?: string | null;
+            /** Deal Id */
+            deal_id?: string | null;
+            /**
+             * Decision Id
+             * Format: uuid
+             */
+            decision_id: string;
+            /** Jira Key */
+            jira_key?: string | null;
+            /** Kind */
+            kind: string;
+            /** Statement */
+            statement: string;
+            /** Unit */
+            unit?: string | null;
+            /** Value */
+            value?: number | null;
+            /** Watch Date */
+            watch_date?: string | null;
+        };
+        /** WatchList */
+        WatchList: {
+            /** Deal Domains */
+            deal_domains: components["schemas"]["DealDomains"][];
+            /** Items */
+            items: components["schemas"]["WatchItem"][];
+        };
+        /** WatchResults */
+        WatchResults: {
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /** Deals */
+            deals?: components["schemas"]["Deal"][];
+            /** Domain Deals */
+            domain_deals?: components["schemas"]["DomainDeals"][];
+            /** Issues */
+            issues?: components["schemas"]["Issue"][];
+            sources: components["schemas"]["Sources"];
+        };
+        /** WatchSources */
+        WatchSources: {
+            /** Checked At */
+            checked_at?: string | null;
+            /**
+             * Hubspot
+             * @default unknown
+             * @enum {string}
+             */
+            hubspot: "connected" | "not_connected" | "unknown";
+            /**
+             * Jira
+             * @default unknown
+             * @enum {string}
+             */
+            jira: "connected" | "not_connected" | "unknown";
+            /**
+             * Linear
+             * @default unknown
+             * @enum {string}
+             */
+            linear: "connected" | "not_connected" | "unknown";
+            /**
+             * Transcripts
+             * @default connected
+             * @constant
+             */
+            transcripts: "connected";
+        };
         /** WeekMeeting */
         WeekMeeting: {
             /** Can Agent Listen */
@@ -9989,6 +12524,74 @@ export interface components {
              */
             week_start: string;
         };
+        /** WhyDecision */
+        WhyDecision: {
+            /** Confidential */
+            confidential: boolean;
+            /** Confirmed By */
+            confirmed_by?: string | null;
+            /** Content */
+            content: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Quote */
+            quote?: string | null;
+            /** Quote Speaker Id */
+            quote_speaker_id?: string | null;
+            /** Quote Start Ms */
+            quote_start_ms?: number | null;
+            /** Rationale */
+            rationale?: string | null;
+            /** Status */
+            status: string;
+        };
+        /** WhyParticipant */
+        WhyParticipant: {
+            /** Name */
+            name: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** WhySource */
+        WhySource: {
+            /** Already Read */
+            already_read: boolean;
+            /** Candidate Actions */
+            candidate_actions: components["schemas"]["CandidateAction"][];
+            decision: components["schemas"]["WhyDecision"];
+            /** Meeting Title */
+            meeting_title?: string | null;
+            /** Participants */
+            participants: components["schemas"]["WhyParticipant"][];
+            /** Speakers */
+            speakers: {
+                [key: string]: string;
+            };
+            /** Turns */
+            turns: components["schemas"]["WhyTurn"][];
+        };
+        /** WhyTurn */
+        WhyTurn: {
+            /** End Ms */
+            end_ms: number;
+            /** Speaker Id */
+            speaker_id: string;
+            /** Start Ms */
+            start_ms: number;
+            /** Text */
+            text: string;
+        };
         /**
          * Worklog
          * @description One `PersonalListenerAgent` note from `worklogs` (Plan 7-9 section 3.3).
@@ -10167,6 +12770,79 @@ export interface components {
              * @enum {string}
              */
             status: "scheduled" | "live" | "ended" | "cancelled";
+        };
+        /** SourceMeeting */
+        services__core_api__briefings__SourceMeeting: {
+            /** Ended At */
+            ended_at?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+        };
+        /** Person */
+        services__core_api__decision_check__Person: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name?: string | null;
+        };
+        /** Person */
+        services__core_api__decision_why__Person: {
+            /** Name */
+            name: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** CheckRequest */
+        services__core_api__routes__decision_challenges__CheckRequest: {
+            context?: components["schemas"]["CheckContext"] | null;
+            /**
+             * Source
+             * @description Where the text is being written.
+             * @default app
+             * @enum {string}
+             */
+            source: "extension" | "mcp" | "app";
+            /**
+             * Text
+             * @description The text to check.
+             */
+            text: string;
+        };
+        /** SourceMeeting */
+        services__core_api__routes__decision_why__SourceMeeting: {
+            /**
+             * Date
+             * Format: date-time
+             */
+            date: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title?: string | null;
+        };
+        /** CheckRequest */
+        services__core_api__routes__internal_bets__CheckRequest: {
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            jira?: components["schemas"]["JiraOutcome"] | null;
+            metric?: components["schemas"]["MetricReading"] | null;
         };
     };
     responses: never;
@@ -10563,6 +13239,382 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MyTask"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    answer_check: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                check_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgreementAnswerIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgreementCheck"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    remove_assumption: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assumption_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    edit_assumption: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                assumption_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssumptionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Assumption"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    book_revisit: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                assumption_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["BookRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Booked"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    reconfirm: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                assumption_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Note"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Assumption"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    reopen_decision: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                assumption_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["OptionalNote"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionWhy"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    revisit_slot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assumption_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlotProposal"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
@@ -11072,62 +14124,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Briefing"];
-                };
-            };
-            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Problem"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Problem"];
-                };
-            };
-            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Problem"];
-                };
-            };
-        };
-    };
-    answer_check: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
-                "Idempotency-Key"?: string;
-            };
-            path: {
-                check_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AgreementAnswerIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AgreementCheck"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
@@ -11700,6 +14696,370 @@ export interface operations {
             };
         };
     };
+    my_challenges: {
+        parameters: {
+            query?: {
+                status?: "open" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChallengeList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    dismiss_challenge_route: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                challenge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionChallenge"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_reopen_requests: {
+        parameters: {
+            query?: {
+                role?: "owner" | "requester" | "all";
+                status?: "pending" | "resolved" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReopenRequestList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_reopen_request: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReopenRequest"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    accept_reopen: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReopenAccept"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReopenRequest"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    decline_reopen: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReopenNote"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReopenRequest"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    withdraw_reopen: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReopenRequest"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     list_reversals: {
         parameters: {
             query?: {
@@ -11893,6 +15253,78 @@ export interface operations {
             };
         };
     };
+    check_text: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["services__core_api__routes__decision_challenges__CheckRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionCheckResult"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Too many checks this minute (`Retry-After`). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Checks are not connected or unavailable (`reason`). */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     update_decision: {
         parameters: {
             query?: never;
@@ -11918,6 +15350,120 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Decision"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    decision_agreement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                decision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionAgreement"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not a participant of this meeting. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    add_assumption: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                decision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssumptionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Assumption"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
@@ -12318,7 +15864,7 @@ export interface operations {
             };
         };
     };
-    decision_agreement: {
+    decision_blast_radius: {
         parameters: {
             query?: never;
             header?: never;
@@ -12335,7 +15881,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DecisionAgreement"];
+                    "application/json": components["schemas"]["BlastRadius"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
@@ -12347,8 +15893,104 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problem"];
                 };
             };
-            /** @description Not a participant of this meeting. */
-            403: {
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    decision_challenges: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                decision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionChallenges"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    dismiss_check: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                decision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DismissCheck"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckDismissed"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -12533,6 +16175,62 @@ export interface operations {
             };
         };
     };
+    request_reopen: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                decision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReopenCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReopenRequest"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     list_decision_links: {
         parameters: {
             query?: never;
@@ -12647,6 +16345,55 @@ export interface operations {
             };
             /** @description Share links are not configured on this server. */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_why: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                decision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionWhy"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -13067,6 +16814,182 @@ export interface operations {
                 };
             };
             /** @description The typed confirmation does not match, or it is your own data. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    dismiss_nudge: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                nudge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LastWordNudge"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    delete_late_contribution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contribution_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Only its author can remove a late point. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    late_contribution_audio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contribution_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The recording. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "audio/mp4": unknown;
+                    "audio/mpeg": unknown;
+                    "audio/ogg": unknown;
+                    "audio/webm": unknown;
+                };
+            };
+            /** @description A byte range of the recording. */
+            206: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not a participant of this meeting. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -14090,182 +18013,6 @@ export interface operations {
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
             401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Problem"];
-                };
-            };
-            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Problem"];
-                };
-            };
-        };
-    };
-    dismiss_nudge: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
-                "Idempotency-Key"?: string;
-            };
-            path: {
-                nudge_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LastWordNudge"];
-                };
-            };
-            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Problem"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Problem"];
-                };
-            };
-            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Problem"];
-                };
-            };
-        };
-    };
-    delete_late_contribution: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                contribution_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Problem"];
-                };
-            };
-            /** @description Only its author can remove a late point. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Problem"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Problem"];
-                };
-            };
-            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Problem"];
-                };
-            };
-        };
-    };
-    late_contribution_audio: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                contribution_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The recording. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "audio/mp4": unknown;
-                    "audio/mpeg": unknown;
-                    "audio/ogg": unknown;
-                    "audio/webm": unknown;
-                };
-            };
-            /** @description A byte range of the recording. */
-            206: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Problem"];
-                };
-            };
-            /** @description Not a participant of this meeting. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Problem"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -15375,6 +19122,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeetingAttendanceChoice"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    meeting_blast_radius: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingBlast"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
@@ -17585,6 +21381,793 @@ export interface operations {
             };
         };
     };
+    list_promises: {
+        parameters: {
+            query?: {
+                status?: "open" | "done" | "dismissed" | "all";
+                channel?: ("meeting" | "in_person" | "slack" | "email" | "manual")[] | null;
+                /** @description A colleague's user id, or `none` for no recipient. */
+                recipient?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromiseLedger"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    create_promise: {
+        parameters: {
+            query?: {
+                tz?: string | null;
+            };
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromiseCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromiseWithCapacity"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_capacity: {
+        parameters: {
+            query?: {
+                /** @description First day; default this Monday. */
+                start?: string | null;
+                days?: number;
+                /** @description IANA zone, default UTC. */
+                tz?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Capacity"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    check_capacity: {
+        parameters: {
+            query: {
+                due_date: string;
+                tz?: string | null;
+                exclude_kind?: ("commitment" | "action") | null;
+                exclude_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapacityCheck"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_capture_preferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaptureSettings"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    put_capture_preferences: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CapturePreferencesUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaptureSettings"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_proposals: {
+        parameters: {
+            query?: {
+                role?: "incoming" | "outgoing";
+                state?: "pending" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DateProposalList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    renegotiate: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DateProposalCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RenegotiateResult"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    accept_proposal: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                proposal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DateProposal"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    decline_proposal: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                proposal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DateProposal"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    withdraw_proposal: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                proposal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DateProposal"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    update_promise: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                promise_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromiseUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LedgerPromise"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    confirm_promise: {
+        parameters: {
+            query?: {
+                tz?: string | null;
+            };
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                promise_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromiseConfirm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromiseWithCapacity"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    hand_off: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                promise_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HandOff"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HandOffResult"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    undo_hand_off: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                promise_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LedgerPromise"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     read_clip_share: {
         parameters: {
             query?: never;
@@ -17869,6 +22452,533 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchResults"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_settlements: {
+        parameters: {
+            query?: {
+                status?: "open" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettlementList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_settlement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                settlement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Settlement"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    accept: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                settlement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Settlement"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    book: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                settlement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["BookRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Booked"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    decline: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                settlement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Settlement"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    keep_both: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                settlement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KeepBoth"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Settlement"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    meeting_slot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                settlement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlotProposal"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    post_message: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                settlement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Settlement"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    share_wording: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                settlement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Settlement"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    supersede: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                settlement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Supersede"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Settlement"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
@@ -19038,6 +24148,148 @@ export interface operations {
             };
         };
     };
+    open_assumptions: {
+        parameters: {
+            query?: {
+                exclude_meeting_id?: string | null;
+                exclude_decision_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpenAssumptions"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    watch_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchList"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    watch_results: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WatchResults"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchApplied"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     due_bets: {
         parameters: {
             query: {
@@ -19101,7 +24353,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CheckRequest"];
+                "application/json": components["schemas"]["services__core_api__routes__internal_bets__CheckRequest"];
             };
         };
         responses: {
@@ -19251,6 +24503,172 @@ export interface operations {
             };
         };
     };
+    slack_dismiss: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                challenge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SlackAct"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionChallenge"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    slack_reopen: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                challenge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SlackAct"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReopenRequest"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    slack_check: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SlackCheck"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionCheckResult"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     decision_record_internal_decisions__decision_id__record_get: {
         parameters: {
             query: {
@@ -19272,6 +24690,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DecisionRecord"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    why_source: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                decision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WhySource"];
                 };
             };
             /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
@@ -20338,6 +25805,168 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DriftNudgeResult"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    capture_check: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaptureCheck"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaptureCheckResult"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    captured: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Captured"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapturedResult"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    lexical_decisions: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LexicalSearch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LexicalResult"];
                 };
             };
             /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */

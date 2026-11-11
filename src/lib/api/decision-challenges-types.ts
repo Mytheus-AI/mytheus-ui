@@ -16,7 +16,8 @@
  *   POST /api/v1/decision-reopen-requests/{id}/accept|decline|withdraw
  */
 
-export type PersonRef = { id: string; name: string };
+/** core-api sends `name: null` for a person with no display name (the generated `Person`). */
+export type PersonRef = { id: string; name: string | null };
 
 export type ChallengeSource = "slack" | "extension" | "mcp" | "app";
 export type ChallengeStatus = "open" | "dismissed" | "reopened";

@@ -220,7 +220,7 @@ function ChallengeRow({ challenge: c, nowIso, onDismiss }: { challenge: Decision
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px]">
           <span className="font-semibold text-ink">{place}</span>
           <span className="sr-only">, on {SOURCE_LABEL[c.source]}</span>
-          {c.author ? <span className="text-ink-3">{c.author.name}</span> : null}
+          {c.author?.name ? <span className="text-ink-3">{c.author.name}</span> : null}
           <span className="text-[12.5px] text-ink-3">
             <LocalWhen iso={c.created_at} nowIso={nowIso} mode="past" />
           </span>

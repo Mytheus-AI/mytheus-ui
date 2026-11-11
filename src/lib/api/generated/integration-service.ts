@@ -217,6 +217,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/internal/watch/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sources */
+        post: operations["sources"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/oauth/{provider}": {
         parameters: {
             query?: never;
@@ -228,6 +245,23 @@ export interface paths {
         put?: never;
         /** Oauth Complete */
         post: operations["oauth_complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/webhooks/slack/interactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Slack Interactions */
+        post: operations["slack_interactions"];
         delete?: never;
         options?: never;
         head?: never;
@@ -361,6 +395,13 @@ export interface components {
              */
             provider: "notion" | "confluence" | "slack";
         };
+        /** DomainDeals */
+        DomainDeals: {
+            /** Deals */
+            deals: components["schemas"]["WatchDeal"][];
+            /** Domain */
+            domain: string;
+        };
         /**
          * @description The frozen program-wide error enum. Clients branch on this and never on `detail`, which is human-readable and free to change. Values are added, never removed or repurposed. Emitted verbatim from `libs.shared.errors.ErrorCode`, so this list cannot drift from the code; the no-removal half is asserted by `test_no_published_error_code_is_ever_removed`, because `oasdiff` does not treat narrowing a response enum as a breaking change.
          * @enum {string}
@@ -413,10 +454,24 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HubSpotSource */
+        HubSpotSource: {
+            /** Connected */
+            connected: boolean;
+            /** Deals */
+            deals?: components["schemas"]["WatchDeal"][];
+            /** Domain Deals */
+            domain_deals?: components["schemas"]["DomainDeals"][];
+        };
         /** IntegrationItem */
         IntegrationItem: {
             /** Configured */
             configured: boolean;
+            /**
+             * Decision Checks
+             * @description Slack only: whether messages in channels the app is in are checked against decisions. `needs_reconnect` for an install from before the history scopes.
+             */
+            decision_checks?: ("on" | "needs_reconnect") | null;
             /** External Account Id */
             external_account_id: string | null;
             /** Installed At */
@@ -464,6 +519,21 @@ export interface components {
             connected: boolean;
             /** Issues */
             issues: components["schemas"]["IssueStatus"][];
+        };
+        /** JiraSource */
+        JiraSource: {
+            /** Connected */
+            connected: boolean;
+            /** Issues */
+            issues?: components["schemas"]["WatchIssue"][];
+        };
+        /** LinearSource */
+        LinearSource: {
+            /**
+             * Connected
+             * @default false
+             */
+            connected: boolean;
         };
         /** MeetingRef */
         MeetingRef: {
@@ -567,6 +637,15 @@ export interface components {
             /** Team Id */
             team_id: string | null;
         };
+        /** SourcesRequest */
+        SourcesRequest: {
+            /** Deal Ids */
+            deal_ids?: string[];
+            /** Domains */
+            domains?: string[];
+            /** Jira Keys */
+            jira_keys?: string[];
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -579,6 +658,52 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** WatchDeal */
+        WatchDeal: {
+            /** Amount */
+            amount?: number | null;
+            /** Close Date */
+            close_date?: string | null;
+            /**
+             * Closed Lost
+             * @default false
+             */
+            closed_lost: boolean;
+            /**
+             * Closed Won
+             * @default false
+             */
+            closed_won: boolean;
+            /** Id */
+            id: string;
+            /** Name */
+            name?: string | null;
+            /** Stage */
+            stage?: string | null;
+            /** Url */
+            url?: string | null;
+        };
+        /** WatchIssue */
+        WatchIssue: {
+            /** Due Date */
+            due_date?: string | null;
+            /** Key */
+            key: string;
+            /** Status */
+            status?: string | null;
+            /** Status Category */
+            status_category?: string | null;
+            /** Summary */
+            summary?: string | null;
+            /** Url */
+            url?: string | null;
+        };
+        /** WatchSources */
+        WatchSources: {
+            hubspot: components["schemas"]["HubSpotSource"];
+            jira: components["schemas"]["JiraSource"];
+            linear: components["schemas"]["LinearSource"];
         };
     };
     responses: never;
@@ -1220,6 +1345,60 @@ export interface operations {
             };
         };
     };
+    sources: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourcesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchSources"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     oauth_complete: {
         parameters: {
             query?: never;
@@ -1263,6 +1442,35 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    slack_interactions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Unhandled server error. Carries a `trace_id` and no internals. */
