@@ -22,6 +22,7 @@ export type FeedKind =
 
 import type { DecisionReversal } from "../../lib/api/only-mytheus-types";
 import { parseSourceEvent } from "../../lib/reversals.ts";
+import { parseBetSource } from "../../lib/bets.ts";
 
 export interface FeedRowInput {
   id: string;
@@ -172,6 +173,22 @@ export function describeNotification(row: FeedRowInput): FeedItem {
       title: row.title || "What changed for you this week",
       href: safeLink(row.link) ?? "/digest",
       linkLabel: "Read your digest",
+    };
+  }
+
+  // Decisions as bets: a bet whose check date came (score it), or one your agent suggested.
+  const bet = parseBetSource(sourceEventId);
+  if (bet) {
+    return {
+      ...base,
+      kind: "reminder",
+      sourceEventId,
+      priority: bet.stage === "due" ? 2 : 3,
+      title: row.title || (bet.stage === "due" ? "Time to score a bet" : "Your agent heard an expected outcome"),
+      body: row.body,
+      quote: null,
+      href: safeLink(row.link) ?? "/decisions/calls",
+      linkLabel: bet.stage === "due" ? "Score the bet" : "Review it",
     };
   }
 

@@ -132,6 +132,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/internal/crm/metric": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Metric */
+        post: operations["metric"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/internal/jira/issue-status": {
         parameters: {
             query?: never;
@@ -455,6 +472,53 @@ export interface components {
              * Format: uuid
              */
             meeting_id: string;
+        };
+        /** MetricReading */
+        MetricReading: {
+            /** Baseline Value */
+            baseline_value?: number | null;
+            /** Connected */
+            connected: boolean;
+            /** Error */
+            error?: string | null;
+            /** Label */
+            label?: string | null;
+            /**
+             * Partial
+             * @default false
+             */
+            partial: boolean;
+            /**
+             * Provider
+             * @default hubspot
+             */
+            provider: string;
+            /** Unit */
+            unit?: string | null;
+            /** Value */
+            value?: number | null;
+            /** Window End */
+            window_end?: string | null;
+            /** Window Start */
+            window_start?: string | null;
+        };
+        /** MetricRequest */
+        MetricRequest: {
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /**
+             * Metric Key
+             * @enum {string}
+             */
+            metric_key: "hubspot.deals_won" | "hubspot.revenue_won" | "hubspot.new_contacts" | "hubspot.new_companies";
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
         };
         /** OAuthCompletion */
         OAuthCompletion: {
@@ -871,6 +935,60 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CrmNoteResult"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    metric: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MetricRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetricReading"];
                 };
             };
             /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */

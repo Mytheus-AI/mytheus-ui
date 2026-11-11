@@ -313,3 +313,31 @@ export async function decideAppConsent(input: { request: string; decision: "appr
 export async function disconnectConnectedApp() {
   return { ok: true as const };
 }
+
+// Decisions as bets and the company time machine (b1): answered as core-api would.
+import { BET, DIFF, SNAPSHOT, TIMELINE, view as betView } from "../bets-fixture";
+export async function saveBet(_decisionId: string, body: Record<string, unknown>) {
+  return { ok: true as const, view: betView({ ...BET, ...(body as object), status: "open" } as typeof BET) };
+}
+export async function stepBet(_decisionId: string, step: string) {
+  const status = step === "dismiss" ? "dismissed" : step === "restore" ? "proposed" : step === "reopen" ? "due" : "open";
+  return { ok: true as const, view: betView({ ...BET, status } as typeof BET) };
+}
+export async function resolveBet(_decisionId: string, input: { outcome: "hit" | "partly" | "missed"; assumption_held: boolean | null; lesson: string }) {
+  return {
+    ok: true as const,
+    view: betView({ ...BET, status: "resolved", outcome: input.outcome, assumption_held: input.assumption_held, lesson: input.lesson || null, resolved_at: "2026-11-11T10:00:00Z", resolved_by_name: "Maya Patel" }),
+  };
+}
+export async function loadBetHints() {
+  return betView(null).hints;
+}
+export async function loadSnapshot(asOf: string, topic?: string) {
+  return { ok: true as const, data: { ...SNAPSHOT, as_of: asOf, topic: topic || null } };
+}
+export async function loadDiff(from: string, to: string, topic?: string) {
+  return { ok: true as const, data: { ...DIFF, from, to, topic: topic || null } };
+}
+export async function loadTimeline(topic: string) {
+  return { ok: true as const, data: { ...TIMELINE, topic } };
+}

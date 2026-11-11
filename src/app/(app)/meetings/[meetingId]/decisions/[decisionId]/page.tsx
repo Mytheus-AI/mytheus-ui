@@ -13,6 +13,8 @@ import { fetchDecisionLineage, type LineageDecision } from "@/lib/api/lineage";
 import { loadDecisionReach } from "@/lib/api/decision-reach";
 import { resolveOrgContext } from "@/lib/api/org-context";
 import { DecisionReach } from "@/components/decisions/DecisionReach";
+import { DecisionBet } from "@/components/bets/DecisionBet";
+import { fetchDecisionBet } from "@/lib/api/bets";
 
 export const metadata: Metadata = { title: "Decision lineage | Mytheus" };
 
@@ -80,10 +82,11 @@ export default async function DecisionLineagePage({
 }: {
   params: { meetingId: string; decisionId: string };
 }) {
-  const [chain, reach, org] = await Promise.all([
+  const [chain, reach, org, bet] = await Promise.all([
     loadChain(params.meetingId, params.decisionId),
     loadDecisionReach(params.decisionId).catch(() => null),
     resolveOrgContext(),
+    fetchDecisionBet(params.decisionId).catch(() => null),
   ]);
   const openMeeting = (
     <LinkButton href={`/meetings/${params.meetingId}`} variant="outline">
@@ -218,6 +221,13 @@ export default async function DecisionLineagePage({
             })}
           </ol>
         </SectionCard>
+        <DecisionBet
+          initial={bet}
+          decisionId={params.decisionId}
+          meetingId={params.meetingId}
+          decisionContent={title}
+          today={new Date().toISOString().slice(0, 10)}
+        />
       </PageColumns>
     </Page>
   );

@@ -155,6 +155,65 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/bets/calibration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Calibration
+         * @description How good are our calls: the workspace's record by decision type and by team. Aggregate
+         *     only; a team appears once it has at least three resolved bets.
+         */
+        get: operations["calibration"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bets/hints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Hints */
+        get: operations["hints"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bets/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Bets
+         * @description Bets you own: the ones waiting for you (proposed, due) first, then open, then the
+         *     latest resolved. Private to you: nobody else's bets are listed.
+         */
+        get: operations["my_bets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/capture/sessions": {
         parameters: {
             query?: never;
@@ -442,6 +501,113 @@ export interface paths {
         head?: never;
         /** Update Decision */
         patch: operations["update_decision"];
+        trace?: never;
+    };
+    "/api/v1/decisions/{decision_id}/bet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Bet */
+        get: operations["get_bet"];
+        /** Save Bet */
+        put: operations["save_bet"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/decisions/{decision_id}/bet/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept Bet */
+        post: operations["accept_bet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/decisions/{decision_id}/bet/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dismiss Bet */
+        post: operations["dismiss_bet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/decisions/{decision_id}/bet/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reopen Bet */
+        post: operations["reopen_bet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/decisions/{decision_id}/bet/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve Bet
+         * @description The person's call, always: hit, partly or missed. A resolved bet may be resolved again
+         *     (a changed mind or a later lesson); `reopen` takes it back to due.
+         */
+        post: operations["resolve_bet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/decisions/{decision_id}/bet/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore Bet */
+        post: operations["restore_bet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/decisions/{decision_id}/confirm": {
@@ -1832,6 +1998,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/time-machine/diff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Diff
+         * @description What changed between two dates: new and reversed decisions, promises made, kept and
+         *     broken, bets resolved, goals that moved, and the meetings that caused each change.
+         */
+        get: operations["diff"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/time-machine/snapshot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Snapshot
+         * @description The company's decisions, open promises and goals as they stood at the end of `as_of`.
+         */
+        get: operations["snapshot"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/time-machine/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Timeline
+         * @description How one topic's decisions changed, step by step, each citing the meeting and the
+         *     words that decided it.
+         */
+        get: operations["timeline"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/worklogs/{worklog_id}/feedback": {
         parameters: {
             query?: never;
@@ -1948,6 +2176,40 @@ export interface paths {
         get: operations["agent_policy"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/bets/due": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Due Bets */
+        get: operations["due_bets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/bets/{bet_id}/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check Bet */
+        post: operations["check_bet"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2625,6 +2887,317 @@ export interface components {
             /** Proxy Update */
             proxy_update?: string | null;
         };
+        /** Bet */
+        Bet: {
+            /** Agent Confidence */
+            agent_confidence?: number | null;
+            /** Assumption */
+            assumption?: string | null;
+            /** Assumption Held */
+            assumption_held?: boolean | null;
+            /** Baseline */
+            baseline?: number | null;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "pricing" | "product" | "growth" | "customers" | "hiring" | "operations" | "engineering" | "finance" | "other";
+            /**
+             * Check Date
+             * Format: date
+             */
+            check_date: string;
+            /** Checked At */
+            checked_at?: string | null;
+            /** Confidence Pct */
+            confidence_pct?: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Decision Id
+             * Format: uuid
+             */
+            decision_id: string;
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "increase" | "decrease" | "reach" | "hold" | "happen" | "not_happen";
+            /** Evidence */
+            evidence?: components["schemas"]["BetEvidence"][];
+            /**
+             * Evidence Status
+             * @enum {string}
+             */
+            evidence_status: "pending" | "gathered";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "metric" | "event";
+            /** Lesson */
+            lesson?: string | null;
+            /** Magnitude */
+            magnitude?: number | null;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Metric */
+            metric: string;
+            /** Metric Key */
+            metric_key?: string | null;
+            /** Observed Value */
+            observed_value?: number | null;
+            /** Outcome */
+            outcome?: ("hit" | "partly" | "missed") | null;
+            /** Owner Name */
+            owner_name?: string | null;
+            /** Owner User Id */
+            owner_user_id?: string | null;
+            /**
+             * Proposed By
+             * @enum {string}
+             */
+            proposed_by: "agent" | "person";
+            /** Quote */
+            quote?: string | null;
+            /** Quote Speaker Name */
+            quote_speaker_name?: string | null;
+            /** Resolved At */
+            resolved_at?: string | null;
+            /** Resolved By Name */
+            resolved_by_name?: string | null;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "crm" | "metrics" | "meetings" | "jira" | "manual";
+            /** Statement */
+            statement: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "proposed" | "open" | "due" | "resolved" | "dismissed";
+            /** Suggested Outcome */
+            suggested_outcome?: ("hit" | "partly" | "missed") | null;
+            /** Suggested Reason */
+            suggested_reason?: string | null;
+            /** Team Id */
+            team_id?: string | null;
+            /** Team Name */
+            team_name?: string | null;
+            /** Unit */
+            unit?: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** BetAtDate */
+        BetAtDate: {
+            /**
+             * Check Date
+             * Format: date
+             */
+            check_date: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Outcome */
+            outcome?: string | null;
+            /** Statement */
+            statement: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "waiting" | "resolved";
+        };
+        /** BetChange */
+        BetChange: {
+            caused_by?: components["schemas"]["MeetingAtDate"] | null;
+            /**
+             * Decision Id
+             * Format: uuid
+             */
+            decision_id: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Outcome */
+            outcome: string;
+            /**
+             * Resolved At
+             * Format: date-time
+             */
+            resolved_at: string;
+            /** Statement */
+            statement: string;
+        };
+        /** BetEvidence */
+        BetEvidence: {
+            /** Decision Id */
+            decision_id?: string | null;
+            /** Detail */
+            detail?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "metric" | "meeting" | "decision" | "jira" | "note";
+            /** Meeting Id */
+            meeting_id?: string | null;
+            /** Meeting Title */
+            meeting_title?: string | null;
+            /** Observed Value */
+            observed_value?: number | null;
+            /** Occurred At */
+            occurred_at?: string | null;
+            /** Signal */
+            signal?: ("supports" | "against" | "neutral") | null;
+            /** Title */
+            title: string;
+            /** Url */
+            url?: string | null;
+            /**
+             * Visible
+             * @default true
+             */
+            visible: boolean;
+        };
+        /** BetHints */
+        BetHints: {
+            /** Category */
+            category?: ("pricing" | "product" | "growth" | "customers" | "hiring" | "operations" | "engineering" | "finance" | "other") | null;
+            /** Lessons */
+            lessons?: components["schemas"]["Lesson"][];
+            record?: components["schemas"]["CategoryRecord"] | null;
+        };
+        /** BetResolve */
+        BetResolve: {
+            /** Assumption Held */
+            assumption_held?: boolean | null;
+            /** Lesson */
+            lesson?: string | null;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "hit" | "partly" | "missed";
+        };
+        /**
+         * BetUpsert
+         * @description Create or edit the expectation. Accepting a proposed bet with edits is this too.
+         */
+        BetUpsert: {
+            /** Assumption */
+            assumption?: string | null;
+            /** Baseline */
+            baseline?: number | null;
+            /**
+             * Category
+             * @default other
+             * @enum {string}
+             */
+            category: "pricing" | "product" | "growth" | "customers" | "hiring" | "operations" | "engineering" | "finance" | "other";
+            /**
+             * Check Date
+             * Format: date
+             */
+            check_date: string;
+            /** Confidence Pct */
+            confidence_pct?: number | null;
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "increase" | "decrease" | "reach" | "hold" | "happen" | "not_happen";
+            /**
+             * Kind
+             * @default metric
+             * @enum {string}
+             */
+            kind: "metric" | "event";
+            /** Magnitude */
+            magnitude?: number | null;
+            /** Metric */
+            metric: string;
+            /** Metric Key */
+            metric_key?: string | null;
+            /** Owner User Id */
+            owner_user_id?: string | null;
+            /**
+             * Source
+             * @default meetings
+             * @enum {string}
+             */
+            source: "crm" | "metrics" | "meetings" | "jira" | "manual";
+            /** Statement */
+            statement: string;
+            /** Team Id */
+            team_id?: string | null;
+            /** Unit */
+            unit?: string | null;
+        };
+        /** Calibration */
+        Calibration: {
+            /** Buckets */
+            buckets: components["schemas"]["CalibrationBucket"][];
+            /** By Category */
+            by_category: components["schemas"]["GroupRecord"][];
+            /** By Team */
+            by_team: components["schemas"]["GroupRecord"][];
+            /** Failing Assumptions */
+            failing_assumptions: components["schemas"]["FailingAssumption"][];
+            /** Lessons */
+            lessons: components["schemas"]["PublicLesson"][];
+            /**
+             * Min Team Resolved
+             * @default 3
+             */
+            min_team_resolved: number;
+            /** Months */
+            months: components["schemas"]["MonthPoint"][];
+            /** Teams Below Threshold */
+            teams_below_threshold: number;
+            totals: components["schemas"]["Totals"];
+        };
+        /** CalibrationBucket */
+        CalibrationBucket: {
+            /** Actual */
+            actual: number;
+            /** Count */
+            count: number;
+            /** High */
+            high: number;
+            /** Label */
+            label: string;
+            /** Low */
+            low: number;
+            /** Stated */
+            stated: number;
+        };
         /** CalibrationDetail */
         CalibrationDetail: {
             /**
@@ -2935,6 +3508,24 @@ export interface components {
              */
             status: "scheduled" | "live" | "ended" | "cancelled";
         };
+        /** CategoryRecord */
+        CategoryRecord: {
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "pricing" | "product" | "growth" | "customers" | "hiring" | "operations" | "engineering" | "finance" | "other";
+            /** Hit */
+            hit: number;
+            /** Hit Rate */
+            hit_rate?: number | null;
+            /** Missed */
+            missed: number;
+            /** Partly */
+            partly: number;
+            /** Resolved */
+            resolved: number;
+        };
         /**
          * ChatHistory
          * @description `GET /meetings/:id/chat`: the meeting's most recent chat messages, oldest first.
@@ -2979,6 +3570,27 @@ export interface components {
             meeting_id: string;
             /** User Id */
             user_id?: string | null;
+        };
+        /** CheckRequest */
+        CheckRequest: {
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            jira?: components["schemas"]["JiraOutcome"] | null;
+            metric?: components["schemas"]["MetricReading"] | null;
+        };
+        /** CheckResult */
+        CheckResult: {
+            /** Evidence Added */
+            evidence_added: number;
+            /** Notified */
+            notified: boolean;
+            /** Status */
+            status: string;
+            /** Suggested Outcome */
+            suggested_outcome?: string | null;
         };
         /** Clip */
         Clip: {
@@ -3503,6 +4115,57 @@ export interface components {
             /** Why */
             why?: string | null;
         };
+        /** DecisionAtDate */
+        DecisionAtDate: {
+            bet?: components["schemas"]["BetAtDate"] | null;
+            /** Confirmed By Name */
+            confirmed_by_name?: string | null;
+            /** Content */
+            content: string;
+            /**
+             * Decided At
+             * Format: date-time
+             */
+            decided_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            meeting: components["schemas"]["MeetingAtDate"];
+            /** Quote */
+            quote?: string | null;
+            /** Quote Speaker Name */
+            quote_speaker_name?: string | null;
+            /** Rationale */
+            rationale?: string | null;
+            replaces?: components["schemas"]["DecisionRef"] | null;
+            /** Why */
+            why?: string | null;
+        };
+        /** DecisionBetView */
+        DecisionBetView: {
+            bet?: components["schemas"]["Bet"] | null;
+            /** Can Edit */
+            can_edit: boolean;
+            /**
+             * Decision Id
+             * Format: uuid
+             */
+            decision_id: string;
+            /** Decision Status */
+            decision_status: string;
+            hints: components["schemas"]["BetHints"];
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Owner Candidates */
+            owner_candidates?: components["schemas"]["OwnerOption"][];
+            /** Teams */
+            teams?: components["schemas"]["TeamOption"][];
+        };
         /**
          * DecisionConfirm
          * @description Confirm body. `supersedes` names an earlier confirmed decision (FOLLOWS_FROM lineage).
@@ -3599,6 +4262,24 @@ export interface components {
              * @enum {string}
              */
             status: "confirmed" | "superseded";
+        };
+        /**
+         * DecisionRef
+         * @description A decision in the story. `visible` false: from a meeting you were not in, withheld.
+         */
+        DecisionRef: {
+            /** Content */
+            content?: string | null;
+            /** Decided At */
+            decided_at?: string | null;
+            /** Id */
+            id?: string | null;
+            meeting?: components["schemas"]["MeetingAtDate"] | null;
+            /**
+             * Visible
+             * @default true
+             */
+            visible: boolean;
         };
         /** DecisionReversal */
         DecisionReversal: {
@@ -3755,6 +4436,55 @@ export interface components {
             /** Status */
             status: string;
         };
+        /** Diff */
+        Diff: {
+            /** Bets Resolved */
+            bets_resolved: components["schemas"]["BetChange"][];
+            counts: components["schemas"]["DiffCounts"];
+            /**
+             * From
+             * Format: date
+             */
+            from: string;
+            /** Goals */
+            goals: components["schemas"]["GoalChange"][];
+            /** Meetings */
+            meetings: components["schemas"]["MeetingImpact"][];
+            /** New Decisions */
+            new_decisions: components["schemas"]["DecisionAtDate"][];
+            /** Promises Broken */
+            promises_broken: components["schemas"]["PromiseChange"][];
+            /** Promises Kept */
+            promises_kept: components["schemas"]["PromiseChange"][];
+            /** Promises Made */
+            promises_made: components["schemas"]["PromiseChange"][];
+            /** Reversed */
+            reversed: components["schemas"]["Reversal"][];
+            /**
+             * To
+             * Format: date
+             */
+            to: string;
+            /** Topic */
+            topic?: string | null;
+        };
+        /** DiffCounts */
+        DiffCounts: {
+            /** Bets Resolved */
+            bets_resolved: number;
+            /** Goals Changed */
+            goals_changed: number;
+            /** New Decisions */
+            new_decisions: number;
+            /** Promises Broken */
+            promises_broken: number;
+            /** Promises Kept */
+            promises_kept: number;
+            /** Promises Made */
+            promises_made: number;
+            /** Reversed */
+            reversed: number;
+        };
         /** DigestAction */
         DigestAction: {
             /** Assignee Id */
@@ -3865,6 +4595,43 @@ export interface components {
             /** Items */
             items: components["schemas"]["DueAction"][];
         };
+        /** DueBet */
+        DueBet: {
+            /** Action Ids */
+            action_ids: string[];
+            /**
+             * Bet Id
+             * Format: uuid
+             */
+            bet_id: string;
+            /**
+             * Check Date
+             * Format: date
+             */
+            check_date: string;
+            /**
+             * Decided On
+             * Format: date
+             */
+            decided_on: string;
+            /**
+             * Decision Id
+             * Format: uuid
+             */
+            decision_id: string;
+            /** Metric Key */
+            metric_key?: string | null;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "crm" | "metrics" | "meetings" | "jira" | "manual";
+        };
+        /** DueBets */
+        DueBets: {
+            /** Items */
+            items: components["schemas"]["DueBet"][];
+        };
         /** ErasureApplied */
         ErasureApplied: {
             /**
@@ -3951,6 +4718,20 @@ export interface components {
             changed: boolean;
             /** Status */
             status: string;
+        };
+        /** FailingAssumption */
+        FailingAssumption: {
+            /** Assumption */
+            assumption: string;
+            /** Categories */
+            categories: ("pricing" | "product" | "growth" | "customers" | "hiring" | "operations" | "engineering" | "finance" | "other")[];
+            /**
+             * Last Failed At
+             * Format: date-time
+             */
+            last_failed_at: string;
+            /** Times */
+            times: number;
         };
         /**
          * FollowUp
@@ -4107,6 +4888,66 @@ export interface components {
              */
             guest_emails?: string[];
         };
+        /** GoalAtDate */
+        GoalAtDate: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Owner Name */
+            owner_name?: string | null;
+            /** Period */
+            period?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "achieved" | "dropped";
+            /** Title */
+            title: string;
+        };
+        /** GoalChange */
+        GoalChange: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /**
+             * Change
+             * @enum {string}
+             */
+            change: "added" | "achieved" | "dropped";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+        };
+        /** GroupRecord */
+        GroupRecord: {
+            /** Hit */
+            hit: number;
+            /** Hit Rate */
+            hit_rate?: number | null;
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Missed */
+            missed: number;
+            /** Open */
+            open: number;
+            /** Partly */
+            partly: number;
+            /** Resolved */
+            resolved: number;
+            /** Stated Confidence */
+            stated_confidence?: number | null;
+        };
         /** GuestDelivery */
         GuestDelivery: {
             /**
@@ -4255,6 +5096,27 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** JiraIssue */
+        JiraIssue: {
+            /**
+             * Action Id
+             * Format: uuid
+             */
+            action_id: string;
+            /** Issue Key */
+            issue_key: string;
+            /** Issue Url */
+            issue_url?: string | null;
+            /** Open */
+            open: boolean;
+        };
+        /** JiraOutcome */
+        JiraOutcome: {
+            /** Connected */
+            connected: boolean;
+            /** Issues */
+            issues?: components["schemas"]["JiraIssue"][];
+        };
         /**
          * LatestStatus
          * @description The assignee's most recent answer to a status request for an action (ADR-0039 B7).
@@ -4267,6 +5129,37 @@ export interface components {
             answered_at: string;
             /** Text */
             text: string;
+        };
+        /**
+         * Lesson
+         * @description A resolved bet's lesson, offered when a similar decision is being made.
+         */
+        Lesson: {
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "pricing" | "product" | "growth" | "customers" | "hiring" | "operations" | "engineering" | "finance" | "other";
+            /** Decision Id */
+            decision_id?: string | null;
+            /** Failed Assumption */
+            failed_assumption?: string | null;
+            /** Lesson */
+            lesson?: string | null;
+            /** Meeting Id */
+            meeting_id?: string | null;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "hit" | "partly" | "missed";
+            /**
+             * Resolved At
+             * Format: date-time
+             */
+            resolved_at: string;
+            /** Statement */
+            statement: string;
         };
         /**
          * LineageStep
@@ -4359,6 +5252,21 @@ export interface components {
             wrap_up_by?: string | null;
             /** Wrap Up Started At */
             wrap_up_started_at?: string | null;
+        };
+        /** MeetingAtDate */
+        MeetingAtDate: {
+            /**
+             * Date
+             * Format: date-time
+             */
+            date: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
         };
         /** MeetingCreate */
         MeetingCreate: {
@@ -4455,6 +5363,16 @@ export interface components {
             wrap_up_by?: string | null;
             /** Wrap Up Started At */
             wrap_up_started_at?: string | null;
+        };
+        /** MeetingImpact */
+        MeetingImpact: {
+            meeting: components["schemas"]["MeetingAtDate"];
+            /** New Decisions */
+            new_decisions: number;
+            /** Promises Made */
+            promises_made: number;
+            /** Reversals */
+            reversals: number;
         };
         /**
          * MeetingMinutes
@@ -4855,6 +5773,27 @@ export interface components {
              */
             weight: number;
         };
+        /** MetricReading */
+        MetricReading: {
+            /** Baseline Value */
+            baseline_value?: number | null;
+            /** Connected */
+            connected: boolean;
+            /** Error */
+            error?: string | null;
+            /** Label */
+            label?: string | null;
+            /** Provider */
+            provider?: string | null;
+            /** Unit */
+            unit?: string | null;
+            /** Value */
+            value?: number | null;
+            /** Window End */
+            window_end?: string | null;
+            /** Window Start */
+            window_start?: string | null;
+        };
         /** MinutesDecision */
         MinutesDecision: {
             /**
@@ -4937,6 +5876,30 @@ export interface components {
             turns: components["schemas"]["SourceTurn"][];
             /** Turns Truncated */
             turns_truncated: boolean;
+        };
+        /** MonthPoint */
+        MonthPoint: {
+            /** Hit Rate */
+            hit_rate?: number | null;
+            /** Month */
+            month: string;
+            /** Resolved */
+            resolved: number;
+        };
+        /** MyBet */
+        MyBet: {
+            bet: components["schemas"]["Bet"];
+            /** Decision Content */
+            decision_content: string;
+            /** Meeting Title */
+            meeting_title?: string | null;
+            /** Needs You */
+            needs_you: boolean;
+        };
+        /** MyBets */
+        MyBets: {
+            /** Items */
+            items: components["schemas"]["MyBet"][];
         };
         /**
          * MyTask
@@ -5099,6 +6062,16 @@ export interface components {
             /** Issue Url */
             issue_url?: string | null;
         };
+        /** OwnerOption */
+        OwnerOption: {
+            /** Name */
+            name: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
         /**
          * Participant
          * @description A participant as a meeting response shows it. ADR-0039 B5: `attendance` and
@@ -5244,6 +6217,65 @@ export interface components {
              */
             type: string;
         };
+        /** PromiseAtDate */
+        PromiseAtDate: {
+            /** Content */
+            content: string;
+            /** Due */
+            due?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "action" | "promise";
+            /**
+             * Made At
+             * Format: date-time
+             */
+            made_at: string;
+            meeting?: components["schemas"]["MeetingAtDate"] | null;
+            /**
+             * Overdue
+             * @default false
+             */
+            overdue: boolean;
+            /** Owner Name */
+            owner_name?: string | null;
+        };
+        /** PromiseChange */
+        PromiseChange: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            caused_by?: components["schemas"]["MeetingAtDate"] | null;
+            /** Content */
+            content: string;
+            /** Due Date */
+            due_date?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kept Later At */
+            kept_later_at?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "action" | "promise";
+            /** On Time */
+            on_time?: boolean | null;
+            /** Owner Name */
+            owner_name?: string | null;
+        };
         /**
          * PublicClipShare
          * @description What a public clip page renders.
@@ -5264,6 +6296,26 @@ export interface components {
             shared_by_name?: string | null;
             /** View Count */
             view_count: number;
+        };
+        /** PublicLesson */
+        PublicLesson: {
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "pricing" | "product" | "growth" | "customers" | "hiring" | "operations" | "engineering" | "finance" | "other";
+            /** Lesson */
+            lesson: string;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "hit" | "partly" | "missed";
+            /**
+             * Resolved At
+             * Format: date-time
+             */
+            resolved_at: string;
         };
         /**
          * PublicShare
@@ -5428,6 +6480,28 @@ export interface components {
              */
             user_id: string;
         };
+        /** ReplacedAtDate */
+        ReplacedAtDate: {
+            /** Content */
+            content: string;
+            /**
+             * Decided At
+             * Format: date-time
+             */
+            decided_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            meeting: components["schemas"]["MeetingAtDate"];
+            /**
+             * Replaced At
+             * Format: date-time
+             */
+            replaced_at: string;
+            replaced_by: components["schemas"]["DecisionRef"];
+        };
         /** RetrievalScope */
         RetrievalScope: {
             /** Meetings */
@@ -5491,6 +6565,17 @@ export interface components {
             actions: components["schemas"]["RetrievedAction"][];
             /** Decisions */
             decisions: components["schemas"]["RetrievedDecision"][];
+        };
+        /** Reversal */
+        Reversal: {
+            caused_by?: components["schemas"]["MeetingAtDate"] | null;
+            new: components["schemas"]["DecisionRef"];
+            old: components["schemas"]["DecisionRef"];
+            /**
+             * Replaced At
+             * Format: date-time
+             */
+            replaced_at: string;
         };
         /** ReversalAction */
         ReversalAction: {
@@ -5734,6 +6819,49 @@ export interface components {
             status: string;
             /** Title */
             title: string | null;
+        };
+        /** Snapshot */
+        Snapshot: {
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            counts: components["schemas"]["SnapshotCounts"];
+            /** Decisions */
+            decisions: components["schemas"]["DecisionAtDate"][];
+            /** Earliest */
+            earliest?: string | null;
+            /** Goals */
+            goals: components["schemas"]["GoalAtDate"][];
+            /** Promises */
+            promises: components["schemas"]["PromiseAtDate"][];
+            /** Replaced */
+            replaced: components["schemas"]["ReplacedAtDate"][];
+            /** Topic */
+            topic?: string | null;
+            /**
+             * Truncated
+             * @default false
+             */
+            truncated: boolean;
+        };
+        /** SnapshotCounts */
+        SnapshotCounts: {
+            /** Bets Waiting */
+            bets_waiting: number;
+            /** Goals Active */
+            goals_active: number;
+            /** In Force */
+            in_force: number;
+            /** Meetings */
+            meetings: number;
+            /** Promises Open */
+            promises_open: number;
+            /** Promises Overdue */
+            promises_overdue: number;
+            /** Replaced */
+            replaced: number;
         };
         /** SourceAction */
         SourceAction: {
@@ -6120,12 +7248,87 @@ export interface components {
             /** Role */
             role?: string | null;
         };
+        /** TeamOption */
+        TeamOption: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+        };
         /** TemplateAgendaItem */
         TemplateAgendaItem: {
             /** Duration Minutes */
             duration_minutes?: number | null;
             /** Title */
             title: string;
+        };
+        /** Timeline */
+        Timeline: {
+            /** From */
+            from?: string | null;
+            /** In Force Now */
+            in_force_now: number;
+            /** Meetings */
+            meetings: number;
+            /** Steps */
+            steps: components["schemas"]["TimelineStep"][];
+            /** To */
+            to?: string | null;
+            /** Topic */
+            topic: string;
+        };
+        /** TimelineStep */
+        TimelineStep: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Bet Statement */
+            bet_statement?: string | null;
+            decision: components["schemas"]["DecisionRef"];
+            /** In Force Now */
+            in_force_now: boolean;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "decided" | "replaced" | "bet_resolved";
+            /** Outcome */
+            outcome?: string | null;
+            /** Quote */
+            quote?: string | null;
+            /** Quote Speaker Name */
+            quote_speaker_name?: string | null;
+            /** Rationale */
+            rationale?: string | null;
+            replaces?: components["schemas"]["DecisionRef"] | null;
+        };
+        /** Totals */
+        Totals: {
+            /** Bets */
+            bets: number;
+            /** Brier */
+            brier?: number | null;
+            /** Due */
+            due: number;
+            /** Hit */
+            hit: number;
+            /** Hit Rate */
+            hit_rate?: number | null;
+            /** Missed */
+            missed: number;
+            /** Open */
+            open: number;
+            /** Partly */
+            partly: number;
+            /** Proposed */
+            proposed: number;
+            /** Resolved */
+            resolved: number;
         };
         /**
          * TranscriptChunk
@@ -6952,6 +8155,132 @@ export interface operations {
             };
         };
     };
+    calibration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Calibration"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    hints: {
+        parameters: {
+            query: {
+                q: string;
+                category?: ("pricing" | "product" | "growth" | "customers" | "hiring" | "operations" | "engineering" | "finance" | "other") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BetHints"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    my_bets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyBets"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     start_capture: {
         parameters: {
             query?: never;
@@ -7711,6 +9040,375 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Decision"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_bet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                decision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionBetView"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    save_bet: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                decision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BetUpsert"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionBetView"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    accept_bet: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                decision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionBetView"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    dismiss_bet: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                decision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionBetView"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    reopen_bet: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                decision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionBetView"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    resolve_bet: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                decision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BetResolve"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionBetView"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    restore_bet: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                decision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionBetView"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
@@ -11865,6 +13563,158 @@ export interface operations {
             };
         };
     };
+    diff: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                topic?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Diff"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    snapshot: {
+        parameters: {
+            query: {
+                as_of: string;
+                topic?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Snapshot"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    timeline: {
+        parameters: {
+            query: {
+                topic: string;
+                from?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Timeline"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     rate_note: {
         parameters: {
             query?: never;
@@ -12175,6 +14025,111 @@ export interface operations {
             };
             /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    due_bets: {
+        parameters: {
+            query: {
+                as_of: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DueBets"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    check_bet: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                bet_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckResult"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

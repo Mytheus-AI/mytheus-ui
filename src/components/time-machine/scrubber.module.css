@@ -1,0 +1,48 @@
+/* The time machine's date scrubber: the track is drawn by the component (a hairline with the
+   coral line up to the day), so the native range only keeps its thumb. Tokens only. */
+.range {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+.range::-webkit-slider-runnable-track {
+  height: 21px;
+  background: transparent;
+}
+.range::-moz-range-track {
+  height: 21px;
+  background: transparent;
+}
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 21px;
+  width: 21px;
+  border-radius: 9999px;
+  background: var(--surface);
+  border: 2px solid var(--signal-line);
+  box-shadow: var(--sh-1);
+  transition: box-shadow 150ms var(--ease-out, ease-out);
+}
+.range::-moz-range-thumb {
+  height: 17px;
+  width: 17px;
+  border-radius: 9999px;
+  background: var(--surface);
+  border: 2px solid var(--signal-line);
+  box-shadow: var(--sh-1);
+}
+.range:focus {
+  outline: none;
+}
+.range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 5px var(--signal-soft);
+}
+.range:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 5px var(--signal-soft);
+}
+@media (prefers-reduced-motion: reduce) {
+  .range::-webkit-slider-thumb {
+    transition: none;
+  }
+}

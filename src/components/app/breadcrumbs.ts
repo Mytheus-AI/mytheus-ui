@@ -21,6 +21,8 @@ export function breadcrumbFor(pathname: string | null, current: string | null = 
     return [meetings, { label: parent || "Meeting", href: `/meetings/${m[1]}` }, { label: current || leaf }];
   }
   if (new RegExp(`^/meetings/(?!new$)${ID}$`).test(p)) return [meetings, { label: current || parent || "Meeting" }];
+  if ((m = p.match(/^\/decisions\/(time-machine|calls)$/)))
+    return [{ label: "Decisions", href: "/decisions" }, { label: current || (m[1] === "calls" ? "How good are our calls" : "Time machine") }];
   if (new RegExp(`^/people/${ID}$`).test(p)) return [{ label: "People", href: "/people" }, { label: current || "Person" }];
   if (new RegExp(`^/settings/integrations/callback/${ID}$`).test(p))
     return [{ label: "Integrations", href: "/settings/integrations" }, { label: current || "Connecting" }];
