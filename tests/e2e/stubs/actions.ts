@@ -313,3 +313,73 @@ export async function decideAppConsent(input: { request: string; decision: "appr
 export async function disconnectConnectedApp() {
   return { ok: true as const };
 }
+// Decisions that follow you: dismissing a challenge and answering a request to reopen a decision.
+const REOPEN_BASE = {
+  id: "11111111-2222-4333-8444-555555555555",
+  decision_id: "d-1",
+  decision_content: "Price the team plan at $18 a seat",
+  meeting_id: "m-1",
+  meeting_title: "Pricing review",
+  requested_by: { id: "u-raj", name: "Raj Patel" },
+  owner: { id: "u-maya", name: "Maya Chen" },
+  reason: null,
+  quote: null,
+  source: "app" as const,
+  place_label: null,
+  link: null,
+  status: "pending" as const,
+  outcome: null,
+  follow_up_action_id: null,
+  revisit_meeting_id: null,
+  response_note: null,
+  created_at: "2026-11-11T09:00:00Z",
+  resolved_at: null,
+  viewer_role: "requester" as const,
+};
+export async function dismissChallenge(id: string) {
+  return {
+    ok: true as const,
+    challenge: {
+      id,
+      decision_id: "d-1",
+      source: "slack" as const,
+      place_label: "#pricing",
+      link: null,
+      quote: "Dismissed",
+      why: "",
+      relation: "contradicts" as const,
+      confidence: 0.8,
+      status: "dismissed" as const,
+      author: null,
+      created_at: "2026-11-11T09:00:00Z",
+      reopen_request_id: null,
+    },
+  };
+}
+export async function askToReopen(_decisionId: string, _meetingId: string, reason: string) {
+  return { ok: true as const, request: { ...REOPEN_BASE, id: "22222222-2222-4333-8444-555555555555", reason: reason || null } };
+}
+export async function withdrawReopen(id: string) {
+  return { ok: true as const, request: { ...REOPEN_BASE, id, status: "withdrawn" as const } };
+}
+export async function acceptReopen(id: string, body: { outcome: "revisit" | "follow_up"; note?: string }) {
+  return {
+    ok: true as const,
+    request: {
+      ...REOPEN_BASE,
+      id,
+      viewer_role: "owner" as const,
+      status: "accepted" as const,
+      outcome: body.outcome,
+      revisit_meeting_id: body.outcome === "revisit" ? "m-revisit" : null,
+      follow_up_action_id: body.outcome === "follow_up" ? "a-follow" : null,
+      response_note: body.note ?? null,
+    },
+  };
+}
+export async function declineReopen(id: string, note?: string) {
+  return { ok: true as const, request: { ...REOPEN_BASE, id, viewer_role: "owner" as const, status: "declined" as const, response_note: note ?? null } };
+}
+export async function answerStatusRequest() {
+  return { ok: false as const, message: "Not available in this test." };
+}

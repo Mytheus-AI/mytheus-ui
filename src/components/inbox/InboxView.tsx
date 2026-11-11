@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight,
   ArrowsClockwise,
+  ArrowsCounterClockwise,
   Bell,
   Binoculars,
   Check,
@@ -15,6 +16,7 @@ import {
   Hourglass,
   Newspaper,
   Scales,
+  ShieldWarning,
   Warning,
   X,
 } from "@phosphor-icons/react";
@@ -27,6 +29,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { textLinkClass } from "@/components/ui/TextLink";
 import { LocalWhen } from "@/components/status/LocalWhen";
 import { ReversalActions, taskOf } from "@/components/reversals/ReversalActions";
+import { ReopenAnswer, ReopenOutcomeLine } from "@/components/decisions/ReopenRequests";
 import { StatusAnswerRow } from "@/components/status/StatusAnswerRow";
 import { useStatusAnswers } from "@/components/status/useStatusAnswers";
 import { dismissAlert, markAlertRead } from "@/app/actions/notifications";
@@ -84,6 +87,9 @@ const NOTE_ICON = {
   decision_changed: ArrowsClockwise,
   promise_drift: Hourglass,
   weekly_digest: Newspaper,
+  decision_challenged: ShieldWarning,
+  reopen_requested: ArrowsCounterClockwise,
+  reopen_resolved: ArrowsCounterClockwise,
 } as const;
 const NOTE_LABEL = {
   topic_watch: "Topic you watch",
@@ -93,6 +99,9 @@ const NOTE_LABEL = {
   decision_changed: "Decision changed",
   promise_drift: "Promise past due",
   weekly_digest: "Weekly digest",
+  decision_challenged: "Decision challenged",
+  reopen_requested: "Reopen request",
+  reopen_resolved: "Reopen request answered",
 } as const;
 
 function asFilter(v: string | null): InboxFilter {
@@ -419,7 +428,7 @@ function rowHref(item: InboxItem | undefined): string | null {
 
 function GroupHead({ label, n }: { label: string; n: number }) {
   return (
-    <li role="presentation" className="flex items-center gap-2.5 bg-surface-2 px-4 py-2.5 sm:px-[22px]">
+    <li className="flex items-center gap-2.5 bg-surface-2 px-4 py-2.5 sm:px-[22px]">
       <span className="text-[14px] font-semibold text-ink">{label}</span>
       <Chip className="tabular-nums">{n}</Chip>
     </li>
@@ -478,6 +487,10 @@ function NotificationRow({
             label={n.reversal?.action.content}
           />
         ) : null}
+        {n.kind === "reopen_requested" && n.reopen && n.reopen.viewer_role === "owner" ? (
+          <ReopenAnswer request={n.reopen} notificationId={item.id} />
+        ) : null}
+        {n.kind === "reopen_resolved" && n.reopen && n.reopen.status !== "pending" ? <ReopenOutcomeLine request={n.reopen} /> : null}
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-start">
         {n.unread ? (

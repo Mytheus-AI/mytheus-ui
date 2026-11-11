@@ -8,6 +8,8 @@
 
 import { apiSafe } from "@/lib/api/client";
 import { fetchDecisionReversals } from "@/lib/api/decision-reversals";
+import { fetchReopenRequests } from "@/lib/api/decision-challenges";
+import { reopenIdOf } from "@/lib/decision-challenges";
 import { fetchNotificationFeed } from "@/lib/api/notification-feed";
 import { fetchMyStatusRequests } from "@/lib/api/status-requests";
 import type { DashboardResponse } from "@/lib/api/types";
@@ -28,7 +30,7 @@ export async function loadInbox(nowMs = Date.now()): Promise<InboxRead> {
     fetchMyStatusRequests("pending").catch(() => null),
     apiSafe<DashboardResponse>("/bff/dashboard"),
   ]);
-  const notes = notifications ? await withReversals(notifications) : null;
+  const notes = notifications ? await withReopens(await withReversals(notifications)) : null;
   const reviewArm = dashboard.ok ? dashboard.data.needs_review : null;
   const reviewFailed = !reviewArm || reviewArm.status === "degraded";
   const failed: InboxArm[] = [];
@@ -53,5 +55,18 @@ async function withReversals(items: FeedItem[]): Promise<FeedItem[]> {
   return items.map((n) => {
     const id = reversalIdOf(n.sourceEventId);
     return id ? { ...n, reversal: byId.get(id) ?? null } : n;
+  });
+}
+
+/** A "reopen your decision" notification (or its answer) carries the request, so the owner can
+ *  accept or decline it in place and a request answered elsewhere shows its outcome. One read,
+ *  and only when there is one. */
+async function withReopens(items: FeedItem[]): Promise<FeedItem[]> {
+  if (!items.some((n) => reopenIdOf(n.sourceEventId))) return items;
+  const rows = await fetchReopenRequests("all", "all").catch(() => null);
+  const byId = new Map((rows ?? []).map((r) => [r.id, r]));
+  return items.map((n) => {
+    const id = reopenIdOf(n.sourceEventId);
+    return id ? { ...n, reopen: byId.get(id) ?? null } : n;
   });
 }

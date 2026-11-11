@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { ArrowRight, CheckCircle, ClockCounterClockwise, GitCommit, Scales, VideoCamera } from "@phosphor-icons/react/dist/ssr";
 import { Chip } from "@/components/ui/Chip";
@@ -13,6 +14,8 @@ import { fetchDecisionLineage, type LineageDecision } from "@/lib/api/lineage";
 import { loadDecisionReach } from "@/lib/api/decision-reach";
 import { resolveOrgContext } from "@/lib/api/org-context";
 import { DecisionReach } from "@/components/decisions/DecisionReach";
+import { ChallengesSection } from "@/components/decisions/ChallengesSection";
+import { ChallengesSkeleton } from "@/components/decisions/ChallengesStates";
 
 export const metadata: Metadata = { title: "Decision lineage | Mytheus" };
 
@@ -25,7 +28,12 @@ export const metadata: Metadata = { title: "Decision lineage | Mytheus" };
 
    Phase 4 reach: the aside shares the record (Copy share link, Export to Notion, Confluence or
    Slack). Every export and share carries this same lineage, built by the server as the person
-   may see it. */
+   may see it.
+
+   Decisions that follow you (Beyond the meeting, Layer 2): under the lineage, "Challenged in N
+   places" lists where people wrote something that goes against the decision, and the requests to
+   reopen it, streamed on its own so the lineage never waits. `?reopen=<id>` (the Inbox link)
+   focuses one request. */
 
 type ChainNode = {
   id: string;
@@ -77,9 +85,12 @@ async function loadChain(meetingId: string, decisionId: string): Promise<ChainNo
 
 export default async function DecisionLineagePage({
   params,
+  searchParams,
 }: {
   params: { meetingId: string; decisionId: string };
+  searchParams?: { reopen?: string | string[] };
 }) {
+  const focusReopenId = typeof searchParams?.reopen === "string" ? searchParams.reopen : null;
   const [chain, reach, org] = await Promise.all([
     loadChain(params.meetingId, params.decisionId),
     loadDecisionReach(params.decisionId).catch(() => null),
@@ -218,6 +229,16 @@ export default async function DecisionLineagePage({
             })}
           </ol>
         </SectionCard>
+        <div className="mt-5">
+          <Suspense fallback={<ChallengesSkeleton />}>
+            <ChallengesSection
+              decisionId={params.decisionId}
+              meetingId={params.meetingId}
+              superseded={superseded}
+              focusReopenId={focusReopenId}
+            />
+          </Suspense>
+        </div>
       </PageColumns>
     </Page>
   );

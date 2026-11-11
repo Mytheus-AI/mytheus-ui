@@ -18,10 +18,15 @@ export type FeedKind =
   | "reminder"
   | "decision_changed"
   | "promise_drift"
-  | "weekly_digest";
+  | "weekly_digest"
+  | "decision_challenged"
+  | "reopen_requested"
+  | "reopen_resolved";
 
 import type { DecisionReversal } from "../../lib/api/only-mytheus-types";
 import { parseSourceEvent } from "../../lib/reversals.ts";
+import type { ReopenRequest } from "../../lib/api/decision-challenges-types";
+import { parseFollowEvent } from "../../lib/decision-challenges.ts";
 
 export interface FeedRowInput {
   id: string;
@@ -56,6 +61,9 @@ export interface FeedItem {
   /** A decision reversal's own row, joined on the server so the Inbox can settle it in place;
    *  null when it could not be read (the row still offers the three choices). */
   reversal?: DecisionReversal | null;
+  /** A reopen request's own row (decisions that follow you), joined on the server so the owner can
+   *  answer it in place; null when it could not be read. */
+  reopen?: ReopenRequest | null;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -129,6 +137,49 @@ export function describeNotification(row: FeedRowInput): FeedItem {
       // the lineage page (which is keyed by that meeting) is reachable only through a server link.
       href: safeLink(row.link) ?? "/decisions",
       linkLabel: "See the decision",
+    };
+  }
+
+  // Decisions that follow you: your decision was challenged somewhere people work, someone asked
+  // you to reopen it, or the owner answered your request. Title, body and link come from the
+  // server; the decision page is the fallback link.
+  const follow = parseFollowEvent(str(p.source_event_id));
+  if (follow) {
+    const own = { ...base, sourceEventId: str(p.source_event_id), body: row.body, linkLabel: "Open the decision" };
+    const fallback = safeLink(row.link) ?? "/decisions";
+    if (follow.kind === "decision-challenge") {
+      const quote = clip(str(p.quote), 240);
+      const place = str(p.place_label);
+      return {
+        ...own,
+        kind: "decision_challenged",
+        // Attention, amber: something went against a decision you own.
+        priority: 2,
+        title: row.title || (place ? `Your decision was challenged in ${place}` : "Your decision was challenged"),
+        quote: quote || null,
+        href: fallback,
+      };
+    }
+    if (follow.kind === "decision-reopen") {
+      return {
+        ...own,
+        kind: "reopen_requested",
+        // A choice waits on you: amber.
+        priority: 2,
+        title: row.title || "Someone asked to reopen your decision",
+        quote: null,
+        href: fallback,
+        linkLabel: "See the request",
+      };
+    }
+    return {
+      ...own,
+      kind: "reopen_resolved",
+      // Informs, blue.
+      priority: 3,
+      title: row.title || "Your request to reopen a decision was answered",
+      quote: null,
+      href: fallback,
     };
   }
 
