@@ -2672,36 +2672,21 @@ export interface components {
             /** Status */
             status: string;
         };
-        /** DigestChange */
-        DigestChange: {
-            /**
-             * Changed At
-             * Format: date-time
-             */
-            changed_at: string;
-            /** Matched Topics */
-            matched_topics?: string[];
-            /**
-             * Meeting Id
-             * Format: uuid
-             */
-            meeting_id: string;
-            /** Meeting Title */
-            meeting_title?: string | null;
-            /** New Content */
-            new_content: string;
-            /**
-             * New Decision Id
-             * Format: uuid
-             */
-            new_decision_id: string;
-            /** Old Content */
-            old_content: string;
-            /**
-             * Old Decision Id
-             * Format: uuid
-             */
-            old_decision_id: string;
+        /** DigestAction */
+        DigestAction: {
+            /** Assignee Id */
+            assignee_id: string | null;
+            /** Content */
+            content: string;
+            /** Due Date */
+            due_date: string | null;
+            /** Status */
+            status: string;
+        };
+        /** DigestDecision */
+        DigestDecision: {
+            /** Content */
+            content: string;
         };
         /** DigestLatest */
         DigestLatest: {
@@ -2741,29 +2726,6 @@ export interface components {
              * @default true
              */
             weekly_enabled: boolean;
-        };
-        /** DigestPromise */
-        DigestPromise: {
-            /** Content */
-            content: string;
-            /** Due Date */
-            due_date?: string | null;
-            /** Due Hint */
-            due_hint?: string | null;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Kind
-             * @enum {string}
-             */
-            kind: "action" | "commitment";
-            /** Meeting Id */
-            meeting_id?: string | null;
-            /** Meeting Title */
-            meeting_title?: string | null;
         };
         /** DigestSummary */
         DigestSummary: {
@@ -4027,9 +3989,9 @@ export interface components {
         /** SlackDigest */
         SlackDigest: {
             /** Actions */
-            actions: components["schemas"]["services__core_api__routes__internal_integrations__DigestAction"][];
+            actions: components["schemas"]["DigestAction"][];
             /** Decisions */
-            decisions: components["schemas"]["services__core_api__routes__internal_integrations__DigestDecision"][];
+            decisions: components["schemas"]["DigestDecision"][];
             /**
              * Meeting Id
              * Format: uuid
@@ -4372,15 +4334,15 @@ export interface components {
         /** WeeklyDigest */
         WeeklyDigest: {
             /** Actions Assigned */
-            actions_assigned?: components["schemas"]["services__core_api__digest__DigestAction"][];
+            actions_assigned?: components["schemas"]["WeeklyDigestAction"][];
             /** Actions Closed */
-            actions_closed?: components["schemas"]["services__core_api__digest__DigestAction"][];
+            actions_closed?: components["schemas"]["WeeklyDigestAction"][];
             /** Created At */
             created_at?: string | null;
             /** Decision Changes */
-            decision_changes?: components["schemas"]["DigestChange"][];
+            decision_changes?: components["schemas"]["WeeklyDigestChange"][];
             /** Decisions */
-            decisions?: components["schemas"]["services__core_api__digest__DigestDecision"][];
+            decisions?: components["schemas"]["WeeklyDigestDecision"][];
             /** Id */
             id?: string | null;
             /**
@@ -4389,7 +4351,7 @@ export interface components {
              */
             item_count: number;
             /** Promises Due */
-            promises_due?: components["schemas"]["DigestPromise"][];
+            promises_due?: components["schemas"]["WeeklyDigestPromise"][];
             /** Topics */
             topics?: string[];
             /**
@@ -4402,6 +4364,104 @@ export interface components {
              * Format: date
              */
             week_start: string;
+        };
+        /** WeeklyDigestAction */
+        WeeklyDigestAction: {
+            /** Changed At */
+            changed_at?: string | null;
+            /** Content */
+            content: string;
+            /** Due Date */
+            due_date?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Meeting Id */
+            meeting_id?: string | null;
+            /** Meeting Title */
+            meeting_title?: string | null;
+            /** Status */
+            status: string;
+        };
+        /** WeeklyDigestChange */
+        WeeklyDigestChange: {
+            /**
+             * Changed At
+             * Format: date-time
+             */
+            changed_at: string;
+            /** Matched Topics */
+            matched_topics?: string[];
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Meeting Title */
+            meeting_title?: string | null;
+            /** New Content */
+            new_content: string;
+            /**
+             * New Decision Id
+             * Format: uuid
+             */
+            new_decision_id: string;
+            /** Old Content */
+            old_content: string;
+            /**
+             * Old Decision Id
+             * Format: uuid
+             */
+            old_decision_id: string;
+        };
+        /** WeeklyDigestDecision */
+        WeeklyDigestDecision: {
+            /** Content */
+            content: string;
+            /**
+             * Decided At
+             * Format: date-time
+             */
+            decided_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Matched Topics */
+            matched_topics?: string[];
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Meeting Title */
+            meeting_title?: string | null;
+        };
+        /** WeeklyDigestPromise */
+        WeeklyDigestPromise: {
+            /** Content */
+            content: string;
+            /** Due Date */
+            due_date?: string | null;
+            /** Due Hint */
+            due_hint?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "action" | "commitment";
+            /** Meeting Id */
+            meeting_id?: string | null;
+            /** Meeting Title */
+            meeting_title?: string | null;
         };
         /** WeeklyRun */
         WeeklyRun: {
@@ -4471,66 +4531,6 @@ export interface components {
         WorklogList: {
             /** Items */
             items: components["schemas"]["Worklog"][];
-        };
-        /** DigestAction */
-        services__core_api__digest__DigestAction: {
-            /** Changed At */
-            changed_at?: string | null;
-            /** Content */
-            content: string;
-            /** Due Date */
-            due_date?: string | null;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Meeting Id */
-            meeting_id?: string | null;
-            /** Meeting Title */
-            meeting_title?: string | null;
-            /** Status */
-            status: string;
-        };
-        /** DigestDecision */
-        services__core_api__digest__DigestDecision: {
-            /** Content */
-            content: string;
-            /**
-             * Decided At
-             * Format: date-time
-             */
-            decided_at: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Matched Topics */
-            matched_topics?: string[];
-            /**
-             * Meeting Id
-             * Format: uuid
-             */
-            meeting_id: string;
-            /** Meeting Title */
-            meeting_title?: string | null;
-        };
-        /** DigestAction */
-        services__core_api__routes__internal_integrations__DigestAction: {
-            /** Assignee Id */
-            assignee_id: string | null;
-            /** Content */
-            content: string;
-            /** Due Date */
-            due_date: string | null;
-            /** Status */
-            status: string;
-        };
-        /** DigestDecision */
-        services__core_api__routes__internal_integrations__DigestDecision: {
-            /** Content */
-            content: string;
         };
     };
     responses: never;

@@ -61,11 +61,11 @@ type DigestLists = "topics" | "decisions" | "decision_changes" | "actions_assign
 /** The same, with every list present and `id` / `created_at` explicit (`normalizeDigest`). */
 export type WeeklyDigest = Omit<WeeklyDigestWire, DigestLists | "id" | "created_at"> &
   Required<Pick<WeeklyDigestWire, DigestLists | "id" | "created_at">>;
-// Element types are taken from the digest itself: the generator gives two of them long,
-// module-qualified names because another schema shares the short one.
+// Element types are taken from the digest itself (server schemas `WeeklyDigestDecision`,
+// `WeeklyDigestChange`, `WeeklyDigestAction`, `WeeklyDigestPromise`).
 export type DigestDecision = WeeklyDigest["decisions"][number];
-export type DigestDecisionChange = CoreApi["DigestChange"];
+export type DigestDecisionChange = WeeklyDigest["decision_changes"][number];
 export type DigestAction = WeeklyDigest["actions_assigned"][number];
-export type DigestPromise = CoreApi["DigestPromise"];
+export type DigestPromise = WeeklyDigest["promises_due"][number];
 export type LatestDigestWire = CoreApi["DigestLatest"];
 export type LatestDigest = { digest: WeeklyDigest | null; next_run_at: string };
