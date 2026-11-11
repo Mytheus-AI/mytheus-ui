@@ -11,6 +11,7 @@ import { notifyError, notifySuccess } from "@/lib/toast";
 import { holdTheLine, joinFromInterruption, listPositions, sendView } from "@/app/actions/listening";
 import type { Interruption, StandingPosition } from "@/lib/api/listening-types";
 import { MAX_HOLD, MAX_VIEW, preselectPositions } from "@/lib/listening";
+import { Bone, LoadingLabel } from "@/components/ui/Page";
 
 /* The three answers to an interruption, in one place, so the live toast, the Inbox row and the
    Listening page behave alike:
@@ -251,9 +252,10 @@ function HoldLineDialog({ interruption, onClose, onHeld }: { interruption: Inter
       }
     >
       {loaded.state === "loading" ? (
-        <div role="status" aria-label="Loading your lines" className="space-y-2.5">
+        <div aria-busy className="space-y-2.5">
+          <LoadingLabel label="Loading your lines" />
           {[0, 1, 2].map((k) => (
-            <div key={k} className="h-14 animate-pulse rounded-ctl bg-bg-2 motion-reduce:animate-none" />
+            <Bone key={k} className="h-14" />
           ))}
         </div>
       ) : loaded.state === "error" ? (

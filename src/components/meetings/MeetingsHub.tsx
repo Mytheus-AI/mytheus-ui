@@ -9,7 +9,7 @@ import { Card, CardBody, CardHead } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { Bone, PageColumns } from "@/components/ui/Page";
+import { Bone, LoadingLabel, PageColumns } from "@/components/ui/Page";
 import { initials, toneOf } from "@/components/room/tone";
 import type { MeetingTemplate, OrgGoal } from "@/lib/api/meeting-brain-types";
 import { NewMeeting, type NewMeetingMe } from "./NewMeeting";
@@ -59,7 +59,8 @@ const wkNumber = "text-[22px] font-bold leading-[1.15] tracking-[-0.02em] text-i
 
 function SkeletonRows() {
   return (
-    <div role="status" aria-label="Loading meetings">
+    <div aria-busy>
+      <LoadingLabel label="Loading meetings" />
       <div className="mt-group-head" aria-hidden="true">
         <Bone className="h-[22px] w-[120px]" />
       </div>
