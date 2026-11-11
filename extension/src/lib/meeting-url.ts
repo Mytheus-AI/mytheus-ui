@@ -136,3 +136,13 @@ export function pickMeetingTab<T extends TabCandidate>(tabs: readonly T[]): T | 
     null
   );
 }
+
+/** Match patterns for the meeting hosts, for `chrome.tabs.query({ url })`. Kept in step with the
+ * manifest's content-script matches in `scripts/build.mjs`. */
+export const MEETING_URL_PATTERNS: string[] = [
+  "https://meet.google.com/*",
+  "https://teams.microsoft.com/*",
+  "https://teams.live.com/*",
+  "https://teams.cloud.microsoft/*",
+  "https://*.zoom.us/wc/*",
+];
