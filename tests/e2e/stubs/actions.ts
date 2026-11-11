@@ -304,3 +304,12 @@ export async function shareClip(meetingId: string, clipId: string, input: { incl
 export async function revokeClipLink() {
   return { ok: true };
 }
+// Connecting an app over OAuth (the consent page and Connected apps). The consent answer returns
+// to this same page with a hash, so the test can watch the "returning you" state without leaving.
+export async function decideAppConsent(input: { request: string; decision: "approve" | "deny" }) {
+  if (input.request === "expired") return { ok: false as const, message: "This request can no longer be approved.", problem: "expired_request" as const };
+  return { ok: true as const, decision: input.decision, redirectTo: `${window.location.href.split("#")[0]}#returned-${input.decision}` };
+}
+export async function disconnectConnectedApp() {
+  return { ok: true as const };
+}
