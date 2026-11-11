@@ -1483,7 +1483,8 @@ export interface components {
         /**
          * Member
          * @description One person in the caller's tenant: who to show in a members list or an invite picker.
-         *     Names are not stored here (Clerk owns them); clients join on `clerk_user_id` for display.
+         *     `display_name` is the person's real name as synced from Clerk (or set by the person); null
+         *     until known, in which case clients join on `clerk_user_id` or fall back to the email.
          *     `agent_name` / `agent_avatar_seed` let a meeting room label everyone's agent (ADR-0038 D3);
          *     null means the UI's default ("{first name}'s agent", a seed derived from the user id).
          */
@@ -1496,6 +1497,8 @@ export interface components {
             avatar_url: string | null;
             /** Clerk User Id */
             clerk_user_id: string | null;
+            /** Display Name */
+            display_name?: string | null;
             /** Email */
             email: string;
             /**
@@ -2103,6 +2106,8 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Display Name */
+            display_name?: string | null;
             /** Email */
             email: string;
             /**
@@ -2148,6 +2153,8 @@ export interface components {
             agent_personality?: ("balanced" | "concise" | "detailed" | "direct" | "friendly") | null;
             /** Bio */
             bio?: string | null;
+            /** Display Name */
+            display_name?: string | null;
             /** Ignore Topics */
             ignore_topics?: string[] | null;
             /** Listen For */

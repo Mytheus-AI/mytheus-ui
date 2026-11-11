@@ -7,6 +7,7 @@ import { profileTag } from "@/lib/api/org-context";
 import { fetchMyProfile } from "@/lib/api/profile";
 import {
   fieldFromDetail,
+  fullNameFrom,
   normalizeProfile,
   validatePersona,
   validateProfile,
@@ -103,4 +104,16 @@ export async function saveAgentPersona(input: PersonaInput): Promise<SaveResult<
   const checked = validatePersona(input);
   if (!checked.ok) return { ok: false, message: "A few details need a look.", fieldErrors: checked.errors };
   return patchMe(checked.value, PERSONA_FIELDS);
+}
+
+/**
+ * Tell Mytheus the caller's real name after they change it in Clerk, so everything the backend
+ * writes (briefings, "{first name}'s agent", owner names) uses it instead of a name made from
+ * the email. Self only; the API stores a blank name as NULL. Never throws: the Clerk save has
+ * already happened, and the next app render's sync retries a name that did not land here.
+ */
+export async function saveDisplayName(name: string): Promise<boolean> {
+  const display_name = fullNameFrom(name, null);
+  const result = await patchMe({ display_name }, [] as const).catch(() => null);
+  return !!result?.ok;
 }

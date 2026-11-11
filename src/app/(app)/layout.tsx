@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { OrgProvider } from "@/lib/org-context";
-import { resolveOrgContext } from "@/lib/api/org-context";
+import { myClerkFullName, resolveOrgContext } from "@/lib/api/org-context";
 import { AppShell } from "@/components/app/AppShell";
 import { LiveInterruptions } from "@/components/listening/LiveInterruptions";
 import type { SidebarAgent } from "@/components/app/Sidebar";
-import { fetchMyProfile } from "@/lib/api/profile";
+import { fetchMyProfile, syncDisplayName } from "@/lib/api/profile";
 import { agentDisplayName, agentSeed } from "@/lib/api/profile-types";
 import "@/styles/app-theme.css";
 
@@ -32,6 +32,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // A failed read leaves the sidebar's agent tab generic rather than failing the shell.
   const [orgContext, profile] = await Promise.all([resolveOrgContext(), fetchMyProfile()]);
   if (!orgContext) redirect("/sign-in");
+
+  // Backfill the name Mytheus stores (briefings, "{first name}'s agent") from Clerk when the two
+  // differ. Not awaited and never throws: the shell renders without waiting on it.
+  void myClerkFullName()
+    .then((fullName) => syncDisplayName(profile, fullName))
+    .catch(() => {});
 
   const agent: SidebarAgent | null = profile
     ? {

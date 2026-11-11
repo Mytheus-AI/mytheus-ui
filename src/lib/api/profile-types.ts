@@ -30,6 +30,8 @@ export type UserProfile = {
   agent_avatar_seed: string | null;
   agent_personality: AgentPersonality;
   agent_instructions: string | null;
+  /** The person's real name as Mytheus stores it (from Clerk), or null when unknown. */
+  display_name: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -46,6 +48,8 @@ export type UserProfileUpdate = {
   agent_avatar_seed?: string | null;
   agent_personality?: AgentPersonality;
   agent_instructions?: string | null;
+  /** Self only. Trimmed by the API; blank stores NULL. At most `LIMITS.displayName`. */
+  display_name?: string | null;
 };
 
 /* ---------------- limits (ADR-0038 D1, D2) ---------------- */
@@ -60,7 +64,36 @@ export const LIMITS = {
   ignoreTopics: { max: 15, itemMax: 100 },
   agentName: 40,
   agentInstructions: 500,
+  displayName: 80,
 } as const;
+
+/* ---------------- the person's name ---------------- */
+
+/** A Clerk first + last name as the API stores it: whitespace collapsed, trimmed, at most
+    `LIMITS.displayName` characters. "" when there is no name. */
+export function fullNameFrom(first: string | null | undefined, last: string | null | undefined): string {
+  return [first, last]
+    .filter((p): p is string => typeof p === "string")
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, LIMITS.displayName)
+    .trim();
+}
+
+/** Whether the stored `display_name` should be set to Clerk's full name: only for a real name
+    that differs from what is stored. An empty Clerk name never clears a stored one. */
+export function needsNameSync(clerkFullName: string, stored: string | null | undefined): boolean {
+  const name = fullNameFrom(clerkFullName, null);
+  return name !== "" && name !== (stored ?? "").trim();
+}
+
+/** The name to show for a person from backend data: the stored name when there is one, else
+    the given fallback (Clerk's name, or a name made from the email). */
+export function personName(displayName: string | null | undefined, fallback: string): string {
+  const stored = typeof displayName === "string" ? displayName.trim() : "";
+  return stored || fallback;
+}
 
 export function isPersonality(value: unknown): value is AgentPersonality {
   return typeof value === "string" && (PERSONALITIES as readonly string[]).includes(value);
@@ -106,6 +139,7 @@ export function normalizeProfile(raw: Partial<UserProfile> & { id: string }): Us
     agent_avatar_seed: isDoodleSeed(raw.agent_avatar_seed) ? raw.agent_avatar_seed : null,
     agent_personality: isPersonality(raw.agent_personality) ? raw.agent_personality : "balanced",
     agent_instructions: text(raw.agent_instructions),
+    display_name: text(raw.display_name)?.trim() ?? null,
     created_at: raw.created_at ?? "",
     updated_at: raw.updated_at ?? "",
   };

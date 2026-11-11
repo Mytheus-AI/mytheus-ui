@@ -1,14 +1,15 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { apiSafe } from "./client";
+import { personName } from "./profile-types";
 import type { AgentPersonality, MemberAgentFields } from "./meeting-agenda-types";
 
 /* Workspace members for the members list and the invite pickers. SERVER-ONLY (it uses the
    session and Clerk's backend client).
 
    The tenant's member list comes from identity-tenant-service (`GET /users`): internal user ids,
-   the only ids a meeting invite accepts, plus each person's access tier. Names live in Clerk,
-   not in our `users` table, so they are joined on `clerk_user_id` here; a person Clerk cannot
-   name falls back to their email. */
+   the only ids a meeting invite accepts, plus each person's access tier, and the person's name
+   as Mytheus stores it (`display_name`, copied from Clerk). Where that is still empty the name is
+   joined from Clerk on `clerk_user_id`; a person neither can name falls back to their email. */
 
 export type MemberTier = "owner" | "admin" | "member";
 
@@ -34,6 +35,8 @@ type ApiMember = {
   avatar_url: string | null;
   role: string | null;
   tier: string | null;
+  /** The stored real name; absent on an older backend. */
+  display_name?: string | null;
 } & MemberAgentFields;
 
 function asTier(t: string | null): MemberTier | null {
@@ -67,7 +70,7 @@ export async function listMembers(): Promise<WorkspaceMemberView[] | null> {
     const fromClerk = m.clerk_user_id ? names.get(m.clerk_user_id) : undefined;
     return {
       id: m.id,
-      name: fromClerk?.name || m.email.split("@")[0] || m.email,
+      name: personName(m.display_name, fromClerk?.name || m.email.split("@")[0] || m.email),
       email: m.email,
       imageUrl: fromClerk?.imageUrl ?? m.avatar_url,
       tier: asTier(m.tier),

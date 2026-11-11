@@ -7,7 +7,7 @@ import { LockSimple } from "@phosphor-icons/react";
 import { DoodlePicker } from "@/components/ui/DoodlePicker";
 import { defaultDoodleSeed, isDoodleSeed } from "@/lib/doodle";
 import { saveDoodle } from "@/lib/doodle-client";
-import { refreshMyProfile, saveWorkingProfile } from "@/app/actions/profile";
+import { refreshMyProfile, saveDisplayName, saveWorkingProfile } from "@/app/actions/profile";
 import { LIMITS, type FieldErrors, type ProfileField, type UserProfile } from "@/lib/api/profile-types";
 import { useOrgContext } from "@/lib/org-context";
 import { Avatar } from "@/components/ui/Avatar";
@@ -21,7 +21,8 @@ import { notifyError, notifySuccess } from "@/lib/toast";
 import { ChipInput } from "./ChipInput";
 
 /* Profile: who you are, and the working profile that tunes what your PersonalListener captures.
-   The name is your Clerk account's (saved there, then the cached profile is dropped); the role,
+   The name is your Clerk account's (saved there, then copied to `users.display_name` so the
+   backend greets you by it, then the cached profile is dropped); the role,
    what you work on, focus areas, listen for and ignore are `users` columns (ADR-0038 D1), read
    from `GET /users/me` and saved by `saveWorkingProfile`. The email comes from the sign-in, so it
    is shown read-only. When the profile cannot be loaded the card says so instead of showing
@@ -45,6 +46,10 @@ export function ProfilePanel({ profile }: { profile: UserProfile | null }) {
     setSaving(true);
     try {
       await clerkUser.update({ firstName, lastName: rest.join(" ") });
+      // Then Mytheus's own copy, which briefings and agent names read. Clerk is already saved,
+      // so a failure here is not the user's problem: the app layout's sync sets it on a later
+      // render. saveDisplayName never throws.
+      await saveDisplayName(trimmed);
       await refreshMyProfile();
       setSavedName(trimmed);
       setName(trimmed);
