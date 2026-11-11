@@ -101,9 +101,14 @@ class MockSocket {
         this.push("chat", { meetingId, userId: "clerk", senderId: "u-maya", content: String(p.content).trim(), clientMsgId: p.clientMsgId, sentAt: new Date().toISOString() });
         this.push("chat-saved", { meetingId, payload: { clientMsgId: p.clientMsgId, id: `row-${Date.now()}`, createdAt: new Date().toISOString() } });
         return { ok: true, persisted: true };
-      case "hand":
-        this.push("hand", { meetingId, payload: { userId: "u-maya", raised: p.raised, at: new Date().toISOString() } });
-        return { ok: true };
+      case "hand": {
+        // Your own hand, or (the host) someone else's coming down, as the gateway announces it.
+        const at = new Date().toISOString();
+        const userId = typeof p.userId === "string" ? p.userId : "u-maya";
+        const reason = typeof p.reason === "string" ? p.reason : p.raised ? "raised" : "lowered";
+        this.push("hand", { meetingId, payload: { userId, raised: p.raised, at, raisedAt: at, byUserId: "u-maya", reason } });
+        return { ok: true, raisedAt: at };
+      }
       case "reaction":
         this.push("reaction", { meetingId, payload: { id: `r-${Date.now()}`, userId: "u-maya", reaction: p.reaction, at: new Date().toISOString() } });
         return { ok: true };

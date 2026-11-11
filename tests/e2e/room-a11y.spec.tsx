@@ -266,7 +266,8 @@ for (const theme of ["light", "dark"] as const) {
     await expect.poll(() => page.evaluate(() => window.__gatewayLog!.some((e) => e.event === "wrap-up"))).toBe(true);
     expect(await axe(page)).toEqual([]);
     // One-click owner, then confirm.
-    await sheet.getByRole("combobox", { name: "No owner yet" }).selectOption("u-raj");
+    await sheet.getByRole("combobox", { name: "Assign: Write the release notes" }).click();
+    await sheet.getByRole("option", { name: "Raj Patel" }).click();
     await expect(sheet.locator(".wu-owner").getByText("Raj Patel")).toBeVisible();
     await sheet.getByRole("button", { name: "Confirm: Write the release notes" }).click();
     await expect(sheet.getByText("Write the release notes")).toBeHidden();
