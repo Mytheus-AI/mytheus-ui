@@ -13,12 +13,12 @@
  */
 
 import { api } from "@/lib/api/client";
-import type { MeetingPrecheck, PrecheckRequest, StatusRequestsAsked } from "@/lib/api/only-mytheus-types";
+import type { MeetingPrecheckWire, PrecheckRequest, StatusRequestsAsked } from "@/lib/api/only-mytheus-types";
 
-export async function postMeetingPrecheck(body: PrecheckRequest): Promise<MeetingPrecheck> {
+export async function postMeetingPrecheck(body: PrecheckRequest): Promise<MeetingPrecheckWire> {
   // A read with a body: the server answers within about a second and a half, and the dialog
   // treats anything slower as "no hints", so this keeps a short budget of its own.
-  return api<MeetingPrecheck>("/bff/meetings/precheck", { method: "POST", body });
+  return api<MeetingPrecheckWire>("/bff/meetings/precheck", { method: "POST", body });
 }
 
 export async function postStatusRequests(actionIds: string[]): Promise<StatusRequestsAsked> {

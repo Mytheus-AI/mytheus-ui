@@ -60,7 +60,7 @@ export function ReversalActions({
 
   const afterServer = (res: Awaited<ReturnType<typeof resolveDecisionReversal>>, wanted: ReversalResolution) => {
     if (res.ok) {
-      setCurrent({ content: res.reversal.action.content, due_date: res.reversal.action.due_date });
+      setCurrent({ content: res.reversal.action.content, due_date: res.reversal.action.due_date ?? null });
       settle(res.reversal.status);
       if (notificationId) void markAlertRead(notificationId);
       onServerSettled?.();
@@ -69,7 +69,7 @@ export function ReversalActions({
     if (res.current) {
       // Settled elsewhere (another tab, the other screen): show what actually happened.
       const actual = res.current.status;
-      setCurrent({ content: res.current.action.content, due_date: res.current.action.due_date });
+      setCurrent({ content: res.current.action.content, due_date: res.current.action.due_date ?? null });
       settle(actual);
       const was = resolutionOf(actual);
       if (was && was !== wanted) notifyInfo("This was already settled", { description: RESOLUTION_COPY[was].outcome });
@@ -120,7 +120,7 @@ export function ReversalActions({
     setBusy(true);
     setError(null);
     const res = await resolveDecisionReversal(reversalId, "rescope", {
-      content: checked.body.content,
+      content: checked.body.content ?? undefined,
       due_date: checked.body.due_date,
     });
     setBusy(false);
@@ -272,5 +272,5 @@ export function ReversalActions({
 
 /** The task part of a reversal, for `ReversalActions`. */
 export function taskOf(r: DecisionReversal | null | undefined): Task | null {
-  return r ? { content: r.action.content, due_date: r.action.due_date } : null;
+  return r ? { content: r.action.content, due_date: r.action.due_date ?? null } : null;
 }

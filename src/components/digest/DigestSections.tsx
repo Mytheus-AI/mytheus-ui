@@ -33,7 +33,7 @@ const rowClass = "px-4 py-3.5 sm:px-[22px]";
 const titleLink =
   "rounded-ctl text-[15px] font-semibold leading-snug text-ink underline-offset-4 decoration-line-2 hover:underline";
 
-function MeetingMeta({ id, title, children }: { id: string | null; title: string | null; children?: ReactNode }) {
+function MeetingMeta({ id, title, children }: { id?: string | null; title?: string | null; children?: ReactNode }) {
   const href = meetingHref(id);
   return (
     <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-ink-3">
@@ -49,8 +49,8 @@ function MeetingMeta({ id, title, children }: { id: string | null; title: string
   );
 }
 
-function Topics({ topics }: { topics: string[] }) {
-  if (topics.length === 0) return null;
+function Topics({ topics }: { topics?: string[] }) {
+  if (!topics || topics.length === 0) return null;
   return (
     <>
       {topics.slice(0, 3).map((t) => (

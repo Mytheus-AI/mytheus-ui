@@ -57,3 +57,13 @@ test("promises say when they are due and where they lead", () => {
   assert.equal(promiseHref(c), "/work/promises");
   assert.equal(promiseDue({ ...c, due_hint: null }), "");
 });
+
+test("a digest with lists left out reads as empty lists", async () => {
+  const { normalizeDigest } = await import("../src/lib/digest.ts");
+  const d = normalizeDigest({ week_start: "2026-11-02", week_end: "2026-11-08", item_count: 0 });
+  assert.deepEqual(d.topics, []);
+  assert.deepEqual(d.promises_due, []);
+  assert.equal(d.id, null);
+  assert.equal(d.created_at, null);
+  assert.equal(isQuietWeek(d), true);
+});

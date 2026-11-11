@@ -14,14 +14,23 @@
  */
 
 import { api } from "@/lib/api/client";
-import type { DigestList, DigestPreferences, LatestDigest, WeeklyDigest } from "@/lib/api/only-mytheus-types";
+import type {
+  DigestList,
+  DigestPreferences,
+  LatestDigest,
+  LatestDigestWire,
+  WeeklyDigest,
+  WeeklyDigestWire,
+} from "@/lib/api/only-mytheus-types";
+import { normalizeDigest } from "@/lib/digest";
 
 export async function fetchLatestDigest(): Promise<LatestDigest> {
-  return api<LatestDigest>("/api/v1/digests/latest");
+  const body = await api<LatestDigestWire>("/api/v1/digests/latest");
+  return { digest: body?.digest ? normalizeDigest(body.digest) : null, next_run_at: body.next_run_at };
 }
 
 export async function fetchDigestPreview(): Promise<WeeklyDigest> {
-  return api<WeeklyDigest>("/api/v1/digests/preview");
+  return normalizeDigest(await api<WeeklyDigestWire>("/api/v1/digests/preview"));
 }
 
 export async function fetchDigestList(limit = 12): Promise<DigestList> {
@@ -29,7 +38,7 @@ export async function fetchDigestList(limit = 12): Promise<DigestList> {
 }
 
 export async function fetchDigest(id: string): Promise<WeeklyDigest> {
-  return api<WeeklyDigest>(`/api/v1/digests/${encodeURIComponent(id)}`);
+  return normalizeDigest(await api<WeeklyDigestWire>(`/api/v1/digests/${encodeURIComponent(id)}`));
 }
 
 export async function fetchDigestPreferences(): Promise<DigestPreferences> {

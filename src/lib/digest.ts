@@ -5,7 +5,31 @@
  * in UTC so the server render and the browser agree.
  */
 
-import type { DigestAction, DigestDecision, DigestDecisionChange, DigestPromise, WeeklyDigest } from "./api/only-mytheus-types";
+import type {
+  DigestAction,
+  DigestDecision,
+  DigestDecisionChange,
+  DigestPromise,
+  WeeklyDigest,
+  WeeklyDigestWire,
+} from "./api/only-mytheus-types";
+
+/** Every list present, so no screen guards each one: the server may leave an empty list out. */
+export function normalizeDigest(w: WeeklyDigestWire): WeeklyDigest {
+  const list = <T,>(v: T[] | null | undefined): T[] => (Array.isArray(v) ? v : []);
+  return {
+    ...w,
+    id: w.id ?? null,
+    created_at: w.created_at ?? null,
+    topics: list(w.topics),
+    decisions: list(w.decisions),
+    decision_changes: list(w.decision_changes),
+    actions_assigned: list(w.actions_assigned),
+    actions_closed: list(w.actions_closed),
+    promises_due: list(w.promises_due),
+    item_count: typeof w.item_count === "number" ? w.item_count : 0,
+  };
+}
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 

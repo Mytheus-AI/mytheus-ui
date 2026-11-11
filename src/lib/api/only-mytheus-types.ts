@@ -3,215 +3,69 @@
  * precheck, status requests asked from the precheck, and the weekly digest), all on core-api
  * except the precheck, which is a `bff` screen read.
  *
- * HAND-WRITTEN from the wave's API contract while the backend branch is built in parallel.
- * Once its OpenAPI documents are emitted, run `npm run generate:api` and these become aliases
- * onto the generated schemas, like `types.ts`.
+ * Every type is an alias onto the generated OpenAPI schemas (`npm run generate:api`), like
+ * `types.ts`. Two of them are also offered in a "view" shape whose lists are always present:
+ * the server may leave an empty list out, and `normalizeDigest` / the precheck route handler fill
+ * it in once at the boundary, so no screen has to guard every array.
  *
  * `snake_case`, because that is what the wire carries.
  */
 
+import type { components as BffSchemas } from "./generated/bff";
+import type { components as CoreApiSchemas } from "./generated/core-api";
+
+type Bff = BffSchemas["schemas"];
+type CoreApi = CoreApiSchemas["schemas"];
+
 /* ---------------- decision reversal ---------------- */
 
-export type ReversalStatus = "pending" | "kept" | "rescoped" | "closed";
-export type ReversalResolution = "keep" | "rescope" | "close";
-
-export interface ReversalDecision {
-  id: string;
-  content: string;
-  meeting_id: string;
-  meeting_title: string | null;
-  decided_at: string;
-}
-
-export interface ReversalAction {
-  id: string;
-  content: string;
-  due_date: string | null;
-  status: "confirmed" | "done" | "dismissed" | "proposed";
-  meeting_id: string | null;
-  meeting_title: string | null;
-}
-
-export interface DecisionReversal {
-  id: string;
-  status: ReversalStatus;
-  created_at: string;
-  resolved_at: string | null;
-  old_decision: ReversalDecision;
-  new_decision: ReversalDecision;
-  action: ReversalAction;
-}
-
-export interface DecisionReversalList {
-  items: DecisionReversal[];
-}
-
-export interface ReversalResolveBody {
-  resolution: ReversalResolution;
-  content?: string;
-  due_date?: string | null;
-}
+export type DecisionReversal = CoreApi["DecisionReversal"];
+export type DecisionReversalList = CoreApi["DecisionReversalList"];
+export type ReversalDecision = CoreApi["ReversalDecision"];
+export type ReversalAction = CoreApi["ReversalAction"];
+export type ReversalStatus = DecisionReversal["status"];
+export type ReversalResolveBody = CoreApi["ReversalResolve"];
+export type ReversalResolution = ReversalResolveBody["resolution"];
 
 /* ---------------- delegated answers ---------------- */
 
-export interface DelegatedStatement {
-  id: string;
-  text: string;
-  position: number;
-  updated_at: string;
-}
-
-export interface DelegatedAnswers {
-  meeting_id: string;
-  attendance: "live" | "agent";
-  editable: boolean;
-  max_statements: number;
-  max_chars: number;
-  statements: DelegatedStatement[];
-}
-
-export interface DelegatedAnswerEntry {
-  id: string;
-  question: string;
-  answer: string;
-  covered: boolean;
-  statement_id: string | null;
-  statement_text: string | null;
-  asked_by: string | null;
-  asked_by_name: string | null;
-  created_at: string;
-}
-
-export interface DelegatedAnswerLog {
-  items: DelegatedAnswerEntry[];
-}
+export type DelegatedAnswers = CoreApi["DelegatedAnswers"];
+export type DelegatedStatement = CoreApi["DelegatedStatement"];
+export type DelegatedAnswerLog = CoreApi["DelegatedAnswerLog"];
+export type DelegatedAnswerEntry = CoreApi["DelegatedAnswerEntry"];
 
 /* ---------------- should this be a meeting? ---------------- */
 
-export interface PrecheckRequest {
-  title: string;
-  agenda: string[];
-  participant_ids?: string[];
-}
+export type PrecheckRequest = Bff["PrecheckRequest"];
+export type PrecheckDecided = Bff["DecidedHint"];
+export type PrecheckStatusUpdate = Bff["StatusHint"];
+export type PrecheckStatusAction = Bff["StatusAction"];
+export type PrecheckRecentMeeting = Bff["RecentMeeting"];
+/** `POST /bff/meetings/precheck` as the server sends it (empty lists may be left out). */
+export type MeetingPrecheckWire = Bff["MeetingPrecheck"];
+/** The same, with every list present (the route handler fills them in). */
+export type MeetingPrecheck = MeetingPrecheckWire &
+  Required<Pick<MeetingPrecheckWire, "already_decided" | "status_updates" | "recent_meetings">>;
 
-export interface PrecheckDecided {
-  decision_id: string;
-  meeting_id: string;
-  meeting_title: string | null;
-  content: string;
-  decided_at: string;
-  score: number;
-  superseded_by: string | null;
-}
-
-export interface PrecheckStatusAction {
-  id: string;
-  content: string;
-  owner_user_id: string;
-  owner_name: string | null;
-  due_date: string | null;
-}
-
-export interface PrecheckStatusUpdate {
-  agenda_index: number;
-  text: string;
-  action: PrecheckStatusAction | null;
-}
-
-export interface PrecheckRecentMeeting {
-  meeting_id: string;
-  title: string;
-  when: string;
-}
-
-export interface MeetingPrecheck {
-  already_decided: PrecheckDecided[];
-  status_updates: PrecheckStatusUpdate[];
-  recent_meetings: PrecheckRecentMeeting[];
-  retrieval: "semantic" | "keyword";
-}
-
-export type StatusAskReason = "requested" | "already_pending" | "no_owner" | "not_open" | "own_action" | "not_found";
-
-export interface StatusRequestsAsked {
-  requested: number;
-  skipped: number;
-  items: { action_id: string; request_id: string | null; owner_name: string | null; reason: StatusAskReason }[];
-}
+export type StatusRequestsAsked = CoreApi["StatusRequestsAsked"];
+export type StatusAskReason = CoreApi["StatusAskItem"]["reason"];
 
 /* ---------------- weekly digest ---------------- */
 
-export interface DigestPreferences {
-  weekly_enabled: boolean;
-  email_enabled: boolean;
-}
-
-export interface DigestDecision {
-  id: string;
-  content: string;
-  meeting_id: string;
-  meeting_title: string | null;
-  decided_at: string;
-  matched_topics: string[];
-}
-
-export interface DigestDecisionChange {
-  old_decision_id: string;
-  old_content: string;
-  new_decision_id: string;
-  new_content: string;
-  meeting_id: string;
-  meeting_title: string | null;
-  changed_at: string;
-  matched_topics: string[];
-}
-
-export interface DigestAction {
-  id: string;
-  content: string;
-  meeting_id: string | null;
-  meeting_title: string | null;
-  due_date: string | null;
-  status: string;
-  changed_at: string | null;
-}
-
-export interface DigestPromise {
-  kind: "action" | "commitment";
-  id: string;
-  content: string;
-  due_date: string | null;
-  due_hint: string | null;
-  meeting_id: string | null;
-  meeting_title: string | null;
-}
-
-export interface WeeklyDigest {
-  id: string | null;
-  week_start: string;
-  week_end: string;
-  created_at: string | null;
-  topics: string[];
-  item_count: number;
-  decisions: DigestDecision[];
-  decision_changes: DigestDecisionChange[];
-  actions_assigned: DigestAction[];
-  actions_closed: DigestAction[];
-  promises_due: DigestPromise[];
-}
-
-export interface LatestDigest {
-  digest: WeeklyDigest | null;
-  next_run_at: string;
-}
-
-export interface DigestSummary {
-  id: string;
-  week_start: string;
-  item_count: number;
-  created_at: string;
-}
-
-export interface DigestList {
-  items: DigestSummary[];
-}
+export type DigestPreferences = CoreApi["DigestPreferences"];
+export type DigestSummary = CoreApi["DigestSummary"];
+export type DigestList = CoreApi["DigestList"];
+/** `WeeklyDigest` as the server sends it (empty lists may be left out). */
+export type WeeklyDigestWire = CoreApi["WeeklyDigest"];
+type DigestLists = "topics" | "decisions" | "decision_changes" | "actions_assigned" | "actions_closed" | "promises_due";
+/** The same, with every list present and `id` / `created_at` explicit (`normalizeDigest`). */
+export type WeeklyDigest = Omit<WeeklyDigestWire, DigestLists | "id" | "created_at"> &
+  Required<Pick<WeeklyDigestWire, DigestLists | "id" | "created_at">>;
+// Element types are taken from the digest itself: the generator gives two of them long,
+// module-qualified names because another schema shares the short one.
+export type DigestDecision = WeeklyDigest["decisions"][number];
+export type DigestDecisionChange = CoreApi["DigestChange"];
+export type DigestAction = WeeklyDigest["actions_assigned"][number];
+export type DigestPromise = CoreApi["DigestPromise"];
+export type LatestDigestWire = CoreApi["DigestLatest"];
+export type LatestDigest = { digest: WeeklyDigest | null; next_run_at: string };

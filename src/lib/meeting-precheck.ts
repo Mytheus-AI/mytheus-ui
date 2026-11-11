@@ -73,7 +73,7 @@ export function askableActions(r: MeetingPrecheck): { id: string; ownerName: str
   for (const s of r.status_updates) {
     if (!s.action || seen.has(s.action.id)) continue;
     seen.add(s.action.id);
-    out.push({ id: s.action.id, ownerName: s.action.owner_name, text: s.text });
+    out.push({ id: s.action.id, ownerName: s.action.owner_name ?? null, text: s.text });
   }
   return out.slice(0, PRECHECK_LIMITS.askMax);
 }
@@ -86,7 +86,7 @@ export function joinNames(names: readonly string[]): string {
 }
 
 /** First names of the owners, for "Raj, Priya and Diego". */
-function first(name: string | null): string | null {
+function first(name: string | null | undefined): string | null {
   return name?.trim().split(/\s+/)[0] || null;
 }
 
