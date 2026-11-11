@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { ArrowDown, ArrowUp, Plus, Sparkle, Target, Trash } from "@phosphor-icons/react";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { AGENDA_LIMITS } from "@/lib/api/meeting-agenda-types";
 import type { OrgGoal } from "@/lib/api/meeting-brain-types";
 import {
@@ -118,25 +119,23 @@ export function AgendaEditor({
                       onChange={(ev) => onChange(retitleRow(rows, row.key, ev.target.value))}
                     />
                   </label>
-                  <label className="ag-ed-owner" htmlFor={`${base}-owner`}>
-                    <span className="sr-only">Item {n} owner</span>
-                    <select
+                  <div className="ag-ed-owner">
+                    <Dropdown
                       id={`${base}-owner`}
+                      label={`Item ${n} owner`}
+                      size="md"
                       value={row.ownerId}
                       disabled={disabled}
-                      aria-invalid={e.owner ? true : undefined}
-                      aria-describedby={describedBy("owner")}
-                      onChange={(ev) => onChange(updateRow(rows, row.key, { ownerId: ev.target.value }))}
-                    >
-                      <option value="">No owner</option>
-                      {people.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                      {row.ownerId && !known.has(row.ownerId) ? <option value={row.ownerId}>Not in this meeting</option> : null}
-                    </select>
-                  </label>
+                      invalid={Boolean(e.owner)}
+                      describedBy={describedBy("owner")}
+                      options={[
+                        { value: "", label: "No owner" },
+                        ...people.map((p) => ({ value: p.id, label: p.name })),
+                        ...(row.ownerId && !known.has(row.ownerId) ? [{ value: row.ownerId, label: "Not in this meeting" }] : []),
+                      ]}
+                      onChange={(v) => onChange(updateRow(rows, row.key, { ownerId: v }))}
+                    />
+                  </div>
                   <label className="ag-ed-min" htmlFor={`${base}-min`}>
                     <span className="sr-only">Item {n} minutes</span>
                     <input
@@ -187,26 +186,23 @@ export function AgendaEditor({
                 {goals.length > 0 || row.source ? (
                   <div className="ag-ed-sub">
                     {goals.length > 0 ? (
-                      <label className="ag-ed-goal" htmlFor={`${base}-goal`}>
-                        <Target size={15} aria-hidden="true" />
-                        <span className="sr-only">Item {n} goal</span>
-                        <select
+                      <div className="ag-ed-goal">
+                        <Dropdown
                           id={`${base}-goal`}
+                          label={`Item ${n} goal`}
+                          size="sm"
+                          shape="round"
+                          icon={<Target size={15} />}
                           value={row.goalId ?? ""}
                           disabled={disabled}
-                          onChange={(ev) => onChange(updateRow(rows, row.key, { goalId: ev.target.value }))}
-                        >
-                          <option value="">No goal</option>
-                          {goals.map((g) => (
-                            <option key={g.id} value={g.id}>
-                              {g.period ? `${g.title}, ${g.period}` : g.title}
-                            </option>
-                          ))}
-                          {row.goalId && !goalIds.has(row.goalId) ? (
-                            <option value={row.goalId}>A goal that is no longer active</option>
-                          ) : null}
-                        </select>
-                      </label>
+                          options={[
+                            { value: "", label: "No goal" },
+                            ...goals.map((g) => ({ value: g.id, label: g.title, description: g.period ?? undefined })),
+                            ...(row.goalId && !goalIds.has(row.goalId) ? [{ value: row.goalId, label: "A goal that is no longer active" }] : []),
+                          ]}
+                          onChange={(v) => onChange(updateRow(rows, row.key, { goalId: v }))}
+                        />
+                      </div>
                     ) : null}
                     {row.source ? (
                       <span className="ag-ed-src">

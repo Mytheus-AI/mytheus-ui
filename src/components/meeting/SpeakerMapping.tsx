@@ -17,9 +17,9 @@
  */
 
 import { useState, useTransition } from "react";
-import { CaretDown } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHead } from "@/components/ui/Card";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { Chip } from "@/components/meetings/Chip";
 import { assignSpeaker } from "@/app/(app)/meetings/[meetingId]/transcript/actions";
 import type { MeetingSpeaker } from "@/lib/api/transcript";
@@ -115,22 +115,16 @@ export function SpeakerMapping({
                     Assign speaker {s.speaker_id}
                   </label>
                   {people.length > 0 ? (
-                    <span className="tx-field-wrap">
-                      <select
-                        id={`sp-${s.speaker_id}`}
-                        value={value}
-                        onChange={(e) => setDraft((d) => ({ ...d, [s.speaker_id]: e.target.value }))}
-                        className="tx-field"
-                      >
-                        <option value="">Choose a person...</option>
-                        {people.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </select>
-                      <CaretDown size={16} weight="bold" aria-hidden className="tx-field-chev" />
-                    </span>
+                    <Dropdown
+                      id={`sp-${s.speaker_id}`}
+                      label={`Assign speaker ${s.speaker_id}`}
+                      size="md"
+                      className="tx-field-wrap"
+                      value={value || null}
+                      placeholder="Choose a person..."
+                      options={people.map((p) => ({ value: p.id, label: p.name }))}
+                      onChange={(v) => setDraft((d) => ({ ...d, [s.speaker_id]: v }))}
+                    />
                   ) : (
                     <span className="tx-field-wrap">
                       <input

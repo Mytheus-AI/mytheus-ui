@@ -431,3 +431,313 @@ body {
     opacity: 1;
   }
 }
+
+/* ---------------- scrollbars ----------------
+   One thin, warm scrollbar on every scrolling surface (the app shell, dialogs, sidebars, lists,
+   the room's panels), in both themes. The thumb is a token (`--sb-thumb`, re-resolved on
+   `.mx-app` so it follows the dark set); older WebKit also turns it coral under the pointer. Browsers with the
+   standard properties (Chrome 121+, Firefox, Safari 18.2+ for the width) use them; older
+   WebKit draws the same look through ::-webkit-scrollbar, on fine pointers only, so phones and
+   tablets keep their native overlay bars and momentum scrolling untouched. */
+:root,
+.mx-app {
+  --sb-thumb: color-mix(in srgb, var(--ink-4) 62%, transparent);
+  --sb-thumb-hover: color-mix(in srgb, var(--signal-line) 78%, transparent);
+  --sb-track: transparent;
+}
+@supports (scrollbar-color: auto) {
+  html,
+  .mx-app,
+  .mx-app * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--sb-thumb) var(--sb-track);
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: var(--sb-track);
+  }
+  ::-webkit-scrollbar-thumb {
+    min-height: 32px;
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: padding-box;
+    background-color: var(--sb-thumb);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--sb-thumb-hover);
+  }
+}
+
+/* ---------------- the dropdown (components/ui/Dropdown.tsx) ----------------
+   Trigger: the form field (lg 44 px, 12 px radius, hairline border, coral ring when open), a
+   40 px control (md) or a compact 36 px one (sm); `round` is the pill for toolbars and filters. Panel: a surface card
+   with the warm shadow, 8 px inset so 12 px rows sit concentric in its 20 px corners; a bottom
+   sheet with large rows on a phone. Tokens only, both themes. */
+.dd {
+  position: relative;
+  min-width: 0;
+}
+.dd-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px 0 14px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+}
+.dd[data-size="md"] .dd-trigger {
+  height: 40px;
+  font-size: 14.5px;
+}
+.dd[data-size="sm"] .dd-trigger {
+  height: 36px;
+  padding: 0 10px 0 12px;
+  font-size: 14px;
+}
+.dd[data-shape="round"] .dd-trigger {
+  border-radius: 999px;
+}
+.dd[data-tone="soft"] .dd-trigger {
+  border-color: transparent;
+  background: var(--bg-2);
+}
+.dd[data-tone="ghost"] .dd-trigger {
+  border-color: transparent;
+  background: transparent;
+}
+.dd-trigger:hover:not(:disabled) {
+  border-color: var(--ink-4);
+}
+.dd[data-tone="soft"] .dd-trigger:hover:not(:disabled),
+.dd[data-tone="ghost"] .dd-trigger:hover:not(:disabled) {
+  border-color: transparent;
+  background: var(--bg-3);
+}
+.dd[data-tone="ghost"] .dd-trigger:hover:not(:disabled) {
+  background: var(--bg-2);
+}
+.dd-trigger[data-open] {
+  border-color: var(--signal);
+  box-shadow: 0 0 0 3px var(--signal-soft);
+}
+.dd-trigger[aria-invalid="true"] {
+  border-color: var(--priority-high);
+}
+.dd-trigger:disabled {
+  border-color: var(--line);
+  background: var(--surface-2);
+  color: var(--ink-3);
+  cursor: default;
+}
+.dd-trigger:disabled .dd-caret {
+  opacity: 0.4;
+}
+.dd-lead {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--ink-3);
+}
+.dd-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dd-trigger[data-placeholder] .dd-value {
+  color: var(--ink-3);
+}
+.dd-caret {
+  flex-shrink: 0;
+  color: var(--ink-3);
+  transition: transform 0.2s var(--ease-out);
+}
+.dd-trigger[data-open] .dd-caret {
+  transform: rotate(180deg);
+}
+
+.dd-panel {
+  position: fixed;
+  inset: auto;
+  z-index: 1000;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: calc(100vw - 16px);
+  padding: 8px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  color: var(--ink-2);
+  box-shadow: var(--sh-3);
+  font-family: var(--font-sans);
+  font-size: 14.5px;
+  line-height: 1.35;
+  text-align: left;
+}
+.dd-panel:not([data-placed]) {
+  visibility: hidden;
+}
+.dd-panel::backdrop {
+  background: transparent;
+}
+.dd-list {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  outline: none;
+}
+.dd-group + .dd-group,
+.dd-opt + .dd-group,
+.dd-group + .dd-opt {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+}
+.dd-group-label {
+  padding: 6px 10px 4px;
+  color: var(--ink-3);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.dd-opt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 8px 10px;
+  border-radius: var(--radius-pill);
+  color: var(--ink-2);
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+.dd-opt[data-active] {
+  background: var(--bg-2);
+  color: var(--ink);
+}
+.dd-opt[aria-selected="true"] {
+  color: var(--ink);
+  font-weight: 650;
+}
+.dd-opt[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.dd-opt-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--ink-3);
+}
+.dd-opt-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+.dd-opt-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dd-opt-desc {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--ink-3);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.dd-check {
+  flex-shrink: 0;
+  color: var(--signal);
+  visibility: hidden;
+}
+.dd-opt[aria-selected="true"] .dd-check {
+  visibility: visible;
+}
+
+/* A phone: a bottom sheet over a dimmed page, rows big enough for a thumb. */
+.dd-panel.is-sheet {
+  inset: auto 0 0 0;
+  width: 100%;
+  max-width: none;
+  max-height: min(72dvh, 560px);
+  padding: 6px 10px calc(12px + env(safe-area-inset-bottom, 0px));
+  border-width: 1px 0 0;
+  border-radius: var(--radius-hero) var(--radius-hero) 0 0;
+}
+.dd-panel.is-sheet::backdrop {
+  background: color-mix(in srgb, var(--ink) 34%, transparent);
+}
+.dd-sheet-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px 10px;
+}
+.dd-grip {
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line-2);
+}
+.dd-sheet-title {
+  align-self: stretch;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.dd-panel.is-sheet .dd-opt {
+  min-height: 52px;
+  padding: 10px 12px;
+  font-size: 16px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dd-panel[data-placed] {
+    transform-origin: 50% 0;
+    animation: dd-in 0.16s var(--ease-out) both;
+  }
+  .dd-panel[data-placed][data-side="top"] {
+    transform-origin: 50% 100%;
+  }
+  .dd-panel.is-sheet[data-placed] {
+    animation: dd-sheet 0.26s var(--ease-soft) both;
+  }
+}
+@keyframes dd-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px) scale(0.98);
+  }
+}
+@keyframes dd-sheet {
+  from {
+    transform: translateY(100%);
+  }
+}

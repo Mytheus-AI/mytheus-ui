@@ -10,6 +10,7 @@ import {
   Pause,
   Play,
 } from "@phosphor-icons/react";
+import { Dropdown } from "@/components/ui/Dropdown";
 import {
   JUMP_STEP_MS,
   SEEK_STEP_MS,
@@ -385,16 +386,16 @@ export const RecordingPlayer = forwardRef<PlayerHandle, Props>(function Recordin
             </span>
           </span>
           <span className="rec-bar-gap" />
-          <label className="rec-speed">
-            <span className="sr-only">Playback speed</span>
-            <select value={rate} onChange={(e) => setRate(Number(e.target.value))}>
-              {SPEEDS.map((s) => (
-                <option key={s} value={s}>
-                  {s}x
-                </option>
-              ))}
-            </select>
-          </label>
+          <Dropdown
+            className="rec-speed"
+            label="Playback speed"
+            size="sm"
+            align="end"
+            matchWidth={false}
+            value={String(rate)}
+            options={SPEEDS.map((s) => ({ value: String(s), label: `${s}x`, description: s === 1 ? "Normal" : undefined }))}
+            onChange={(v) => setRate(Number(v))}
+          />
           <button
             type="button"
             className={`rec-btn tap${captions ? " is-on" : ""}`}

@@ -18,6 +18,7 @@ import { AgendaEditor, type AgendaPerson } from "./AgendaEditor";
 import { rowsFromItems, validateAgenda, type AgendaDraftRow, type AgendaRowErrors } from "./agenda-editor-model";
 import { STATUS_LABEL, STATUS_TONE, itemMeta, statusSourceText } from "./agenda-status";
 import { Chip } from "./Chip";
+import { Dropdown } from "@/components/ui/Dropdown";
 
 /* The agenda on the meeting page (ADR-0038 D6, D11): each item with its owner, minutes, status
    and the meeting agent's note. Who set a status (the agent or the host) is said quietly under it.
@@ -216,20 +217,17 @@ export function MeetingAgendaCard({
                   </div>
                   <div className="ag-status">
                     {steer ? (
-                      <label className="ag-status-pick">
-                        <span className="sr-only">Status of {item.title}</span>
-                        <select
-                          value={item.status}
-                          className={`is-${STATUS_TONE[item.status]}`}
-                          onChange={(e) => void setStatus(item, e.target.value as AgendaStatus)}
-                        >
-                          {AGENDA_STATUSES.map((s) => (
-                            <option key={s} value={s}>
-                              {STATUS_LABEL[s]}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
+                      <Dropdown
+                        className={`ag-status-pick is-${STATUS_TONE[item.status]}`}
+                        label={`Status of ${item.title}`}
+                        size="sm"
+                        shape="round"
+                        align="end"
+                        matchWidth={false}
+                        value={item.status}
+                        options={AGENDA_STATUSES.map((st) => ({ value: st, label: STATUS_LABEL[st] }))}
+                        onChange={(v) => void setStatus(item, v)}
+                      />
                     ) : (
                       <Chip tone={STATUS_TONE[item.status]}>{STATUS_LABEL[item.status]}</Chip>
                     )}

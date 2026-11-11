@@ -95,12 +95,14 @@
 .rec-btn.is-quiet:hover { color: var(--ink); background: var(--bg-2); }
 .rec-time { margin-left: 6px; font-size: 14px; font-variant-numeric: tabular-nums; }
 .rec-time-total { opacity: 0.72; }
-.rec-speed select {
-  height: 36px; padding: 0 8px; border-radius: var(--radius-ctl, 12px); border: 1px solid color-mix(in srgb, var(--pill-on) 30%, transparent);
-  background: transparent; color: inherit; font-size: 14px; font-weight: 600;
+/* The speed menu on the dark bar: a quiet outlined trigger; its list is the shared dropdown panel. */
+.rec-speed { flex: none; }
+.rec-speed .dd-trigger {
+  width: auto; gap: 6px; padding: 0 8px 0 10px; border-color: color-mix(in srgb, var(--pill-on) 30%, transparent);
+  background: transparent; color: inherit; font-weight: 600;
 }
-.rec-speed select option { color: var(--ink); background: var(--surface); }
-.rec-speed select:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+.rec-speed .dd-trigger:hover:not(:disabled) { border-color: color-mix(in srgb, var(--pill-on) 60%, transparent); }
+.rec-speed .dd-trigger .dd-caret { color: inherit; opacity: 0.7; }
 .rec-gaps-note { margin-top: 6px; color: color-mix(in srgb, var(--pill-on) 80%, transparent); font-size: 13px; line-height: 1.45; }
 @media (max-width: 420px) {
   .rec-bar { gap: 4px 2px; }

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { CardHead, cardClass } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { Dialog } from "@/components/ui/Dialog";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { FieldMsg, fieldClass } from "@/components/ui/Form";
 import { Note } from "@/components/ui/Note";
 import { notifyError, notifySuccess } from "@/lib/toast";
@@ -343,24 +344,22 @@ function ExportDialog({
               <label htmlFor={`${uid}-target`} className="mb-1.5 block text-[14px] font-semibold text-ink">
                 {provider === "notion" ? "Put it under" : "Space"}
               </label>
-              <select
+              <Dropdown
                 id={`${uid}-target`}
+                label={provider === "notion" ? "Put it under" : "Space"}
                 value={target}
-                onChange={(e) => {
-                  setTarget(e.target.value);
+                placeholder={provider === "notion" ? "Pick a page" : "Pick a space"}
+                options={[
+                  { value: "", label: provider === "notion" ? "Pick a page" : "Pick a space", disabled: true },
+                  ...options.map((d) => ({ value: d.id, label: d.name })),
+                ]}
+                onChange={(v) => {
+                  setTarget(v);
                   if (error) setError(null);
                 }}
-                aria-describedby={`${uid}-msg ${uid}-note`}
-                aria-invalid={error ? true : undefined}
-                className={fieldClass}
-              >
-                <option value="">{provider === "notion" ? "Pick a page" : "Pick a space"}</option>
-                {options.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
+                describedBy={`${uid}-msg ${uid}-note`}
+                invalid={Boolean(error)}
+              />
             </div>
           )}
           {load.note ? (

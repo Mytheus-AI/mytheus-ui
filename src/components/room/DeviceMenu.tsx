@@ -2,6 +2,8 @@
 
 import { useEffect, useId, useState } from "react";
 import { Room, RoomEvent } from "livekit-client";
+import { Microphone, SpeakerHigh, VideoCamera, type Icon as PhosphorIcon } from "@phosphor-icons/react";
+import { Dropdown, type DropdownOption } from "@/components/ui/Dropdown";
 
 /* In-call device switching (polish program, Phase 0): pick the microphone, camera and, where the
    browser allows it, the speaker, without leaving the call. Lists what the browser reports, shows
@@ -12,6 +14,7 @@ import { Room, RoomEvent } from "livekit-client";
 type Kind = "audioinput" | "videoinput" | "audiooutput";
 
 const LABEL: Record<Kind, string> = { audioinput: "Microphone", videoinput: "Camera", audiooutput: "Speaker" };
+const ICON: Record<Kind, PhosphorIcon> = { audioinput: Microphone, videoinput: VideoCamera, audiooutput: SpeakerHigh };
 
 export function DeviceMenu({ room, onPicked }: { room: Room; onPicked?: (kind: "mic" | "cam", deviceId: string) => void }) {
   const uid = useId();
@@ -63,24 +66,28 @@ export function DeviceMenu({ room, onPicked }: { room: Room; onPicked?: (kind: "
   return (
     <div className="dev-menu">
       <p className="pop-title">Devices</p>
-      {kinds.map((kind) => (
-        <label className="dev-row" key={kind} htmlFor={`${uid}-${kind}`}>
-          <span>{LABEL[kind]}</span>
-          <select
-            id={`${uid}-${kind}`}
-            value={active[kind]}
-            disabled={devices[kind].length === 0}
-            onChange={(e) => void pick(kind, e.target.value)}
-          >
-            {devices[kind].length === 0 ? <option value="">None found</option> : null}
-            {devices[kind].map((d, i) => (
-              <option key={d.deviceId || i} value={d.deviceId}>
-                {d.label || `${LABEL[kind]} ${i + 1}`}
-              </option>
-            ))}
-          </select>
-        </label>
-      ))}
+      {kinds.map((kind) => {
+        const Icon = ICON[kind];
+        const list = devices[kind];
+        return (
+          <div className="dev-row" key={kind}>
+            <label className="dev-label" htmlFor={`${uid}-${kind}`}>
+              <Icon size={15} aria-hidden="true" />
+              {LABEL[kind]}
+            </label>
+            <Dropdown
+              id={`${uid}-${kind}`}
+              label={LABEL[kind]}
+              size="md"
+              value={active[kind] || null}
+              disabled={list.length === 0}
+              emptyText="None found"
+              options={list.map((d, i) => deviceOption(d, `${LABEL[kind]} ${i + 1}`))}
+              onChange={(id) => void pick(kind, id)}
+            />
+          </div>
+        );
+      })}
       {problem ? (
         <p className="pop-problem" role="alert">
           {problem}
@@ -88,4 +95,13 @@ export function DeviceMenu({ room, onPicked }: { room: Room; onPicked?: (kind: "
       ) : null}
     </div>
   );
+}
+
+/* Browsers name the system default "Default - MacBook Pro Microphone (Built-in)": the device is
+   the label and "System default" the quieter line under it. */
+function deviceOption(d: MediaDeviceInfo, fallback: string): DropdownOption {
+  const raw = d.label || fallback;
+  const m = /^(default|communications)\s*-\s*(.+)$/i.exec(raw);
+  if (m) return { value: d.deviceId, label: m[2], description: m[1].toLowerCase() === "default" ? "System default" : "Used for calls" };
+  return { value: d.deviceId, label: raw };
 }

@@ -9,8 +9,6 @@
 
 .mx-app {
   /* Light tokens are the global ones in globals.css :root. Only app-only values live here. */
-  --sb-thumb: rgba(60, 45, 35, 0.24);
-  --sb-thumb-hover: rgba(193, 95, 60, 0.55);
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
   color: var(--ink-2);
@@ -60,8 +58,6 @@
   --ok: #9cbb8f;
   --ok-soft: #232e20;
   --wash: linear-gradient(157deg, #4a2e22, #3a2820 40%, #2a2220 75%, #232120);
-  --sb-thumb: rgba(243, 240, 232, 0.2);
-  --sb-thumb-hover: rgba(224, 128, 95, 0.6);
   color-scheme: dark;
 }
 
@@ -74,21 +70,7 @@
 .mx-app .font-mono { font-family: var(--font-sans); font-variant-numeric: tabular-nums; }
 .mx-app :is(input, textarea, select):focus-visible { outline-offset: 0; }
 
-/* Scrollbar: thin, rounded, warm, invisible until the container is hovered or focused. */
-.mx-app, .mx-app * { scrollbar-width: thin; scrollbar-color: transparent transparent; }
-.mx-app *:hover, .mx-app *:focus-within { scrollbar-color: var(--sb-thumb) transparent; }
-.mx-app ::-webkit-scrollbar { width: 12px; height: 12px; }
-.mx-app ::-webkit-scrollbar-track { background: transparent; }
-.mx-app ::-webkit-scrollbar-corner { background: transparent; }
-.mx-app ::-webkit-scrollbar-thumb {
-  background-color: transparent;
-  background-clip: padding-box;
-  border: 3px solid transparent;
-  border-radius: 999px;
-  transition: background-color 0.2s;
-}
-.mx-app *:hover::-webkit-scrollbar-thumb { background-color: var(--sb-thumb); }
-.mx-app ::-webkit-scrollbar-thumb:hover { background-color: var(--sb-thumb-hover); }
+/* Scrollbars are global now (globals.css, "scrollbars"): thin, token-coloured, in both themes. */
 
 /* Sidebar rail: labels collapse, an icon-only 76px column that expands on hover or focus. */
 .mx-app .sb-slot { transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1); }

@@ -139,8 +139,7 @@
 .mx-meet .tx-field:hover { border-color: var(--ink-4); }
 .mx-meet .tx-field:focus-visible { outline: none; border-color: var(--signal); box-shadow: 0 0 0 3px var(--signal-soft); }
 .mx-meet .tx-spk-row.is-unk .tx-field { border-color: color-mix(in srgb, var(--priority-medium) 60%, var(--line-2)); }
-.mx-meet select.tx-field { padding-right: 34px; cursor: pointer; }
-.mx-meet .tx-field-chev { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--ink-3); pointer-events: none; }
+.mx-meet .tx-spk-row.is-unk .tx-field-wrap .dd-trigger:not([data-open]) { border-color: color-mix(in srgb, var(--priority-medium) 60%, var(--line-2)); }
 .mx-meet .tx-error { margin-top: 10px; color: var(--priority-high); font-size: 14px; font-weight: 600; }
 
 /* Talk time rows use the shared bars; names here can be "Speaker 12". */
