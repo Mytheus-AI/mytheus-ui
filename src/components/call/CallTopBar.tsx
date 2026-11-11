@@ -6,8 +6,10 @@ import { Wordmark } from "@/components/site/Wordmark";
 import { useCallToast } from "@/components/call/CallToast";
 
 /* The call window's top bar. On the pre-join it is the wordmark and, at the end, whatever the
-   page passes (a way back). In the room it adds the meeting title in the display serif with who
-   is here under it, the Call / Notes switch, Share link and the panel toggle. The wordmark is not
+   page passes (a way back). In the room it adds the meeting title in the display serif with a
+   compact "4 in call" chip beside it on the same line (the title gives way first and truncates;
+   on a phone the chip shrinks to the people icon and the number), the Call / Notes switch, Share
+   link and the panel toggle. The wordmark is not
    a link in the room: a stray click must never drop you out of a call. */
 
 export type CallTopBarRoom = {
@@ -38,11 +40,25 @@ export function CallTopBar({ room, end }: { room?: CallTopBarRoom; end?: ReactNo
           <span className="cx-top-sep" aria-hidden="true" />
           <div className="cx-top-title">
             <h1 title={room.title}>{room.title}</h1>
-            <p>
-              <Users size={14} aria-hidden />
-              {room.inCall} in call
-              {room.invited > room.inCall ? <span className="cx-invited">, {room.invited} invited</span> : null}
-            </p>
+            <span
+              className="cx-incall"
+              role="img"
+              aria-label={`${room.inCall} in call${room.invited > room.inCall ? `, ${room.invited} invited` : ""}`}
+              title={`${room.inCall} in call${room.invited > room.inCall ? `, ${room.invited} invited` : ""}`}
+            >
+              <Users size={14} weight="bold" aria-hidden />
+              <span className="cx-incall-n" aria-hidden>
+                {room.inCall}
+              </span>
+              <span className="cx-incall-label" aria-hidden>
+                in call
+              </span>
+              {room.invited > room.inCall ? (
+                <span className="cx-invited" aria-hidden>
+                  , {room.invited} invited
+                </span>
+              ) : null}
+            </span>
           </div>
 
           {room.mode && room.onMode ? (

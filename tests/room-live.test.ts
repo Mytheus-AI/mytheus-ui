@@ -139,3 +139,103 @@ test("a host agenda change from the room applies to everyone, keeping position",
   assert.equal(next.items[0].status_source, "host");
   assert.equal(next.items[0].position, 2);
 });
+
+// UI polish pass: the hands queue, what the room says about a change, and lowering a hand once
+// you have been speaking for a few seconds.
+import {
+  SPEAK_LOWER_MS,
+  handAnnouncement,
+  handChangeOf,
+  handPlace,
+  handWait,
+  ordinal,
+  quietSpeech,
+  spokeLongEnough,
+  stepSpeech,
+} from "../src/lib/realtime/room-live.ts";
+import { itemsFromText } from "../src/lib/agenda-quick-add.ts";
+
+test("a hand keeps the gateway's raise time, and the queue is oldest first", () => {
+  let s = applyHand(emptyHandsState, { userId: "raj", raised: true, at: "2026-11-11T10:00:05Z", raisedAt: "2026-11-11T10:00:01Z" });
+  assert.equal(s.raised.raj, "2026-11-11T10:00:01Z");
+  s = applyHand(s, { userId: "priya", raised: true, at: "2026-11-11T10:00:03Z" });
+  assert.deepEqual(handQueue(s), ["raj", "priya"]);
+  assert.equal(handPlace(s, "priya"), 2);
+  assert.equal(handPlace(s, "maya"), 0);
+  assert.equal(handPlace(s, null), 0);
+  // A second raise without the gateway's time does not move anyone.
+  assert.equal(applyHand(s, { userId: "raj", raised: true, at: "2026-11-11T11:00:00Z" }), s);
+});
+
+test("ordinals and calm wait times", () => {
+  assert.deepEqual([1, 2, 3, 4, 11, 12, 13, 21, 22, 103].map(ordinal), ["1st", "2nd", "3rd", "4th", "11th", "12th", "13th", "21st", "22nd", "103rd"]);
+  const t = Date.parse("2026-11-11T10:10:00Z");
+  assert.equal(handWait("2026-11-11T10:09:30Z", t), "just now");
+  assert.equal(handWait("2026-11-11T10:07:59Z", t), "2 min");
+  assert.equal(handWait("not a time", t), "just now");
+});
+
+test("a hand change is read from the gateway, older payloads included", () => {
+  assert.deepEqual(handChangeOf({ userId: "raj", raised: false, byUserId: "maya", reason: "called" }, 4), {
+    seq: 4,
+    userId: "raj",
+    raised: false,
+    byUserId: "maya",
+    reason: "called",
+  });
+  assert.equal(handChangeOf({ userId: "raj", raised: true }, 1)?.reason, "raised");
+  assert.equal(handChangeOf({ userId: "raj", raised: false, reason: "weird" }, 1)?.reason, "lowered");
+  assert.equal(handChangeOf({ raised: true }, 1), null);
+});
+
+test("what the room says: the host hears hands go up, you hear when you are called on", () => {
+  const nameOf = (id: string) => ({ raj: "Raj Patel", maya: "Maya Chen" })[id] ?? "A teammate";
+  const up = handChangeOf({ userId: "raj", raised: true }, 1)!;
+  const host = handAnnouncement(up, { meId: "maya", steers: true, place: 2, count: 2, nameOf });
+  assert.equal(host.live, "Raj Patel raised their hand, 2nd in line.");
+  assert.deepEqual(host.toast, { text: "Raj Patel raised their hand, 2nd in line", tone: "info" });
+  assert.equal(handAnnouncement(up, { meId: "priya", steers: false, place: 2, count: 2, nameOf }).toast, null);
+
+  const called = handChangeOf({ userId: "raj", raised: false, byUserId: "maya", reason: "called" }, 2)!;
+  const toRaj = handAnnouncement(called, { meId: "raj", steers: false, place: 0, count: 1, nameOf });
+  assert.equal(toRaj.live, "Maya Chen called on you. 1 hand up.");
+  assert.deepEqual(toRaj.toast, { text: "Maya Chen called on you. Go ahead.", tone: "success" });
+  assert.equal(handAnnouncement(called, { meId: "maya", steers: true, place: 0, count: 0, nameOf }).live, "You called on Raj Patel. No hands up.");
+
+  const lowered = handChangeOf({ userId: "raj", raised: false, byUserId: "maya", reason: "lowered" }, 3)!;
+  assert.deepEqual(handAnnouncement(lowered, { meId: "raj", steers: false, place: 0, count: 0, nameOf }).toast, {
+    text: "Maya Chen lowered your hand",
+    tone: "info",
+  });
+  const own = handChangeOf({ userId: "raj", raised: false, byUserId: "raj" }, 4)!;
+  assert.equal(handAnnouncement(own, { meId: "raj", steers: false, place: 0, count: 0, nameOf }).toast, null);
+  const spoke = handChangeOf({ userId: "raj", raised: false, reason: "spoke" }, 5)!;
+  assert.match(handAnnouncement(spoke, { meId: "maya", steers: true, place: 0, count: 0, nameOf }).live, /started speaking/);
+});
+
+test("a hand comes down only after a few seconds of speech, pauses between words included", () => {
+  let run = quietSpeech;
+  run = stepSpeech(run, true, 0);
+  run = stepSpeech(run, false, 900); // a pause between words
+  run = stepSpeech(run, true, 1500);
+  assert.equal(spokeLongEnough(run, 1500), false);
+  run = stepSpeech(run, true, SPEAK_LOWER_MS + 10);
+  assert.equal(spokeLongEnough(run, SPEAK_LOWER_MS + 10), true);
+  // Speech stops, and a long silence starts over.
+  run = stepSpeech(run, false, SPEAK_LOWER_MS + 20);
+  run = stepSpeech(run, false, SPEAK_LOWER_MS + 2000);
+  assert.deepEqual(run, quietSpeech);
+  run = stepSpeech(run, true, 10_000);
+  assert.equal(spokeLongEnough(run, 10_500), false, "a cough is not the floor");
+});
+
+test("Add agenda reads one item per line, pasted bullets and numbers included", () => {
+  assert.deepEqual(itemsFromText("Beta readiness\n\n- Launch date\n2) Pricing\n  * Hiring  \n• Wrap"), [
+    "Beta readiness",
+    "Launch date",
+    "Pricing",
+    "Hiring",
+    "Wrap",
+  ]);
+  assert.deepEqual(itemsFromText("   \n"), []);
+});

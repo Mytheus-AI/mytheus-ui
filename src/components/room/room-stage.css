@@ -74,6 +74,67 @@
   font-weight: 600;
   white-space: nowrap;
 }
+/* No agenda: a slim line in the gap above the stage, not a card. The host's "Add agenda" sits
+   beside it. A catch-up line or a stand-in's questions under it bring the card back. */
+.mx-meet .stage-bar.is-empty { margin-bottom: 8px; padding: 0; border: 0; background: none; box-shadow: none; }
+.mx-meet .stage-bar.is-empty:has(.sb-catchup, .sb-standins) { padding: 6px 10px 8px 12px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--sh-1); }
+.mx-meet .sb-empty { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-height: 30px; }
+.mx-meet .sb-empty-chip {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  height: 30px;
+  padding: 0 12px 0 10px;
+  border-radius: 999px;
+  background: var(--bg-2);
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.mx-meet .sb-empty-chip svg { flex-shrink: 0; margin-right: 6px; color: var(--ink-3); }
+.mx-meet .sb-empty-sub { overflow: hidden; color: var(--ink-3); font-weight: 500; text-overflow: ellipsis; }
+.mx-meet .sb-empty-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px dashed var(--line-2);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 650;
+}
+.mx-meet .sb-empty-add:hover { border-style: solid; border-color: var(--ink-4); background: var(--surface); }
+.mx-meet .sb-empty-stale { color: var(--mx-medium-ink); font-size: 12.5px; font-weight: 600; }
+@media (max-width: 719px) {
+  .mx-meet .sb-empty-sub { display: none; }
+}
+
+/* Add agenda, in the room. */
+.room-dialog .aq-form { display: flex; flex-direction: column; gap: 8px; }
+.room-dialog .aq-lead { color: var(--ink-3); font-size: 14px !important; }
+.room-dialog .aq-label { margin-top: 4px; color: var(--ink); font-size: 14px; font-weight: 600; }
+.room-dialog .aq-area {
+  width: 100%;
+  min-height: 140px;
+  padding: 10px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  resize: vertical;
+}
+.room-dialog .aq-area:focus-visible { outline: none; border-color: var(--signal); box-shadow: 0 0 0 3px var(--signal-soft); }
+.room-dialog .aq-area[aria-invalid="true"] { border-color: var(--priority-high); }
+.room-dialog .aq-count { color: var(--ink-3); font-size: 12.5px !important; }
+.room-dialog .aq-count.is-over { color: var(--priority-high); font-weight: 600; }
+.room-dialog .aq-err { color: var(--priority-high); font-size: 14px !important; font-weight: 600; }
+
 .mx-meet .sb-quiet { display: flex; align-items: center; gap: 8px; color: var(--ink-3); font-size: 14px; }
 
 .mx-meet .sb-time {
@@ -432,16 +493,7 @@
 .room-dialog .wu-owner { grid-area: owner; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; color: var(--ink-2); font-size: 12.5px; }
 .room-dialog .wu-owner-label { color: var(--mx-medium-ink, var(--ink-2)); font-weight: 650; }
 .room-dialog .wu-acts { grid-area: acts; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
-.room-dialog .wu-select {
-  height: 36px;
-  max-width: 100%;
-  padding: 0 10px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--line-2);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 14px;
-}
+.room-dialog .wu-select { width: 200px; max-width: 100%; font-weight: 500; }
 .room-dialog .wu-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--ink-2); font-size: 14px; font-weight: 600; }
 
 /* ---------------------------------------------------------------- narrow screens */

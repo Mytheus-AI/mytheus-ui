@@ -5,6 +5,7 @@ import { HandPalm, MicrophoneSlash, Microphone, PushPin, UsersThree } from "@pho
 import { initials, toneOf } from "@/components/room/tone";
 import { Doodle } from "@/components/ui/Doodle";
 import { useSpotlight } from "@/components/room/useSpotlight";
+import { ordinal } from "@/lib/realtime/room-live";
 
 /* The meeting stage, shared by your own pre-connect tile and the live LiveKit tiles so connecting
    is not also a visual change. Each tile is plain data (`RoomTile`); the live grid passes a
@@ -18,7 +19,8 @@ import { useSpotlight } from "@/components/room/useSpotlight";
      lib/realtime/spotlight.ts), with up to three thumbnails beside it (a strip on a phone) and a
      "+N" button that opens the grid when there are more.
 
-   A raised hand shows as a hand badge on the person's tile (and in the People tab, in order).
+   A raised hand shows as an amber badge with the person's place in the queue on their tile (and
+   in the People tab and the stage's Hands raised list, in order).
    - grid: everyone as equal tiles inside the same frame.
 
    `overlay` is drawn inside the frame on top of the video: the clock, captions and controls.
@@ -52,7 +54,25 @@ export type RoomTile = {
   proxy?: { forName: string; update: string | null; onOpen?: () => void };
   /** This person's hand is up. */
   handUp?: boolean;
+  /** Their place in the hands queue, from 1 (0 or absent when the hand is down). */
+  handPlace?: number;
 };
+
+/* A raised hand on a tile: the hand and the person's place in the queue, in amber. */
+function HandBadge({ tile, className }: { tile: RoomTile; className: string }) {
+  if (!tile.handUp) return null;
+  return (
+    <span className={className} aria-hidden="true">
+      <HandPalm size={14} weight="fill" />
+      {tile.handPlace ? <span className="hand-n">{tile.handPlace}</span> : null}
+    </span>
+  );
+}
+
+function handWords(tile: RoomTile): string | null {
+  if (!tile.handUp) return null;
+  return tile.handPlace ? `hand raised, ${ordinal(tile.handPlace)} in line` : "hand raised";
+}
 
 /* A participant's agent, as a small doodle badge in their name tag. Its accessible name says
    whose agent it is. */
@@ -144,7 +164,10 @@ export function RoomGrid({
               {main.kind !== "screen" ? <AgentBadge agent={main.agent} /> : null}
               {main.isLocal ? `${main.name} (you)` : main.name}
               {main.handUp ? (
-                <HandPalm size={15} weight="fill" className="cx-hand" role="img" aria-label="Hand raised" />
+                <span className="cx-hand" role="img" aria-label={handWords(main) ?? "Hand raised"}>
+                  <HandPalm size={15} weight="fill" aria-hidden />
+                  {main.handPlace ? <span className="hand-n">{main.handPlace}</span> : null}
+                </span>
               ) : null}
               {mainSpeaking ? <small>Speaking</small> : null}
             </span>
@@ -232,23 +255,19 @@ function TileSurface({ tile }: { tile: RoomTile }) {
 function Thumb({ tile, pinLabel, onPin }: { tile: RoomTile; pinLabel: string; onPin?: () => void }) {
   const screen = tile.kind === "screen";
   const speaking = Boolean(tile.speaking) && tile.micOn && !screen;
-  const label = [tile.name, tile.isLocal ? "you" : null, !tile.micOn && !screen ? "muted" : null, speaking ? "speaking" : null, tile.handUp ? "hand raised" : null]
+  const label = [tile.name, tile.isLocal ? "you" : null, !tile.micOn && !screen ? "muted" : null, speaking ? "speaking" : null, handWords(tile)]
     .filter(Boolean)
     .join(", ");
 
   return (
-    <div className={`thumb ${toneOf(personKey(tile))}${speaking ? " is-speaking" : ""}`} role="group" aria-label={label}>
+    <div className={`thumb ${toneOf(personKey(tile))}${speaking ? " is-speaking" : ""}${tile.handUp ? " has-hand" : ""}`} role="group" aria-label={label}>
       <TileSurface tile={tile} />
       {onPin ? (
         <button type="button" className="thumb-pin tap tip-below tip-end" data-tip={pinLabel} aria-label={`${pinLabel} ${tile.name}`} onClick={onPin}>
           <PushPin size={15} aria-hidden />
         </button>
       ) : null}
-      {tile.handUp ? (
-        <span className="thumb-hand" aria-hidden>
-          <HandPalm size={14} weight="fill" />
-        </span>
-      ) : null}
+      <HandBadge tile={tile} className="thumb-hand" />
       <span className="thumb-name">
         {speaking ? <Wave /> : null}
         {screen ? null : <AgentBadge agent={tile.agent} />}

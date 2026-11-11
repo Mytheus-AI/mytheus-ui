@@ -20,6 +20,8 @@ import type { MeetingSocketState } from "@/lib/realtime/useMeetingSocket";
    at once and then announced to the room through the gateway ("agenda-status"), so everyone's
    bar moves within a second, and a reload reads the same rows back.
 
+   With no agenda it is one slim line (UI polish pass), with the host's "Add agenda".
+
    The item's clock is the server's `started_at`, so two people never see two different times. The
    digits tick once a second but are hidden from screen readers; the bar's label carries a calm,
    minute-level phrase, and running over is announced once. */
@@ -33,6 +35,7 @@ export function StageBar({
   steers,
   nameOf,
   standInIds,
+  onAddAgenda,
   children,
 }: {
   meetingId: string;
@@ -43,6 +46,8 @@ export function StageBar({
   nameOf: (id: string) => string;
   /** People who sent their agent instead of coming, so an item they own says so. */
   standInIds: ReadonlySet<string>;
+  /** The host's way to add an agenda when there is none. */
+  onAddAgenda?: () => void;
   /** Rows under the bar (the catch-up line, a stand-in's questions). */
   children?: React.ReactNode;
 }) {
@@ -164,9 +169,39 @@ export function StageBar({
         ? `Agenda: ${view.total} items, not started yet.`
         : view.phase === "done"
           ? `Agenda done: all ${view.total} items.`
-          : view.phase === "running"
-            ? `Agenda: ${view.done} of ${view.total} items done.`
-            : "No agenda.";
+          : `Agenda: ${view.done} of ${view.total} items done.`;
+
+  // No agenda: one slim, calm line instead of a card (on a phone it must not cost the stage its
+  // height). The host gets "Add agenda" right there; rows under the bar (the catch-up line, a
+  // stand-in's questions) still draw as the card they always were.
+  if (view.phase === "empty") {
+    return (
+      <section className="stage-bar is-empty" aria-labelledby={`${uid}-h`}>
+        <h2 id={`${uid}-h`} className="sr-only">
+          Agenda
+        </h2>
+        <div className="sb-empty">
+          <span className="sb-empty-chip">
+            <ListChecks size={15} aria-hidden />
+            <span>No agenda</span>
+            <span className="sb-empty-sub">, the meeting agent takes notes as you go</span>
+          </span>
+          {steers && onAddAgenda ? (
+            <button type="button" className="sb-empty-add tap" onClick={onAddAgenda}>
+              <Plus size={14} weight="bold" aria-hidden />
+              Add agenda
+            </button>
+          ) : null}
+          {agenda.stale ? (
+            <span className="sb-empty-stale" role="status">
+              May be out of date
+            </span>
+          ) : null}
+        </div>
+        {children}
+      </section>
+    );
+  }
 
   return (
     <section className={`stage-bar is-${view.phase}${timeClass}`} aria-labelledby={`${uid}-h`}>
@@ -188,12 +223,7 @@ export function StageBar({
         ) : null}
 
         <div className="sb-now">
-          {view.phase === "empty" ? (
-            <p className="sb-quiet">
-              <ListChecks size={16} aria-hidden />
-              No agenda for this meeting. The meeting agent takes notes as you go.
-            </p>
-          ) : view.phase === "done" ? (
+          {view.phase === "done" ? (
             <p className="sb-title">
               <CheckCircle size={18} weight="fill" className="sb-done-ico" aria-hidden />
               <span>Agenda done</span>
@@ -254,7 +284,7 @@ export function StageBar({
           </p>
         ) : null}
 
-        {steers && view.phase !== "empty" && view.phase !== "done" ? (
+        {steers && view.phase !== "done" ? (
           <div className="sb-acts" role="group" aria-label="Agenda controls">
             <button
               type="button"
