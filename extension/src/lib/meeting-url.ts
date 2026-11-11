@@ -5,7 +5,8 @@
  * the content script all decide "is this a meeting tab" through `detectMeeting`, so the three
  * can never disagree.
  *
- * - Google Meet: `meet.google.com/abc-defg-hij`. The landing page and `/new` are not calls.
+ * - Google Meet: `meet.google.com/abc-defg-hij`, or `meet.google.com/meet/abc-defg-hij` when several
+ *   Google accounts are signed in (`?authuser=3`). The landing page and `/new` are not calls.
  * - Microsoft Teams (web): `teams.microsoft.com`, `teams.live.com` and the newer
  *   `teams.cloud.microsoft`. Teams runs calls inside its single-page app without a call URL, so
  *   any Teams page is offered; `inCall` is true only when the URL shows a meeting join.
@@ -30,7 +31,7 @@ export const SOURCE_LABELS: Record<MeetingSource, string> = {
   zoom: "Zoom",
 };
 
-const MEET_CODE = /^\/([a-z]{3}-[a-z]{4}-[a-z]{3})(?:\/|$)/;
+const MEET_CODE = /^\/(?:_?meet\/)?([a-z]{3}-[a-z]{4}-[a-z]{3})(?:\/|$)/;
 const ZOOM_WC = /^\/wc\/(?:join\/)?(\d{9,12})(?:\/|$)/;
 const TEAMS_HOSTS = new Set(["teams.microsoft.com", "teams.live.com", "teams.cloud.microsoft"]);
 

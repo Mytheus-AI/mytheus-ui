@@ -88,3 +88,10 @@ test("pickMeetingTab prefers the focused window, then active, then audible", () 
   assert.equal(pickMeetingTab([{ id: 9, url: "https://example.com" }, zoom])?.id, 1);
   assert.equal(pickMeetingTab([{ id: 9, url: "https://meet.google.com/" }]), null);
 });
+
+test("Google Meet: the multi-account /meet/ path is a meeting too", () => {
+  const m = detectMeeting("https://meet.google.com/meet/fcg-iiqn-ttq?pli=1&authuser=3");
+  assert.equal(m?.source, "meet");
+  assert.equal(m?.code, "fcg-iiqn-ttq");
+  assert.equal(detectMeeting("https://meet.google.com/meet/")?.source, undefined);
+});
