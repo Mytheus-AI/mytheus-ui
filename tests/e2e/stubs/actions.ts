@@ -1,5 +1,7 @@
 import { applyUpdate, forgotten, type MemoryUpdate, type PersonMemory } from "../../../src/lib/memory";
 import { MEMORY_FIXTURE } from "../memory-fixture";
+import { CAPACITY, CHECK_FULL, LEDGER, TODAY } from "../ledger-fixture";
+import { addDays, type LedgerPromise } from "../../../src/lib/promises/ledger";
 
 // The server actions the room calls, answered as core-api would on success.
 const row = (id: string) => ({ id, content: "Ship the beta on 2 December", status: "confirmed", confirmed_by: "u-maya" });
@@ -382,4 +384,91 @@ export async function declineReopen(id: string, note?: string) {
 }
 export async function answerStatusRequest() {
   return { ok: false as const, message: "Not available in this test." };
+}
+
+
+// The promise ledger (Beyond the meeting, Layer 2), answered as core-api would on success.
+
+const ledgerRow = (id: string, over: Partial<LedgerPromise> = {}): LedgerPromise => ({
+  ...(LEDGER.items.find((p) => p.id === id) ?? LEDGER.items[0]),
+  id,
+  ...over,
+});
+export async function loadLedger() {
+  return { ok: true as const, ledger: LEDGER };
+}
+export async function loadCapacity() {
+  return { ok: true as const, capacity: CAPACITY };
+}
+export async function checkCapacity(dueDate: string) {
+  const full = dueDate === CHECK_FULL.due_date;
+  return {
+    ok: true as const,
+    check: full
+      ? CHECK_FULL
+      : { ...CHECK_FULL, due_date: dueDate, level: "ok" as const, items_on_day: 2, warn: false, message: "That makes 2 things due then; your day still has room.", suggested_date: null, suggested_label: null },
+  };
+}
+export async function checkAcceptedAction() {
+  return { ok: true as const, check: null };
+}
+export async function setPromiseStatus(id: string, status: "open" | "done" | "dismissed") {
+  return { ok: true as const, promise: ledgerRow(id, { status, done_at: status === "done" ? `${TODAY}T10:00:00Z` : null }) };
+}
+export async function setPromiseDue(id: string, due: string | null) {
+  return { ok: true as const, promise: ledgerRow(id, { due_at: due }) };
+}
+export async function confirmPromise(id: string) {
+  return { ok: true as const, promise: ledgerRow(id, { review_state: "confirmed" }), capacity: CHECK_FULL };
+}
+export async function addPromise(input: { content: string; dueAt: string | null }) {
+  return {
+    ok: true as const,
+    promise: ledgerRow("aaaaaaaa-aaaa-4aaa-8aaa-000000000099", { content: input.content, due_at: input.dueAt, channel: "manual", review_state: "confirmed", status: "open" }),
+    capacity: input.dueAt === CHECK_FULL.due_date ? CHECK_FULL : null,
+  };
+}
+export async function handOffPromise(id: string) {
+  return { ok: true as const, promise: ledgerRow(id, { status: "dismissed", handed_off_to: "u-raj", handed_off_to_name: "Raj Patel" }), name: "Raj Patel" };
+}
+export async function undoHandOff(id: string) {
+  return { ok: true as const, promise: ledgerRow(id) };
+}
+export async function renegotiateDate(input: { target: "commitment" | "action"; targetId: string; proposedDue: string }) {
+  const row = LEDGER.items.find((p) => p.id === input.targetId);
+  if (row?.recipient_user_id) {
+    return {
+      ok: true as const,
+      result: {
+        mode: "proposed" as const,
+        target: input.target,
+        target_id: input.targetId,
+        due_at: row.due_at,
+        previous_due: row.due_at,
+        proposal: {
+          id: "aaaaaaaa-aaaa-4aaa-8aaa-000000000077",
+          target: input.target,
+          target_id: input.targetId,
+          content: row.content,
+          current_due: row.due_at,
+          proposed_due: input.proposedDue,
+          note: null,
+          state: "pending" as const,
+          proposer_id: "u-maya",
+          proposer_name: "Maya Chen",
+          requester_id: row.recipient_user_id,
+          requester_name: row.recipient_name,
+          created_at: `${TODAY}T10:00:00Z`,
+          decided_at: null,
+        },
+      },
+    };
+  }
+  return { ok: true as const, result: { mode: "applied" as const, target: input.target, target_id: input.targetId, due_at: input.proposedDue, previous_due: row?.due_at ?? addDays(TODAY, 1), proposal: null } };
+}
+export async function decideProposal(id: string, verb: string) {
+  return { ok: true as const, proposal: { id, state: verb === "accept" ? "accepted" : verb === "decline" ? "declined" : "withdrawn" } };
+}
+export async function saveCapturePreferences(prefs: { slack_enabled: boolean; email_enabled: boolean }) {
+  return { ok: true as const, capture: { ...prefs, email_connected: false } };
 }

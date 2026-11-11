@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowsClockwise, CheckCircle, CheckSquare, EyeSlash, PencilSimple, Scales, Trash } from "@phosphor-icons/react";
 import { confirmCandidate, dismissCandidate, editCandidate } from "@/app/actions/candidates";
+import { checkAcceptedAction } from "@/app/actions/promises";
 import type { Candidate, Settlement } from "@/lib/realtime/candidates";
 import { useRoomName } from "@/lib/realtime/room-names";
 
@@ -113,6 +114,12 @@ export function CandidateCard({
     const by = (res.row as { confirmed_by?: string | null }).confirmed_by ?? null;
     if (by && meId && by !== meId) onNotice(`${nameOf(by, "Someone")} already confirmed this ${noun}.`, "info");
     onConfirmed(by);
+    // Promise ledger: a task you just took on, checked against your week (yours only, quietly).
+    if (candidate.kind === "action" && (!by || by === meId)) {
+      void checkAcceptedAction(candidate.id, null).then((r) => {
+        if (r.ok && r.check) onNotice(`${r.check.message} Your promise ledger can offer it for you.`, "info");
+      });
+    }
   };
 
   const dismissForEveryone = async () => {
