@@ -464,7 +464,7 @@ export function PreJoin({ meeting, session = null }: { meeting: CallMeeting; ses
                     ) : (
                       <>
                         <LockSimple size={14} aria-hidden />
-                        Tick the box above to enable Join.
+                        Tick the agreement to enable Join.
                       </>
                     )}
                   </p>

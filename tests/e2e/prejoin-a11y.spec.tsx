@@ -62,7 +62,7 @@ test("Join is locked until the notice is agreed", async ({ mount, page }) => {
   });
   await expect(join).toBeDisabled();
   await expect(
-    page.getByText("Tick the box above to enable Join."),
+    page.getByText("Tick the agreement to enable Join."),
   ).toBeVisible();
   await page.getByText("I have read this and agree to join on these terms").click();
   await expect(agree).toBeChecked();
