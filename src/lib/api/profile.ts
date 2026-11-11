@@ -14,9 +14,9 @@
 
 import { cache } from "react";
 import { auth } from "@clerk/nextjs/server";
-import { apiSafe } from "@/lib/api/client";
+import { api, apiSafe } from "@/lib/api/client";
 import type { components as IdentitySchemas } from "@/lib/api/generated/identity-tenant-service";
-import { normalizeProfile, type UserProfile } from "@/lib/api/profile-types";
+import { fullNameFrom, needsNameSync, normalizeProfile, type UserProfile } from "@/lib/api/profile-types";
 
 type MemberList = IdentitySchemas["schemas"]["MemberList"];
 type UserContext = IdentitySchemas["schemas"]["UserContext"];
@@ -47,3 +47,35 @@ export const fetchMyProfile = cache(async function fetchMyProfile(): Promise<Use
   if (!ctx.ok) return null;
   return normalizeProfile({ id, role: ctx.data.role, skills: ctx.data.skills });
 });
+
+/* Names already sent by this server process, so a sync that keeps failing (an older backend
+   that refuses the field, say) is tried once per name, not on every render. Bounded so a
+   long-running process cannot grow it without limit. */
+const nameSyncsTried = new Set<string>();
+
+/**
+ * Backfill `users.display_name` from Clerk: when the person's Clerk name differs from the one
+ * Mytheus stores, PATCH it, once. This is how everyone who signed up before the backend stored
+ * names (or whose webhook was missed) gets greeted by name.
+ *
+ * Fire and forget, on purpose: it returns at once and never throws, so the app layout calls it
+ * without awaiting and the page never waits on it. The self-hosted Node server keeps running the
+ * request after the response is sent, and `api()` captured the session token before its first
+ * network await. No revalidation here: revalidating during a render is not allowed, and the next
+ * render reads the stored name anyway.
+ */
+export function syncDisplayName(profile: UserProfile | null, clerkFullName: string): void {
+  try {
+    if (!profile || !needsNameSync(clerkFullName, profile.display_name)) return;
+    const name = fullNameFrom(clerkFullName, null);
+    const key = `${profile.id}:${name}`;
+    if (nameSyncsTried.has(key)) return;
+    if (nameSyncsTried.size > 5000) nameSyncsTried.clear();
+    nameSyncsTried.add(key);
+    void api(`/users/${profile.id}`, { method: "PATCH", body: { display_name: name } }).catch(() => {
+      // Cosmetic and retried by the next process; the stored name stays as it was.
+    });
+  } catch {
+    // Never let a name sync reach the shell.
+  }
+}

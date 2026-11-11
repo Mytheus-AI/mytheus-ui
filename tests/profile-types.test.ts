@@ -10,7 +10,10 @@ import {
   agentSeed,
   cleanList,
   fieldFromDetail,
+  fullNameFrom,
+  needsNameSync,
   normalizeProfile,
+  personName,
   splitItems,
   validatePersona,
   validateProfile,
@@ -176,4 +179,35 @@ test("every personality has a preset with a sample and no dashes", () => {
     assert.ok(p.sample.length > 0 && p.blurb.length > 0);
     assert.doesNotMatch(`${p.label} ${p.blurb} ${p.sample}`, /[–—]/);
   }
+});
+
+test("fullNameFrom joins first and last, collapses spaces, trims and caps at 80", () => {
+  assert.equal(fullNameFrom("  Samar ", null), "Samar");
+  assert.equal(fullNameFrom("Maya", "  Patel  Rao "), "Maya Patel Rao");
+  assert.equal(fullNameFrom("", ""), "");
+  assert.equal(fullNameFrom(null, undefined), "");
+  assert.equal(fullNameFrom("a".repeat(100), null).length, LIMITS.displayName);
+});
+
+test("needsNameSync only for a real Clerk name that differs from the stored one", () => {
+  assert.equal(needsNameSync("Samar", null), true);
+  assert.equal(needsNameSync("Samar", "Nnm23ad071"), true);
+  assert.equal(needsNameSync("Samar", "Samar"), false);
+  assert.equal(needsNameSync("  Samar  ", "Samar"), false);
+  // An empty Clerk name never clears what is stored.
+  assert.equal(needsNameSync("", "Samar"), false);
+  assert.equal(needsNameSync("   ", null), false);
+});
+
+test("personName prefers the stored name, else the fallback", () => {
+  assert.equal(personName("Samar", "Nnm23ad071"), "Samar");
+  assert.equal(personName("  ", "Nnm23ad071"), "Nnm23ad071");
+  assert.equal(personName(null, "Maya"), "Maya");
+  assert.equal(personName(undefined, "Maya"), "Maya");
+});
+
+test("normalizeProfile keeps display_name trimmed, blank as null", () => {
+  assert.equal(normalizeProfile({ id: "u1", display_name: " Samar " }).display_name, "Samar");
+  assert.equal(normalizeProfile({ id: "u1", display_name: "  " }).display_name, null);
+  assert.equal(normalizeProfile({ id: "u1" }).display_name, null);
 });

@@ -22,8 +22,17 @@ import { unstable_cache } from "next/cache";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import type { OrgContextValue } from "@/lib/types";
 import { defaultDoodleSeed, isDoodleSeed } from "@/lib/doodle";
+import { fullNameFrom } from "@/lib/api/profile-types";
 
-type Profile = { name: string; email: string; avatarSeed?: string; imageUrl?: string };
+type Profile = {
+  name: string;
+  email: string;
+  avatarSeed?: string;
+  imageUrl?: string;
+  /** Clerk's first + last name as typed, "" when none. Unlike `name`, never made from the
+      email: it is what the app layout copies to `users.display_name`. */
+  fullName?: string;
+};
 
 /** The cache tag for one user's profile, so a profile edit can drop it at once. */
 export const profileTag = (userId: string) => `clerk-profile:${userId}`;
@@ -44,6 +53,7 @@ function profileFor(userId: string): Promise<Profile> {
       const seed = (user.unsafeMetadata as Record<string, unknown> | null)?.doodle;
       return {
         name: user.fullName?.trim() || email.split("@")[0] || "Member",
+        fullName: fullNameFrom(user.firstName, user.lastName),
         email,
         // Everyone has a doodle. Until they choose one it is the default for their email, the
         // same face teammates see on their profile; DoodleImageSync then stores it for real.
@@ -106,3 +116,14 @@ export const resolveOrgContext = cache(async (): Promise<OrgContextValue | null>
     },
   };
 });
+
+/**
+ * The signed-in person's Clerk full name ("" when they have none), from the same five-minute
+ * cached lookup the shell already makes, so asking costs no extra Clerk call. An entry cached
+ * before this field existed reads as "" and simply skips the name sync until it expires.
+ */
+export async function myClerkFullName(): Promise<string> {
+  const { userId } = await auth();
+  if (!userId) return "";
+  return (await profileFor(userId)).fullName ?? "";
+}
