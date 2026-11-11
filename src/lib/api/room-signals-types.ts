@@ -7,7 +7,8 @@
  * test runner can import it.
  */
 
-export type SignalKind = "spoken_over" | "hand_not_called" | "cut_off" | "topic_silent";
+export type SignalKind =
+  "spoken_over" | "hand_not_called" | "cut_off" | "topic_silent";
 export type NudgeStatus = "open" | "contributed" | "dismissed";
 
 export interface LastWordNudge {
@@ -199,3 +200,65 @@ export interface PublicLateContribution {
   body: string;
   created_at: string;
 }
+
+/* ---------------------------------------------------------------------------------------------
+   Drift guard: every response type above must be exactly what core-api's spec says (the
+   generated `core-api.ts`, regenerated with `npm run generate:api`). The server always sends its
+   defaulted fields, so the generated optionals are compared as required. A change on either side
+   that is not mirrored on the other fails `tsc`.
+   --------------------------------------------------------------------------------------------- */
+import type { components } from "./generated/core-api.ts";
+
+type Schemas = components["schemas"];
+type DeepRequired<T> = T extends (infer U)[]
+  ? DeepRequired<U>[]
+  : T extends object
+    ? { [K in keyof T]-?: DeepRequired<T[K]> }
+    : T;
+type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+type Check<T extends true> = T;
+
+export type RoomSignalsSpecChecks = [
+  Check<
+    Same<DeepRequired<Schemas["AfterSignals"]>, DeepRequired<AfterSignals>>
+  >,
+  Check<
+    Same<DeepRequired<Schemas["LastWordList"]>, DeepRequired<LastWordList>>
+  >,
+  Check<
+    Same<
+      DeepRequired<Schemas["LateContributionList"]>,
+      DeepRequired<LateContributionList>
+    >
+  >,
+  Check<
+    Same<
+      DeepRequired<Schemas["AgreementCheckList"]>,
+      DeepRequired<AgreementCheckList>
+    >
+  >,
+  Check<
+    Same<
+      DeepRequired<Schemas["DecisionAgreement"]>,
+      DeepRequired<DecisionAgreement>
+    >
+  >,
+  Check<
+    Same<
+      DeepRequired<Schemas["ResumePointRead"]>,
+      DeepRequired<ResumePointRead>
+    >
+  >,
+  Check<
+    Same<
+      DeepRequired<Schemas["RecapLateContribution"]>,
+      DeepRequired<PublicLateContribution>
+    >
+  >,
+  Check<
+    Same<
+      DeepRequired<Schemas["MeetingMinutesView"]>["late_contributions"],
+      DeepRequired<LateContribution>[]
+    >
+  >,
+];
