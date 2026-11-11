@@ -4,7 +4,9 @@
  * decision page and decides (schedule a revisit, add a follow-up, or decline). The person chose
  * this, so the place it happened (a Docs or Jira address; never a Gmail draft) goes with it.
  *
- * Body: `{ decision_id, quote, reason?, place_label?, link? }`. Answers the ReopenRequest.
+ * Body: `{ decision_id, quote, reason?, place_label?, link? }`. Answers the ReopenRequest. A second
+ * click is safe without a fixed idempotency key: core-api answers the person's existing pending
+ * request (200) instead of creating another, and a fresh key keeps a reopen after a withdraw new.
  */
 
 import { NextResponse } from "next/server";
@@ -26,7 +28,6 @@ export async function POST(request: Request): Promise<NextResponse> {
     const created = await gateway<unknown>(caller.bearer, `/api/v1/decisions/${parsed.value.decisionId}/reopen-requests`, {
       method: "POST",
       body: parsed.value.body,
-      idempotencyKey: `ext-reopen:${parsed.value.decisionId}:${caller.link.sub}`,
     });
     return noStore(created, 201);
   } catch (error) {
