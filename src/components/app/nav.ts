@@ -33,6 +33,8 @@ import {
   SpeakerHigh,
   Headphones,
   BellSimpleZ,
+  ClockCounterClockwise,
+  Target,
 } from "@phosphor-icons/react/ssr";
 
 /* The app's information architecture, in one place. One list feeds the sidebar, the topbar
@@ -120,6 +122,9 @@ export const LINKED_ITEMS: NavItem[] = [
   { href: "/welcome", label: "Welcome brief", icon: Compass, keywords: "new joiner" },
   { href: "/digest", label: "Weekly digest", icon: Newspaper, keywords: "what changed this week summary" },
   { href: "/briefings", label: "Your briefings", icon: SpeakerHigh, keywords: "brief me briefing listen agent voice" },
+  // Beyond the meeting, Layer 3: under Decisions (the Decisions row stays active on them).
+  { href: "/decisions/time-machine", label: "Time machine", icon: ClockCounterClockwise, keywords: "history as of date compare what changed topic timeline rewind" },
+  { href: "/decisions/calls", label: "How good are our calls", icon: Target, keywords: "bets expected outcome calibration track record lessons hit rate" },
 ];
 
 /* Platform-staff consoles (every tenant, ops). Not in the workspace nav: staff status is only

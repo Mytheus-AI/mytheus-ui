@@ -19,6 +19,7 @@ import { Select } from "@/components/ui/Select";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Page, PageHead } from "@/components/ui/Page";
 import { SidePanel } from "@/components/tasks/SidePanel";
+import { DecisionsMoreLinks } from "@/components/time-machine/DecisionsMoreLinks";
 import type { DecisionView as Decision } from "@/lib/api/decisions";
 
 /* The decision log: every decision confirmed in a meeting you were in, newest first, grouped by
@@ -354,16 +355,19 @@ export function DecisionsLog({ decisions }: { decisions: Decision[] }) {
         title="Decisions"
         context="What your meetings decided. Every entry was confirmed by a person; when one is replaced, both stay on the record."
         action={
-          sorted.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-2" aria-label="Summary">
-              <Chip tone="ok" icon={<CheckCircle size={14} weight="fill" />}>
-                {inForce} in force
-              </Chip>
-              {sorted.length - inForce > 0 ? (
-                <Chip icon={<ClockCounterClockwise size={14} weight="bold" />}>{sorted.length - inForce} replaced</Chip>
-              ) : null}
-            </div>
-          ) : null
+          <>
+            {sorted.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-2" aria-label="Summary">
+                <Chip tone="ok" icon={<CheckCircle size={14} weight="fill" />}>
+                  {inForce} in force
+                </Chip>
+                {sorted.length - inForce > 0 ? (
+                  <Chip icon={<ClockCounterClockwise size={14} weight="bold" />}>{sorted.length - inForce} replaced</Chip>
+                ) : null}
+              </div>
+            ) : null}
+            <DecisionsMoreLinks />
+          </>
         }
       />
 

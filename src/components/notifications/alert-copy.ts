@@ -37,6 +37,7 @@ import { parseSignalEvent } from "../../lib/room-signals.ts";
 import { newNotificationLabel } from "../../lib/settlements.ts";
 import { eveningDigestIdOf, interruptionIdOf } from "../../lib/listening.ts";
 import type { Interruption } from "../../lib/api/listening-types";
+import { parseBetSource } from "../../lib/bets.ts";
 
 export interface FeedRowInput {
   id: string;
@@ -335,6 +336,22 @@ export function describeNotification(row: FeedRowInput): FeedItem {
       quote: null,
       href: safeLink(row.link) ?? "/meetings/listening",
       linkLabel: "Read the digest",
+    };
+  }
+
+  // Decisions as bets: a bet whose check date came (score it), or one your agent suggested.
+  const bet = parseBetSource(sourceEventId);
+  if (bet) {
+    return {
+      ...base,
+      kind: "reminder",
+      sourceEventId,
+      priority: bet.stage === "due" ? 2 : 3,
+      title: row.title || (bet.stage === "due" ? "Time to score a bet" : "Your agent heard an expected outcome"),
+      body: row.body,
+      quote: null,
+      href: safeLink(row.link) ?? "/decisions/calls",
+      linkLabel: bet.stage === "due" ? "Score the bet" : "Review it",
     };
   }
 

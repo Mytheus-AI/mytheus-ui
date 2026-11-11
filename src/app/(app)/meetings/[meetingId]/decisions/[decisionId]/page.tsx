@@ -24,6 +24,8 @@ import { ReopenedChip, isReopened } from "@/components/decision-why/ReopenedChip
 import { BlastRadiusSection } from "@/components/blast-radius/BlastRadiusSection";
 import { fetchDecisionWhy } from "@/lib/api/decision-why";
 import { fetchBlastRadius } from "@/lib/api/blast-radius";
+import { DecisionBet } from "@/components/bets/DecisionBet";
+import { fetchDecisionBet } from "@/lib/api/bets";
 
 export const metadata: Metadata = { title: "Decision lineage | Mytheus" };
 
@@ -99,7 +101,7 @@ export default async function DecisionLineagePage({
   searchParams?: { reopen?: string | string[] };
 }) {
   const focusReopenId = typeof searchParams?.reopen === "string" ? searchParams.reopen : null;
-  const [chain, reach, org, agreement, after, why, blast] = await Promise.all([
+  const [chain, reach, org, agreement, after, why, blast, bet] = await Promise.all([
     loadChain(params.meetingId, params.decisionId),
     loadDecisionReach(params.decisionId).catch(() => null),
     resolveOrgContext(),
@@ -109,6 +111,8 @@ export default async function DecisionLineagePage({
     // a4: why we decided, and what a change would ripple into.
     fetchDecisionWhy(params.decisionId),
     fetchBlastRadius(params.decisionId),
+    // b1: what this decision bets on.
+    fetchDecisionBet(params.decisionId).catch(() => null),
   ]);
   const signal = after.ok ? after.data.decisions.find((d) => d.decision_id === params.decisionId) ?? null : null;
   const weak = strengthChip(agreement.ok ? agreement.data.strength : signal?.agreement);
@@ -263,6 +267,13 @@ export default async function DecisionLineagePage({
             })}
           </ol>
         </SectionCard>
+        <DecisionBet
+          initial={bet}
+          decisionId={params.decisionId}
+          meetingId={params.meetingId}
+          decisionContent={title}
+          today={new Date().toISOString().slice(0, 10)}
+        />
         {/* The column's space-y spaces the sections, so an absent one (no agreement read yet)
             leaves no gap behind. */}
         <AgreementCard read={agreement} />
