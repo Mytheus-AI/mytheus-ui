@@ -107,3 +107,32 @@ export function titleFromTab(tabTitle: string | undefined | null, meeting: Detec
   if (GENERIC_TITLES.has(title.toLowerCase())) return "";
   return title.slice(0, 120);
 }
+
+/** A browser tab as far as choosing the meeting tab needs it (a subset of `chrome.tabs.Tab`). */
+export interface TabCandidate {
+  id?: number;
+  url?: string;
+  title?: string;
+  active?: boolean;
+  audible?: boolean;
+  /** True for the active tab of the last-focused normal browser window. */
+  focused?: boolean;
+}
+
+/**
+ * The tab the popup should capture. The popup used to read "the active tab of the current
+ * window", which is the popup itself whenever the browser shows the action popup as its own
+ * window (some Chromium browsers do), so a live call read as "Open a call to capture it".
+ * Preference, among tabs that hold a meeting: the focused window's active tab, then any active
+ * tab, then one playing sound, then the first. Null when no tab holds a meeting.
+ */
+export function pickMeetingTab<T extends TabCandidate>(tabs: readonly T[]): T | null {
+  const meetings = tabs.filter((t) => detectMeeting(t.url) !== null);
+  return (
+    meetings.find((t) => t.focused) ??
+    meetings.find((t) => t.active) ??
+    meetings.find((t) => t.audible) ??
+    meetings[0] ??
+    null
+  );
+}

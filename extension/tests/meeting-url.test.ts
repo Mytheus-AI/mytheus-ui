@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { detectMeeting, titleFromTab } from "../src/lib/meeting-url.ts";
+import { detectMeeting, pickMeetingTab, titleFromTab } from "../src/lib/meeting-url.ts";
 
 test("Google Meet: a call URL is a meeting, with its code", () => {
   const m = detectMeeting("https://meet.google.com/abc-defg-hij?authuser=1");
@@ -71,4 +71,20 @@ test("titles: product names, codes and counters are stripped; a real name is kep
   assert.equal(titleFromTab("84512345678", zoom), "");
   assert.equal(titleFromTab(undefined, zoom), "");
   assert.equal(titleFromTab("x".repeat(300), zoom).length, 120);
+});
+
+test("pickMeetingTab finds the call when the popup is its own window", () => {
+  const popupWindow = { id: 1, url: "chrome-extension://abc/popup.html", active: true };
+  const meet = { id: 2, url: "https://meet.google.com/fcg-iiqn-ttq", active: true, focused: true };
+  assert.equal(pickMeetingTab([popupWindow, meet])?.id, 2);
+});
+
+test("pickMeetingTab prefers the focused window, then active, then audible", () => {
+  const zoom = { id: 1, url: "https://app.zoom.us/wc/84512345678/join", audible: true };
+  const meetActive = { id: 2, url: "https://meet.google.com/abc-defg-hij", active: true };
+  const meetFocused = { id: 3, url: "https://meet.google.com/xyz-abcd-efg", active: true, focused: true };
+  assert.equal(pickMeetingTab([zoom, meetActive, meetFocused])?.id, 3);
+  assert.equal(pickMeetingTab([zoom, meetActive])?.id, 2);
+  assert.equal(pickMeetingTab([{ id: 9, url: "https://example.com" }, zoom])?.id, 1);
+  assert.equal(pickMeetingTab([{ id: 9, url: "https://meet.google.com/" }]), null);
 });

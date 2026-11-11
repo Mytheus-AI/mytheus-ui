@@ -12,7 +12,12 @@ import {
   type DecisionCheckSettings,
   type Site,
 } from "./lib/decisions.ts";
-import { detectMeeting, titleFromTab, type DetectedMeeting } from "./lib/meeting-url.ts";
+import {
+  detectMeeting,
+  pickMeetingTab,
+  titleFromTab,
+  type DetectedMeeting,
+} from "./lib/meeting-url.ts";
 import {
   CONSENT_NOTICE,
   IDLE_STATE,
@@ -423,14 +428,29 @@ function render(): void {
   root.replaceChildren(header(), view, link && !recording ? viewDecisionChecks() : "", footer() ?? "");
 }
 
+/**
+ * Every tab of the normal browser windows, with the last-focused window's active tab marked.
+ * Not "the current window": when the browser opens the action popup as its own window, that
+ * window is the popup, and the meeting tab is in another one.
+ */
+async function meetingTabCandidates(): Promise<(chrome.tabs.Tab & { focused: boolean })[]> {
+  const [windows, focusedWindow] = await Promise.all([
+    chrome.windows.getAll({ populate: true, windowTypes: ["normal"] }),
+    chrome.windows.getLastFocused({ windowTypes: ["normal"] }).catch(() => null),
+  ]);
+  return windows.flatMap((w) =>
+    (w.tabs ?? []).map((t) => ({ ...t, focused: Boolean(t.active && w.id === focusedWindow?.id) })),
+  );
+}
+
 async function load(): Promise<void> {
   const [tabs, session, local] = await Promise.all([
-    chrome.tabs.query({ active: true, currentWindow: true }),
+    meetingTabCandidates(),
     chrome.storage.session.get(STATE_KEY),
     chrome.storage.local.get([LINK_KEY, SETTINGS_KEY]),
   ]);
   checks = readSettings(local[SETTINGS_KEY]);
-  tab = tabs[0] ?? null;
+  tab = pickMeetingTab(tabs) ?? tabs.find((t) => t.focused) ?? null;
   meeting = detectMeeting(tab?.url);
   state = { ...IDLE_STATE, ...(session[STATE_KEY] as Partial<CaptureState> | undefined) };
   link = (local[LINK_KEY] as LinkRecord | undefined) ?? null;
