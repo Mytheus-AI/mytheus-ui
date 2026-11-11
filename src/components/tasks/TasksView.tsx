@@ -398,6 +398,12 @@ export function TasksView({ actions, members = null }: { actions: TaskItem[]; me
     setSelectedId(id);
     setPanelOpen(true);
   }, []);
+  // `?focus={id}` (a promise reminder, the weekly digest) opens that task on arrival.
+  const focusId = params?.get("focus") ?? null;
+  useEffect(() => {
+    if (focusId && actions.some((a) => a.id === focusId)) openTask(focusId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusId]);
   const closePanel = useCallback(() => setPanelOpen(false), []);
   const toggleGroup = useCallback(
     (g: TaskGroup) => setCollapsed((c) => ({ ...c, [g]: !c[g] })),

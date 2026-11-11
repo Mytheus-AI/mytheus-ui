@@ -28,6 +28,7 @@ import {
   Bell,
   Notebook,
   Broadcast,
+  Newspaper,
 } from "@phosphor-icons/react/ssr";
 
 /* The app's information architecture, in one place. One list feeds the sidebar, the topbar
@@ -104,6 +105,7 @@ export const SETTINGS_TABS: NavItem[] = [
 export const LINKED_ITEMS: NavItem[] = [
   { href: "/search", label: "Ask Mytheus", icon: Sparkle, keywords: "search question" },
   { href: "/welcome", label: "Welcome brief", icon: Compass, keywords: "new joiner" },
+  { href: "/digest", label: "Weekly digest", icon: Newspaper, keywords: "what changed this week summary" },
 ];
 
 /* Platform-staff consoles (every tenant, ops). Not in the workspace nav: staff status is only

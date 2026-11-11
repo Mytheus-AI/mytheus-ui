@@ -27,6 +27,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import type { AgendaPerson } from "@/components/meetings/AgendaEditor";
 import { AttendanceCard } from "@/components/meetings/AttendanceCard";
 import { CarryForwardCard } from "@/components/meetings/CarryForwardCard";
+import { PreApprovedAnswers } from "@/components/meetings/PreApprovedAnswers";
+import { WhatMyAgentSaid } from "@/components/meeting/WhatMyAgentSaid";
 import { BriefSection } from "@/components/briefs/BriefSection";
 import { HealthCard } from "@/components/health/HealthCard";
 import { Chip } from "@/components/meetings/Chip";
@@ -319,6 +321,7 @@ function UpcomingDetail({
         <div className="md-col">
           <WhenCard meeting={meeting} note={note} live={live} />
           {plan.attendance ? <AttendanceCard {...plan.attendance} /> : null}
+          {plan.attendance ? <PreApprovedAnswers meetingId={meeting.id} /> : null}
           {plan.brief ? <BriefSection brief={plan.brief} nameOf={plan.nameOf} goals={plan.goals} /> : null}
         </div>
         <div className="md-col">
@@ -400,6 +403,7 @@ function EndedDetail({
           </div>
           <div className="md-col">
             {!meeting.missed ? <CatchUpLink meetingId={meeting.id} sentAgent={plan.sentAgent} /> : null}
+            {plan.sentAgent ? <WhatMyAgentSaid meetingId={meeting.id} /> : null}
             {plan.agenda.items.length > 0 ? <PlanCards plan={plan} side="main" /> : null}
             <PlanCards plan={plan} side="aside" />
           </div>
@@ -487,6 +491,7 @@ function EndedDetail({
         </div>
         <div className="md-col">
           {plan.sentAgent ? <CatchUpLink meetingId={meeting.id} sentAgent /> : null}
+          {plan.sentAgent ? <WhatMyAgentSaid meetingId={meeting.id} /> : null}
           <PlanCards plan={plan} side="main" />
           <section className="mx-card mx-card-pad" aria-labelledby="md-thread-h">
             <div className="mx-card-head">
