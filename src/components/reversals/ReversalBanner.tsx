@@ -12,6 +12,8 @@ import type { DecisionReversal, ReversalDecision, ReversalStatus } from "@/lib/a
 import { dayMonth } from "@/lib/digest";
 import { decisionHref } from "@/lib/reversals";
 import { ReversalActions, taskOf } from "./ReversalActions";
+import { ReopenedLine } from "./ReopenedLine";
+import { reversalKind } from "@/lib/settlements";
 
 /* The banner over My work, Tasks: each task whose decision was replaced, with the old decision,
    the new one (both linking to their decision pages), the task, and Keep, Re-scope or Close.
@@ -61,7 +63,9 @@ export function ReversalBanner({ items: fromServer, focusId }: { items: Decision
         title="Decisions changed under your tasks"
         description={
           pending > 0
-            ? "A decision one of your tasks came from was replaced. Keep the task, re-scope it for the new decision, or close it."
+            ? items.every((r) => reversalKind(r) === "reopened")
+              ? "A decision one of your tasks came from was reopened. Keep the task, re-scope it, or close it."
+              : "A decision one of your tasks came from was replaced. Keep the task, re-scope it for the new decision, or close it."
             : "All settled. Each task now follows the decision that replaced the old one."
         }
         right={pending > 0 ? <Count n={pending} label="waiting on you" tone="medium" /> : <Chip tone="ok">Settled</Chip>}
@@ -137,6 +141,9 @@ function ReversalRow({
 }) {
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-8">
+      {reversalKind(r) === "reopened" ? (
+        <ReopenedLine d={r.old_decision} />
+      ) : (
       <div className="grid items-start gap-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:gap-4">
         <DecisionLine tone="before" label="Was" d={r.old_decision} />
         <span aria-hidden className="hidden h-full items-center text-ink-4 md:flex">
@@ -144,6 +151,7 @@ function ReversalRow({
         </span>
         <DecisionLine tone="now" label="Now" d={r.new_decision} />
       </div>
+      )}
       <div className="min-w-0 rounded-ctl bg-bg-2 px-3.5 py-3 lg:bg-transparent lg:p-0">
         <p className="flex flex-wrap items-center gap-2 text-[12.5px] font-semibold text-ink-3">
           <GitDiff size={14} aria-hidden />

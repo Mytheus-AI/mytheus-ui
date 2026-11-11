@@ -22,6 +22,7 @@ export type FeedKind =
 
 import type { DecisionReversal } from "../../lib/api/only-mytheus-types";
 import { parseSourceEvent } from "../../lib/reversals.ts";
+import { newNotificationLabel } from "../../lib/settlements.ts";
 
 export interface FeedRowInput {
   id: string;
@@ -183,6 +184,8 @@ export function describeNotification(row: FeedRowInput): FeedItem {
     body: row.body,
     quote: null,
     href: safeLink(row.link) ?? meetingHref,
-    linkLabel: ["/status-requests", "/work/updates"].includes(safeLink(row.link) ?? "") ? "Answer it" : "Open",
+    linkLabel:
+      newNotificationLabel(sourceEventId, safeLink(row.link)) ??
+      (["/status-requests", "/work/updates"].includes(safeLink(row.link) ?? "") ? "Answer it" : "Open"),
   };
 }

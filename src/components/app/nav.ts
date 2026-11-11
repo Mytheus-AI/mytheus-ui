@@ -15,6 +15,7 @@ import {
   Lifebuoy,
   Lock,
   PaintBrush,
+  Lightning,
   PlugsConnected,
   Scales,
   ShieldCheck,
@@ -77,6 +78,7 @@ export const WORK_TABS: NavItem[] = [
   { href: "/work/tasks", label: "Tasks", icon: CheckSquare, keywords: "action items to do" },
   { href: "/work/promises", label: "Promises", icon: Handshake, keywords: "commitments" },
   { href: "/work/updates", label: "Updates I owe", icon: ChatCircleDots, keywords: "status requests" },
+  { href: "/work/settle", label: "To settle", icon: Lightning, keywords: "clash conflict decisions other team settle" },
 ];
 
 /** The Workspace console's tabs (admins). The company brain keeps its sections as a secondary nav
