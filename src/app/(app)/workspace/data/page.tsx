@@ -19,7 +19,9 @@ import { loadErasures, loadExportRequests } from "@/lib/api/admin-tenant";
 import { listMembers } from "@/lib/api/members";
 import { listMeetings } from "@/lib/api/meetings";
 import { ErasureFlow, type ErasableMeeting } from "@/components/tenant/ErasureFlow";
-import { erasureSummary } from "@/lib/erasure";
+import { anyInProgress, erasureSummary } from "@/lib/erasure";
+import { ErasureStores } from "@/components/tenant/ErasureStores";
+import { RefreshWhile } from "@/components/tenant/RefreshWhile";
 import { safeHttpsUrl } from "@/lib/integrations";
 
 export const metadata: Metadata = { title: "Data and privacy | Mytheus" };
@@ -36,8 +38,10 @@ export const dynamic = "force-dynamic";
    https URL.
    - Erasing one person's or one meeting's data over `/admin/tenant/erasures`: a dialog picks the
      target, says what goes and what stays, and only turns Erase on once the admin types the
-     person's email or the meeting's title (the server checks it again). Completed erasures are
-     listed from the audit log. */
+     person's email or the meeting's title (the server checks it again). Erasures are listed from
+     the audit log, each with a per-store checklist: core-api's records finish with the request,
+     transcripts, the AI search index, keyword search and the knowledge graph report back as their
+     services run. While any store is waiting, the page re-reads itself every 10 seconds. */
 
 const dateTime = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
 const shortDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -182,16 +186,18 @@ export default async function DataExportPage() {
           </div>
         ) : erasures.kind === "live" ? (
           erasureRows.length === 0 ? (
-            <EmptyState inCard compact art="done" title="No erasures yet" description="Completed erasures are listed here, newest first, with what was removed." />
+            <EmptyState inCard compact art="done" title="No erasures yet" description="Erasures are listed here, newest first, with what was removed and each store's progress." />
           ) : (
             <div>
+              <RefreshWhile active={anyInProgress(erasureRows)} />
               <table className="mx-table w-full border-collapse text-left text-[14px]">
-                <caption className="sr-only">Completed erasures</caption>
+                <caption className="sr-only">Erasures and their progress in each store</caption>
                 <thead>
                   <tr className={theadRowClass}>
                     <th scope="col" className={`${thClass} !pl-[22px]`}>Erased</th>
                     <th scope="col" className={thClass}>What</th>
-                    <th scope="col" className={`${thClass} !pr-[22px]`}>Removed</th>
+                    <th scope="col" className={thClass}>Removed</th>
+                    <th scope="col" className={`${thClass} !pr-[22px]`}>Progress</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
@@ -206,8 +212,11 @@ export default async function DataExportPage() {
                           <span className="min-w-0 break-words text-ink">{r.label ?? (r.kind === "person" ? "A former member" : "A meeting")}</span>
                         </span>
                       </td>
-                      <td data-label="Removed" className="py-3 pl-5 pr-[22px] text-ink-3">
+                      <td data-label="Removed" className="px-5 py-3 text-ink-3">
                         {erasureSummary(r)}
+                      </td>
+                      <td data-label="Progress" className="py-3 pl-5 pr-[22px] align-top">
+                        <ErasureStores id={`erasure-${r.id}`} progress={r.progress} stores={r.stores} />
                       </td>
                     </tr>
                   ))}

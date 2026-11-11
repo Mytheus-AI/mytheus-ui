@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, Books, Prohibit, ShieldWarning } from "@phosphor-icons/react/dist/ssr";
+import { ArrowRight, Books, Prohibit, ShieldWarning } from "@phosphor-icons/react/dist/ssr";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LinkButton } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Page, PageHead } from "@/components/ui/Page";
 import { Note } from "@/components/ui/Note";
 import { StatCard, thClass } from "@/components/admin/StatCard";
 import { resolveCallMeeting } from "@/components/call/resolve-meeting";
@@ -135,129 +136,129 @@ export default async function CollaborationsPage({
   const refused = rows.filter(isRefused);
 
   return (
-    <div className="mx-page flex flex-col gap-6">
-      <div>
-        <Link href={`/meetings/${meeting.id}`} className="mx-back">
-          <ArrowLeft size={16} weight="bold" aria-hidden />
-          {meeting.title}
-        </Link>
-        <header className="mx-head" style={{ paddingBottom: 0 }}>
-          <div className="mx-head-main">
-            <h1 className="mx-title">Agent collaboration</h1>
-            <p className="mx-sub">
-              When someone&rsquo;s agent needed context they were missing, it asked another agent or their own knowledge
-              base. Every request is logged here, including the ones policy refused. What was shared is never shown here.
-            </p>
-          </div>
-        </header>
-      </div>
-
-      {page === null ? (
-        <Note tone="error">The collaboration log could not be loaded just now. Try again in a moment.</Note>
-      ) : (
-        <>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCard label={cursor ? "Requests on this page" : "Requests"} value={rows.length} />
-            <StatCard label="Answered" value={answered.length} />
-            <StatCard label="Denied or blocked" value={refused.length} />
-            <StatCard label="Median latency" value={rows.length ? `${median(rows.map((r) => r.latency_ms))} ms` : "None"} />
-          </div>
-
-          {rows.length === 0 ? (
-            <EmptyState
-              title={cursor ? "No older requests" : "No agent collaboration in this meeting"}
-              description="Agents only ask for context when the conversation refers to something a participant was missing."
-            />
-          ) : (
-            <section aria-label="Collaboration log" className="overflow-hidden rounded-card border border-line bg-surface shadow-warm-1">
-              <table className="hidden w-full border-collapse text-left text-[14px] md:table">
-                <thead>
-                  <tr className="bg-surface-2">
-                    <th scope="col" className={thClass}>Time</th>
-                    <th scope="col" className={thClass}>Who asked whom</th>
-                    <th scope="col" className={thClass}>Where</th>
-                    <th scope="col" className={thClass}>Asked for</th>
-                    <th scope="col" className={thClass}>Scope</th>
-                    <th scope="col" className={thClass}>Result</th>
-                    <th scope="col" className={`${thClass} text-right`}>Latency</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {rows.map((r) => (
-                    <tr key={r.id} className={isRefused(r) ? "bg-priority-high-soft" : "transition-colors hover:bg-surface-2"}>
-                      <td className="whitespace-nowrap px-5 py-3.5 text-[13px] tabular-nums text-ink-3">
-                        {time.format(new Date(r.created_at))}
-                      </td>
-                      <td className="max-w-[300px] px-5 py-3.5">
-                        <Pair row={r} />
-                      </td>
-                      <td className="whitespace-nowrap px-5 py-3.5 text-ink-2">{HOP_LABEL[r.hop] ?? r.hop}</td>
-                      <td className="whitespace-nowrap px-5 py-3.5 text-ink-2">{CLASS_LABEL[r.query_class] ?? r.query_class}</td>
-                      <td className="whitespace-nowrap px-5 py-3.5 text-ink-2">{scope(r)}</td>
-                      <td className="px-5 py-3.5">
-                        <Result row={r} />
-                      </td>
-                      <td className="whitespace-nowrap px-5 py-3.5 text-right tabular-nums text-ink-2">{r.latency_ms} ms</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              <ul className="divide-y divide-line md:hidden">
-                {rows.map((r) => (
-                  <li key={r.id} className={`px-4 py-4 text-[13.5px] ${isRefused(r) ? "bg-priority-high-soft" : ""}`}>
-                    <div className="flex items-center justify-between gap-3">
-                      <Pair row={r} />
-                      <span className="shrink-0">
-                        <Result row={r} />
-                      </span>
-                    </div>
-                    <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
-                      <div>
-                        <dt className="text-ink-3">Where</dt>
-                        <dd className="text-ink-2">{HOP_LABEL[r.hop] ?? r.hop}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-ink-3">Asked for</dt>
-                        <dd className="text-ink-2">{CLASS_LABEL[r.query_class] ?? r.query_class}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-ink-3">Scope</dt>
-                        <dd className="text-ink-2">{scope(r)}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-ink-3">When</dt>
-                        <dd className="tabular-nums text-ink-2">
-                          {time.format(new Date(r.created_at))}, {r.latency_ms} ms
-                        </dd>
-                      </div>
-                    </dl>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          {page.next_cursor || cursor ? (
-            <div className="flex items-center gap-3">
-              {cursor ? (
-                <LinkButton href={`/meetings/${meeting.id}/collaborations`} variant="outline" size="sm">
-                  Newest
-                </LinkButton>
-              ) : null}
-              {page.next_cursor ? (
-                <LinkButton
-                  href={`/meetings/${meeting.id}/collaborations?cursor=${encodeURIComponent(page.next_cursor)}`}
-                  variant="outline"
-                  size="sm"
-                >
-                  Older requests
-                </LinkButton>
-              ) : null}
+    <Page>
+      <PageHead
+        title="Agent collaboration"
+        context={
+          <>
+            When someone&rsquo;s agent needed context they were missing, it asked another agent or their own knowledge base. Every request is
+            logged here, including the ones policy refused. What was shared is never shown here.
+          </>
+        }
+        action={
+          <LinkButton href={`/meetings/${meeting.id}`} variant="outline">
+            Open the meeting
+          </LinkButton>
+        }
+      />
+      <div className="flex flex-col gap-6">
+        {page === null ? (
+          <Note tone="error">The collaboration log could not be loaded just now. Try again in a moment.</Note>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <StatCard label={cursor ? "Requests on this page" : "Requests"} value={rows.length} />
+              <StatCard label="Answered" value={answered.length} />
+              <StatCard label="Denied or blocked" value={refused.length} />
+              <StatCard label="Median latency" value={rows.length ? `${median(rows.map((r) => r.latency_ms))} ms` : "None"} />
             </div>
-          ) : null}
-        </>
-      )}
-    </div>
+
+            {rows.length === 0 ? (
+              <EmptyState
+                title={cursor ? "No older requests" : "No agent collaboration in this meeting"}
+                description="Agents only ask for context when the conversation refers to something a participant was missing."
+              />
+            ) : (
+              <Card as="section" flush aria-label="Collaboration log">
+                <table className="hidden w-full border-collapse text-left text-[14px] md:table">
+                  <thead>
+                    <tr className="bg-surface-2">
+                      <th scope="col" className={thClass}>Time</th>
+                      <th scope="col" className={thClass}>Who asked whom</th>
+                      <th scope="col" className={thClass}>Where</th>
+                      <th scope="col" className={thClass}>Asked for</th>
+                      <th scope="col" className={thClass}>Scope</th>
+                      <th scope="col" className={thClass}>Result</th>
+                      <th scope="col" className={`${thClass} text-right`}>Latency</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line">
+                    {rows.map((r) => (
+                      <tr key={r.id} className={isRefused(r) ? "bg-priority-high-soft" : "transition-colors hover:bg-surface-2"}>
+                        <td className="whitespace-nowrap px-5 py-3.5 text-[12.5px] tabular-nums text-ink-3">
+                          {time.format(new Date(r.created_at))}
+                        </td>
+                        <td className="max-w-[300px] px-5 py-3.5">
+                          <Pair row={r} />
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-3.5 text-ink-2">{HOP_LABEL[r.hop] ?? r.hop}</td>
+                        <td className="whitespace-nowrap px-5 py-3.5 text-ink-2">{CLASS_LABEL[r.query_class] ?? r.query_class}</td>
+                        <td className="whitespace-nowrap px-5 py-3.5 text-ink-2">{scope(r)}</td>
+                        <td className="px-5 py-3.5">
+                          <Result row={r} />
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-3.5 text-right tabular-nums text-ink-2">{r.latency_ms} ms</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                <ul className="divide-y divide-line md:hidden">
+                  {rows.map((r) => (
+                    <li key={r.id} className={`px-4 py-4 text-[14px] ${isRefused(r) ? "bg-priority-high-soft" : ""}`}>
+                      <div className="flex items-center justify-between gap-3">
+                        <Pair row={r} />
+                        <span className="shrink-0">
+                          <Result row={r} />
+                        </span>
+                      </div>
+                      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[12.5px]">
+                        <div>
+                          <dt className="text-ink-3">Where</dt>
+                          <dd className="text-ink-2">{HOP_LABEL[r.hop] ?? r.hop}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-ink-3">Asked for</dt>
+                          <dd className="text-ink-2">{CLASS_LABEL[r.query_class] ?? r.query_class}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-ink-3">Scope</dt>
+                          <dd className="text-ink-2">{scope(r)}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-ink-3">When</dt>
+                          <dd className="tabular-nums text-ink-2">
+                            {time.format(new Date(r.created_at))}, {r.latency_ms} ms
+                          </dd>
+                        </div>
+                      </dl>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}
+
+            {page.next_cursor || cursor ? (
+              <div className="flex items-center gap-3">
+                {cursor ? (
+                  <LinkButton href={`/meetings/${meeting.id}/collaborations`} variant="outline" size="sm">
+                    Newest
+                  </LinkButton>
+                ) : null}
+                {page.next_cursor ? (
+                  <LinkButton
+                    href={`/meetings/${meeting.id}/collaborations?cursor=${encodeURIComponent(page.next_cursor)}`}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Older requests
+                  </LinkButton>
+                ) : null}
+              </div>
+            ) : null}
+          </>
+        )}
+      </div>
+    </Page>
   );
 }

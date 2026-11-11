@@ -3,6 +3,7 @@ import { NewMeeting, type FollowUpOption } from "@/components/meetings/NewMeetin
 import { listMeetings, toCallMeeting } from "@/lib/api/meetings";
 import { fetchActiveGoals, fetchMeetingTemplates } from "@/lib/api/meeting-brain";
 import { listMembers } from "@/lib/api/members";
+import { Page, PageHead } from "@/components/ui/Page";
 import "@/styles/meeting-hub.css";
 import "@/styles/meeting-agenda.css";
 import "@/styles/meeting-brain.css";
@@ -41,14 +42,12 @@ export default async function MeetingsPage() {
     .map((m) => ({ id: m.id, title: m.title, startTime: m.startTime }));
 
   return (
-    <div className="mx-page">
-      <header className="mx-head">
-        <div className="mx-head-main">
-          <h1 className="mx-title">Meetings</h1>
-          <p className="mx-sub">Every call on your calendar, what your agent captured, and where to pick it up.</p>
-        </div>
-        <NewMeeting members={invitable} openFromLink recent={recent} me={me} templates={templates} goals={goals} />
-      </header>
+    <Page>
+      <PageHead
+        title="Meetings"
+        context="Every call on your calendar, what your agent captured, and where to pick it up."
+        action={<NewMeeting members={invitable} openFromLink recent={recent} me={me} templates={templates} goals={goals} />}
+      />
       <MeetingsHub
         meetings={meetings}
         people={people}
@@ -58,6 +57,6 @@ export default async function MeetingsPage() {
         templates={templates}
         goals={goals}
       />
-    </div>
+    </Page>
   );
 }

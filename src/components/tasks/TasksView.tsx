@@ -20,8 +20,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionBar } from "@/components/ui/Page";
 import { Count } from "@/components/ui/Chip";
 import { useOrgContext } from "@/lib/org-context";
-import { graceful, notifyInfo } from "@/lib/toast";
-import { markTaskDone } from "@/app/actions/tasks";
+import { notifyError, notifySuccess } from "@/lib/toast";
+import { markTaskDone, reopenTask } from "@/app/actions/tasks";
 import type { TaskItem } from "@/lib/tasks";
 import { SidePanel } from "./SidePanel";
 import { NewTaskDialog } from "./NewTaskDialog";
@@ -30,10 +30,11 @@ import { TaskDetailBody, TaskDetailHeader } from "./TaskDetail";
 import { CheckButton, DueChip, PriorityBadge } from "./task-ui";
 import { daysUntil, groupOf, sortTasks, type Task, type TaskGroup } from "./dates";
 
-/* My work, Tasks tab. Completing a task shows it done at once with a "Task completed" toast and
-   Undo; `markTaskDone` (POST /api/v1/actions/{id}/done) is only sent after a five second grace
-   period, because done is final server-side. Undo (the toast, or the task's own check while the
-   grace runs) simply never sends it; a refusal rolls it back with the server's reason. "New task"
+/* My work, Tasks tab. Completing a task shows it done at once and sends `markTaskDone` (POST
+   /api/v1/actions/{id}/done) straight away, with a "Task completed" toast whose Undo reopens it
+   (`reopenTask`, POST /api/v1/actions/{id}/reopen). The check on a done task reopens it too, at
+   any time. A refusal either way rolls the row back with the server's reason; an Undo pressed
+   while the completion is still in flight waits for it, so the two never cross. "New task"
    (the tab's action, or `?new=1` from the command palette) opens the New task dialog. Everything
    else (view, filters, groups, quick view) is client-side presentation of the tasks the page read. */
 
@@ -343,31 +344,40 @@ export function TasksView({ actions, members = null }: { actions: TaskItem[]; me
           .filter(Boolean)
           .join(", ") + ".";
 
-  // Undo for a completion still inside its grace period, by task id.
-  const pendingUndo = useRef<Record<string, () => void>>({});
+  // The write in flight per task, so a reopen never overtakes the completion it undoes.
+  const inFlight = useRef<Record<string, Promise<unknown>>>({});
+  const reopen = useCallback((id: string) => {
+    setDoneMap((m) => ({ ...m, [id]: false }));
+    const run = (inFlight.current[id] ?? Promise.resolve()).then(() => reopenTask(id));
+    inFlight.current[id] = run;
+    void run.then((res) => {
+      if (inFlight.current[id] === run) delete inFlight.current[id];
+      if (res.ok) notifySuccess("Task reopened");
+      else {
+        setDoneMap((m) => ({ ...m, [id]: true }));
+        notifyError(res.message);
+      }
+    });
+  }, []);
   const toggleDone = useCallback(
     (id: string) => {
       if (doneMap[id]) {
-        const undo = pendingUndo.current[id];
-        if (undo) undo();
-        else notifyInfo("Completed tasks stay completed", { description: "Done is final once the grace period has passed." });
+        reopen(id);
         return;
       }
-      const { undo } = graceful({
-        message: "Task completed",
-        apply: () => setDoneMap((m) => ({ ...m, [id]: true })),
-        revert: () => {
-          delete pendingUndo.current[id];
+      setDoneMap((m) => ({ ...m, [id]: true }));
+      notifySuccess("Task completed", { undo: () => reopen(id) });
+      const run = (inFlight.current[id] ?? Promise.resolve()).then(() => markTaskDone(id));
+      inFlight.current[id] = run;
+      void run.then((res) => {
+        if (inFlight.current[id] === run) delete inFlight.current[id];
+        if (!res.ok) {
           setDoneMap((m) => ({ ...m, [id]: false }));
-        },
-        commit: () => {
-          delete pendingUndo.current[id];
-          return markTaskDone(id);
-        },
+          notifyError(res.message);
+        }
       });
-      pendingUndo.current[id] = undo;
     },
-    [doneMap],
+    [doneMap, reopen],
   );
 
   const router = useRouter();
@@ -388,6 +398,12 @@ export function TasksView({ actions, members = null }: { actions: TaskItem[]; me
     setSelectedId(id);
     setPanelOpen(true);
   }, []);
+  // `?focus={id}` (a promise reminder, the weekly digest) opens that task on arrival.
+  const focusId = params?.get("focus") ?? null;
+  useEffect(() => {
+    if (focusId && actions.some((a) => a.id === focusId)) openTask(focusId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusId]);
   const closePanel = useCallback(() => setPanelOpen(false), []);
   const toggleGroup = useCallback(
     (g: TaskGroup) => setCollapsed((c) => ({ ...c, [g]: !c[g] })),

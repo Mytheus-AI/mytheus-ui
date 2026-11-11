@@ -1,3 +1,6 @@
+import { applyUpdate, forgotten, type MemoryUpdate, type PersonMemory } from "../../../src/lib/memory";
+import { MEMORY_FIXTURE } from "../memory-fixture";
+
 // The server actions the room calls, answered as core-api would on success.
 const row = (id: string) => ({ id, content: "Ship the beta on 2 December", status: "confirmed", confirmed_by: "u-maya" });
 export async function confirmCandidate(_kind: string, id: string) {
@@ -61,7 +64,13 @@ export async function askAgent(question: string) {
       degraded: false,
       citations: [
         { n: 1, text: "QA signed off on the beta, so we ship on the second.", kind: "decision", meeting_id: "8a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d", decision_id: "33333333-3333-4333-8333-333333333333", meeting_title: "Q4 launch review" },
-        { n: 2, text: "Pro stays at 25 dollars a seat.", kind: "transcript", meeting_id: "44444444-4444-4444-8444-444444444444", meeting_title: "Pricing review", occurred_at: "2026-11-04T10:00:00Z", speaker: "Raj Patel" },
+        { n: 2, text: "Pro stays at 25 dollars a seat.", kind: "transcript", meeting_id: "44444444-4444-4444-8444-444444444444", meeting_title: "Pricing review", occurred_at: "2026-11-04T10:00:00Z", speaker: "Raj Patel", start_ms: 754_200 },
+        {
+          n: 3,
+          text: "Pricing policy: list prices change once a quarter, after the pricing review signs off. Existing customers keep their price until renewal, and any discount above 20 percent needs the finance lead's approval in writing before it is offered.",
+          kind: "document",
+          document_id: "66666666-6666-4666-8666-666666666666",
+        },
       ],
     },
   };
@@ -108,4 +117,121 @@ export async function exportDecision() {
 }
 export async function eraseData() {
   return { ok: true as const, summary: "3 notes and 1 promise removed", label: "Pricing review" };
+}
+
+// Settings > Agent memory (wave 3): answered as core-api would, from the harness's fixture.
+let memoryState: PersonMemory = MEMORY_FIXTURE;
+export async function updateMemory(update: MemoryUpdate) {
+  if ((update.pin_topics ?? []).includes("Refuse me")) return { ok: false as const, message: "Your change could not be saved just now. Try again in a moment." };
+  memoryState = applyUpdate(memoryState, update);
+  return { ok: true as const, memory: memoryState };
+}
+export async function forgetEverything() {
+  memoryState = forgotten(memoryState);
+  return { ok: true as const };
+}
+
+// Off the record and the consent receipt (wave 3), answered as core-api and meeting-service would.
+const offRecordState = (active: boolean, requestedBy: string | null = null) => {
+  const started = new Date(Date.now() - 4 * 60_000).toISOString();
+  const seg = {
+    id: "66666666-6666-4666-8666-666666666666",
+    started_at: started,
+    started_by: "u-maya",
+    requested_by: requestedBy,
+    ended_at: active ? null : new Date().toISOString(),
+    ended_by: active ? null : "u-maya",
+    start_ms: 600_000,
+    end_ms: active ? null : 840_000,
+    duration_ms: active ? null : 240_000,
+  };
+  const state = { meeting_id: "m", active, current: active ? seg : null, segments: [seg], total_ms: active ? 0 : 240_000, can_toggle: true };
+  return {
+    ok: true as const,
+    state,
+    wire: {
+      active,
+      segmentId: seg.id,
+      startedAt: seg.started_at,
+      startedBy: seg.started_by,
+      requestedBy,
+      endedAt: seg.ended_at,
+      endedBy: seg.ended_by,
+      totalMs: state.total_ms,
+      at: new Date().toISOString(),
+    },
+  };
+};
+export async function startOffRecord(_meetingId: string, requestedBy: string | null = null) {
+  return offRecordState(true, requestedBy);
+}
+export async function endOffRecord() {
+  return offRecordState(false);
+}
+export async function loadOffRecord() {
+  return offRecordState(false);
+}
+export async function loadConsentReceipt(meetingId: string) {
+  return {
+    ok: true as const,
+    receipt: {
+      meeting_id: meetingId,
+      meeting_title: "Q4 launch review",
+      consent_required: true,
+      consented: true,
+      consented_at: "2026-11-11T09:59:00Z",
+      consent_version: "room-notice-2026-11-11.2",
+      current_version: "room-notice-2026-11-11.2",
+      recording: false,
+      clauses: [
+        { key: "transcript", title: "A transcript is kept", body: "What is said is transcribed with who said it." },
+        { key: "off_record", title: "You can go off the record", body: "Anyone can ask the host to go off the record." },
+      ],
+    },
+  };
+}
+
+// Only-Mytheus wave: decision reversal, delegated answers, the precheck's status ask, digest prefs.
+const REV = {
+  id: "6f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b",
+  status: "kept",
+  created_at: "2026-11-10T09:00:00Z",
+  resolved_at: "2026-11-11T09:00:00Z",
+  old_decision: { id: "d-old", content: "Ship the beta to 40 customers", meeting_id: "m-1", meeting_title: "Beta review", decided_at: "2026-10-03T10:00:00Z" },
+  new_decision: { id: "d-new", content: "Ship the beta to 10 design partners", meeting_id: "m-2", meeting_title: "Launch sync", decided_at: "2026-11-10T10:00:00Z" },
+  action: { id: "a-1", content: "Email the 40 beta customers", due_date: "2026-11-20", status: "confirmed", meeting_id: "m-1", meeting_title: "Beta review" },
+};
+export async function resolveDecisionReversal(_id: string, resolution: string, fields: { content?: string; due_date?: string | null } = {}) {
+  const status = resolution === "keep" ? "kept" : resolution === "close" ? "closed" : "rescoped";
+  return {
+    ok: true as const,
+    reversal: { ...REV, status, action: { ...REV.action, content: fields.content ?? REV.action.content, due_date: fields.due_date === undefined ? REV.action.due_date : fields.due_date } },
+  };
+}
+export async function saveDelegatedAnswers(meetingId: string, statements: string[]) {
+  return {
+    ok: true as const,
+    saved: {
+      meeting_id: meetingId,
+      attendance: "agent" as const,
+      editable: true,
+      max_statements: 10,
+      max_chars: 300,
+      statements: statements.map((text, position) => ({ id: `s-${position}`, text, position, updated_at: "2026-11-11T09:00:00Z" })),
+    },
+  };
+}
+export async function askForStatusInstead(actionIds: string[]) {
+  const names = ["Raj Patel", "Priya Nair", "Diego Ruiz"];
+  return {
+    ok: true as const,
+    asked: {
+      requested: actionIds.length,
+      skipped: 0,
+      items: actionIds.map((action_id, i) => ({ action_id, request_id: `r-${i}`, owner_name: names[i] ?? null, reason: "requested" as const })),
+    },
+  };
+}
+export async function saveDigestPreferences(prefs: { weekly_enabled: boolean; email_enabled: boolean }) {
+  return { ok: true as const, prefs };
 }

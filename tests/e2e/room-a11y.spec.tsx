@@ -74,7 +74,7 @@ test("the keyboard reaches every control in order, and tabs and popovers behave"
     if (name) order.push(name);
   }
   const at = (label: string) => order.findIndex((n) => n.startsWith(label));
-  for (const label of ["Call", "Copy meeting link", "Side panel", "Microphone", "Camera", "Raise hand", "Send a reaction", "Live captions", "Grid view", "More options", "Leave or end the meeting", "Agent"]) {
+  for (const label of ["Call", "Copy meeting link", "Side panel", "Microphone", "Camera", "Raise hand", "Send a reaction", "Off the record", "Live captions", "Caption language", "Grid view", "More options", "Leave or end the meeting", "Agent"]) {
     expect(at(label), `${label} is reachable by Tab (got ${order.join(" | ")})`).toBeGreaterThanOrEqual(0);
   }
   // Top bar, then the stage's controls, then the panel.
@@ -103,7 +103,9 @@ test("the keyboard reaches every control in order, and tabs and popovers behave"
   await more.focus();
   await page.keyboard.press("Enter");
   await expect(more).toHaveAttribute("aria-expanded", "true");
-  await expect(page.getByRole("switch", { name: /Keyboard shortcuts/ })).toBeFocused();
+  // Its first item is "What is recorded" (wave 3), then the shortcuts switch.
+  await expect(page.getByRole("button", { name: /What is recorded/ })).toBeFocused();
+  await expect(page.getByRole("switch", { name: /Keyboard shortcuts/ })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(more).toHaveAttribute("aria-expanded", "false");
   await expect(more).toBeFocused();

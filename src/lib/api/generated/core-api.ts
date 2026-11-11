@@ -128,6 +128,114 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/actions/{action_id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reopen
+         * @description Move a `done` action back to `confirmed` (wave 3: the "done" Undo on web and phone,
+         *     and reopening a task finished by mistake).
+         *
+         *     For its assignee or its owner (the person who confirmed or created it, `confirmed_by`);
+         *     anyone else is 403, another tenant's or a deleted task 404. Idempotent: an open
+         *     (`confirmed`) task answers 200 unchanged; a `proposed` or `dismissed` candidate is 409.
+         *     Audited (`action.reopened`); emits nothing, like `done` (the `actions` topic carries
+         *     confirmations only).
+         */
+        post: operations["reopen"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/capture/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Capture
+         * @description authz: member. Start recording an in-person meeting on the caller's phone.
+         */
+        post: operations["start_capture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/capture/sessions/{meeting_id}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End Capture
+         * @description authz: member (a participant of the meeting). End the recording and the meeting, with
+         *     its real start and end. Idempotent: an ended meeting answers 200 unchanged.
+         */
+        post: operations["end_capture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/capture/sessions/{meeting_id}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Capture
+         * @description authz: member (a participant of the meeting). A fresh token for a running capture.
+         */
+        post: operations["refresh_capture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/capture/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Capture Status
+         * @description authz: member. Whether in-person recording is connected on this server.
+         */
+        get: operations["capture_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/chat": {
         parameters: {
             query?: never;
@@ -199,6 +307,63 @@ export interface paths {
          * @description Hide a fill card for good. Requester only; repeating it is 200 and writes nothing.
          */
         post: operations["dismiss_context_fill"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/decision-reversals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Reversals
+         * @description The caller's own reversals, newest first (at most 200).
+         */
+        get: operations["list_reversals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/decision-reversals/{reversal_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Reversal */
+        get: operations["get_reversal"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/decision-reversals/{reversal_id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve Reversal
+         * @description Keep, re-scope or close the task. Idempotent per resolution.
+         */
+        post: operations["resolve_reversal"];
         delete?: never;
         options?: never;
         head?: never;
@@ -330,6 +495,92 @@ export interface paths {
         put?: never;
         /** Create Department */
         post: operations["create_department"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/digests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Digests */
+        get: operations["list_digests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/digests/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Latest Digest */
+        get: operations["latest_digest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/digests/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Preferences */
+        get: operations["get_preferences"];
+        /** Put Preferences */
+        put: operations["put_preferences"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/digests/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preview Digest */
+        get: operations["preview_digest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/digests/{digest_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Digest */
+        get: operations["get_digest"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -768,6 +1019,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/meetings/{meeting_id}/delegated-answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Delegated Answers */
+        get: operations["get_delegated_answers"];
+        /** Put Delegated Answers */
+        put: operations["put_delegated_answers"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meetings/{meeting_id}/delegated-answers/log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Delegated Answer Log */
+        get: operations["delegated_answer_log"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/meetings/{meeting_id}/follow-up": {
         parameters: {
             query?: never;
@@ -829,6 +1115,54 @@ export interface paths {
         get: operations["get_minutes"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meetings/{meeting_id}/off-record": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Off Record
+         * @description Whether the meeting is off the record now, and every off-the-record stretch so far
+         *     (participants only). The transcript, the minutes and the room read it.
+         */
+        get: operations["get_off_record"];
+        put?: never;
+        /**
+         * Start Off Record
+         * @description Take the meeting off the record (the host or the creator). Pauses every agent and all
+         *     transcript persistence, captions included, until it is ended. Idempotent: while a segment
+         *     runs, this answers it unchanged.
+         */
+        post: operations["start_off_record"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meetings/{meeting_id}/off-record/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End Off Record
+         * @description Back on the record (the host or the creator): transcription and the agents resume.
+         *     Idempotent: with nothing running, this answers the state unchanged.
+         */
+        post: operations["end_off_record"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1230,7 +1564,8 @@ export interface paths {
          */
         get: operations["list_status_requests"];
         put?: never;
-        post?: never;
+        /** Ask For Status */
+        post: operations["ask_for_status"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1554,6 +1889,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/internal/digests/weekly": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Weekly Run */
+        post: operations["weekly_run"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/internal/meetings/{meeting_id}/agenda": {
         parameters: {
             query?: never;
@@ -1580,6 +1932,23 @@ export interface paths {
         };
         /** Crm Digest */
         get: operations["crm_digest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/meetings/{meeting_id}/delegated-answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Internal Delegated Answers */
+        get: operations["internal_delegated_answers"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1773,6 +2142,40 @@ export interface paths {
         get: operations["person_memory"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/promise-drift/due": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Due Actions */
+        get: operations["due_actions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/promise-drift/nudges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Nudge */
+        post: operations["nudge"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2215,6 +2618,92 @@ export interface components {
             status: string;
             /** Why */
             why?: string | null;
+        };
+        /** CaptureEnded */
+        CaptureEnded: {
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /**
+             * Status
+             * @default ended
+             * @constant
+             */
+            status: "ended";
+        };
+        /** CaptureRefresh */
+        CaptureRefresh: {
+            /**
+             * Consent At
+             * Format: date-time
+             */
+            consent_at: string;
+        };
+        /** CaptureSession */
+        CaptureSession: {
+            /** Capture Token */
+            capture_token: string;
+            /** Consent At */
+            consent_at: string;
+            /**
+             * Encoding
+             * @default pcm_s16le
+             * @constant
+             */
+            encoding: "pcm_s16le";
+            /**
+             * Expires At
+             * @description Unix seconds; mint a fresh token after this.
+             */
+            expires_at: number;
+            /**
+             * Ingest Url
+             * @description transcription-service's `/capture/audio` WebSocket.
+             */
+            ingest_url: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /**
+             * Sample Rate
+             * @default 16000
+             */
+            sample_rate: number;
+            /**
+             * Source
+             * @default in_person
+             * @constant
+             */
+            source: "in_person";
+            /** Title */
+            title: string;
+        };
+        /** CaptureStart */
+        CaptureStart: {
+            /**
+             * Consent
+             * @description The caller confirms everyone in the room knows it is being recorded.
+             */
+            consent: boolean;
+            /**
+             * Consent At
+             * @description When they confirmed; now when omitted. At most a day old.
+             */
+            consent_at?: string | null;
+            /** Title */
+            title?: string | null;
+        };
+        /** CaptureStatus */
+        CaptureStatus: {
+            /**
+             * Configured
+             * @description False until the server has a capture secret and URL.
+             */
+            configured: boolean;
         };
         /**
          * CarryForward
@@ -2805,6 +3294,34 @@ export interface components {
              */
             status: "confirmed" | "superseded";
         };
+        /** DecisionReversal */
+        DecisionReversal: {
+            action: components["schemas"]["ReversalAction"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            new_decision: components["schemas"]["ReversalDecision"];
+            old_decision: components["schemas"]["ReversalDecision"];
+            /** Resolved At */
+            resolved_at?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "kept" | "rescoped" | "closed";
+        };
+        /** DecisionReversalList */
+        DecisionReversalList: {
+            /** Items */
+            items: components["schemas"]["DecisionReversal"][];
+        };
         /**
          * DecisionUpdate
          * @description PATCH body: edit a proposed decision before confirming it. At least one field.
@@ -2814,6 +3331,87 @@ export interface components {
             content?: string | null;
             /** Rationale */
             rationale?: string | null;
+        };
+        /** DelegatedAnswerEntry */
+        DelegatedAnswerEntry: {
+            /** Answer */
+            answer: string;
+            /** Asked By */
+            asked_by?: string | null;
+            /** Asked By Name */
+            asked_by_name?: string | null;
+            /** Covered */
+            covered: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Question */
+            question: string;
+            /** Statement Id */
+            statement_id?: string | null;
+            /** Statement Text */
+            statement_text?: string | null;
+        };
+        /** DelegatedAnswerLog */
+        DelegatedAnswerLog: {
+            /** Items */
+            items: components["schemas"]["DelegatedAnswerEntry"][];
+        };
+        /** DelegatedAnswers */
+        DelegatedAnswers: {
+            /**
+             * Attendance
+             * @enum {string}
+             */
+            attendance: "live" | "agent";
+            /** Editable */
+            editable: boolean;
+            /**
+             * Max Chars
+             * @default 300
+             */
+            max_chars: number;
+            /**
+             * Max Statements
+             * @default 10
+             */
+            max_statements: number;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Statements */
+            statements: components["schemas"]["DelegatedStatement"][];
+        };
+        /** DelegatedAnswersUpdate */
+        DelegatedAnswersUpdate: {
+            /** Statements */
+            statements: string[];
+        };
+        /** DelegatedStatement */
+        DelegatedStatement: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Position */
+            position: number;
+            /** Text */
+            text: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** Department */
         Department: {
@@ -2867,6 +3465,20 @@ export interface components {
             /** Content */
             content: string;
         };
+        /** DigestLatest */
+        DigestLatest: {
+            digest?: components["schemas"]["WeeklyDigest"] | null;
+            /**
+             * Next Run At
+             * Format: date-time
+             */
+            next_run_at: string;
+        };
+        /** DigestList */
+        DigestList: {
+            /** Items */
+            items: components["schemas"]["DigestSummary"][];
+        };
         /** DigestParticipant */
         DigestParticipant: {
             /** Email */
@@ -2878,6 +3490,74 @@ export interface components {
              * Format: uuid
              */
             user_id: string;
+        };
+        /** DigestPreferences */
+        DigestPreferences: {
+            /**
+             * Email Enabled
+             * @default false
+             */
+            email_enabled: boolean;
+            /**
+             * Weekly Enabled
+             * @default true
+             */
+            weekly_enabled: boolean;
+        };
+        /** DigestSummary */
+        DigestSummary: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Item Count */
+            item_count: number;
+            /**
+             * Week Start
+             * Format: date
+             */
+            week_start: string;
+        };
+        /** DriftNudgeRequest */
+        DriftNudgeRequest: {
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /** Issues */
+            issues: components["schemas"]["OpenIssue"][];
+        };
+        /** DriftNudgeResult */
+        DriftNudgeResult: {
+            /** Host */
+            host: number;
+            /** Owner */
+            owner: number;
+        };
+        /** DueAction */
+        DueAction: {
+            /**
+             * Action Id
+             * Format: uuid
+             */
+            action_id: string;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+        };
+        /** DueActions */
+        DueActions: {
+            /** Items */
+            items: components["schemas"]["DueAction"][];
         };
         /** ErasureApplied */
         ErasureApplied: {
@@ -3225,6 +3905,23 @@ export interface components {
             /** Questions */
             questions?: string[];
         };
+        /** InternalDelegate */
+        InternalDelegate: {
+            /** Name */
+            name: string;
+            /** Statements */
+            statements: components["schemas"]["InternalStatement"][];
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** InternalDelegates */
+        InternalDelegates: {
+            /** Delegates */
+            delegates: components["schemas"]["InternalDelegate"][];
+        };
         /**
          * InternalProxy
          * @description ADR-0039 B5: a participant who sent their agent instead.
@@ -3239,6 +3936,16 @@ export interface components {
              * Format: uuid
              */
             user_id: string;
+        };
+        /** InternalStatement */
+        InternalStatement: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Text */
+            text: string;
         };
         /**
          * LatestStatus
@@ -3310,6 +4017,12 @@ export interface components {
             participants?: components["schemas"]["Participant"][];
             /** Previous Meeting Id */
             previous_meeting_id?: string | null;
+            /**
+             * Recorded In Person
+             * @description True for a meeting held in a room and recorded on a phone: it has no call and no Mytheus room to join (its `source` is `mytheus`).
+             * @default false
+             */
+            recorded_in_person: boolean;
             /** Scheduled End */
             scheduled_end: string | null;
             /** Scheduled Start */
@@ -3356,7 +4069,7 @@ export interface components {
             /** Scheduled Start */
             scheduled_start?: string | null;
             /** Source */
-            source?: ("mytheus" | "meet" | "teams" | "zoom") | null;
+            source?: ("mytheus" | "meet" | "teams" | "zoom" | "in_person") | null;
             /** Template Id */
             template_id?: string | null;
             /** Title */
@@ -3400,6 +4113,12 @@ export interface components {
             previous_meeting?: components["schemas"]["MeetingRef"] | null;
             /** Previous Meeting Id */
             previous_meeting_id?: string | null;
+            /**
+             * Recorded In Person
+             * @description True for a meeting held in a room and recorded on a phone: it has no call and no Mytheus room to join (its `source` is `mytheus`).
+             * @default false
+             */
+            recorded_in_person: boolean;
             /** Scheduled End */
             scheduled_end: string | null;
             /** Scheduled Start */
@@ -3732,6 +4451,12 @@ export interface components {
             /** Agent */
             agent: string;
             /**
+             * Dismissed
+             * @description Of `samples`, about how many you dismissed (the recency-weighted dismiss share times `samples`), for a plain-language "you dismissed 4 of the last 10"
+             * @default 0
+             */
+            dismissed: number;
+            /**
              * Personal
              * @description True when tuned from your own feedback
              */
@@ -3969,6 +4694,102 @@ export interface components {
         NoteRating: {
             /** Useful */
             useful: boolean;
+        };
+        /**
+         * OffRecordSegment
+         * @description One stretch of the meeting that was (or is) off the record.
+         */
+        OffRecordSegment: {
+            /**
+             * Duration Ms
+             * @description Length of a finished segment; null while it runs.
+             */
+            duration_ms?: number | null;
+            /** End Ms */
+            end_ms?: number | null;
+            /**
+             * Ended At
+             * @description Null while it runs.
+             */
+            ended_at?: string | null;
+            /**
+             * Ended By
+             * @description Null while it runs, or when the meeting ending closed it.
+             */
+            ended_by?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Requested By
+             * @description Who asked for it, when the host granted a request.
+             */
+            requested_by?: string | null;
+            /**
+             * Start Ms
+             * @description Where it began on the meeting's clock (the transcript's time origin), or null when the room clock is unknown.
+             */
+            start_ms?: number | null;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Started By */
+            started_by: string | null;
+        };
+        /** OffRecordStart */
+        OffRecordStart: {
+            /**
+             * Requested By
+             * @description The participant whose request the host is granting, if any. Must be a participant of the meeting.
+             */
+            requested_by?: string | null;
+        };
+        /**
+         * OffRecordState
+         * @description Whether the meeting is off the record now, and every off-the-record stretch so far.
+         */
+        OffRecordState: {
+            /** Active */
+            active: boolean;
+            /**
+             * Can Toggle
+             * @description Whether the caller (the host or the creator) may start and end it.
+             */
+            can_toggle: boolean;
+            /** @description The running segment, when active. */
+            current?: components["schemas"]["OffRecordSegment"] | null;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /**
+             * Segments
+             * @description Every segment in time order, the running one last.
+             */
+            segments?: components["schemas"]["OffRecordSegment"][];
+            /**
+             * Total Ms
+             * @description Total length of the finished segments.
+             * @default 0
+             */
+            total_ms: number;
+        };
+        /** OpenIssue */
+        OpenIssue: {
+            /**
+             * Action Id
+             * Format: uuid
+             */
+            action_id: string;
+            /** Issue Key */
+            issue_key: string;
+            /** Issue Url */
+            issue_url?: string | null;
         };
         /**
          * Participant
@@ -4325,6 +5146,61 @@ export interface components {
             /** Decisions */
             decisions: components["schemas"]["RetrievedDecision"][];
         };
+        /** ReversalAction */
+        ReversalAction: {
+            /** Content */
+            content: string;
+            /** Due Date */
+            due_date?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Meeting Id */
+            meeting_id?: string | null;
+            /** Meeting Title */
+            meeting_title?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "proposed" | "confirmed" | "done" | "dismissed";
+        };
+        /** ReversalDecision */
+        ReversalDecision: {
+            /** Content */
+            content: string;
+            /**
+             * Decided At
+             * Format: date-time
+             */
+            decided_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Meeting Title */
+            meeting_title?: string | null;
+        };
+        /** ReversalResolve */
+        ReversalResolve: {
+            /** Content */
+            content?: string | null;
+            /** Due Date */
+            due_date?: string | null;
+            /**
+             * Resolution
+             * @enum {string}
+             */
+            resolution: "keep" | "rescope" | "close";
+        };
         /** RoomState */
         RoomState: {
             /**
@@ -4645,6 +5521,23 @@ export interface components {
             /** Status Text */
             status_text: string;
         };
+        /** StatusAskItem */
+        StatusAskItem: {
+            /**
+             * Action Id
+             * Format: uuid
+             */
+            action_id: string;
+            /** Owner Name */
+            owner_name?: string | null;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "requested" | "already_pending" | "no_owner" | "not_open" | "own_action" | "not_found";
+            /** Request Id */
+            request_id?: string | null;
+        };
         /**
          * StatusRequest
          * @description A status asked of the caller about one of their actions before a follow-up meeting.
@@ -4692,6 +5585,20 @@ export interface components {
         StatusRequestList: {
             /** Items */
             items: components["schemas"]["StatusRequest"][];
+        };
+        /** StatusRequestsAsk */
+        StatusRequestsAsk: {
+            /** Action Ids */
+            action_ids: string[];
+        };
+        /** StatusRequestsAsked */
+        StatusRequestsAsked: {
+            /** Items */
+            items: components["schemas"]["StatusAskItem"][];
+            /** Requested */
+            requested: number;
+            /** Skipped */
+            skipped: number;
         };
         /**
          * Suggestion
@@ -4937,6 +5844,162 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** WeeklyDigest */
+        WeeklyDigest: {
+            /** Actions Assigned */
+            actions_assigned?: components["schemas"]["WeeklyDigestAction"][];
+            /** Actions Closed */
+            actions_closed?: components["schemas"]["WeeklyDigestAction"][];
+            /** Created At */
+            created_at?: string | null;
+            /** Decision Changes */
+            decision_changes?: components["schemas"]["WeeklyDigestChange"][];
+            /** Decisions */
+            decisions?: components["schemas"]["WeeklyDigestDecision"][];
+            /** Id */
+            id?: string | null;
+            /**
+             * Item Count
+             * @default 0
+             */
+            item_count: number;
+            /** Promises Due */
+            promises_due?: components["schemas"]["WeeklyDigestPromise"][];
+            /** Topics */
+            topics?: string[];
+            /**
+             * Week End
+             * Format: date
+             */
+            week_end: string;
+            /**
+             * Week Start
+             * Format: date
+             */
+            week_start: string;
+        };
+        /** WeeklyDigestAction */
+        WeeklyDigestAction: {
+            /** Changed At */
+            changed_at?: string | null;
+            /** Content */
+            content: string;
+            /** Due Date */
+            due_date?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Meeting Id */
+            meeting_id?: string | null;
+            /** Meeting Title */
+            meeting_title?: string | null;
+            /** Status */
+            status: string;
+        };
+        /** WeeklyDigestChange */
+        WeeklyDigestChange: {
+            /**
+             * Changed At
+             * Format: date-time
+             */
+            changed_at: string;
+            /** Matched Topics */
+            matched_topics?: string[];
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Meeting Title */
+            meeting_title?: string | null;
+            /** New Content */
+            new_content: string;
+            /**
+             * New Decision Id
+             * Format: uuid
+             */
+            new_decision_id: string;
+            /** Old Content */
+            old_content: string;
+            /**
+             * Old Decision Id
+             * Format: uuid
+             */
+            old_decision_id: string;
+        };
+        /** WeeklyDigestDecision */
+        WeeklyDigestDecision: {
+            /** Content */
+            content: string;
+            /**
+             * Decided At
+             * Format: date-time
+             */
+            decided_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Matched Topics */
+            matched_topics?: string[];
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Meeting Title */
+            meeting_title?: string | null;
+        };
+        /** WeeklyDigestPromise */
+        WeeklyDigestPromise: {
+            /** Content */
+            content: string;
+            /** Due Date */
+            due_date?: string | null;
+            /** Due Hint */
+            due_hint?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "action" | "commitment";
+            /** Meeting Id */
+            meeting_id?: string | null;
+            /** Meeting Title */
+            meeting_title?: string | null;
+        };
+        /** WeeklyRun */
+        WeeklyRun: {
+            /**
+             * Week Start
+             * Format: date
+             */
+            week_start: string;
+        };
+        /** WeeklyRunResult */
+        WeeklyRunResult: {
+            /** Built */
+            built: number;
+            /** Emailed */
+            emailed: number;
+            /** Notified */
+            notified: number;
+            /** Skipped */
+            skipped: number;
+            /**
+             * Week Start
+             * Format: date
+             */
+            week_start: string;
         };
         /**
          * Worklog
@@ -5491,6 +6554,258 @@ export interface operations {
             };
         };
     };
+    reopen: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                action_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyTask"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    start_capture: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaptureStart"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaptureSession"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    end_capture: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaptureEnded"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    refresh_capture: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaptureRefresh"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaptureSession"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    capture_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaptureStatus"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     post_chat: {
         parameters: {
             query?: never;
@@ -5671,6 +6986,161 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContextFillDismissed"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_reversals: {
+        parameters: {
+            query?: {
+                status?: "pending" | "resolved" | "all";
+                action_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionReversalList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_reversal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reversal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionReversal"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    resolve_reversal: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                reversal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReversalResolve"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionReversal"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
@@ -6137,6 +7607,272 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Department"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_digests: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DigestList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    latest_digest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DigestLatest"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_preferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DigestPreferences"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    put_preferences: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DigestPreferences"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DigestPreferences"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    preview_digest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeeklyDigest"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_digest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                digest_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeeklyDigest"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
@@ -7403,6 +9139,160 @@ export interface operations {
             };
         };
     };
+    get_delegated_answers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DelegatedAnswers"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    put_delegated_answers: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DelegatedAnswersUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DelegatedAnswers"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    delegated_answer_log: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DelegatedAnswerLog"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     get_follow_up: {
         parameters: {
             query?: never;
@@ -7595,6 +9485,163 @@ export interface operations {
             };
             /** @description Not a participant of this meeting. */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_off_record: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OffRecordState"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    start_off_record: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["OffRecordStart"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OffRecordState"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    end_off_record: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OffRecordState"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8590,6 +10637,60 @@ export interface operations {
             };
         };
     };
+    ask_for_status: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusRequestsAsk"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusRequestsAsked"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     answer_status_request: {
         parameters: {
             query?: never;
@@ -9478,6 +11579,60 @@ export interface operations {
             };
         };
     };
+    weekly_run: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WeeklyRun"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeeklyRunResult"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     meeting_agenda: {
         parameters: {
             query?: never;
@@ -9545,6 +11700,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CrmDigest"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    internal_delegated_answers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalDelegates"];
                 };
             };
             /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
@@ -10099,6 +12303,109 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CompactMemory"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    due_actions: {
+        parameters: {
+            query: {
+                as_of: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DueActions"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    nudge: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DriftNudgeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriftNudgeResult"];
                 };
             };
             /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */

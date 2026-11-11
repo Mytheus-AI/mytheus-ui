@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowClockwise, Lock, PaperPlaneRight, Sparkle, WarningCircle } from "@phosphor-icons/react";
 import { askAgent } from "@/app/actions/ask";
 import { segmentAnswer } from "@/lib/rag/answer";
-import { askCitationHref, askCitationLabel, askCitationMeta, excerpt, type AskAnswer } from "@/lib/rag/ask-live";
+import { askCitationHref, askCitationInline, askCitationLabel, askCitationMeta, excerpt, type AskAnswer } from "@/lib/rag/ask-live";
 
 /* Ask your agent, live (polish program, Phase 1). Every rival lets you ask during the call; this is
    Mytheus's: a private box in the Agent tab over the existing ask path (bff `POST /api/v1/ask`
@@ -79,12 +79,38 @@ function Answer({ ex, meetingId }: { ex: Exchange; meetingId: string }) {
                       <span className="ask-source-label">{label}</span>
                     )}
                     {meta ? <span className="ask-source-meta">{meta}</span> : null}
-                    {c.text ? <span className="ask-source-text">{excerpt(c.text)}</span> : null}
+                    {askCitationInline(c) ? (
+                      <DocumentPassage text={c.text} n={c.n} />
+                    ) : c.text ? (
+                      <span className="ask-source-text">{excerpt(c.text)}</span>
+                    ) : null}
                   </span>
                 </li>
               );
             })}
         </ol>
+      ) : null}
+    </>
+  );
+}
+
+/* A company-brain passage, read in place: no service serves a document page, so the cited text is
+   the view everyone gets, admin or member. Collapsed to an excerpt; "Show passage" opens all of it. */
+function DocumentPassage({ text, n }: { text: string; n: number }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  const short = excerpt(text);
+  const long = short !== text.replace(/\s+/g, " ").trim();
+  return (
+    <>
+      <span id={id} className="ask-source-text">
+        {open || !long ? text : short}
+      </span>
+      {long ? (
+        <button type="button" className="ask-source-link tap" aria-expanded={open} aria-controls={id} onClick={() => setOpen((v) => !v)}>
+          {open ? "Show less" : "Show passage"}
+          <span className="sr-only"> from source {n}</span>
+        </button>
       ) : null}
     </>
   );

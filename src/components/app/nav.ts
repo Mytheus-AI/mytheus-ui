@@ -26,7 +26,9 @@ import {
   UsersThree,
   VideoCamera,
   Bell,
+  Notebook,
   Broadcast,
+  Newspaper,
 } from "@phosphor-icons/react/ssr";
 
 /* The app's information architecture, in one place. One list feeds the sidebar, the topbar
@@ -93,6 +95,7 @@ export const WORKSPACE_TABS: NavItem[] = [
 export const SETTINGS_TABS: NavItem[] = [
   { href: "/settings/profile", label: "Profile", icon: UserCircle, keywords: "name role" },
   { href: "/settings/notifications", label: "Notifications", icon: Bell, keywords: "email alerts" },
+  { href: "/settings/memory", label: "Agent memory", icon: Notebook, keywords: "what your agent remembers topics questions forget learning calibration" },
   { href: "/settings/integrations", label: "Integrations", icon: PlugsConnected, keywords: "calendar slack jira hubspot notion confluence" },
   { href: "/settings/api", label: "API access", icon: Key, keywords: "personal access token mcp claude api curl" },
   { href: "/settings/appearance", label: "Appearance", icon: PaintBrush, keywords: "theme dark light shortcuts" },
@@ -102,6 +105,7 @@ export const SETTINGS_TABS: NavItem[] = [
 export const LINKED_ITEMS: NavItem[] = [
   { href: "/search", label: "Ask Mytheus", icon: Sparkle, keywords: "search question" },
   { href: "/welcome", label: "Welcome brief", icon: Compass, keywords: "new joiner" },
+  { href: "/digest", label: "Weekly digest", icon: Newspaper, keywords: "what changed this week summary" },
 ];
 
 /* Platform-staff consoles (every tenant, ops). Not in the workspace nav: staff status is only

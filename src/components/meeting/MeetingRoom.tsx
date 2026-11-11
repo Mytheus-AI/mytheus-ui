@@ -23,6 +23,8 @@ import { PeoplePanel } from "@/components/room/PeoplePanel";
 import { ReactionLayer } from "@/components/room/ReactionLayer";
 import { RoomClock } from "@/components/room/RoomClock";
 import { CatchUpLine } from "@/components/room/CatchUpLine";
+import { OffRecordAsks, OffRecordBanner, WhatIsRecorded } from "@/components/room/OffRecord";
+import { endOffRecord, startOffRecord } from "@/app/actions/off-record";
 import { StageBar } from "@/components/room/StageBar";
 import { StandInDialog, StandInQuestions } from "@/components/room/StandIn";
 import { WrapUpSheet, WrappingBanner } from "@/components/room/WrapUp";
@@ -68,7 +70,11 @@ import type { CallMeeting } from "@/components/call/resolve-meeting";
    - single-key shortcuts with an off switch that never fire while you type.
 
    ADR-0039 B5, C5: everyone who sent their agent instead of coming is on the stage as an agent
-   tile carrying their update (unless they joined after all). */
+   tile carrying their update (unless they joined after all).
+
+   Wave 3: Off the record (the host or creator takes the meeting off the record and back, anyone
+   else asks; a room-wide banner while it runs, captions and agents paused, enforced by the server),
+   "What is recorded" (your own consent receipt), and the caption language (live translation). */
 
 export type RoomMode = "call" | "notes";
 
@@ -185,6 +191,10 @@ function Room({
   const [standInFor, setStandInFor] = useState<string | null>(null);
   const [questionsDone, setQuestionsDone] = useState<Record<string, true>>({});
   const [mode, setMode] = useState<RoomMode>("call");
+  // Off the record (wave 3): a start or end in flight, your own pending ask, the receipt dialog.
+  const [offBusy, setOffBusy] = useState(false);
+  const [askedAt, setAskedAt] = useState<number | null>(null);
+  const [receiptOpen, setReceiptOpen] = useState(false);
   useEffect(() => {
     setShortcutsOn(loadShortcutsEnabled());
     try {
@@ -399,6 +409,84 @@ function Room({
     });
   }, [socket, handUp, toast]);
 
+  /* Off the record (wave 3). The host or creator starts and ends it through core-api (which sets
+     the flag every pipeline enforces and tells the room); anyone else asks the host through the
+     meeting link. This screen applies core-api's answer at once; the room echo follows. */
+  const offRecord = socket.offRecord;
+  const steers = Boolean(me?.steers);
+  const goOffRecord = useCallback(
+    async (requestedBy: string | null) => {
+      if (offBusy) return;
+      setOffBusy(true);
+      const res = await startOffRecord(meeting.id, requestedBy);
+      setOffBusy(false);
+      if (!res.ok) {
+        toast(res.message, "error");
+        return;
+      }
+      socket.applyOffRecordState(res.wire);
+      if (requestedBy) socket.settleOffRecordRequest(requestedBy);
+      toast("Off the record. Agents are paused and nothing is transcribed.", "success");
+    },
+    [offBusy, meeting.id, socket, toast],
+  );
+  const backOnRecord = useCallback(async () => {
+    if (offBusy) return;
+    setOffBusy(true);
+    const res = await endOffRecord(meeting.id);
+    setOffBusy(false);
+    if (!res.ok) {
+      toast(res.message, "error");
+      return;
+    }
+    socket.applyOffRecordState(res.wire);
+    toast("Back on the record. Transcription and agents have resumed.", "success");
+  }, [offBusy, meeting.id, socket, toast]);
+  const askOffRecord = useCallback(() => {
+    void socket.requestOffRecord().then((ack) => {
+      if (ack.ok) {
+        setAskedAt(Date.now());
+        toast("Asked the host to go off the record. You will see it here when they do.", "success");
+      } else if (ack.error === "RATE_LIMITED") toast("You asked a moment ago. The host has your request.", "info");
+      else if (ack.error === "ALREADY_OFF_RECORD") toast("The meeting is already off the record.", "info");
+      else toast("Could not reach the host just now. Try again in a moment.", "error");
+    });
+  }, [socket, toast]);
+  // Your ask stands for 20 seconds (the gateway's limit), or until the meeting goes off the record.
+  useEffect(() => {
+    if (askedAt === null) return;
+    if (offRecord.active) {
+      setAskedAt(null);
+      return;
+    }
+    const id = window.setTimeout(() => setAskedAt(null), Math.max(0, askedAt + 20_000 - Date.now()));
+    return () => window.clearTimeout(id);
+  }, [askedAt, offRecord.active]);
+  // Someone else changed it: say so once (your own change already toasted).
+  const lastChange = offRecord.lastChange;
+  useEffect(() => {
+    if (!lastChange || lastChange.by === meId) return;
+    const who = lastChange.by ? names[lastChange.by]?.name ?? "The host" : "The host";
+    toast(
+      lastChange.active
+        ? `${who} took the meeting off the record. Agents are paused and nothing is transcribed.`
+        : `${who} put the meeting back on the record. Transcription and agents have resumed.`,
+      "info",
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per change, not per name update
+  }, [lastChange]);
+  const declineAsk = useCallback(
+    (userId: string) => {
+      void socket.declineOffRecord(userId).then((ack) => {
+        if (!ack.ok) {
+          socket.settleOffRecordRequest(userId);
+          toast("Could not tell the room. The request is cleared on your screen.", "info");
+        }
+      });
+    },
+    [socket, toast],
+  );
+
   // Keyboard shortcuts: M mic, V camera, C captions, L layout, H hand; 1 Call, 2 Notes. Off with
   // the switch in More; never while typing or with a modifier (WCAG 2.1.4).
   useEffect(() => {
@@ -574,7 +662,14 @@ function Room({
       <ReactionLayer reactions={socket.reactions} meId={meId} />
 
       {/* Live captions: the real `caption` stream while the meeting link is joined. */}
-      {captionsOn && joined ? <LiveCaptions lines={socket.captions.lines} speakerLabel={speakerLabel} /> : null}
+      {captionsOn && joined ? (
+        <LiveCaptions
+          lines={socket.captions.lines}
+          speakerLabel={speakerLabel}
+          translation={socket.translation}
+          offRecord={offRecord.active}
+        />
+      ) : null}
 
       <ControlBar
         micOn={micOn}
@@ -607,6 +702,25 @@ function Room({
         onShortcuts={changeShortcuts}
         onEndForEveryone={me?.steers ? () => void beginWrapUp() : undefined}
         compact={compact}
+        offRecord={
+          joined
+            ? {
+                active: offRecord.active,
+                steers,
+                busy: offBusy,
+                asked: askedAt !== null,
+                onPress: steers ? () => void (offRecord.active ? backOnRecord() : goOffRecord(null)) : askOffRecord,
+              }
+            : undefined
+        }
+        captionLanguage={{
+          value: socket.translation.language,
+          onChange: (language) =>
+            void socket.setCaptionLanguage(language).then((ack) => {
+              if (!ack.ok && ack.error !== "NOT_CONNECTED") toast("Could not change the caption language. Try again.", "error");
+            }),
+        }}
+        onWhatIsRecorded={() => setReceiptOpen(true)}
       />
     </>
   );
@@ -637,8 +751,10 @@ function Room({
     [meId, me?.steers, settlements, socket.candidates, socket.settleCandidate, socket.announceCandidate, socket.updateCandidate, socket.hideCandidate, socket.lockCandidate],
   );
 
-  const liveState: "listening" | "paused" | "off" = joined
-    ? "listening"
+  const liveState: "listening" | "paused" | "off" | "off_record" = joined
+    ? offRecord.active
+      ? "off_record"
+      : "listening"
     : socket.status === "disabled" || socket.status === "forbidden"
       ? "off"
       : "paused";
@@ -797,6 +913,26 @@ function Room({
             ) : null}
           </StageBar>
         ) : null}
+        {live.status !== "consent" ? (
+          <>
+            <OffRecordBanner
+              state={offRecord}
+              steers={steers}
+              nameOf={nameOfPerson}
+              busy={offBusy}
+              onEnd={() => void backOnRecord()}
+            />
+            {steers && !offRecord.active ? (
+              <OffRecordAsks
+                requests={socket.offRecordRequests}
+                nameOf={nameOfPerson}
+                busy={offBusy}
+                onGrant={(userId) => void goOffRecord(userId)}
+                onDecline={declineAsk}
+              />
+            ) : null}
+          </>
+        ) : null}
         {socket.wrapUp && !me?.steers ? (
           <WrappingBanner
             wrapUp={socket.wrapUp}
@@ -877,6 +1013,13 @@ function Room({
           onClosed={onClosed}
         />
       ) : null}
+      <WhatIsRecorded
+        open={receiptOpen}
+        onClose={() => setReceiptOpen(false)}
+        meetingId={meeting.id}
+        offRecord={offRecord}
+        recording={session?.recording ?? null}
+      />
       {standIn ? (
         <StandInDialog
           open

@@ -9,6 +9,7 @@ import {
   CaretDown,
   CheckSquare,
   GearSix,
+  EyeSlash,
   PauseCircle,
   Question,
   Scales,
@@ -158,7 +159,8 @@ export function AgentSidebar({
   /** Anchor id for the "My agent" section, so the collapsed rail can open the panel at it. */
   id?: string;
   /** The meeting link is joined (captions and the agent are flowing). */
-  live: "listening" | "paused" | "off";
+  /** `off_record`: the meeting is off the record, so every agent is paused on purpose (wave 3). */
+  live: "listening" | "paused" | "off" | "off_record";
   notes?: LiveNote[];
   /** The meeting's decision and action candidates waiting for a person, oldest first. */
   candidates?: Candidate[];
@@ -374,7 +376,7 @@ export function AgentSidebar({
 
   const settings = (
     <Link
-      href="/settings"
+      href="/agent"
       target="_blank"
       rel="noopener"
       className="cx-icon-btn sm tap tip-below tip-end"
@@ -390,6 +392,11 @@ export function AgentSidebar({
       <span className="mx-chip">
         <Waveform size={14} aria-hidden />
         Listening
+      </span>
+    ) : live === "off_record" ? (
+      <span className="mx-chip" role="status">
+        <EyeSlash size={14} weight="bold" aria-hidden />
+        Paused, off the record
       </span>
     ) : live === "paused" ? (
       <span className="mx-chip is-medium" role="status">
@@ -548,7 +555,9 @@ export function AgentSidebar({
           <p>
             {live === "listening"
               ? "Your agent is listening. Decisions, tasks and questions land here, one card per moment, as the meeting goes."
-              : live === "paused"
+              : live === "off_record"
+                ? "The meeting is off the record, so your agent is paused and nothing said now is kept. It picks up again when the host goes back on the record."
+                : live === "paused"
                 ? "Your agent is paused while the meeting link reconnects. Nothing said meanwhile is lost: the transcript is kept, and notes catch up."
                 : "Live transcription is not running for this meeting, so your agent has nothing to work from yet."}
           </p>

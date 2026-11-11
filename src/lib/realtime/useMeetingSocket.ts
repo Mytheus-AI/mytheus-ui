@@ -124,6 +124,23 @@ import {
 } from "./room-live";
 import { MAX_RECONNECT_ATTEMPTS, backoffMs, type LiveLink } from "./connection";
 import { applyWrapUp, initialWrapUp, type WrapUpState } from "./stage";
+import {
+  applyOffRecord,
+  applyRequest,
+  applyTranslation,
+  chooseLanguage,
+  initialOffRecord,
+  initialTranslation,
+  readSavedLanguage,
+  saveLanguage,
+  settleRequest,
+  type CaptionLanguage,
+  type CaptionTranslationWire,
+  type OffRecordRequests,
+  type OffRecordState,
+  type OffRecordWire,
+  type TranslationState,
+} from "./privacy";
 import { loadCandidateLedger, loadChatHistory } from "@/components/room/actions";
 import type { AgendaItem, AgendaStatus, AgentAgendaPayload, AgentNudgePayload } from "@/lib/api/meeting-agenda-types";
 
@@ -200,6 +217,21 @@ export interface MeetingSocketState {
   setWrapUp: (next: WrapUpState | null) => void;
   /** After core-api stored the host's start or cancel: tell everyone in the room. */
   announceWrapUp: () => Promise<RoomAck>;
+  /** Off the record, as core-api holds it (forwarded by the gateway, wave 3). */
+  offRecord: OffRecordState;
+  /** Apply the state core-api answered to this screen's own start or end (the room echo follows). */
+  applyOffRecordState: (p: OffRecordWire) => void;
+  /** Requests to go off the record the host has not answered yet. */
+  offRecordRequests: OffRecordRequests;
+  /** Ask the host to go off the record (anyone in the meeting). */
+  requestOffRecord: () => Promise<RoomAck>;
+  /** The host's "Not now" to one person's request. */
+  declineOffRecord: (userId: string) => Promise<RoomAck>;
+  /** Forget a request on this screen (the host granted it, or closed the prompt). */
+  settleOffRecordRequest: (userId: string) => void;
+  /** Live translation: the caption language this viewer chose and the translated finals. */
+  translation: TranslationState;
+  setCaptionLanguage: (language: CaptionLanguage | null) => Promise<RoomAck>;
 }
 
 interface JoinAck {
@@ -271,8 +303,22 @@ export function useMeetingSocket(
   const [ended, setEnded] = useState<MeetingEnded | null>(null);
   const [wrapUp, setWrapUp] = useState<WrapUpState | null>(() => initialWrapUp(options.initialWrapUpStartedAt));
   const [generation, setGeneration] = useState(0);
+  const [offRecord, setOffRecord] = useState<OffRecordState>(initialOffRecord);
+  const [offRecordRequests, setOffRecordRequests] = useState<OffRecordRequests>([]);
+  const [translation, setTranslation] = useState<TranslationState>(initialTranslation);
+  // The chosen caption language, re-sent on every (re)join: the gateway keeps it per socket, and
+  // a reconnect is a new socket.
+  const languageRef = useRef<CaptionLanguage | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const joinedRef = useRef(false);
+
+  // The caption language this viewer chose last time (a per-browser convenience).
+  useEffect(() => {
+    const saved = readSavedLanguage();
+    if (!saved) return;
+    languageRef.current = saved;
+    setTranslation((prev) => chooseLanguage(prev, saved));
+  }, []);
 
   // "Hide for me" is remembered for this meeting in this browser.
   useEffect(() => {
@@ -390,6 +436,7 @@ export function useMeetingSocket(
           setEverJoined(true);
           setStatus("joined");
           setPresence(ack.presence ?? []);
+          if (languageRef.current) socket.emit("caption-language", { meetingId, language: languageRef.current });
         } else if (ack?.error === "FORBIDDEN") {
           setStatus("forbidden");
         } else {
@@ -484,6 +531,27 @@ export function useMeetingSocket(
       setChat((prev) => applyLiveChat(prev, event, meRef.current));
     });
     socket.on("chat-saved", mine<{ clientMsgId?: string; id?: string; createdAt?: string }>((p) => setChat((prev) => applyChatSaved(prev, p))));
+    // Off the record (wave 3): the state core-api holds, a participant's request, the host's answer.
+    socket.on(
+      "off-record",
+      mine<OffRecordWire>((p) => {
+        setOffRecord((prev) => applyOffRecord(prev, p));
+        if (p.active) setOffRecordRequests([]);
+      }),
+    );
+    socket.on(
+      "off-record-request",
+      mine<{ userId?: string; at?: string }>((p) => setOffRecordRequests((prev) => applyRequest(prev, p))),
+    );
+    socket.on(
+      "off-record-answer",
+      mine<{ userId?: string }>((p) => setOffRecordRequests((prev) => settleRequest(prev, p.userId))),
+    );
+    // Live translation: only this viewer's language reaches this socket; the reducer re-checks.
+    socket.on(
+      "caption-translation",
+      mine<CaptionTranslationWire>((p) => setTranslation((prev) => applyTranslation(prev, p))),
+    );
     socket.on("presence", (members: string[]) => {
       if (!cancelled) setPresence(Array.isArray(members) ? members : []);
     });
@@ -616,6 +684,26 @@ export function useMeetingSocket(
   const react = useCallback((reaction: ReactionId) => emitAck("reaction", { reaction }), [emitAck]);
   const announceEnd = useCallback(() => emitAck("end-meeting", {}, true), [emitAck]);
   const announceWrapUp = useCallback(() => emitAck("wrap-up", {}, true), [emitAck]);
+  const applyOffRecordState = useCallback((p: OffRecordWire) => setOffRecord((prev) => applyOffRecord(prev, p)), []);
+  const requestOffRecord = useCallback(() => emitAck("off-record-request", {}), [emitAck]);
+  const declineOffRecord = useCallback(
+    async (userId: string) => {
+      const ack = await emitAck("off-record-answer", { userId }, true);
+      if (ack.ok) setOffRecordRequests((prev) => settleRequest(prev, userId));
+      return ack;
+    },
+    [emitAck],
+  );
+  const settleOffRecordRequest = useCallback((userId: string) => setOffRecordRequests((prev) => settleRequest(prev, userId)), []);
+  const setCaptionLanguage = useCallback(
+    async (language: CaptionLanguage | null) => {
+      languageRef.current = language;
+      saveLanguage(language);
+      setTranslation((prev) => chooseLanguage(prev, language));
+      return emitAck("caption-language", { language });
+    },
+    [emitAck],
+  );
 
   return useMemo(
     () => ({
@@ -655,6 +743,14 @@ export function useMeetingSocket(
       wrapUp,
       setWrapUp,
       announceWrapUp,
+      offRecord,
+      applyOffRecordState,
+      offRecordRequests,
+      requestOffRecord,
+      declineOffRecord,
+      settleOffRecordRequest,
+      translation,
+      setCaptionLanguage,
     }),
     [
       status,
@@ -692,6 +788,14 @@ export function useMeetingSocket(
       announceEnd,
       wrapUp,
       announceWrapUp,
+      offRecord,
+      applyOffRecordState,
+      offRecordRequests,
+      requestOffRecord,
+      declineOffRecord,
+      settleOffRecordRequest,
+      translation,
+      setCaptionLanguage,
     ],
   );
 }

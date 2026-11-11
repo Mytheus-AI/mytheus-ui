@@ -4,55 +4,35 @@
    Everything sits under `.mx-meet`, which the Meetings layout and the call layout put on their
    root, so nothing here reaches another screen. Colours, radii and shadows read the global tokens
    (src/app/globals.css); the dark set flips them under `.mx-app[data-theme="dark"]`
-   (src/styles/app-theme.css), so this file holds no hex and needs no dark twin. Radii are the
-   system's four: 12 controls, 20 cards, 28 stages and big panels, full for chips and avatars.
+   (src/styles/app-theme.css), so this file holds no hex; the one dark-only value (the video
+   letterbox) is set just below the scope. Radii are the system's four, read from the global
+   tokens: --radius-pill 12 for controls (Tailwind `rounded-ctl`), --radius-card 20 for cards,
+   --radius-hero 28 for stages and big panels, 999px or 50% for chips and avatars. Type is the
+   six-size scale, 12.5 / 14 / 15 / 17 / 22 / 30px, plus the page-title display size
+   clamp(28px, 3vw, 34px) (ui/Page's pageTitleClass); names and initials inside a video tile
+   scale with the tile between two of those sizes.
 
-   This file: scope and aliases, shared pieces (tooltips, chips, small buttons, section heads,
+   This file: scope, shared pieces (tooltips, chips, small buttons, section heads,
    person tints), the live room's stage, the side panel, and the agent sidebar. Screen layouts
    live in meeting-hub.css, meeting-transcript.css and meeting-call.css. */
 
 /* ---------------------------------------------------------------- scope */
 
 .mx-meet {
-  --mx-r-ctl: 12px;
-  --mx-r-card: 20px;
-  --mx-r-hero: 28px;
   /* Amber text on amber soft is 4.0:1 with the raw token; pulled toward ink it clears AA in both
      themes (in dark, ink is light, so the mix lightens). */
   --mx-medium-ink: color-mix(in srgb, var(--priority-medium) 74%, var(--ink));
-  /* Letterbox behind live video. Video is always dark, in either theme. */
-  --mx-video: rgb(20 18 16);
-
-  /* Older meeting variable names, kept as aliases of the global tokens for any inline style that
-     still reads them. New rules use the global names directly. */
-  --bgApp: var(--bg);
-  --surfaceAlt: var(--surface-2);
-  --navBorder: var(--line);
-  --tabTrack: var(--bg-2);
-  --inkDeep: var(--ink-display);
-  --body: var(--ink-2);
-  --muted: var(--ink-3);
-  --mutedAlt: var(--ink-3);
-  --mutedDeep: var(--ink-3);
-  --mutedTime: var(--ink-3);
-  --mutedLabel: var(--ink-3);
-  --mutedIcon: var(--ink-4);
-  --accent: var(--signal-line);
-  --accentDeep: var(--signal);
-  --accentDeeper: var(--signal-deep);
-  --green: var(--ok);
-  --prioHigh: var(--priority-high);
-  --prioHighBg: var(--priority-high-soft);
-  --prioMid: var(--priority-medium);
-  --prioMidBg: var(--priority-medium-soft);
-  --prioLow: var(--priority-low);
-  --prioLowBg: var(--priority-low-soft);
+  /* Letterbox behind live video, near black in both themes: ink in light, the stage in dark. */
+  --mx-video: var(--ink);
 
   color: var(--ink-2);
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
 }
+
+.mx-app[data-theme="dark"] .mx-meet,
+.mx-app.mx-meet[data-theme="dark"] { --mx-video: var(--bg); }
 
 .mx-meet :focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
 
@@ -62,7 +42,7 @@
 
 /* ---------------------------------------------------------------- tooltips
    `data-tip` on a positioned control (every class that uses one sets position). Points up by
-   default; `.tip-below` (the call's top bar) points down; `.tip-right` beside the collapsed rail. */
+   default; `.tip-below` (the call's top bar) points down; `.tip-end` and `.tip-left` sit beside. */
 
 .mx-meet [data-tip]::after {
   content: attr(data-tip);
@@ -70,8 +50,8 @@
   left: 50%;
   bottom: calc(100% + 9px);
   transform: translate(-50%, 3px);
-  padding: 7px 10px;
-  border-radius: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-pill);
   background: var(--pill);
   color: var(--pill-on);
   font-size: 12.5px;
@@ -91,9 +71,6 @@
 .mx-meet .tip-end[data-tip]::after { left: auto; right: 0; transform: translateY(-3px); }
 .mx-meet .tip-end[data-tip]:hover::after,
 .mx-meet .tip-end[data-tip]:focus-visible::after { transform: none; }
-.mx-meet .tip-right[data-tip]::after { left: calc(100% + 10px); bottom: auto; top: 50%; transform: translate(-3px, -50%); }
-.mx-meet .tip-right[data-tip]:hover::after,
-.mx-meet .tip-right[data-tip]:focus-visible::after { transform: translate(0, -50%); }
 .mx-meet .tip-left[data-tip]::after { left: auto; right: calc(100% + 10px); bottom: auto; top: 50%; transform: translate(3px, -50%); }
 .mx-meet .tip-left[data-tip]:hover::after,
 .mx-meet .tip-left[data-tip]:focus-visible::after { transform: translate(0, -50%); }
@@ -120,7 +97,6 @@
 .mx-meet .mx-chip.is-high { background: var(--priority-high-soft); color: var(--priority-high); }
 .mx-meet .mx-chip.is-medium { background: var(--priority-medium-soft); color: var(--mx-medium-ink); }
 .mx-meet .mx-chip.is-low { background: var(--priority-low-soft); color: var(--priority-low); }
-.mx-meet .mx-chip.is-dark { background: var(--pill); color: var(--pill-on); }
 .mx-meet a.mx-chip:hover { box-shadow: inset 0 0 0 1px var(--line-2); color: var(--ink); }
 
 .mx-meet .mx-count {
@@ -128,7 +104,7 @@
   place-items: center;
   min-width: 22px;
   height: 20px;
-  padding: 0 7px;
+  padding: 0 8px;
   border-radius: 999px;
   background: var(--bg-2);
   color: var(--ink-3);
@@ -158,12 +134,12 @@
   justify-content: center;
   gap: 6px;
   height: 34px;
-  padding: 0 13px;
-  border-radius: var(--mx-r-ctl);
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--pill);
   background: var(--pill);
   color: var(--pill-on);
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
@@ -173,7 +149,7 @@
 .mx-meet .nfy-act.is-quiet { background: var(--surface); border-color: var(--line-2); color: var(--ink); }
 .mx-meet .nfy-act.is-quiet:hover { background: var(--surface-2); }
 .mx-meet .nfy-act.is-on { background: var(--signal-soft); border-color: transparent; color: var(--signal-ink); }
-.mx-meet .nfy-act:disabled { opacity: 0.5; cursor: default; }
+.mx-meet .nfy-act:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .mx-meet .cx-icon-btn {
   position: relative;
@@ -182,12 +158,13 @@
   width: 40px;
   height: 40px;
   flex-shrink: 0;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   color: var(--ink-3);
 }
 .mx-meet .cx-icon-btn:hover { background: var(--bg-2); color: var(--ink); }
 .mx-meet .cx-icon-btn.is-on { background: var(--surface); color: var(--ink); box-shadow: var(--sh-1); }
 .mx-meet .cx-icon-btn.sm { width: 34px; height: 34px; }
+.mx-meet .cx-icon-btn:disabled { opacity: 0.4; cursor: not-allowed; background: transparent; }
 
 /* ---------------------------------------------------------------- person tints
    One of the four illustration tints per person (components/room/tone.ts). */
@@ -215,7 +192,7 @@
 .mx-meet .mx-av.sm { width: 26px; height: 26px; font-size: 12.5px; }
 .mx-meet .mx-avs { display: inline-flex; }
 .mx-meet .mx-avs .mx-av { box-shadow: 0 0 0 2px var(--surface); }
-.mx-meet .mx-avs .mx-av + .mx-av { margin-left: -7px; }
+.mx-meet .mx-avs .mx-av + .mx-av { margin-left: -8px; }
 
 /* ---------------------------------------------------------------- the drawn line
    The coral stroke that means "this carries forward". `.mx-line` on an inline SVG path. */
@@ -234,7 +211,7 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  border-radius: var(--mx-r-hero);
+  border-radius: var(--radius-hero);
   background: var(--surface);
   border: 1px solid var(--line);
   box-shadow: var(--sh-1);
@@ -259,7 +236,7 @@
   background: var(--tone, var(--tint-peach));
   color: var(--ink);
   font-family: var(--font-display);
-  font-size: clamp(17px, 11cqmin, 44px);
+  font-size: clamp(17px, 11cqmin, 30px);
   font-weight: 500;
   letter-spacing: -0.01em;
   line-height: 1;
@@ -281,7 +258,7 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  border-radius: var(--mx-r-card);
+  border-radius: var(--radius-card);
   background: var(--bg-2);
   container-type: size;
   transition: outline-color 0.2s var(--ease-out);
@@ -297,7 +274,7 @@
   z-index: 2;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   max-width: calc(100% - 52px);
   border-radius: 999px;
   background: color-mix(in srgb, var(--surface) 92%, transparent);
@@ -309,8 +286,8 @@
   box-shadow: var(--sh-1);
   backdrop-filter: blur(6px);
 }
-.mx-meet .thumb-name { left: 10px; bottom: 10px; height: 28px; padding: 0 11px; font-size: 12.5px; }
-.mx-meet .name-pill { left: 16px; top: 16px; height: 34px; padding: 0 14px 0 12px; font-size: 13.5px; }
+.mx-meet .thumb-name { left: 10px; bottom: 10px; height: 28px; padding: 0 12px; font-size: 12.5px; }
+.mx-meet .name-pill { left: 16px; top: 16px; height: 34px; padding: 0 14px 0 12px; font-size: 14px; }
 .mx-meet .name-pill small { font-size: 12.5px; font-weight: 500; color: var(--ink-3); }
 .mx-meet .cx-muted { color: var(--priority-high); flex-shrink: 0; }
 
@@ -380,18 +357,18 @@
   justify-content: center;
   gap: 8px;
   height: 44px;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   border: 1px solid var(--line-2);
   background: var(--surface);
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 600;
 }
 .mx-meet .more-pill:hover { background: var(--surface-2); }
 
 /* The speaking wave, four bars. */
 .mx-meet .wave { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; color: var(--signal-line); }
-.mx-meet .wave i { width: 3px; border-radius: 2px; background: currentColor; transform-origin: bottom; }
+.mx-meet .wave i { width: 3px; border-radius: 999px; background: currentColor; transform-origin: bottom; }
 .mx-meet .wave i:nth-child(1) { height: 50%; }
 .mx-meet .wave i:nth-child(2) { height: 100%; }
 .mx-meet .wave i:nth-child(3) { height: 65%; }
@@ -418,7 +395,7 @@
   border-radius: 999px;
   background: color-mix(in srgb, var(--surface) 92%, transparent);
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 650;
   font-variant-numeric: tabular-nums;
   box-shadow: var(--sh-1);
@@ -444,8 +421,8 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 11px 18px 12px;
-  border-radius: var(--mx-r-card);
+  padding: 12px 18px 12px;
+  border-radius: var(--radius-card);
   background: var(--surface);
   border: 1px solid var(--line);
   box-shadow: var(--sh-2);
@@ -457,7 +434,7 @@
 .mx-meet .cap-interim { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .mx-meet .cap-line { color: var(--ink-2); }
 .mx-meet .cap-line b,
-.mx-meet .cap-interim b { margin-right: 7px; color: var(--ink); font-weight: 700; font-style: normal; }
+.mx-meet .cap-interim b { margin-right: 8px; color: var(--ink); font-weight: 700; font-style: normal; }
 .mx-meet .cap-interim { min-height: 22px; color: var(--ink-3); font-style: italic; }
 
 .mx-meet .stream-caret {
@@ -465,7 +442,7 @@
   width: 6px;
   height: 13px;
   margin-left: 3px;
-  border-radius: 2px;
+  border-radius: 999px;
   background: var(--signal-line);
   vertical-align: -2px;
 }
@@ -548,7 +525,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: var(--mx-r-card);
+  border-radius: var(--radius-card);
   background: var(--surface);
   border: 1px solid var(--line);
   box-shadow: var(--sh-1);
@@ -569,7 +546,7 @@
   display: flex;
   gap: 2px;
   padding: 4px;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   background: var(--bg-2);
 }
 .mx-meet .side-tab {
@@ -581,9 +558,9 @@
   gap: 6px;
   height: 34px;
   padding: 0 8px;
-  border-radius: 9px;
+  border-radius: var(--radius-pill);
   color: var(--ink-3);
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -600,7 +577,7 @@
 
 /* A section heading inside the panel: sentence case, quiet, with an optional count. */
 .mx-meet .side-sec { display: flex; align-items: center; gap: 8px; min-height: 34px; margin: 14px 0 8px; }
-.mx-meet .side-sec h3 { font-size: 13px; font-weight: 600; letter-spacing: 0; color: var(--ink-3); }
+.mx-meet .side-sec h3 { font-size: 12.5px; font-weight: 600; letter-spacing: 0; color: var(--ink-3); }
 .mx-meet .side-sec .side-sec-end { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; }
 
 /* The collapsed rail. */
@@ -611,7 +588,7 @@
   align-items: center;
   gap: 6px;
   padding: 10px 0;
-  border-radius: var(--mx-r-card);
+  border-radius: var(--radius-card);
   background: var(--surface);
   border: 1px solid var(--line);
   box-shadow: var(--sh-1);
@@ -622,7 +599,7 @@
   height: 44px;
   display: grid;
   place-items: center;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   color: var(--ink-3);
 }
 .mx-meet .mini-btn:hover { background: var(--bg-2); color: var(--ink); }
@@ -633,14 +610,14 @@
   right: 0;
   min-width: 19px;
   height: 19px;
-  padding: 0 5px;
+  padding: 0 6px;
   display: grid;
   place-items: center;
   border-radius: 999px;
   border: 2px solid var(--surface);
   background: var(--signal-deep);
   color: var(--surface);
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 800;
   line-height: 1;
 }
@@ -655,7 +632,7 @@
 .mx-meet .ppl-row + .ppl-row { border-top: 1px solid var(--line); }
 .mx-meet .ppl-row .mx-av { width: 36px; height: 36px; }
 .mx-meet .ppl-name { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.mx-meet .ppl-name strong { color: var(--ink); font-size: 14.5px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-meet .ppl-name strong { color: var(--ink); font-size: 15px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mx-meet .ppl-name small { color: var(--ink-3); font-size: 12.5px; }
 .mx-meet .ppl-state { display: inline-flex; align-items: center; color: var(--ink-3); }
 .mx-meet .ppl-state.is-muted { color: var(--priority-high); }
@@ -667,15 +644,15 @@
 .mx-meet .chat-empty { margin: auto; max-width: 30ch; text-align: center; color: var(--ink-3); font-size: 14px; line-height: 1.5; }
 .mx-meet .cmsg { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 4px 10px; }
 .mx-meet .cmsg .mx-av { grid-row: span 2; width: 30px; height: 30px; }
-.mx-meet .cmsg-meta { display: flex; align-items: baseline; gap: 8px; font-size: 13px; }
+.mx-meet .cmsg-meta { display: flex; align-items: baseline; gap: 8px; font-size: 12.5px; }
 .mx-meet .cmsg-meta strong { color: var(--ink); font-weight: 650; }
 .mx-meet .cmsg-meta time { color: var(--ink-3); font-size: 12.5px; }
-.mx-meet .cbubble { color: var(--ink-2); font-size: 14.5px; line-height: 1.5; overflow-wrap: anywhere; }
+.mx-meet .cbubble { color: var(--ink-2); font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; }
 .mx-meet .cmsg.is-sent { grid-template-columns: minmax(0, 1fr); justify-items: end; }
 .mx-meet .cmsg.is-sent .cbubble {
   max-width: 92%;
   padding: 8px 12px;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   background: var(--signal-soft);
   color: var(--ink);
 }
@@ -692,11 +669,11 @@
   min-width: 0;
   height: 42px;
   padding: 0 14px;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   border: 1px solid var(--line-2);
   background: var(--surface);
   color: var(--ink);
-  font-size: 14.5px;
+  font-size: 15px;
 }
 .mx-meet .composer-input::placeholder { color: var(--ink-3); }
 .mx-meet .composer-input:focus-visible { outline: none; border-color: var(--signal); box-shadow: 0 0 0 3px var(--signal-soft); }
@@ -708,7 +685,7 @@
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   background: var(--pill);
   color: var(--pill-on);
 }
@@ -737,7 +714,7 @@
 .mx-meet .conflict-banner {
   position: relative;
   padding: 14px 16px;
-  border-radius: var(--mx-r-card);
+  border-radius: var(--radius-card);
   background: var(--priority-high-soft);
   border: 1px solid color-mix(in srgb, var(--priority-high) 32%, transparent);
   transition: opacity 0.22s var(--ease-out), transform 0.22s var(--ease-out);
@@ -754,21 +731,21 @@
 }
 @keyframes mx-in { from { opacity: 0; transform: translateY(8px); } }
 
-.mx-meet .cbn-kind { display: flex; align-items: center; gap: 7px; color: var(--priority-high); font-size: 13.5px; font-weight: 700; }
+.mx-meet .cbn-kind { display: flex; align-items: center; gap: 8px; color: var(--priority-high); font-size: 14px; font-weight: 700; }
 .mx-meet .cbn-meta {
   margin-left: auto;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   height: 24px;
-  padding: 0 9px;
+  padding: 0 10px;
   border-radius: 999px;
   background: var(--surface);
   color: var(--ink-2);
   font-size: 12.5px;
   font-weight: 600;
 }
-.mx-meet .cbn-text { margin: 6px 0 0; color: var(--ink); font-size: 14.5px; font-weight: 500; line-height: 1.5; }
+.mx-meet .cbn-text { margin: 6px 0 0; color: var(--ink); font-size: 15px; font-weight: 500; line-height: 1.5; }
 .mx-meet .cbn-text b { font-weight: 700; }
 .mx-meet .conflict-banner .alert-title { font-weight: 650; }
 .mx-meet .conflict-banner.is-read .cbn-kind { color: var(--ink-3); }
@@ -777,7 +754,7 @@
 .mx-meet .nfy-card {
   position: relative;
   padding: 14px 16px;
-  border-radius: var(--mx-r-card);
+  border-radius: var(--radius-card);
   background: var(--surface);
   border: 1px solid var(--line);
   box-shadow: var(--sh-1);
@@ -796,7 +773,7 @@
 /* Context fills reserve their height so one landing mid-meeting does not shove the panel. */
 .mx-meet .nfy-card.is-context { min-height: 112px; }
 
-.mx-meet .nfy-kind { display: flex; align-items: center; gap: 7px; color: var(--ink-2); font-size: 13.5px; font-weight: 650; }
+.mx-meet .nfy-kind { display: flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 14px; font-weight: 650; }
 .mx-meet .nfy-kind > svg { flex-shrink: 0; color: var(--ink-3); }
 .mx-meet .nfy-card.is-decision .nfy-kind > svg { color: var(--ok); }
 .mx-meet .nfy-card.is-action .nfy-kind > svg { color: var(--signal-ink); }
@@ -816,7 +793,7 @@
   display: inline-flex;
   align-items: center;
   height: 24px;
-  padding: 0 9px;
+  padding: 0 10px;
   border-radius: 999px;
   background: var(--bg-2);
   color: var(--ink-2);
@@ -830,10 +807,10 @@
 .mx-meet .nfy-card.is-p1 .nfy-meta,
 .mx-meet .nfy-card.is-alert .nfy-meta { background: var(--surface); }
 
-.mx-meet .nfy-text { margin: 8px 0 0; color: var(--ink); font-size: 14.5px; font-weight: 550; line-height: 1.5; overflow-wrap: anywhere; }
+.mx-meet .nfy-text { margin: 8px 0 0; color: var(--ink); font-size: 15px; font-weight: 550; line-height: 1.5; overflow-wrap: anywhere; }
 .mx-meet .nfy-text b { font-weight: 700; }
-.mx-meet .nfy-sub { margin: 5px 0 0; color: var(--ink-3); font-size: 13.5px; line-height: 1.5; }
-.mx-meet .nfy-from { display: flex; align-items: center; gap: 6px; margin: 6px 0 0; color: var(--ink-3); font-size: 13px; font-weight: 600; }
+.mx-meet .nfy-sub { margin: 6px 0 0; color: var(--ink-3); font-size: 14px; line-height: 1.5; }
+.mx-meet .nfy-from { display: flex; align-items: center; gap: 6px; margin: 6px 0 0; color: var(--ink-3); font-size: 12.5px; font-weight: 600; }
 .mx-meet .nfy-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 12px; }
 
 /* Sourced answers: the coral line runs from what the agent said into where it came from, with a
@@ -848,7 +825,7 @@
   height: 22px;
   border-left: 2px solid var(--signal-line);
   border-bottom: 2px solid var(--signal-line);
-  border-bottom-left-radius: 10px;
+  border-bottom-left-radius: var(--radius-pill);
 }
 .mx-meet .nfy-cites::after {
   content: "";
@@ -863,7 +840,7 @@
 .mx-meet .cite-chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   min-height: 28px;
   padding: 4px 10px;
   border-radius: 999px;
@@ -880,17 +857,17 @@
 /* The candidate edit form. */
 .mx-meet .nfy-edit { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
 .mx-meet .nfy-edit label { display: flex; flex-direction: column; gap: 6px; }
-.mx-meet .nfy-edit label > span { color: var(--ink); font-size: 13px; font-weight: 600; }
+.mx-meet .nfy-edit label > span { color: var(--ink); font-size: 12.5px; font-weight: 600; }
 .mx-meet .nfy-edit textarea,
 .mx-meet .nfy-edit input {
   width: 100%;
-  padding: 9px 12px;
-  border-radius: var(--mx-r-ctl);
+  padding: 10px 12px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--line-2);
   background: var(--surface);
   color: var(--ink);
   font: inherit;
-  font-size: 14.5px;
+  font-size: 15px;
   line-height: 1.45;
   resize: vertical;
 }
@@ -903,11 +880,11 @@
 .mx-meet .alert-why-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   min-height: 28px;
-  border-radius: 8px;
+  border-radius: var(--radius-pill);
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   text-decoration: underline;
   text-decoration-color: var(--line-2);
@@ -916,7 +893,7 @@
 .mx-meet .alert-why-toggle:hover { color: var(--ink); text-decoration-color: currentColor; }
 .mx-meet .alert-why-toggle svg { transition: transform 0.15s var(--ease-out); }
 .mx-meet .alert-why-toggle svg.is-open { transform: rotate(180deg); }
-.mx-meet .alert-why-text { margin: 4px 0 0; color: var(--ink-3); font-size: 13px; line-height: 1.5; }
+.mx-meet .alert-why-text { margin: 4px 0 0; color: var(--ink-3); font-size: 12.5px; line-height: 1.5; }
 .mx-meet .nfy-card.is-read .alert-title { color: var(--ink-3); }
 
 /* My notes and Saved for later. */
@@ -946,7 +923,7 @@
 }
 .mx-meet .afeed-ico { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: var(--bg-2); color: var(--ink-3); }
 .mx-meet .afeed-item.is-carried .afeed-ico { background: var(--signal-soft); color: var(--signal-ink); }
-.mx-meet .afeed-kind { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; font-size: 13px; }
+.mx-meet .afeed-kind { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; font-size: 12.5px; }
 .mx-meet .afeed-kind b { color: var(--ink); font-weight: 650; }
 .mx-meet .afeed-res { color: var(--ok); font-weight: 600; }
 .mx-meet .afeed-res.is-muted { color: var(--ink-3); }
@@ -955,19 +932,18 @@
 .mx-meet .afeed-item.is-resolved .afeed-text { color: var(--ink-3); }
 .mx-meet .afeed-item .cite-chip { margin-top: 8px; }
 .mx-meet .afeed-item .nfy-acts { margin-top: 8px; }
-.mx-meet .afeed-start { padding: 10px 0 0 40px; color: var(--ink-3); font-size: 13px; border-top: 1px solid var(--line); }
 
 /* Before anything arrives: the line at rest, and what will appear. */
 .mx-meet .agent-empty {
   margin-top: 6px;
   padding: 22px 18px 20px;
-  border-radius: var(--mx-r-card);
+  border-radius: var(--radius-card);
   border: 1px dashed var(--line-2);
   background: var(--surface-2);
   text-align: center;
 }
 .mx-meet .agent-empty svg { display: block; width: 104px; height: 32px; margin: 0 auto 10px; }
-.mx-meet .agent-empty h4 { color: var(--ink); font-family: var(--font-display); font-size: 19px; font-weight: 500; line-height: 1.25; }
+.mx-meet .agent-empty h4 { color: var(--ink); font-family: var(--font-display); font-size: 22px; font-weight: 500; line-height: 1.25; }
 .mx-meet .agent-empty p { max-width: 34ch; margin: 6px auto 0; color: var(--ink-3); font-size: 14px; line-height: 1.5; }
 
 /* ---------------------------------------------------------------- the toast
@@ -988,10 +964,10 @@
 .mx-meet .toast {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   max-width: calc(100vw - 32px);
-  padding: 11px 16px;
-  border-radius: var(--mx-r-ctl);
+  padding: 12px 16px;
+  border-radius: var(--radius-pill);
   background: var(--pill);
   color: var(--pill-on);
   font-size: 14px;
@@ -1030,7 +1006,7 @@
   gap: 6px;
   min-height: 32px;
   margin-bottom: 4px;
-  border-radius: 8px;
+  border-radius: var(--radius-pill);
   color: var(--ink-3);
   font-size: 14px;
   font-weight: 600;
@@ -1042,21 +1018,20 @@
 .mx-meet .mx-title {
   color: var(--ink-display);
   font-family: var(--font-display);
-  font-size: clamp(28px, 3.2vw, 36px);
+  font-size: clamp(28px, 3vw, 34px);
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.08;
   text-wrap: balance;
   overflow-wrap: anywhere;
 }
-.mx-meet .mx-sub { margin-top: 8px; max-width: 64ch; color: var(--ink-3); font-size: 16px; line-height: 1.5; }
 .mx-meet .mx-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 
-.mx-meet .mx-card { min-width: 0; border-radius: var(--mx-r-card); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--sh-1); }
+.mx-meet .mx-card { min-width: 0; border-radius: var(--radius-card); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--sh-1); }
 .mx-meet .mx-card-pad { padding: 20px 22px; }
 .mx-meet .mx-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-.mx-meet .mx-card-title { color: var(--ink); font-size: 17px; font-weight: 650; letter-spacing: -0.005em; }
-.mx-meet .mx-card-note { color: var(--ink-3); font-size: 13.5px; }
+.mx-meet .mx-card-title { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); font-size: 17px; font-weight: 650; letter-spacing: -0.005em; }
+.mx-meet .mx-card-note { color: var(--ink-3); font-size: 14px; }
 .mx-meet .mx-help { color: var(--ink-3); font-size: 14px; line-height: 1.5; }
 
 /* A native button styled as ui/Button, for openers that need a ref to return focus to. */
@@ -1067,7 +1042,7 @@
   gap: 8px;
   height: 44px;
   padding: 0 18px;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   border: 1px solid var(--pill);
   background: var(--pill);
   color: var(--pill-on);
@@ -1094,7 +1069,7 @@
   gap: 10px;
   height: 44px;
   padding: 0 14px;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   border: 1px solid var(--line-2);
   background: var(--surface);
   color: var(--ink-4);
@@ -1106,8 +1081,8 @@
 .mx-meet .mt-search input::placeholder { color: var(--ink-3); }
 .mx-meet .mt-search input:focus-visible { outline: none; }
 
-.mx-meet .md-sub { margin-bottom: 8px; color: var(--ink-3); font-size: 13px; font-weight: 600; }
-.mx-meet .md-talk-row { display: grid; grid-template-columns: 120px minmax(0, 1fr) 44px; gap: 12px; align-items: center; padding: 5px 0; font-size: 14px; }
+.mx-meet .md-sub { margin-bottom: 8px; color: var(--ink-3); font-size: 12.5px; font-weight: 600; }
+.mx-meet .md-talk-row { display: grid; grid-template-columns: 120px minmax(0, 1fr) 44px; gap: 12px; align-items: center; padding: 6px 0; font-size: 14px; }
 .mx-meet .md-talk-name { color: var(--ink-2); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mx-meet .md-bar { height: 8px; overflow: hidden; border-radius: 999px; background: var(--bg-2); }
 .mx-meet .md-bar i { display: block; height: 100%; border-radius: inherit; background: var(--signal); }

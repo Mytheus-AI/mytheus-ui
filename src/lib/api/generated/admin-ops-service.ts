@@ -217,8 +217,8 @@ export interface paths {
         };
         /**
          * List Erasures
-         * @description authz: admin. Completed erasures, newest first. A person's label is their email read now
-         *     from `users` (RLS-scoped); null when they are gone.
+         * @description authz: admin. Erasures, newest first, each with its per-store progress. A person's label
+         *     is their email read now from `users` (RLS-scoped); null when they are gone.
          */
         get: operations["list_erasures"];
         put?: never;
@@ -486,7 +486,8 @@ export interface components {
         };
         /**
          * Erasure
-         * @description One completed erasure, as recorded in `audit_logs` (`data_erasure.completed`).
+         * @description One erasure, as recorded in `audit_logs` (`data_erasure.completed` is the request; each
+         *     store's finish is a `data_erasure.store_completed` row).
          */
         Erasure: {
             /** Anonymized */
@@ -513,6 +514,13 @@ export interface components {
              */
             label?: string | null;
             /**
+             * Progress
+             * @description The erasure across every store: `completed` once each of `stores` has run.
+             * @default completed
+             * @enum {string}
+             */
+            progress: "in_progress" | "completed";
+            /**
              * Requested At
              * Format: date-time
              */
@@ -531,10 +539,16 @@ export interface components {
             revoked_tokens: number;
             /**
              * Status
+             * @description core-api applied the request (always `completed`; see `progress`).
              * @default completed
              * @constant
              */
             status: "completed";
+            /**
+             * Stores
+             * @description Per-store progress: `core_api` (finished with the request), then `transcript_chunks`, `vectors`, `search_index` and `knowledge_graph`.
+             */
+            stores?: components["schemas"]["ErasureStore"][];
             /**
              * Target Id
              * Format: uuid
@@ -567,6 +581,30 @@ export interface components {
         ErasureList: {
             /** Items */
             items: components["schemas"]["Erasure"][];
+        };
+        /**
+         * ErasureStore
+         * @description One store's share of an erasure. `core_api` finishes inside the request; the other four
+         *     report back on `admin-events` `erasure_completed` (one `data_erasure.store_completed` audit
+         *     row each), so they are `pending` until their service has run.
+         */
+        ErasureStore: {
+            /** Completed At */
+            completed_at?: string | null;
+            /** Counts */
+            counts?: {
+                [key: string]: number;
+            };
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "completed";
+            /**
+             * Store
+             * @enum {string}
+             */
+            store: "core_api" | "transcript_chunks" | "vectors" | "search_index" | "knowledge_graph";
         };
         /**
          * @description The frozen program-wide error enum. Clients branch on this and never on `detail`, which is human-readable and free to change. Values are added, never removed or repurposed. Emitted verbatim from `libs.shared.errors.ErrorCode`, so this list cannot drift from the code; the no-removal half is asserted by `test_no_published_error_code_is_ever_removed`, because `oasdiff` does not treat narrowing a response enum as a breaking change.

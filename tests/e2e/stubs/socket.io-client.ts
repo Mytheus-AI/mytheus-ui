@@ -107,6 +107,11 @@ class MockSocket {
       case "reaction":
         this.push("reaction", { meetingId, payload: { id: `r-${Date.now()}`, userId: "u-maya", reaction: p.reaction, at: new Date().toISOString() } });
         return { ok: true };
+      case "off-record-request":
+        this.push("off-record-request", { meetingId, payload: { userId: "u-maya", at: new Date().toISOString() } });
+        return { ok: true };
+      case "caption-language":
+        return { ok: true, language: p.language ?? null };
       default:
         return { ok: true };
     }

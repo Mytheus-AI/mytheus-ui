@@ -10,8 +10,13 @@ import {
   type ReactNode,
 } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { CaretDown, CaretUp, MagnifyingGlass } from "@phosphor-icons/react";
+import { CaretDown, CaretUp, EyeSlash, MagnifyingGlass } from "@phosphor-icons/react";
+import { gapLength } from "@/lib/realtime/privacy";
 import { TranscriptHead } from "@/components/transcript/TranscriptHead";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Page, PageColumns } from "@/components/ui/Page";
 import { initials, toneOf } from "@/components/room/tone";
 import {
   formatOffset,
@@ -66,6 +71,20 @@ function highlight(text: string, query: string, startOrdinal: number, current: n
   return parts.map((p, i) => <Fragment key={i}>{p}</Fragment>);
 }
 
+/** One stretch that was off the record, placed on the meeting clock when the room clock was known. */
+export interface TranscriptGap {
+  id: string;
+  startMs: number | null;
+  durationMs: number | null;
+  /** Still running (the meeting is off the record right now). */
+  running: boolean;
+}
+
+function gapLine(g: TranscriptGap): string {
+  const at = g.startMs === null ? "" : ` at ${formatOffset(g.startMs)}`;
+  return g.running ? `Off the record since${at || " a moment ago"}, nothing transcribed` : `Off the record, ${gapLength(g.durationMs)}${at}. Nothing was transcribed.`;
+}
+
 export function TranscriptView({
   chunks,
   speakers = [],
@@ -76,6 +95,7 @@ export function TranscriptView({
   meta,
   backHref,
   rail,
+  gaps = [],
 }: {
   chunks: TranscriptChunk[];
   speakers?: MeetingSpeaker[];
@@ -90,6 +110,9 @@ export function TranscriptView({
   backHref: string;
   /** The left rail panels (overview, speakers, talk time), rendered by the page. */
   rail?: ReactNode;
+  /** Stretches that were off the record (wave 3): nothing was transcribed, so the list shows a
+   *  marker where each one sat on the meeting clock. */
+  gaps?: TranscriptGap[];
 }) {
   const [query, setQuery] = useState("");
   const [current, setCurrent] = useState(0);
@@ -124,6 +147,18 @@ export function TranscriptView({
   const total = search.lineOfMatch.length;
   const currentMatch = Math.min(current, Math.max(total - 1, 0));
 
+  // Each gap sits before the first line that started after it; one with no place on the clock, or
+  // after the last line, is listed under the legend.
+  const { gapsBefore, gapsLeft } = useMemo(() => {
+    const before = new Map<number, TranscriptGap[]>();
+    const left: TranscriptGap[] = [];
+    for (const g of gaps) {
+      const idx = g.startMs === null ? -1 : chunks.findIndex((c) => c.start_ms >= (g.startMs as number));
+      if (idx < 0) left.push(g);
+      else before.set(idx, [...(before.get(idx) ?? []), g]);
+    }
+    return { gapsBefore: before, gapsLeft: left };
+  }, [gaps, chunks]);
   const words = useMemo(() => chunks.reduce((n, c) => n + wordCount(c.text), 0), [chunks]);
   const interims = useMemo(() => chunks.filter((c) => !c.is_final).length, [chunks]);
 
@@ -202,11 +237,11 @@ export function TranscriptView({
   };
 
   return (
-    <div className="mx-page tx" id="page-transcript">
+    <Page>
       <TranscriptHead title={title} meta={meta} backHref={backHref} />
 
-      <div className="tx-layout">
-        <section className="mx-card tx-main" aria-label="Transcript">
+      <PageColumns sticky={false} asideLabel="Speakers and talk time" aside={rail}>
+        <Card as="section" flush aria-label="Transcript" className="flex flex-col">
           <div className="tx-bar">
             <div className="mt-search tx-search" role="search">
               <MagnifyingGlass size={18} aria-hidden />
@@ -270,16 +305,37 @@ export function TranscriptView({
                 </span>
               </>
             ) : null}
+            {gaps.length > 0 ? (
+              <span className="tx-legend-key">
+                <EyeSlash size={14} aria-hidden />
+                {gaps.length === 1 ? "Off the record once" : `Off the record ${gaps.length} times`}, {gapLength(gaps.reduce((n, g) => n + (g.durationMs ?? 0), 0))} in all
+              </span>
+            ) : null}
           </div>
+          {gapsLeft.length > 0 ? (
+            <ul className="tx-gaps">
+              {gapsLeft.map((g) => (
+                <li key={g.id} className="tx-gap">
+                  <EyeSlash size={14} aria-hidden />
+                  {gapLine(g)}
+                </li>
+              ))}
+            </ul>
+          ) : null}
 
           {q && total === 0 ? (
-            <div className="tx-none" role="status">
-              <MagnifyingGlass size={30} aria-hidden className="tx-none-ico" />
-              <h3>No lines match &ldquo;{q}&rdquo;</h3>
-              <p>Check the spelling or try a shorter word.</p>
-              <button type="button" className="mx-btn is-outline is-sm tap" onClick={clear}>
-                Clear search
-              </button>
+            <div role="status">
+              <EmptyState
+                inCard
+                art="search"
+                title={`No lines match “${q}”`}
+                description="Check the spelling or try a shorter word."
+                action={
+                  <Button variant="outline" size="sm" onClick={clear}>
+                    Clear search
+                  </Button>
+                }
+              />
             </div>
           ) : (
             <div ref={scrollRef} tabIndex={0} role="region" aria-label="Transcript lines" className="tx-scroll">
@@ -298,6 +354,12 @@ export function TranscriptView({
                       className="tx-item"
                       style={{ transform: `translateY(${row.start}px)` }}
                     >
+                      {gapsBefore.get(row.index)?.map((g) => (
+                        <p key={g.id} className="tx-gap">
+                          <EyeSlash size={14} aria-hidden />
+                          {gapLine(g)}
+                        </p>
+                      ))}
                       <div className={`tr-row${dim ? " is-dim" : ""}${isActive ? " is-active" : ""}`}>
                         <span className="tr-when">
                           <button
@@ -345,12 +407,8 @@ export function TranscriptView({
               </ol>
             </div>
           )}
-        </section>
-
-        <aside className="tx-rail" aria-label="Speakers and talk time">
-          {rail}
-        </aside>
-      </div>
-    </div>
+        </Card>
+      </PageColumns>
+    </Page>
   );
 }

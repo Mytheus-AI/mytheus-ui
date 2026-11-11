@@ -132,6 +132,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/internal/jira/issue-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Issue Status */
+        post: operations["issue_status"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/internal/slack/meeting-summary": {
         parameters: {
             query?: never;
@@ -402,6 +419,34 @@ export interface components {
         IntegrationList: {
             /** Items */
             items: components["schemas"]["IntegrationItem"][];
+        };
+        /** IssueStatus */
+        IssueStatus: {
+            /**
+             * Action Id
+             * Format: uuid
+             */
+            action_id: string;
+            /** Issue Key */
+            issue_key: string;
+            /** Issue Url */
+            issue_url?: string | null;
+            /** Open */
+            open: boolean;
+            /** Source */
+            source: string;
+        };
+        /** IssueStatusRequest */
+        IssueStatusRequest: {
+            /** Action Ids */
+            action_ids: string[];
+        };
+        /** IssueStatusResult */
+        IssueStatusResult: {
+            /** Connected */
+            connected: boolean;
+            /** Issues */
+            issues: components["schemas"]["IssueStatus"][];
         };
         /** MeetingRef */
         MeetingRef: {
@@ -826,6 +871,60 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CrmNoteResult"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    issue_status: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IssueStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueStatusResult"];
                 };
             };
             /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */

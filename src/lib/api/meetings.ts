@@ -54,6 +54,9 @@ export interface CallMeeting {
   agenda: AgendaItem[];
   /** The host opened the 60-second close-out wrap-up at this time, or null (polish program). */
   wrapUpStartedAt?: string | null;
+  /** Held in a room and recorded on a phone (core-api `recorded_in_person`): there is no call
+   *  and no Mytheus room to join. */
+  recordedInPerson?: boolean;
 }
 
 /** A scheduled meeting this long past its end with nobody having joined is over. Matches the
@@ -106,6 +109,7 @@ export function toCallMeeting(raw: ApiMeeting): CallMeeting {
     previousMeeting: m.previous_meeting ?? null,
     agenda: Array.isArray(m.agenda) ? [...m.agenda].sort((a, b) => a.position - b.position) : [],
     wrapUpStartedAt: typeof m.wrap_up_started_at === "string" ? m.wrap_up_started_at : null,
+    recordedInPerson: (m as { recorded_in_person?: unknown }).recorded_in_person === true,
   };
 }
 

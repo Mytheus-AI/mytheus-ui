@@ -1,5 +1,4 @@
 import "@/styles/meeting.css";
-import "@/styles/meeting-dark.css";
 
 /**
  * Every Meetings screen inside the app shell renders under `.mx-meet`, the scope that

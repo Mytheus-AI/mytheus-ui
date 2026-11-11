@@ -28,7 +28,7 @@
   display: grid;
   place-items: center;
   color: var(--ink-3);
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 650;
   font-variant-numeric: tabular-nums;
 }
@@ -43,11 +43,11 @@
   width: 100%;
   height: 40px;
   padding: 0 12px;
-  border-radius: var(--mx-r-ctl);
+  border-radius: var(--radius-pill);
   border: 1px solid var(--line-2);
   background: var(--surface);
   color: var(--ink);
-  font-size: 14.5px;
+  font-size: 15px;
 }
 .mx-meet .ag-ed-fields input::placeholder { color: var(--ink-3); }
 .mx-meet .ag-ed-fields input:hover,
@@ -61,10 +61,10 @@
 .mx-meet .ag-ed-acts .cx-icon-btn:disabled,
 .mx-meet .ag-ed-acts .cx-icon-btn[disabled] { opacity: 0.35; cursor: default; background: transparent; }
 .mx-meet .ag-ed-errs { grid-column: 2; display: flex; flex-direction: column; gap: 2px; margin-top: 6px; }
-.mx-meet .ag-ed-err { color: var(--priority-high); font-size: 13px; font-weight: 600; line-height: 1.4; }
+.mx-meet .ag-ed-err { color: var(--priority-high); font-size: 12.5px; font-weight: 600; line-height: 1.4; }
 .mx-meet .ag-ed-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
-.mx-meet .ag-ed-sum { color: var(--ink-3); font-size: 13.5px; }
-.mx-meet .ag-ed-sum.is-over { color: color-mix(in srgb, var(--priority-medium) 74%, var(--ink)); font-weight: 600; }
+.mx-meet .ag-ed-sum { color: var(--ink-3); font-size: 14px; }
+.mx-meet .ag-ed-sum.is-over { color: var(--mx-medium-ink); font-weight: 600; }
 
 @media (max-width: 640px) {
   .mx-meet .ag-new-pair { grid-template-columns: minmax(0, 1fr); }
@@ -89,16 +89,16 @@
   border-radius: 999px;
   background: var(--bg-2);
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 650;
   font-variant-numeric: tabular-nums;
 }
 .mx-meet .ag-item.is-in_progress .ag-num { background: var(--signal-soft); color: var(--signal-ink); }
 .mx-meet .ag-item.is-covered .ag-num { background: var(--ok-soft); color: var(--ok); }
 .mx-meet .ag-body { min-width: 0; display: flex; flex-direction: column; gap: 3px; padding-top: 3px; }
-.mx-meet .ag-title { color: var(--ink); font-size: 15.5px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+.mx-meet .ag-title { color: var(--ink); font-size: 15px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
 .mx-meet .ag-item.is-skipped .ag-title { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--line-2); }
-.mx-meet .ag-meta { color: var(--ink-3); font-size: 13.5px; }
+.mx-meet .ag-meta { color: var(--ink-3); font-size: 14px; }
 .mx-meet .ag-note { display: flex; gap: 6px; align-items: flex-start; margin-top: 4px; color: var(--ink-2); font-family: var(--font-display); font-style: italic; font-size: 15px; line-height: 1.45; }
 .mx-meet .ag-note svg { flex-shrink: 0; margin-top: 4px; color: var(--signal-ink); }
 .mx-meet .ag-src { color: var(--ink-3); font-size: 12.5px; }
@@ -110,7 +110,7 @@
   border: 1px solid var(--line-2);
   background: var(--surface);
   color: var(--ink);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
 }
 .mx-meet .ag-status-pick select.is-accent { background: var(--signal-soft); border-color: transparent; color: var(--signal-ink); }
@@ -127,12 +127,12 @@
 /* Carried forward. */
 .mx-meet .cf-link { color: var(--ink); font-weight: 600; text-decoration: underline; text-decoration-color: var(--signal-line); text-underline-offset: 3px; }
 .mx-meet .cf-link:hover { color: var(--signal-ink); }
-.mx-meet .cf-empty { margin-top: 12px; padding: 14px 16px; border-radius: var(--mx-r-ctl); background: var(--surface-2); color: var(--ink-3); font-size: 14px; line-height: 1.5; }
+.mx-meet .cf-empty { margin-top: 12px; padding: 14px 16px; border-radius: var(--radius-pill); background: var(--surface-2); color: var(--ink-3); font-size: 14px; line-height: 1.5; }
 .mx-meet .cf-groups { display: flex; flex-direction: column; gap: 16px; margin-top: 14px; }
-.mx-meet .cf-sub { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; color: var(--ink-3); font-size: 13px; font-weight: 600; }
-.mx-meet .cf-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; padding: 7px 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.45; overflow-wrap: anywhere; }
+.mx-meet .cf-sub { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; color: var(--ink-3); font-size: 12.5px; font-weight: 600; }
+.mx-meet .cf-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; padding: 8px 0; color: var(--ink-2); font-size: 15px; line-height: 1.45; overflow-wrap: anywhere; }
 .mx-meet .cf-list li + li { border-top: 1px solid var(--line); }
-.mx-meet .cf-list li small { color: var(--ink-3); font-size: 13px; }
+.mx-meet .cf-list li small { color: var(--ink-3); font-size: 12.5px; }
 .mx-meet .cf-q-ico { flex-shrink: 0; color: var(--ink-4); align-self: center; }
 
 /* ================================================================ the room */
@@ -144,27 +144,27 @@
   align-items: center;
   gap: 12px;
   padding: 10px 6px 10px 10px;
-  border-radius: var(--mx-r-card);
+  border-radius: var(--radius-card);
   background: var(--surface-2);
   border: 1px solid var(--line);
 }
 .mx-meet .agent > .agent-head { margin-top: 12px; }
 .mx-meet .agent-head-face { width: 44px; height: 44px; flex-shrink: 0; overflow: hidden; border-radius: 999px; background: var(--bg-2); }
 .mx-meet .agent-head-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.mx-meet .agent-head-name { color: var(--ink); font-family: var(--font-display); font-size: 19px; font-weight: 500; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mx-meet .agent-head-meta { color: var(--ink-3); font-size: 13px; }
+.mx-meet .agent-head-name { color: var(--ink); font-family: var(--font-display); font-size: 22px; font-weight: 500; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-meet .agent-head-meta { color: var(--ink-3); font-size: 12.5px; }
 
 /* The shared live agenda. */
 .mx-meet .agenda { display: flex; flex-direction: column; gap: 8px; margin-bottom: 4px; }
-.mx-meet .agenda-list { display: flex; flex-direction: column; border-radius: var(--mx-r-card); border: 1px solid var(--line); background: var(--surface); overflow: hidden; }
-.mx-meet .agenda-item { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; padding: 11px 14px; transition: background-color 0.2s var(--ease-out); }
+.mx-meet .agenda-list { display: flex; flex-direction: column; border-radius: var(--radius-card); border: 1px solid var(--line); background: var(--surface); overflow: hidden; }
+.mx-meet .agenda-item { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; padding: 12px 14px; transition: background-color 0.2s var(--ease-out); }
 .mx-meet .agenda-item + .agenda-item { border-top: 1px solid var(--line); }
 .mx-meet .agenda-item.is-in_progress { background: color-mix(in srgb, var(--signal-soft) 55%, var(--surface)); }
 .mx-meet .agenda-ico { padding-top: 1px; color: var(--ink-4); }
 .mx-meet .agenda-item.is-in_progress .agenda-ico { color: var(--signal-ink); }
 .mx-meet .agenda-item.is-covered .agenda-ico { color: var(--ok); }
 .mx-meet .agenda-body { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.mx-meet .agenda-title { color: var(--ink); font-size: 14.5px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+.mx-meet .agenda-title { color: var(--ink); font-size: 15px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
 .mx-meet .agenda-item.is-skipped .agenda-title { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--line-2); }
 .mx-meet .agenda-meta { display: flex; flex-wrap: wrap; gap: 2px 10px; color: var(--ink-3); font-size: 12.5px; }
 .mx-meet .agenda-status { font-weight: 650; color: var(--ink-2); }
@@ -175,9 +175,9 @@
 .mx-meet .agenda-src { color: var(--ink-3); font-size: 12.5px; }
 .mx-meet .agenda-item .nfy-acts { margin-top: 4px; }
 .mx-meet .agenda-more { align-self: center; margin-left: auto; color: var(--ink-3); font-size: 12.5px; }
-.mx-meet .agenda-stale { color: var(--ink-3); font-size: 13px; line-height: 1.45; }
+.mx-meet .agenda-stale { color: var(--ink-3); font-size: 12.5px; line-height: 1.45; }
 .mx-meet .agenda-loading { display: flex; flex-direction: column; gap: 8px; }
-.mx-meet .agenda-loading i { display: block; height: 44px; border-radius: var(--mx-r-ctl); background: var(--bg-2); }
+.mx-meet .agenda-loading i { display: block; height: 44px; border-radius: var(--radius-pill); background: var(--bg-2); }
 @media (prefers-reduced-motion: no-preference) {
   .mx-meet .agenda-loading i { animation: agenda-wait 1.4s var(--ease-out) infinite alternate; }
 }
