@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* One system for every surface (marketing, auth, app, call). Warm cream stage, white surfaces,
-   one coral, dark controls; Newsreader for display titles, Hanken Grotesk for everything else.
+   one coral, dark controls; Syne for display titles, Hanken Grotesk for everything else.
    The signature is a single coral line (the logo's stroke). Dark mode is scoped to
    `<html data-theme="dark">` in src/styles/app-theme.css. Rules: docs/DESIGN-ONELINE.md. */
 
@@ -87,11 +87,13 @@ body {
   /* The font files are loaded on <body> by next/font (src/lib/fonts.ts); these names are what
      every component reads. */
   --font-sans: var(--font-hanken), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: var(--font-newsreader), Georgia, "Times New Roman", serif;
+  --font-display: var(--font-syne), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   background-color: var(--bg);
   color: var(--ink-2);
   font-family: var(--font-sans);
+  /* Only real faces: Syne (display) ships 400 and 500 upright only, see src/lib/fonts.ts. */
+  font-synthesis: none;
   font-size: 16px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
@@ -99,6 +101,11 @@ body {
   /* clip (not hidden) so it doesn't become a scroll container and break the
      position:sticky used by the LiveCapture scroll-pinned conveyor */
   overflow-x: clip;
+}
+
+/* The marketing home page alone keeps Newsreader for its titles and wordmark (src/lib/fonts.ts). */
+body:has([data-home-type]) {
+  --font-display: var(--font-newsreader), Georgia, "Times New Roman", serif;
 }
 
 ::selection {
@@ -268,12 +275,15 @@ body {
 .auth-spin {
   animation: authSpin 0.8s linear infinite;
 }
-/* autofill must not paint browser yellow over the warm field */
-.auth-input:-webkit-autofill,
-.auth-input:-webkit-autofill:hover,
-.auth-input:-webkit-autofill:focus {
+/* Autofill must not paint the browser's own fill over the field. The inset shadow is the field's
+   surface token, not white, so an autofilled field stays dark in dark mode (with white here, the
+   light ink sat on a white box and the value all but vanished). */
+:is(.mx-app, .mx-auth) input:-webkit-autofill,
+:is(.mx-app, .mx-auth) input:-webkit-autofill:hover,
+:is(.mx-app, .mx-auth) input:-webkit-autofill:focus {
   -webkit-text-fill-color: var(--ink);
-  -webkit-box-shadow: 0 0 0 1000px #fff inset;
+  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
+  caret-color: var(--ink);
   transition: background-color 9999s ease-out;
 }
 /* Clerk's bot-protection widget mounts here; hide the slot until it does */

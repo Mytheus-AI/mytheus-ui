@@ -246,7 +246,7 @@ export function PrimaryButton({
       size="lg"
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={`w-full ${className}`}
+      className={`w-full !text-[16px] ${className}`}
       {...rest}
     >
       {loading ? <Spinner /> : null}
@@ -274,7 +274,7 @@ export function GoogleButton({
       onClick={onClick}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className="w-full gap-3"
+      className="w-full gap-3 !text-[16px]"
     >
       {loading ? <Spinner className="text-ink-3" /> : <GoogleGlyph />}
       {children}

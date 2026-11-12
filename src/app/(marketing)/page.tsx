@@ -12,6 +12,8 @@ import { FaqSection } from "@/components/home/FaqSection";
 export default function Home() {
   return (
     <>
+      {/* Marker: switches the display font to Newsreader on this page only (globals.css). */}
+      <span hidden data-home-type />
       <HomeHero />
       <NotesSection />
       <RoomSection />
