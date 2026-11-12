@@ -86,6 +86,18 @@ export default function Loading() {
           </div>
         </div>
         <div className="md-col md-rail">
+          {/* Invite and share (ADR-0043): the join link, the calendar buttons, the invite button. */}
+          <section className="mx-card mx-card-pad">
+            <CardHead title="w-36" />
+            <TextBone className="text-[13px]" widths={["w-20"]} />
+            <Bone className="mt-2 h-10 w-full !rounded-[var(--radius-pill)] !bg-bg-2" />
+            <TextBone className="mt-4 text-[13px]" widths={["w-28"]} />
+            <div className="mt-2 flex flex-wrap gap-2">
+              {["w-24", "w-24", "w-32"].map((w, i) => (
+                <Bone key={i} className={`h-10 ${w} !rounded-[var(--radius-pill)] !bg-bg-2`} />
+              ))}
+            </div>
+          </section>
           <section className="mx-card mx-card-pad">
             <CardHead title="w-16" note />
             <div className="md-people">

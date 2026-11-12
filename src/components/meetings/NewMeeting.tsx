@@ -8,6 +8,7 @@ import {
   CalendarCheck,
   CalendarPlus,
   Clock,
+  EnvelopeSimple,
   Crown,
   Lightning,
   ListChecks,
@@ -21,7 +22,10 @@ import {
   WarningCircle,
   X,
 } from "@phosphor-icons/react";
+import { invitationEmailStatus, sendInvitations } from "@/app/actions/invitations";
 import { createMeeting, draftAgenda } from "@/app/actions/meetings";
+import { INVITE_LIMITS, sentSummary } from "@/lib/api/invitations-types";
+import { notifyError, notifySuccess } from "@/lib/toast";
 import { Dropdown } from "@/components/ui/Dropdown";
 import type { MeetingTemplate, OrgGoal } from "@/lib/api/meeting-brain-types";
 import { AgendaEditor, type AgendaPerson } from "./AgendaEditor";
@@ -49,6 +53,12 @@ import { useDialogKeys } from "./useDialogKeys";
    switch, "Draft the agenda" from the type and the meeting this follows up (each drafted item
    says where it came from), and a company goal on each agenda item when the workspace has goals.
    Nothing is saved until Create.
+
+   ADR-0043 adds "Send email invites" under People once someone is picked: on by default when
+   this workspace can send email (asked when the window opens), with an optional short note. After
+   the meeting is created the invitations go out and the toast says who was emailed. When email is
+   not set up the switch is off and says so; the meeting page still offers the link and a
+   calendar file.
 
    The window (UI polish pass): one popup with a fixed head and foot and a scrolling body. On a
    wide screen two columns, what and when (and the optional agenda) on the left, people, host and
@@ -145,6 +155,10 @@ export function NewMeeting({
   const [notice, setNotice] = useState<Notice>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Email invites (ADR-0043): undefined while asking, null when it could not be asked.
+  const [emailOk, setEmailOk] = useState<boolean | null | undefined>(undefined);
+  const [sendEmail, setSendEmail] = useState(true);
+  const [inviteNote, setInviteNote] = useState("");
   const template = templates?.find((t) => t.id === templateId) ?? null;
   const lengths = useMemo(
     () => Array.from(new Set<number>([...DURATIONS, duration])).sort((a, b) => a - b),
@@ -187,7 +201,14 @@ export function NewMeeting({
     setDrafting(false);
     setNotice(null);
     setError(null);
+    setSendEmail(true);
+    setInviteNote("");
     setOpen(true);
+    setEmailOk(undefined);
+    void invitationEmailStatus().then((ok) => {
+      setEmailOk(ok);
+      if (ok === false) setSendEmail(false);
+    });
   };
 
   useDialogKeys(dialogRef, open, close, () => titleRef.current?.focus());
@@ -304,16 +325,42 @@ export function NewMeeting({
       setBusy(false);
       return setError(result.message);
     }
+    const created = when === "now" ? "Meeting started" : "Meeting scheduled";
+    if (emailing) {
+      const sent = await sendInvitations(result.id, invitees, inviteNote);
+      if (!sent.ok) {
+        notifyError(`${created}, but the invitations weren't sent`, {
+          description: `${sent.message} You can send them from the meeting page.`,
+        });
+      } else if (!sent.result.email_configured) {
+        notifySuccess(created, { description: "Email isn't set up for this workspace yet, so nobody was emailed." });
+      } else if (sent.result.sent === 0) {
+        notifyError(`${created}, but the invitations couldn't be delivered`, {
+          description: "Use Retry under Invite and share on the meeting page.",
+        });
+      } else {
+        notifySuccess(created, {
+          description: `${sentSummary(sent.result)}${
+            sent.result.failed > 0 ? ` ${sent.result.failed} couldn't be sent; retry from the meeting page.` : ""
+          }`,
+        });
+      }
+    } else {
+      notifySuccess(created);
+    }
     router.push(when === "now" ? `/meetings/${result.id}/join` : `/meetings/${result.id}`);
     router.refresh();
   };
 
   const participantCount = 1 + invitees.length;
+  const emailing = sendEmail && emailOk !== false && invitees.length > 0;
   const hostName = hostId ? inMeeting.find((p) => p.id === hostId)?.name ?? "Invited member" : "you";
   const whenLine = when === "now" ? "Starts now" : scheduledLine(date, time);
   const summary = `${whenLine}, ${lengthLabel(duration)}, ${
     participantCount === 1 ? "just you" : `${participantCount} people`
-  }${hostId ? `, ${hostName} hosts` : ""}${confidential ? ", confidential" : ""}`;
+  }${hostId ? `, ${hostName} hosts` : ""}${confidential ? ", confidential" : ""}${
+    emailing ? `, ${invitees.length === 1 ? "invite" : "invites"} by email` : ""
+  }`;
   const typeOptions = [
     {
       value: "",
@@ -540,6 +587,59 @@ export function NewMeeting({
                       </span>
                     </h3>
                     <MemberPicker members={members} selected={invitees} onChange={setInvitees} disabled={busy} />
+                    {invitees.length > 0 ? (
+                      <div className="nm-mail">
+                        <button
+                          id={`${ids}-mail`}
+                          type="button"
+                          role="switch"
+                          aria-checked={emailing}
+                          aria-describedby={`${ids}-mail-note`}
+                          className="nm-switch tap"
+                          disabled={busy || emailOk === false || emailOk === undefined}
+                          onClick={() => setSendEmail((v) => !v)}
+                        >
+                          <span className="nm-switch-track" aria-hidden="true">
+                            <span className="nm-switch-knob" />
+                          </span>
+                          <span className="nm-switch-label">
+                            <EnvelopeSimple size={15} aria-hidden="true" />
+                            Send email invites
+                          </span>
+                        </button>
+                        {emailOk === false ? (
+                          <p id={`${ids}-mail-note`} className="nm-mail-warn">
+                            <WarningCircle size={16} weight="fill" aria-hidden="true" />
+                            Email isn&rsquo;t set up for this workspace yet. Share the link or the calendar file from the meeting page.
+                          </p>
+                        ) : (
+                          <small id={`${ids}-mail-note`} className="mh-new-hint">
+                            {emailOk === undefined
+                              ? "Checking email for this workspace..."
+                              : emailing
+                                ? `Each person gets the time in their own time zone, the agenda, a Join button and a calendar invite.`
+                                : "Nobody is emailed. They still see it in Mytheus."}
+                          </small>
+                        )}
+                        {emailing ? (
+                          <>
+                            <label htmlFor={`${ids}-mail-msg`} className="nm-label">
+                              Note <small className="mh-new-hint">Optional</small>
+                            </label>
+                            <textarea
+                              id={`${ids}-mail-msg`}
+                              className="nm-input iv-note-input"
+                              rows={2}
+                              maxLength={INVITE_LIMITS.messageMax}
+                              value={inviteNote}
+                              placeholder="Bring the Q1 numbers, we'll decide on pricing."
+                              disabled={busy}
+                              onChange={(e) => setInviteNote(e.target.value)}
+                            />
+                          </>
+                        ) : null}
+                      </div>
+                    ) : null}
                     <div className="nm-pair">
                       <div className="nm-field">
                         <label htmlFor={`${ids}-host`} className="nm-label">

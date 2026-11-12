@@ -2,6 +2,7 @@ import "../../src/styles/meeting.css";
 import "../../src/styles/meeting-hub.css";
 import "../../src/styles/meeting-agenda.css";
 import "../../src/styles/meeting-brain.css";
+import "../../src/styles/meeting-invites.css";
 import { OrgProvider } from "../../src/lib/org-context";
 import { NewMeeting } from "../../src/components/meetings/NewMeeting";
 import type { PickableMember } from "../../src/components/meetings/MemberPicker";
