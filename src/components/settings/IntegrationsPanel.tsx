@@ -1,64 +1,83 @@
 import type { Icon } from "@phosphor-icons/react";
-import { AddressBook, BookOpenText, CalendarDots, Kanban, NotionLogo, SlackLogo, SquaresFour } from "@phosphor-icons/react/ssr";
+import { AddressBook, BookOpenText, CalendarDots, Kanban, NotionLogo, SlackLogo } from "@phosphor-icons/react/ssr";
+import type { ReactNode } from "react";
 import { FormSubmit } from "@/components/admin/FormSubmit";
-import { SectionCard, cardClass } from "@/components/ui/Card";
+import { cardClass } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Note } from "@/components/ui/Note";
+import { ClampedText } from "./ClampedText";
+import { IntegrationSetup } from "./IntegrationSetup";
 import { ReturnToast } from "./ReturnToast";
 import { connectProvider, disconnectProvider } from "@/app/actions/integrations";
 import {
-  cardState,
+  SETUP_GUIDES,
+  VIEW_CHIP,
+  callbackUrl,
   decisionChecksCopy,
-  scopeLabel,
+  providerView,
   trackerOptions,
-  type CardState,
   type IntegrationItem,
   type ProviderKey,
+  type ProviderView,
   type ReturnBanner,
-  type TrackerOption,
 } from "@/lib/integrations";
 import type { IntegrationsLoad } from "@/lib/api/integrations";
 
-/* Integration connections (Phase P12, plan 3.14, guardrail R8): Google Calendar, Slack, and ONE
-   project tracker chosen with a single radio (Jira, with Linear shown as not available). Every
-   figure comes from integration-service's `GET /integrations`; a provider without app credentials
-   on the server is "Not configured" and cannot be connected. No token is ever shown: the server
-   never returns one and the view model has no field for it.
+/* Settings > Integrations (Phase P12 plan 3.14 and Phase 4 reach; redesigned 2026-11-12).
 
-   Phase 4 reach adds HubSpot (a note per meeting on the matching CRM companies and contacts) and
-   Notion and Confluence (where a decision record can be exported). They sit outside R8, so they
-   are plain cards in their own section. ADR-0037 D3: a provider the server has no app credentials
-   for says "Not available yet" and its Connect stays off; it lights up when the credentials land.
+   Six cards in one grid, in two groups: "For your Mytes" (Google Calendar, Slack, the project
+   tracker) and "Share and export" (HubSpot, Notion, Confluence). Every card is the same shape: a
+   header (icon, status chip), the name, a two-line description with "More", and a footer with
+   exactly one action. Each card has exactly one chip, for one of five states:
 
-   Server component. Connect and Disconnect are form actions, so they work without client JS;
-   only the submit buttons are client islands (pending label, confirm step). */
+     Connected         account and last sync; Disconnect
+     Ready to connect  the server has app credentials; Connect starts the OAuth flow
+     Needs setup       the server has none; admins get "Set up" (what to create, the redirect
+                       URL, the scopes, the env var names), others "Ask an admin to set this up"
+     Error             connected but failing at the provider; Reconnect
+     Coming soon       Linear, as a disabled segment of the tracker choice (never a chip)
 
-const dateTime = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+   Every figure comes from integration-service's `GET /integrations`. No token is ever shown: the
+   server never returns one and the view model has no field for it. Server component: Connect and
+   Disconnect are form actions, so they work without client JS; the submit buttons, the setup
+   dialog and "More" are the client islands. */
+
+const dateTime = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 const fmt = (iso: string | null) => (iso && !Number.isNaN(Date.parse(iso)) ? dateTime.format(new Date(iso)) : null);
 
-type CardMeta = { key: ProviderKey; name: string; description: string; icon: Icon };
+type CardMeta = { key: Exclude<ProviderKey, "linear">; name: string; description: string; icon: Icon };
 
-const CARDS: CardMeta[] = [
+const FOR_MYTES: CardMeta[] = [
   {
     key: "google_calendar",
     name: "Google Calendar",
-    description: "Meetings on the installer's primary calendar sync in, with attendees matched to people in this workspace, so Mytes can prepare before you join.",
+    description: "Meetings on your calendar sync in with their attendees matched to people here, so each Myte can prepare before you join.",
     icon: CalendarDots,
   },
   {
     key: "slack",
     name: "Slack",
-    description: "Prep briefs before a meeting, summaries after it and action reminders arrive as direct messages from the Mytheus app.",
+    description:
+      "Briefs before a meeting, summaries after it and action reminders arrive as Slack messages. A message that goes against a decision is flagged to its writer first.",
     icon: SlackLogo,
   },
 ];
 
-const REACH_CARDS: CardMeta[] = [
+const TRACKER: CardMeta = {
+  key: "jira",
+  name: "Project tracker",
+  description: "Confirmed action items become issues with a link back to the meeting, and closing an issue marks the action done here. One tracker per workspace.",
+  icon: Kanban,
+};
+
+const SHARE: CardMeta[] = [
   {
     key: "hubspot",
     name: "HubSpot",
-    description: "When a meeting with people outside the workspace ends, its confirmed decisions and actions are added as one note on the matching HubSpot companies and contacts. Confidential meetings never go to the CRM.",
+    description:
+      "After a meeting with people outside the workspace, its confirmed decisions and actions become one note on the matching companies and contacts. Confidential meetings never go to the CRM.",
     icon: AddressBook,
   },
   {
@@ -75,60 +94,89 @@ const REACH_CARDS: CardMeta[] = [
   },
 ];
 
-function StatusBadge({ state }: { state: CardState }) {
-  if (state.kind === "not_configured") return <Chip tone="outline">Not available yet</Chip>;
-  if (state.kind === "available") return <Chip>Not connected</Chip>;
-  return state.status === "active" ? <Chip tone="ok">Connected</Chip> : <Chip tone="medium">Needs attention</Chip>;
+/** Everything a card needs besides its own row. */
+type Ctx = { canManage: boolean; appOrigin: string; apiOrigin: string; people: Map<string, string> };
+
+const GRID = "grid grid-cols-[repeat(auto-fill,minmax(min(100%,236px),1fr))] gap-4";
+
+/* ---------------- the card ---------------- */
+
+function Card({
+  meta,
+  view,
+  body,
+  footer,
+}: {
+  meta: { name: string; description: string; icon: Icon };
+  view: ProviderView;
+  body?: ReactNode;
+  footer: ReactNode;
+}) {
+  const Glyph = meta.icon;
+  const chip = VIEW_CHIP[view];
+  return (
+    <li className={cardClass({ clip: false, className: "flex h-full min-w-0 flex-col" })}>
+      <div className="flex items-start justify-between gap-3">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-ctl bg-bg-2 text-ink" aria-hidden="true">
+          <Glyph size={22} />
+        </span>
+        <Chip tone={chip.tone}>
+          <span className="sr-only">{meta.name}: </span>
+          {chip.label}
+        </Chip>
+      </div>
+      <h4 className="mt-3.5 text-[17px] font-semibold leading-snug text-ink">{meta.name}</h4>
+      <ClampedText className="mt-1">{meta.description}</ClampedText>
+      {body ? <div className="mt-3.5 flex flex-col gap-2.5">{body}</div> : null}
+      <div className="mt-auto flex min-h-9 flex-wrap items-center gap-2 pt-4">{footer}</div>
+    </li>
+  );
 }
 
+/** Account and last sync, for a connected card. */
 function Details({ item, people }: { item: IntegrationItem; people: Map<string, string> }) {
+  const installer = item.installed_by ? (people.get(item.installed_by) ?? "a former member") : null;
   const rows: [string, string][] = [];
   if (item.external_account_id) rows.push(["Account", item.external_account_id]);
-  if (item.installed_by) rows.push(["Installed by", people.get(item.installed_by) ?? "A former member"]);
-  const installed = fmt(item.installed_at);
-  if (installed) rows.push(["Installed", installed]);
   rows.push(["Last sync", fmt(item.last_synced_at) ?? "Not synced yet"]);
   return (
-    <div className="flex flex-col gap-3">
-      <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-4 gap-y-1.5 rounded-ctl border border-line bg-surface-2 px-3.5 py-3 text-[14px]">
-        {rows.map(([k, v]) => (
-          <div key={k} className="contents">
-            <dt className="text-ink-3">{k}</dt>
-            <dd className="truncate text-right font-semibold text-ink" title={v}>
-              {v}
-            </dd>
-          </div>
-        ))}
-      </dl>
-      {item.scopes.length > 0 ? (
-        <div>
-          <p className="kicker">Permissions granted</p>
-          <ul className="mt-1.5 flex flex-wrap gap-1.5">
-            {item.scopes.map((s) => (
-              <li key={s} title={s}>
-                <Chip>{scopeLabel(s)}</Chip>
-              </li>
-            ))}
-          </ul>
+    <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-1 rounded-ctl bg-surface-2 px-3 py-2.5 text-[13.5px]">
+      {rows.map(([k, v]) => (
+        <div key={k} className="contents">
+          <dt className="text-ink-3">{k}</dt>
+          <dd className="truncate text-right font-semibold text-ink" title={k === "Account" && installer ? `${v}, connected by ${installer}` : v}>
+            {v}
+          </dd>
         </div>
-      ) : null}
-    </div>
+      ))}
+    </dl>
   );
 }
 
-function DecisionChecksLine({ item }: { item: IntegrationItem }) {
-  const copy = decisionChecksCopy(item.decision_checks);
-  if (!copy) return null;
-  return (
-    <div className="flex flex-col items-start gap-1.5">
-      <Chip tone={copy.tone}>{copy.label}</Chip>
-      <p className="text-[14px] leading-relaxed text-ink-3">{copy.text}</p>
-    </div>
-  );
+const Quiet = ({ children }: { children: ReactNode }) => <p className="text-[14px] leading-snug text-ink-3">{children}</p>;
+
+/** The state's detail between the description and the footer; nothing for "Ready" and "Needs setup". */
+function bodyFor(view: ProviderView, name: string, item: IntegrationItem | undefined, ctx: Ctx): ReactNode {
+  if ((view === "connected" || view === "error") && item) {
+    const checks = item.provider === "slack" ? decisionChecksCopy(item.decision_checks) : null;
+    return (
+      <>
+        {view === "error" ? <Note tone="warning">Failing at {name}. Reconnect to repair it.</Note> : null}
+        <Details item={item} people={ctx.people} />
+        {checks && view === "connected" ? <Quiet>{checks.label}</Quiet> : null}
+      </>
+    );
+  }
+  if (view === "blocked") return <Quiet>Another project tracker is connected. Disconnect it before connecting Jira.</Quiet>;
+  return null;
 }
 
-function Actions({ provider, name, state, connectBlocked }: { provider: ProviderKey; name: string; state: CardState; connectBlocked?: string | null }) {
-  if (state.kind === "connected") {
+/** The one footer action for a state. */
+function actionFor(view: ProviderView, provider: Exclude<ProviderKey, "linear">, name: string, ctx: Ctx): ReactNode {
+  if (!ctx.canManage || view === "unknown") {
+    return <Quiet>{view === "connected" ? "Connected by a workspace admin" : "Ask an admin to set this up"}</Quiet>;
+  }
+  if (view === "connected") {
     return (
       <form action={disconnectProvider}>
         <input type="hidden" name="provider" value={provider} />
@@ -138,130 +186,90 @@ function Actions({ provider, name, state, connectBlocked }: { provider: Provider
       </form>
     );
   }
-  const disabled = state.kind === "not_configured" || !!connectBlocked;
+  if (view === "ready" || view === "error") {
+    const verb = view === "error" ? "Reconnect" : "Connect";
+    return (
+      <form action={connectProvider}>
+        <input type="hidden" name="provider" value={provider} />
+        <FormSubmit variant="primary" pendingLabel="Opening..." ariaLabel={`${verb} ${name}`}>
+          {verb}
+        </FormSubmit>
+      </form>
+    );
+  }
+  if (view === "needs_setup") {
+    return <IntegrationSetup name={name} guide={SETUP_GUIDES[provider]} redirectUrl={callbackUrl(ctx.appOrigin, provider)} apiOrigin={ctx.apiOrigin} />;
+  }
+  return <Quiet>Disconnect the other tracker first</Quiet>;
+}
+
+function viewFor(load: IntegrationsLoad, provider: ProviderKey, opts?: { otherTrackerConnected?: boolean }): ProviderView {
+  return load.kind === "live" ? providerView(load.items.get(provider), opts) : "unknown";
+}
+
+function ProviderCard({ meta, load, ctx }: { meta: CardMeta; load: IntegrationsLoad; ctx: Ctx }) {
+  const item = load.kind === "live" ? load.items.get(meta.key) : undefined;
+  const view = viewFor(load, meta.key);
+  return <Card meta={meta} view={view} body={bodyFor(view, meta.name, item, ctx)} footer={actionFor(view, meta.key, meta.name, ctx)} />;
+}
+
+/* ---------------- the project tracker ---------------- */
+
+/** Jira or Linear, as a two-segment choice. Linear is not built: a disabled segment marked
+    "Coming soon", never a second chip (R8: one tracker; Linear is never connectable). */
+function TrackerChoice() {
   return (
-    <form action={connectProvider}>
-      <input type="hidden" name="provider" value={provider} />
-      <FormSubmit variant="primary" disabled={disabled} pendingLabel="Opening..." ariaLabel={`Connect ${name}`}>
-        Connect
-      </FormSubmit>
-    </form>
+    <fieldset className="w-full min-w-0">
+      <legend className="sr-only">Tracker</legend>
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-1 rounded-full bg-bg-2 p-1">
+        <label className="flex h-8 cursor-pointer items-center justify-center rounded-full px-4 text-[14px] font-semibold text-ink-2 transition-[background-color,color,box-shadow] duration-150 has-[:checked]:bg-surface has-[:checked]:text-ink has-[:checked]:shadow-warm-1 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-signal">
+          <input type="radio" name="pm-tracker" value="jira" defaultChecked className="sr-only" />
+          Jira
+        </label>
+        <label className="flex h-8 min-w-0 cursor-not-allowed items-center justify-center gap-1.5 rounded-full px-3 text-[14px] text-ink-3">
+          <input type="radio" name="pm-tracker" value="linear" disabled aria-describedby="linear-soon" className="sr-only" />
+          <span className="font-semibold">Linear</span>
+          <span id="linear-soon" className="truncate text-[13px]">
+            Coming soon
+          </span>
+        </label>
+      </div>
+    </fieldset>
   );
 }
 
-function ProviderCard({ meta, item, people }: { meta: CardMeta; item: IntegrationItem | undefined; people: Map<string, string> }) {
-  const state = cardState(item);
-  const Glyph = meta.icon;
+function TrackerCard({ load, ctx }: { load: IntegrationsLoad; ctx: Ctx }) {
+  const jira = load.kind === "live" ? load.items.get("jira") : undefined;
+  const otherTrackerConnected = load.kind === "live" && trackerOptions(load.items)[0].reason === "other_tracker_connected";
+  const view = viewFor(load, "jira", { otherTrackerConnected });
   return (
-    <li className={cardClass({ className: "flex flex-col gap-4" })}>
-      <div className="flex items-start gap-3.5">
-        <span className="grid h-[46px] w-[46px] shrink-0 place-items-center rounded-ctl bg-bg-2 text-ink" aria-hidden="true">
-          <Glyph size={24} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <h3 className="text-[17px] font-semibold leading-snug text-ink">{meta.name}</h3>
-          <p className="mt-1 text-[14px] leading-relaxed text-ink-3">{meta.description}</p>
-        </div>
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        <StatusBadge state={state} />
-      </div>
-      {state.kind === "not_configured" ? (
-        <p className="text-[14px] text-ink-3">
-          {meta.name} is not enabled on this Mytheus server yet, so it cannot be connected. Connect turns on here as soon as it is.
-        </p>
-      ) : null}
-      {state.kind === "connected" && state.status === "degraded" ? (
-        <Note tone="warning">The connection is failing at {meta.name}. Disconnect and connect again to repair it.</Note>
-      ) : null}
-      {item && state.kind === "connected" ? <Details item={item} people={people} /> : null}
-      {item && state.kind === "connected" ? <DecisionChecksLine item={item} /> : null}
-      <div className="mt-auto border-t border-line pt-4">
-        <Actions provider={meta.key} name={meta.name} state={state} />
-      </div>
-    </li>
+    <Card
+      meta={TRACKER}
+      view={view}
+      body={bodyFor(view, "Jira", jira, ctx)}
+      footer={
+        <>
+          <TrackerChoice />
+          {actionFor(view, "jira", "Jira", ctx)}
+        </>
+      }
+    />
   );
 }
 
-const REASON_COPY: Record<NonNullable<TrackerOption["reason"]>, string> = {
-  not_available: "Not available",
-  not_configured: "Not available yet",
-  other_tracker_connected: "Another tracker is connected",
-  connected: "Connected",
-};
+/* ---------------- the page body ---------------- */
 
-function TrackerSection({ items, people }: { items: Map<ProviderKey, IntegrationItem>; people: Map<string, string> }) {
-  const options = trackerOptions(items);
-  const jira = items.get("jira");
-  const jiraState = cardState(jira);
-  const jiraOption = options.find((o) => o.key === "jira")!;
+function Group({ id, title, lead, children }: { id: string; title: string; lead: string; children: ReactNode }) {
   return (
-    <SectionCard
-      title="Project tracker"
-      description="One tracker per workspace. Only action items someone has confirmed become issues, and an issue closed in the tracker marks the action done here."
-    >
-      <div className="flex flex-col gap-4 px-4 py-4 sm:px-[22px] md:py-[18px]">
-        <fieldset className="grid gap-2.5">
-          <legend className="sr-only">Project tracker</legend>
-          {options.map((o) => {
-            const OptionIcon = o.key === "jira" ? SquaresFour : Kanban;
-            return (
-              <label
-                key={o.key}
-                className={`flex flex-wrap items-start gap-3 rounded-ctl border border-line-2 bg-surface px-4 py-3.5 transition-[border-color,background-color,box-shadow] duration-150 has-[:checked]:border-signal has-[:checked]:bg-surface-2 has-[:checked]:shadow-[0_0_0_1px_var(--signal)] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-signal ${
-                  o.selectable ? "cursor-pointer hover:border-ink-4 hover:bg-surface-2" : "cursor-not-allowed bg-surface-2"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="pm-tracker"
-                  value={o.key}
-                  defaultChecked={o.selected}
-                  disabled={!o.selectable}
-                  className="peer sr-only"
-                />
-                <span
-                  aria-hidden="true"
-                  className="mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border-2 border-ink-3 peer-checked:border-signal peer-disabled:border-line-2 [&>span]:hidden peer-checked:[&>span]:block"
-                >
-                  <span className="h-2 w-2 rounded-full bg-signal" />
-                </span>
-                <OptionIcon size={20} className="mt-0.5 shrink-0 text-ink-2" aria-hidden="true" />
-                <span className="min-w-0 flex-[1_1_12rem]">
-                  <span className={`block text-[15px] font-semibold ${o.selectable ? "text-ink" : "text-ink-3"}`}>{o.name}</span>
-                  <span className="mt-0.5 block text-[14px] leading-snug text-ink-3">
-                    {o.key === "jira"
-                      ? "Confirmed action items become Jira issues, with a link back to the meeting."
-                      : "Linear is not supported yet."}
-                  </span>
-                </span>
-                <span className="flex shrink-0 flex-wrap gap-1.5">
-                  {o.reason && o.reason !== "connected" ? <Chip tone="outline">{REASON_COPY[o.reason]}</Chip> : null}
-                  {o.key === "jira" ? <StatusBadge state={jiraState} /> : null}
-                </span>
-              </label>
-            );
-          })}
-        </fieldset>
-
-        {jiraOption.reason === "other_tracker_connected" ? (
-          <Note tone="warning">Another project tracker is connected. Disconnect it before connecting Jira.</Note>
-        ) : null}
-        {jiraState.kind === "connected" && jiraState.status === "degraded" ? (
-          <Note tone="warning">The connection is failing at Jira. Disconnect and connect again to repair it.</Note>
-        ) : null}
-        {jira && jiraState.kind === "connected" ? <Details item={jira} people={people} /> : null}
-
-        <div className="border-t border-line pt-4">
-          <Actions
-            provider="jira"
-            name="Jira"
-            state={jiraState}
-            connectBlocked={jiraOption.canConnect || jiraState.kind === "connected" ? null : jiraOption.reason}
-          />
-        </div>
+    <section aria-labelledby={id} className="flex flex-col gap-3">
+      <div>
+        <h3 id={id} className="display text-[20px] text-ink-display">
+          {title}
+        </h3>
+        <p className="mt-0.5 max-w-[70ch] text-[14.5px] leading-relaxed text-ink-3">{lead}</p>
       </div>
-    </SectionCard>
+      <ul className={GRID}>{children}</ul>
+    </section>
   );
 }
 
@@ -269,46 +277,60 @@ export function IntegrationsPanel({
   load,
   banner,
   people,
+  canManage,
+  appOrigin,
+  apiOrigin,
 }: {
   load: IntegrationsLoad;
   banner: ReturnBanner;
-  /** internal user id -> display name, for "Installed by" */
+  /** internal user id -> display name, for "Connected by" */
   people: Map<string, string>;
+  /** a workspace owner or admin: may connect, disconnect and set up */
+  canManage: boolean;
+  /** this app's origin, for the OAuth redirect URL shown in setup */
+  appOrigin: string;
+  /** the API origin, for Slack's event and interactivity URLs */
+  apiOrigin: string;
 }) {
+  const ctx: Ctx = { canManage: canManage && load.kind !== "forbidden", appOrigin, apiOrigin, people };
+
+  if (load.kind === "unavailable") {
+    return <ErrorState title="Integrations could not be loaded" text="Nothing was changed. Connected tools keep working while this page is unavailable." />;
+  }
+  if (load.kind === "live" && load.items.size === 0) {
+    return (
+      <EmptyState
+        title="No integrations on this server"
+        description="This Mytheus server lists no tools to connect. Once integration-service is deployed, Google Calendar, Slack, Jira, HubSpot, Notion and Confluence appear here."
+      />
+    );
+  }
+
+  const nothingConfigured = load.kind === "live" && Array.from(load.items.values()).every((i) => !i.configured && i.status === null);
+
   return (
     <>
       {banner && banner.tone !== "error" ? <ReturnToast message={banner.message} /> : null}
       {banner?.tone === "error" ? <Note tone="error">{banner.message}</Note> : null}
 
-      {load.kind === "forbidden" ? (
-        <Note>Only workspace owners and admins can see and manage integrations.</Note>
-      ) : load.kind === "unavailable" ? (
-        <ErrorState title="Integrations could not be loaded" text="Nothing can be connected until they load. Nothing was changed." />
-      ) : (
-        <>
-          <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))] gap-5">
-            {CARDS.map((c) => (
-              <ProviderCard key={c.key} meta={c} item={load.items.get(c.key)} people={people} />
-            ))}
-          </ul>
-          <TrackerSection items={load.items} people={people} />
-          <section aria-labelledby="reach-heading" className="flex flex-col gap-3">
-            <div>
-              <h2 id="reach-heading" className="display text-[22px] text-ink">
-                Share and export
-              </h2>
-              <p className="mt-1 max-w-[70ch] text-[15px] leading-relaxed text-ink-3">
-                Send what the workspace confirmed to the tools other people already read. Each one is optional and independent of the others.
-              </p>
-            </div>
-            <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-5">
-              {REACH_CARDS.map((c) => (
-                <ProviderCard key={c.key} meta={c} item={load.items.get(c.key)} people={people} />
-              ))}
-            </ul>
-          </section>
-        </>
-      )}
+      {!ctx.canManage ? (
+        <Note>Only workspace admins can connect integrations. Exporting a decision to Notion, Confluence or Slack works for everyone once it is connected.</Note>
+      ) : nothingConfigured ? (
+        <Note>Nothing is set up on this server yet. Choose Set up on any tool to see the app to create and the keys the server needs.</Note>
+      ) : null}
+
+      <Group id="for-mytes" title="For your Mytes" lead="What each Myte reads before a meeting and where it reports after.">
+        {FOR_MYTES.map((m) => (
+          <ProviderCard key={m.key} meta={m} load={load} ctx={ctx} />
+        ))}
+        <TrackerCard load={load} ctx={ctx} />
+      </Group>
+
+      <Group id="share-export" title="Share and export" lead="Send what the workspace confirmed to the tools other people already read. Each one is optional.">
+        {SHARE.map((m) => (
+          <ProviderCard key={m.key} meta={m} load={load} ctx={ctx} />
+        ))}
+      </Group>
     </>
   );
 }

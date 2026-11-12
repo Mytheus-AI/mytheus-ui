@@ -162,3 +162,55 @@ test("callback outcomes never carry the code or state", () => {
     assert.equal(loc.includes("SECRET"), false);
   }
 });
+
+/* ---- the settings page's view (redesign of 2026-11-12) ---- */
+import { CONNECTABLE, SETUP_GUIDES, VIEW_CHIP, appOriginFrom, callbackUrl, providerView } from "../src/lib/integrations.ts";
+
+test("view: one state per card, from configured and status", () => {
+  assert.equal(providerView(undefined), "needs_setup");
+  assert.equal(providerView(row("slack", { configured: false }) as never), "needs_setup");
+  assert.equal(providerView(row("slack") as never), "ready");
+  assert.equal(providerView(row("slack", { status: "disconnected" }) as never), "ready");
+  assert.equal(providerView(row("slack", { status: "active" }) as never), "connected");
+  assert.equal(providerView(row("slack", { status: "degraded" }) as never), "error");
+  assert.equal(providerView(row("jira") as never, { otherTrackerConnected: true }), "blocked");
+  assert.equal(providerView(row("jira", { status: "active" }) as never), "connected");
+  assert.equal(VIEW_CHIP.needs_setup.label, "Needs setup");
+  assert.equal(VIEW_CHIP.ready.label, "Ready to connect");
+});
+
+test("redirect URL is the app's own callback page, per provider", () => {
+  assert.equal(callbackUrl("https://dashboard.mytheus.cloud", "slack"), "https://dashboard.mytheus.cloud/settings/integrations/callback/slack");
+  assert.equal(callbackUrl("http://localhost:3000/", "google_calendar"), "http://localhost:3000/settings/integrations/callback/google_calendar");
+});
+
+test("app origin from the request host, never a crafted one", () => {
+  assert.equal(appOriginFrom("dashboard.mytheus.cloud", "https"), "https://dashboard.mytheus.cloud");
+  assert.equal(appOriginFrom("dashboard.mytheus.cloud, proxy.internal", "https, http"), "https://dashboard.mytheus.cloud");
+  assert.equal(appOriginFrom("localhost:3000", null), "http://localhost:3000");
+  assert.equal(appOriginFrom(null, null), "https://dashboard.mytheus.cloud");
+  assert.equal(appOriginFrom("evil.com/path?x", "https"), "https://dashboard.mytheus.cloud");
+  assert.equal(appOriginFrom("ex ample.com", "https"), "https://dashboard.mytheus.cloud");
+  assert.equal(appOriginFrom("dashboard.mytheus.cloud", "javascript"), "https://dashboard.mytheus.cloud");
+});
+
+test("every connectable provider has a setup guide with an https console link, env names and scopes", () => {
+  const env: Record<string, string[]> = {
+    google_calendar: ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
+    slack: ["SLACK_CLIENT_ID", "SLACK_CLIENT_SECRET", "SLACK_SIGNING_SECRET"],
+    jira: ["JIRA_CLIENT_ID", "JIRA_CLIENT_SECRET"],
+    hubspot: ["HUBSPOT_CLIENT_ID", "HUBSPOT_CLIENT_SECRET"],
+    notion: ["NOTION_CLIENT_ID", "NOTION_CLIENT_SECRET"],
+    confluence: ["CONFLUENCE_CLIENT_ID", "CONFLUENCE_CLIENT_SECRET"],
+  };
+  for (const p of CONNECTABLE) {
+    const g = SETUP_GUIDES[p as keyof typeof SETUP_GUIDES];
+    assert.ok(g, p);
+    assert.match(g.console.href, /^https:\/\//);
+    assert.deepEqual(g.env, env[p]);
+    assert.ok(g.scopes.length > 0 || g.scopesNote, p);
+    assert.ok(g.steps.length > 0, p);
+  }
+  assert.ok(SETUP_GUIDES.slack.scopes.includes("channels:history"));
+  assert.ok(SETUP_GUIDES.jira.scopes.includes("offline_access"));
+});

@@ -750,6 +750,10 @@ export async function saveWorkingProfile() {
   return { ok: true as const };
 }
 
+// Settings > Integrations: Connect and Disconnect are form actions (React 18 cannot run them; the
+// spec checks the form's fields instead).
+export async function connectProvider(_formData: FormData) {}
+export async function disconnectProvider(_formData: FormData) {}
 // Meeting invitations (ADR-0043). `window.__emailConfigured` (default true) answers the New meeting
 // window's check; `window.__invitesRead` is what the card's Retry reads back; `window.__inviteFail`
 // makes a send fail as core-api's 429 would.
