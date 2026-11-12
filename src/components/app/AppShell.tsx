@@ -8,6 +8,7 @@ import { Topbar } from "@/components/app/Topbar";
 import { CommandPalette } from "@/components/app/CommandPalette";
 import { DoodleImageSync } from "@/components/app/DoodleImageSync";
 import { CrumbProvider } from "@/components/app/Crumb";
+import { MyAgentProvider } from "@/lib/my-agent";
 import { Toaster } from "@/components/ui/Toaster";
 import { inboxCount as readInboxCount } from "@/app/actions/inbox";
 import { INBOX_COUNT_EVENT } from "@/lib/inbox";
@@ -169,6 +170,7 @@ export function AppShell({
   };
 
   return (
+    <MyAgentProvider value={agent ?? null}>
     <CrumbProvider>
     <div suppressHydrationWarning className={`mx-app ${appFontClass} flex h-dvh bg-bg ${sbSynced ? "" : "sb-instant"}`}>
       <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
@@ -233,5 +235,6 @@ export function AppShell({
       <Toaster />
     </div>
     </CrumbProvider>
+    </MyAgentProvider>
   );
 }
