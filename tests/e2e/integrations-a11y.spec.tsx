@@ -71,7 +71,7 @@ for (const theme of ["light", "dark"] as const) {
 
 test("needs setup: one chip and one action per card, no long paragraph", async ({ mount, page }) => {
   await mount(<IntegrationsHarness scenario="nothing" />);
-  for (const name of ["Google Calendar", "Slack", "Project tracker", "HubSpot", "Notion", "Confluence"]) {
+  for (const name of ["Google Calendar", "Slack", "Project tracker", "Notion", "Confluence"]) {
     const c = card(page, name);
     await expect(c.getByText(/Needs setup$/)).toHaveCount(1);
     await expect(c.getByRole("button", { name: /^Set up / })).toHaveCount(1);
@@ -120,7 +120,7 @@ test("another tracker connected blocks Jira with a reason", async ({ mount, page
 test("a member sees the cards and is told to ask an admin, with no buttons", async ({ mount, page }) => {
   await mount(<IntegrationsHarness scenario="member" />);
   await expect(page.getByText("Only workspace admins can connect integrations", { exact: false })).toBeVisible();
-  await expect(page.getByText("Ask an admin to set this up")).toHaveCount(6);
+  await expect(page.getByText("Ask an admin to set this up")).toHaveCount(5);
   await expect(page.getByRole("button", { name: /^(Set up|Connect|Disconnect|Reconnect)/ })).toHaveCount(0);
 });
 
@@ -133,10 +133,10 @@ test("a failed read says so and offers Retry", async ({ mount, page }) => {
 test("More expands a clamped description", async ({ mount, page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await mount(<IntegrationsHarness scenario="nothing" />);
-  const more = card(page, "HubSpot").getByRole("button", { name: "More" });
+  const more = card(page, "Slack").getByRole("button", { name: "More" });
   await expect(more).toHaveAttribute("aria-expanded", "false");
   await more.click();
-  await expect(card(page, "HubSpot").getByRole("button", { name: "Less" })).toHaveAttribute("aria-expanded", "true");
+  await expect(card(page, "Slack").getByRole("button", { name: "Less" })).toHaveAttribute("aria-expanded", "true");
 });
 
 for (const [width, cols] of [
@@ -157,7 +157,7 @@ for (const [width, cols] of [
         .filter({ has: page.getByRole("heading", { level: 4 }) })
         .evaluateAll((els) => els.map((e) => e.getBoundingClientRect()).map((r) => ({ x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) })));
       expect(new Set(boxes.slice(0, cols).map((b) => b.y)).size).toBe(1);
-      expect(new Set(boxes.map((b) => b.x)).size).toBe(cols);
+      expect(new Set(boxes.map((b) => b.x)).size).toBe(Math.min(cols, boxes.length));
       expect(new Set(boxes.map((b) => b.w)).size).toBe(1);
       const rows = new Map<number, number[]>();
       for (const b of boxes) rows.set(b.y, [...(rows.get(b.y) ?? []), b.h]);

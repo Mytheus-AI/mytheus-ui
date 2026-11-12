@@ -1,5 +1,5 @@
 import type { Icon } from "@phosphor-icons/react";
-import { AddressBook, BookOpenText, CalendarDots, Kanban, NotionLogo, SlackLogo } from "@phosphor-icons/react/ssr";
+import { BookOpenText, CalendarDots, Kanban, NotionLogo, SlackLogo } from "@phosphor-icons/react/ssr";
 import type { ReactNode } from "react";
 import { FormSubmit } from "@/components/admin/FormSubmit";
 import { cardClass } from "@/components/ui/Card";
@@ -28,7 +28,7 @@ import type { IntegrationsLoad } from "@/lib/api/integrations";
 /* Settings > Integrations (Phase P12 plan 3.14 and Phase 4 reach; redesigned 2026-11-12).
 
    Six cards in one grid, in two groups: "For your Mytes" (Google Calendar, Slack, the project
-   tracker) and "Share and export" (HubSpot, Notion, Confluence). Every card is the same shape: a
+   tracker) and "Share and export" (Notion, Confluence). Every card is the same shape: a
    header (icon, status chip), the name, a two-line description with "More", and a footer with
    exactly one action. Each card has exactly one chip, for one of five states:
 
@@ -73,13 +73,6 @@ const TRACKER: CardMeta = {
 };
 
 const SHARE: CardMeta[] = [
-  {
-    key: "hubspot",
-    name: "HubSpot",
-    description:
-      "After a meeting with people outside the workspace, its confirmed decisions and actions become one note on the matching companies and contacts. Confidential meetings never go to the CRM.",
-    icon: AddressBook,
-  },
   {
     key: "notion",
     name: "Notion",
@@ -301,7 +294,7 @@ export function IntegrationsPanel({
     return (
       <EmptyState
         title="No integrations on this server"
-        description="This Mytheus server lists no tools to connect. Once integration-service is deployed, Google Calendar, Slack, Jira, HubSpot, Notion and Confluence appear here."
+        description="This Mytheus server lists no tools to connect. Once integration-service is deployed, Google Calendar, Slack, Jira, Notion and Confluence appear here."
       />
     );
   }

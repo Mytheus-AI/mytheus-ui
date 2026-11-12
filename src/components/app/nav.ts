@@ -111,7 +111,7 @@ export const SETTINGS_TABS: NavItem[] = [
   { href: "/settings/listening", label: "Listening", icon: BellSimpleZ, keywords: "interruptions quiet hours focus blocks evening digest lines positions hold the line" },
   { href: "/settings/memory", label: "Myte memory", icon: Notebook, keywords: "agent what your Myte remembers topics questions forget learning calibration" },
   { href: "/settings/briefings", label: "Briefings", icon: SpeakerHigh, keywords: "briefing voice speak listen auto-play length language" },
-  { href: "/settings/integrations", label: "Integrations", icon: PlugsConnected, keywords: "calendar slack jira hubspot notion confluence" },
+  { href: "/settings/integrations", label: "Integrations", icon: PlugsConnected, keywords: "calendar slack jira notion confluence" },
   { href: "/settings/api", label: "API access", icon: Key, keywords: "personal access token mcp claude api curl" },
   { href: "/settings/appearance", label: "Appearance", icon: PaintBrush, keywords: "theme dark light shortcuts" },
 ];
