@@ -36,6 +36,8 @@ import { HealthCard } from "@/components/health/HealthCard";
 import { Chip } from "@/components/meetings/Chip";
 import { MeetingAgendaCard } from "@/components/meetings/MeetingAgendaCard";
 import { InviteToMeeting } from "@/components/meetings/InviteToMeeting";
+import { InviteShareCard } from "@/components/meetings/InviteShareCard";
+import { fetchInvitations, type InvitationsRead } from "@/lib/api/invitations";
 import type { PickableMember } from "@/components/meetings/MemberPicker";
 import { wordCount } from "@/components/meetings/transcript-utils";
 import { initials, toneOf } from "@/components/room/tone";
@@ -65,6 +67,7 @@ import "@/styles/meeting-agenda.css";
 import "@/styles/meeting-brain.css";
 import "@/styles/meeting-minutes.css";
 import "@/styles/meeting-recording.css";
+import "@/styles/meeting-invites.css";
 
 export const metadata: Metadata = { title: "Meeting | Mytheus" };
 
@@ -316,11 +319,14 @@ function UpcomingDetail({
   list,
   hasTranscript,
   plan,
+  invites,
 }: {
   meeting: CallMeeting;
   list: Person[];
   hasTranscript: boolean;
   plan: Plan;
+  /** Invite and share (ADR-0043): the read and the people a host can pick. */
+  invites: { read: InvitationsRead; members: PickableMember[] | null };
 }) {
   const live = meeting.status === "live";
   const start = new Date(meeting.startTime);
@@ -360,6 +366,7 @@ function UpcomingDetail({
         </div>
       </div>
       <div className="md-col md-rail">
+        <InviteShareCard meetingId={meeting.id} initial={invites.read} members={invites.members} />
         <PeopleCard list={list} title="Invited" />
       </div>
     </div>
@@ -553,7 +560,7 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
   // ADR-0039: the brief before and during it, the health card after (not for one that never
   // happened); goals name and pick an agenda item's goal. Each failing costs only its own card.
   const happened = ended && !meeting.missed;
-  const [transcript, members, carried, brief, health, goals, minutes, followUp, shareLinks, recording, clips, offRecord, choiceRead] = await Promise.all([
+  const [transcript, members, carried, brief, health, goals, minutes, followUp, shareLinks, recording, clips, offRecord, choiceRead, inviteRead] = await Promise.all([
     fetchTranscriptSurface(meeting.id).catch(() => null),
     listMembers(),
     meeting.previousMeetingId ? fetchCarryForward(meeting.id) : Promise.resolve(null),
@@ -571,6 +578,8 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
       : Promise.resolve(null),
     // In every meeting at once: your choice for this meeting (a non-participant gets 403: no card).
     ended ? Promise.resolve(null) : fetchAttendanceChoice(meeting.id),
+    // Invite and share (ADR-0043): before and during the call only.
+    ended ? Promise.resolve<InvitationsRead>({ ok: false, status: 0 }) : fetchInvitations(meeting.id),
   ]);
   // After the meeting (a3 room signals): late points, agreement reads, the thread saved for next
   // time, with the meeting's decisions for their wording. Each failing costs only its own card.
@@ -819,7 +828,16 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
       {ended ? (
         <EndedDetail meeting={meeting} list={list} chunks={chunks} names={names} plan={plan} />
       ) : (
-        <UpcomingDetail meeting={meeting} list={list} hasTranscript={chunks.length > 0} plan={plan} />
+        <UpcomingDetail
+          meeting={meeting}
+          list={list}
+          hasTranscript={chunks.length > 0}
+          plan={plan}
+          invites={{
+            read: inviteRead,
+            members: members?.filter((m) => !m.isYou).map(({ id, name, email }) => ({ id, name, email })) ?? null,
+          }}
+        />
       )}
     </div>
   );

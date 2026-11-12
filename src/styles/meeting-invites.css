@@ -1,0 +1,117 @@
+/* "Invite and share" (ADR-0043): the meeting page's card for the join link, add-to-calendar and
+   the emailed invitations. Tokens only; both themes flip with the token set. */
+
+.mx-meet .iv-card { display: flex; flex-direction: column; gap: 18px; }
+.mx-meet .iv-card .mx-card-head { margin-bottom: 0; }
+.mx-meet .iv-block { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.mx-meet .iv-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-3);
+  font-size: 13px;
+  font-weight: 600;
+}
+.mx-meet .iv-label svg { color: var(--ink-4); }
+.mx-meet .iv-optional { color: var(--ink-3); font-size: 12.5px; font-weight: 500; }
+.mx-meet .iv-hint { color: var(--ink-3); font-size: 13.5px; line-height: 1.45; }
+
+.mx-meet .iv-link { display: flex; gap: 8px; min-width: 0; }
+.mx-meet .iv-link-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 40px;
+  font-size: 14px;
+  color: var(--ink-2);
+  text-overflow: ellipsis;
+}
+.mx-meet .iv-copy { flex-shrink: 0; height: 40px; }
+
+.mx-meet .iv-cal { display: flex; flex-wrap: wrap; gap: 8px; }
+.mx-meet .iv-cal .mx-btn { height: 40px; }
+
+.mx-meet .iv-invite { padding-top: 16px; border-top: 1px solid var(--line); gap: 12px; }
+.mx-meet .iv-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 36px; }
+.mx-meet .iv-sub { color: var(--ink); font-size: 15px; font-weight: 650; }
+
+.mx-meet .iv-warn,
+.mx-meet .iv-error {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.mx-meet .iv-warn { background: var(--priority-medium-soft); color: var(--ink-2); }
+.mx-meet .iv-warn svg { flex-shrink: 0; margin-top: 2px; color: var(--mx-medium-ink, var(--priority-medium)); }
+.mx-meet .iv-warn strong { color: var(--ink); font-weight: 650; }
+.mx-meet .iv-error { background: var(--priority-high-soft); color: var(--ink-2); }
+.mx-meet .iv-error svg { flex-shrink: 0; margin-top: 2px; color: var(--priority-high); }
+.mx-meet .iv-error + .mx-btn { align-self: flex-start; }
+
+.mx-meet .iv-note {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-3);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.mx-meet .iv-note svg { flex-shrink: 0; margin-top: 3px; color: var(--ink-4); }
+
+.mx-meet .iv-empty { color: var(--ink-3); font-size: 14px; line-height: 1.5; }
+
+.mx-meet .iv-list { display: flex; flex-direction: column; }
+.mx-meet .iv-item {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+}
+.mx-meet .iv-item + .iv-item { border-top: 1px solid var(--line); }
+.mx-meet .iv-who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mx-meet .iv-who strong { overflow: hidden; color: var(--ink); font-size: 14.5px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.mx-meet .iv-who small { overflow-wrap: anywhere; color: var(--ink-3); font-size: 13px; line-height: 1.35; }
+.mx-meet .iv-act { height: 36px; padding: 0 10px; }
+
+.mx-meet .iv-bone { display: block; height: 12px; border-radius: 999px; background: var(--bg-2); }
+.mx-meet .iv-bone.is-thin { height: 10px; margin-top: 4px; }
+.mx-meet .iv-bone-av { width: 28px; height: 28px; }
+@media (prefers-reduced-motion: no-preference) {
+  .mx-meet .iv-bone { animation: iv-pulse 1.4s var(--ease-out) infinite alternate; }
+}
+@keyframes iv-pulse { from { opacity: 1; } to { opacity: 0.55; } }
+
+.mx-meet .iv-open { align-self: flex-start; }
+.mx-meet .iv-compose { display: flex; flex-direction: column; gap: 10px; padding-top: 4px; }
+.mx-meet .iv-note-input {
+  height: auto;
+  min-height: 84px;
+  padding: 10px 14px;
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-size: 14.5px;
+  line-height: 1.5;
+  resize: vertical;
+}
+.mx-meet .iv-count { align-self: flex-end; margin-top: -4px; color: var(--ink-3); font-size: 12.5px; }
+.mx-meet .iv-form-error { display: flex; align-items: center; gap: 6px; color: var(--priority-high); font-size: 14px; }
+.mx-meet .iv-compose-acts { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* The New meeting window: send email invites, with an optional note. */
+.mx-meet .nm-mail { display: flex; flex-direction: column; gap: 8px; padding-top: 14px; border-top: 1px solid var(--line); }
+.mx-meet .nm-mail .iv-note-input { min-height: 72px; }
+.mx-meet .nm-mail-warn { display: flex; gap: 8px; align-items: flex-start; color: var(--ink-3); font-size: 13.5px; line-height: 1.45; }
+.mx-meet .nm-mail-warn svg { flex-shrink: 0; margin-top: 2px; color: var(--mx-medium-ink, var(--priority-medium)); }
+
+@media (max-width: 520px) {
+  .mx-meet .iv-item { grid-template-columns: 28px minmax(0, 1fr) auto; }
+  .mx-meet .iv-item .iv-act { grid-column: 2 / -1; justify-self: start; margin-left: -10px; }
+  .mx-meet .iv-cal .mx-btn { flex: 1 1 auto; justify-content: center; }
+  .mx-meet .iv-compose-acts > * { flex: 1; justify-content: center; }
+}

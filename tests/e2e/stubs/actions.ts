@@ -754,3 +754,44 @@ export async function saveWorkingProfile() {
 // spec checks the form's fields instead).
 export async function connectProvider(_formData: FormData) {}
 export async function disconnectProvider(_formData: FormData) {}
+// Meeting invitations (ADR-0043). `window.__emailConfigured` (default true) answers the New meeting
+// window's check; `window.__invitesRead` is what the card's Retry reads back; `window.__inviteFail`
+// makes a send fail as core-api's 429 would.
+type InviteWindow = { __emailConfigured?: boolean | null; __invitesRead?: unknown; __inviteFail?: boolean; __invitesSent?: string[][] };
+const iw = () => window as unknown as InviteWindow;
+export async function invitationEmailStatus() {
+  return iw().__emailConfigured === undefined ? true : iw().__emailConfigured;
+}
+export async function loadInvitations() {
+  return (iw().__invitesRead as { ok: true } | undefined) ?? { ok: false as const, status: 503 };
+}
+export async function sendInvitations(_meetingId: string, userIds: string[]) {
+  (iw().__invitesSent ??= []).push(userIds);
+  if (iw().__inviteFail) return { ok: false as const, message: "That's a lot of invitations for one meeting. Try again in an hour." };
+  const configured = iw().__emailConfigured !== false;
+  const now = new Date().toISOString();
+  return {
+    ok: true as const,
+    result: {
+      email_configured: configured,
+      invitations: userIds.map((id) => ({
+        id: `inv-${id}`,
+        email: `${id.replace("u-", "")}@example.com`,
+        user_id: id,
+        name: id.replace("u-", "").replace(/^./, (c) => c.toUpperCase()),
+        status: configured ? ("sent" as const) : ("not_configured" as const),
+        last_error: null,
+        last_kind: "invite" as const,
+        send_count: 1,
+        sent_at: configured ? now : null,
+        invited_by: "u-maya",
+        created_at: now,
+        updated_at: now,
+      })),
+      sent: configured ? userIds.length : 0,
+      failed: 0,
+      not_configured: configured ? 0 : userIds.length,
+      participants_added: userIds.length,
+    },
+  };
+}
