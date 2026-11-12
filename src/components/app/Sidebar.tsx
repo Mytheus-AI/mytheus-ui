@@ -32,7 +32,7 @@ import {
 /* Rail labels open with the panel: on hover, or on KEYBOARD focus. Not `focus-within`: a mouse click
    leaves focus on the clicked link or button, which kept the panel open after the pointer had gone. */
 const PEEK_SHOW =
-  "group-hover/sb:w-auto group-hover/sb:opacity-100 group-has-[:focus-visible]/sb:w-auto group-has-[:focus-visible]/sb:opacity-100";
+  "group-hover/sb:w-auto group-hover/sb:!flex-1 group-hover/sb:opacity-100 group-has-[:focus-visible]/sb:w-auto group-has-[:focus-visible]/sb:!flex-1 group-has-[:focus-visible]/sb:opacity-100";
 
 type Lay = { open: string; rail: string; peek: string };
 
@@ -62,8 +62,8 @@ const ORG: Lay = {
 };
 const CTA: Lay = {
   open: "w-full justify-start gap-2.5 px-3",
-  rail: "mx-auto w-11 justify-center gap-0 !px-0",
-  peek: "group-hover/sb:mx-0 group-hover/sb:w-full group-hover/sb:justify-start group-hover/sb:gap-2.5 group-hover/sb:!px-3 group-has-[:focus-visible]/sb:mx-0 group-has-[:focus-visible]/sb:w-full group-has-[:focus-visible]/sb:justify-start group-has-[:focus-visible]/sb:gap-2.5 group-has-[:focus-visible]/sb:!px-3",
+  rail: "mx-auto w-11 justify-center !gap-0 !px-0",
+  peek: "group-hover/sb:mx-0 group-hover/sb:w-full group-hover/sb:justify-start group-hover/sb:!gap-2.5 group-hover/sb:!px-3 group-has-[:focus-visible]/sb:mx-0 group-has-[:focus-visible]/sb:w-full group-has-[:focus-visible]/sb:justify-start group-has-[:focus-visible]/sb:!gap-2.5 group-has-[:focus-visible]/sb:!px-3",
 };
 // Collapsed, a group title becomes a short hairline between groups (its text stays for screen
 // readers, just transparent); open, it is the label again.
@@ -128,7 +128,20 @@ export function Sidebar({
   // Without it the hover rule reopens the rail under the cursor the instant it collapses.
   const [holdClosed, setHoldClosed] = useState(false);
   const peekable = railed && !holdClosed;
-  const label = railed ? (peekable ? `w-0 opacity-0 ${PEEK_SHOW}` : "w-0 opacity-0") : "";
+  // Collapsed, a label takes no room at all: `flex-none` matters, because a zero-width `flex-1` label
+  // still grows to fill the row and pushes the icon off the rail's centre line.
+  const label = railed ? (peekable ? `w-0 !flex-none opacity-0 ${PEEK_SHOW}` : "w-0 !flex-none opacity-0") : "";
+  // The Inbox count pill: hidden in the collapsed rail (its padding would push the icon off centre;
+  // the dot on the icon says it instead), back when the panel opens.
+  const pillShow = railed
+    ? peekable
+      ? "hidden group-hover/sb:inline-block group-has-[:focus-visible]/sb:inline-block"
+      : "hidden"
+    : "";
+  // A hairline between the rail's groups; gone while the panel is open.
+  const railRule = railed
+    ? `mx-auto mb-3 h-px w-6 shrink-0 bg-line ${peekable ? "group-hover/sb:hidden group-has-[:focus-visible]/sb:hidden" : ""}`
+    : "hidden";
   const lay = (c: Lay) => (railed ? (peekable ? `${c.rail} ${c.peek}` : c.rail) : c.open);
   // Only shown while the panel is open: hidden (taking no space) in the collapsed rail.
   const openOnly = railed
@@ -187,7 +200,7 @@ export function Sidebar({
         {badge ? (
           <span
             aria-hidden
-            className={`sb-fade ml-auto shrink-0 rounded-full bg-signal-soft px-2 py-px text-[12.5px] font-semibold tabular-nums text-signal-ink ${label}`}
+            className={`sb-fade ml-auto shrink-0 rounded-full bg-signal-soft px-2 py-px text-[12.5px] font-semibold tabular-nums text-signal-ink ${pillShow}`}
           >
             {badge}
           </span>
@@ -273,6 +286,7 @@ export function Sidebar({
         label={label}
         onNavigate={onNavigate}
       />
+      <div aria-hidden className={railRule} />
 
       {liveCall ? (
         <Link
