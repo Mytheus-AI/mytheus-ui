@@ -12,6 +12,7 @@ import { Crumb } from "@/components/app/Crumb";
 import { apiSafe } from "@/lib/api/client";
 import type { components as BffSchemas } from "@/lib/api/generated/bff";
 import { listMembers } from "@/lib/api/members";
+import { zonedFormat } from "@/lib/timezone-server";
 
 export const metadata: Metadata = { title: "Person | Mytheus" };
 
@@ -38,11 +39,10 @@ type PersonView = {
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const dateFormatter = new Intl.DateTimeFormat("en-US", {
+const dateFormatter = () => zonedFormat({
   month: "short",
   day: "numeric",
   year: "numeric",
-  timeZone: "UTC",
 });
 
 function fromApi(p: PersonProfile, named?: { name: string; imageUrl: string | null }): PersonView {
@@ -176,7 +176,7 @@ export default async function PersonPage({ params }: { params: { personId: strin
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-[14px] font-semibold text-ink">{m.title}</span>
                           <span className="block text-[12.5px] text-ink-3">
-                            {m.when ? dateFormatter.format(new Date(m.when)) : "Not scheduled"}
+                            {m.when ? dateFormatter().format(new Date(m.when)) : "Not scheduled"}
                           </span>
                         </span>
                         <Chip tone={st.tone}>{st.label}</Chip>

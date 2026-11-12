@@ -26,6 +26,7 @@ import { fetchDecisionWhy } from "@/lib/api/decision-why";
 import { fetchBlastRadius } from "@/lib/api/blast-radius";
 import { DecisionBet } from "@/components/bets/DecisionBet";
 import { fetchDecisionBet } from "@/lib/api/bets";
+import { zonedFormat } from "@/lib/timezone-server";
 
 export const metadata: Metadata = { title: "Decision lineage | Mytheus" };
 
@@ -54,15 +55,14 @@ type ChainNode = {
   role: "ancestor" | "subject" | "descendant";
 };
 
-const dateTime = new Intl.DateTimeFormat("en-US", {
+const dateTime = () => zonedFormat({
   month: "short",
   day: "numeric",
   year: "numeric",
   hour: "numeric",
   minute: "2-digit",
-  timeZone: "UTC",
 });
-const shortDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+const shortDate = () => zonedFormat({ month: "short", day: "numeric", year: "numeric" });
 
 function fromLive(d: LineageDecision): ChainNode {
   return {
@@ -160,7 +160,7 @@ export default async function DecisionLineagePage({
               </Chip>
             ) : (
               <Chip tone="ok" icon={<CheckCircle size={14} weight="fill" />}>
-                Confirmed{subject.confirmedAt ? ` ${dateTime.format(new Date(subject.confirmedAt))} UTC` : ""}
+                Confirmed{subject.confirmedAt ? ` ${dateTime().format(new Date(subject.confirmedAt))} UTC` : ""}
               </Chip>
             )}
             {weak ? (
@@ -231,7 +231,7 @@ export default async function DecisionLineagePage({
                   </p>
                   <p className="mt-1 text-[12.5px] text-ink-3">
                     {caption(node, i)}
-                    {node.confirmedAt ? `, ${shortDate.format(new Date(node.confirmedAt))}` : ""}
+                    {node.confirmedAt ? `, ${shortDate().format(new Date(node.confirmedAt))}` : ""}
                   </p>
                 </>
               );

@@ -17,6 +17,7 @@ import {
   type CollaborationResult,
   type CollaborationRow,
 } from "@/lib/api/context-fills";
+import { zonedFormat } from "@/lib/timezone-server";
 
 export const metadata: Metadata = { title: "Myte collaboration | Mytheus" };
 
@@ -30,7 +31,7 @@ export const metadata: Metadata = { title: "Myte collaboration | Mytheus" };
 
 export const dynamic = "force-dynamic";
 
-const time = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit" });
+const time = () => zonedFormat({ hour: "numeric", minute: "2-digit", second: "2-digit" });
 
 const CLASS_LABEL: Record<CollaborationRow["query_class"], string> = {
   meeting_context: "Meeting context",
@@ -186,7 +187,7 @@ export default async function CollaborationsPage({
                     {rows.map((r) => (
                       <tr key={r.id} className={isRefused(r) ? "bg-priority-high-soft" : "transition-colors hover:bg-surface-2"}>
                         <td className="whitespace-nowrap px-5 py-3.5 text-[12.5px] tabular-nums text-ink-3">
-                          {time.format(new Date(r.created_at))}
+                          {time().format(new Date(r.created_at))}
                         </td>
                         <td className="max-w-[300px] px-5 py-3.5">
                           <Pair row={r} />
@@ -228,7 +229,7 @@ export default async function CollaborationsPage({
                         <div>
                           <dt className="text-ink-3">When</dt>
                           <dd className="tabular-nums text-ink-2">
-                            {time.format(new Date(r.created_at))}, {r.latency_ms} ms
+                            {time().format(new Date(r.created_at))}, {r.latency_ms} ms
                           </dd>
                         </div>
                       </dl>

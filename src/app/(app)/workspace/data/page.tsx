@@ -23,6 +23,7 @@ import { anyInProgress, erasureSummary } from "@/lib/erasure";
 import { ErasureStores } from "@/components/tenant/ErasureStores";
 import { RefreshWhile } from "@/components/tenant/RefreshWhile";
 import { safeHttpsUrl } from "@/lib/integrations";
+import { zonedFormat } from "@/lib/timezone-server";
 
 export const metadata: Metadata = { title: "Data and privacy | Mytheus" };
 export const dynamic = "force-dynamic";
@@ -43,9 +44,9 @@ export const dynamic = "force-dynamic";
      transcripts, the AI search index, keyword search and the knowledge graph report back as their
      services run. While any store is waiting, the page re-reads itself every 10 seconds. */
 
-const dateTime = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
-const shortDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
-const fmt = (iso: string) => (Number.isNaN(Date.parse(iso)) ? "" : dateTime.format(new Date(iso)));
+const dateTime = () => zonedFormat({ month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+const shortDate = () => zonedFormat({ month: "short", day: "numeric", year: "numeric" });
+const fmt = (iso: string) => (Number.isNaN(Date.parse(iso)) ? "" : dateTime().format(new Date(iso)));
 
 export default async function DataExportPage() {
   const [res, settings, erasures, members, meetings] = await Promise.all([
@@ -60,7 +61,7 @@ export default async function DataExportPage() {
     meetings?.map((m) => ({
       id: m.id,
       title: m.title ?? null,
-      when: m.scheduled_start ? shortDate.format(new Date(m.scheduled_start)) : m.created_at ? shortDate.format(new Date(m.created_at)) : null,
+      when: m.scheduled_start ? shortDate().format(new Date(m.scheduled_start)) : m.created_at ? shortDate().format(new Date(m.created_at)) : null,
       live: m.status === "live",
     })) ?? null;
   const erasureRows = erasures.kind === "live" ? erasures.data : [];

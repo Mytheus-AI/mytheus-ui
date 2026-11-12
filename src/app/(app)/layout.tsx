@@ -4,6 +4,7 @@ import { OrgProvider } from "@/lib/org-context";
 import { myClerkFullName, resolveOrgContext } from "@/lib/api/org-context";
 import { AppShell } from "@/components/app/AppShell";
 import { LiveInterruptions } from "@/components/listening/LiveInterruptions";
+import { TimeZoneSync } from "@/components/app/TimeZoneSync";
 import type { SidebarAgent } from "@/components/app/Sidebar";
 import { fetchMyProfile, syncDisplayName } from "@/lib/api/profile";
 import { agentDisplayName, agentSeed } from "@/lib/api/profile-types";
@@ -51,6 +52,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <AppShell agent={agent}>
         {/* In every meeting at once: your Myte's live interruptions, on every app page. */}
         <LiveInterruptions />
+        <TimeZoneSync />
         {children}
       </AppShell>
     </OrgProvider>

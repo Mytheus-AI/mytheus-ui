@@ -68,6 +68,7 @@ import "@/styles/meeting-brain.css";
 import "@/styles/meeting-minutes.css";
 import "@/styles/meeting-recording.css";
 import "@/styles/meeting-invites.css";
+import { zonedFormat } from "@/lib/timezone-server";
 
 export const metadata: Metadata = { title: "Meeting | Mytheus" };
 
@@ -99,9 +100,9 @@ export const metadata: Metadata = { title: "Meeting | Mytheus" };
 
 export const dynamic = "force-dynamic";
 
-const dayFormatter = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "short", day: "numeric" });
-const timeFormatter = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" });
-const monthFormatter = new Intl.DateTimeFormat("en-US", { month: "short" });
+const dayFormatter = () => zonedFormat({ weekday: "long", month: "short", day: "numeric" });
+const timeFormatter = () => zonedFormat({ hour: "numeric", minute: "2-digit" });
+const monthFormatter = () => zonedFormat({ month: "short" });
 
 function plural(n: number, one: string, many: string): string {
   return `${n} ${n === 1 ? one : many}`;
@@ -264,12 +265,12 @@ function WhenCard({ meeting, note, live }: { meeting: CallMeeting; note: string;
       </div>
       <div className="md-when">
         <span className="md-date" aria-hidden="true">
-          <small>{monthFormatter.format(start)}</small>
+          <small>{monthFormatter().format(start)}</small>
           <b>{start.getDate()}</b>
         </span>
         <span className="md-when-text">
           <strong>
-            {dayFormatter.format(start)}, {timeFormatter.format(start)} to {timeFormatter.format(end)}
+            {dayFormatter().format(start)}, {timeFormatter().format(start)} to {timeFormatter().format(end)}
           </strong>
           <span>{note}</span>
         </span>
@@ -723,11 +724,11 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
           <div className="md-meta">
             <span>
               <CalendarBlank size={18} aria-hidden="true" />
-              {dayFormatter.format(start)}
+              {dayFormatter().format(start)}
             </span>
             <span>
               <Clock size={18} aria-hidden="true" />
-              {timeFormatter.format(start)} to {timeFormatter.format(end)}, {meeting.durationMinutes} min
+              {timeFormatter().format(start)} to {timeFormatter().format(end)}, {meeting.durationMinutes} min
             </span>
             <span>
               {shown.length > 0 ? (
