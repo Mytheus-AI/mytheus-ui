@@ -311,18 +311,21 @@ function ReadyPlayer({
           <Face seed={seed} size={variant === "compact" ? 56 : 64} speaking={state.playing} orb={state.playing ? "speaking" : "idle"} />
           <div className="min-w-0 flex-[1_1_14rem]">
             <p className="text-[13px] font-semibold text-ink-3">{coverLine(briefing)}</p>
-            <H id={headingId} className="display text-[22px] leading-tight text-ink sm:text-[24px]">
+            <H id={headingId} className="display mt-0.5 text-[24px] leading-tight text-ink sm:text-[28px]">
               A briefing from {mine?.name ?? briefing.agent.name}
             </H>
-            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              <Chip tone="outline">{clock(state.total)} long</Chip>
-              {!heard ? <Chip tone="accent">New</Chip> : null}
-              {state.engine === "audio" ? (
-                <Chip tone="neutral" icon={<Waveform size={13} />}>
-                  Recorded voice
-                </Chip>
-              ) : null}
-            </div>
+            {/* The length is not repeated here: the player's own clock shows it. The row only
+                appears when there is something to flag, so the title block is centred on the face. */}
+            {!heard || state.engine === "audio" ? (
+              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                {!heard ? <Chip tone="accent">New</Chip> : null}
+                {state.engine === "audio" ? (
+                  <Chip tone="neutral" icon={<Waveform size={13} />}>
+                    Recorded voice
+                  </Chip>
+                ) : null}
+              </div>
+            ) : null}
           </div>
           {onAsk ? (
             <Button type="button" variant="ghost" size="sm" onClick={() => void onAsk()} disabled={asking} aria-busy={asking} className="shrink-0">
@@ -332,8 +335,9 @@ function ReadyPlayer({
           ) : null}
         </div>
 
-        {/* The line being said, large. */}
-        <p className="brf-now display mt-5 min-h-[3.2em] text-[clamp(19px,2.1vw,23px)] leading-snug text-ink" aria-hidden={state.playing ? undefined : true}>
+        {/* The line being said, in the interface sans (it is a caption, not a title), kept well
+            below the title's size so the title still leads the card. */}
+        <p className="brf-now mt-4 min-h-[3.2em] font-sans text-[clamp(16px,1.5vw,18px)] leading-relaxed text-ink-2" aria-hidden={state.playing ? undefined : true}>
           {current ? <Highlighted text={current.text} word={state.playing ? state.word : null} /> : null}
         </p>
         <p className="sr-only" aria-live="polite">
