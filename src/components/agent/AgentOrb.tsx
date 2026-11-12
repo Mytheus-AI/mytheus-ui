@@ -6,7 +6,6 @@ import { orbHue, type OrbState, type OrbTheme } from "@/lib/agent-orb";
 import {
   cachedSnapshot,
   loadOrbScene,
-  markWebglBroken,
   orbSnapshot,
   releaseLiveSlot,
   takeLiveSlot,
@@ -83,6 +82,7 @@ export function AgentOrb({
   /* still: a cached snapshot */
   useEffect(() => {
     if (live || !theme) return;
+    setFallback(false);
     if (!webglAvailable()) {
       setFallback(true);
       return;
@@ -97,8 +97,8 @@ export function AgentOrb({
       (u) => {
         if (alive) setUrl(u);
       },
-      () => {
-        markWebglBroken();
+      (err: unknown) => {
+        console.warn("[agent-orb] still render failed", err);
         if (alive) setFallback(true);
       },
     );
@@ -189,10 +189,10 @@ export function AgentOrb({
         setLiveReady(true);
         schedule();
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         if (disposed) return;
-        markWebglBroken();
-        setFallback(true);
+        console.warn("[agent-orb] live view failed, showing a still", err);
+        setLiveDenied(true);
       });
 
     return () => {

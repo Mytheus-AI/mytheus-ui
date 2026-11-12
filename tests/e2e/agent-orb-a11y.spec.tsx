@@ -128,6 +128,31 @@ test("orbs: without WebGL, agents keep their doodle", async ({ mount, page }) =>
   await expect(page.getByRole("img", { name: "Samar's agent" })).toBeVisible();
 });
 
+test("orbs: a lost WebGL context is rebuilt, so a new face is still an orb", async ({ mount, page }) => {
+  // record every WebGL context the page makes, so the test can take them all away
+  await page.evaluate(() => {
+    const w = window as unknown as { __gl: WebGLRenderingContext[] };
+    w.__gl = [];
+    const orig = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, type: string, ...rest: unknown[]) {
+      const ctx = (orig as (...a: unknown[]) => unknown).call(this, type, ...rest);
+      if (ctx && (type === "webgl" || type === "webgl2")) w.__gl.push(ctx as WebGLRenderingContext);
+      return ctx;
+    } as typeof orig;
+  });
+  await mount(<AgentHarness view="settings" />);
+  const group = page.getByRole("radiogroup", { name: "Its face" });
+  await expect(page.locator("[data-orb]:not([data-ready])")).toHaveCount(0, { timeout: 60_000 });
+  // what a browser does when it has too many WebGL canvases: the old contexts are dropped
+  await page.evaluate(() => {
+    for (const gl of (window as unknown as { __gl: WebGLRenderingContext[] }).__gl) gl.getExtension("WEBGL_lose_context")?.loseContext();
+  });
+  await page.getByRole("button", { name: "Shuffle" }).click();
+  await expect(page.locator("[data-orb]:not([data-ready])")).toHaveCount(0, { timeout: 60_000 });
+  await expect(page.locator("[data-orb] svg")).toHaveCount(0);
+  await expect(group.locator('[data-orb="still"] img')).toHaveCount(7);
+});
+
 test("the agent face picker shows orbs, shuffles, and moves by keyboard", async ({ mount, page }) => {
   await mount(<AgentHarness view="settings" />);
   const group = page.getByRole("radiogroup", { name: "Its face" });

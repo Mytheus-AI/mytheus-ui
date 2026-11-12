@@ -651,6 +651,9 @@ function toDataUrl(renderer: THREE.WebGLRenderer, px: number): string {
   encoder ??= document.createElement("canvas");
   encoder.width = encoder.height = px;
   const g = encoder.getContext("2d")!;
+  let any = 0;
+  for (let i = 3; i < buf.length; i += 4) any |= buf[i];
+  if (!any) return "";
   const img = g.createImageData(px, px);
   const row = px * 4;
   for (let y = 0; y < px; y++) {
@@ -676,27 +679,56 @@ let queue: Promise<unknown> = Promise.resolve();
 /** A still snapshot of an agent's creature as a PNG data URL, `sizePx` CSS pixels square. */
 export function renderOrbSnapshot(seed: string, sizePx: number, theme: OrbTheme, dpr: number): Promise<string> {
   const job = queue.then(() => {
-    if (!shared) {
-      const canvas = document.createElement("canvas");
-      shared = { renderer: newRenderer(canvas, false), ...stage() };
+    // The browser can drop this offscreen context at any time: a page that opens and closes live
+    // orbs, or simply holds many WebGL canvases, pushes the oldest ones out. A lost context reads
+    // back blank pixels without throwing, so check for that too, rebuild the renderer once and
+    // try again before giving up on this one avatar.
+    try {
+      return snapshotOnce(seed, sizePx, theme, dpr);
+    } catch {
+      dropShared();
+      return snapshotOnce(seed, sizePx, theme, dpr);
     }
-    const { renderer, scene, camera } = shared;
-    const px = Math.max(16, Math.round(sizePx * dpr));
-    renderer.setPixelRatio(1);
-    renderer.setSize(px, px, false);
-    const small = sizePx <= SMALL_PX;
-    placeCamera(camera, halfViewFor(sizePx));
-    const creature = buildCreature(orbTraits(seed), theme, sizePx > 72 ? 32 : 20, { sparks: !small });
-    scene.add(creature.root);
+  });
+  queue = job.catch(() => undefined);
+  return job;
+}
+
+function dropShared(): void {
+  if (!shared) return;
+  try {
+    shared.renderer.dispose();
+  } catch {
+    /* already gone */
+  }
+  shared = null;
+}
+
+function snapshotOnce(seed: string, sizePx: number, theme: OrbTheme, dpr: number): string {
+  if (shared && shared.renderer.getContext().isContextLost()) dropShared();
+  if (!shared) {
+    const canvas = document.createElement("canvas");
+    shared = { renderer: newRenderer(canvas, false), ...stage() };
+  }
+  const { renderer, scene, camera } = shared;
+  const px = Math.max(16, Math.round(sizePx * dpr));
+  renderer.setPixelRatio(1);
+  renderer.setSize(px, px, false);
+  const small = sizePx <= SMALL_PX;
+  placeCamera(camera, halfViewFor(sizePx));
+  const creature = buildCreature(orbTraits(seed), theme, sizePx > 72 ? 32 : 20, { sparks: !small });
+  scene.add(creature.root);
+  try {
     // A fixed moment: the liquid mid-wave, the body facing forward, eyes open.
     creature.update(0.9, 0, "idle", true);
     renderer.clear();
     renderer.render(scene, camera);
+    if (renderer.getContext().isContextLost()) throw new Error("orb snapshot: context lost");
     const url = toDataUrl(renderer, px);
+    if (!url) throw new Error("orb snapshot: blank frame");
+    return url;
+  } finally {
     scene.remove(creature.root);
     creature.dispose();
-    return url;
-  });
-  queue = job.catch(() => undefined);
-  return job;
+  }
 }
