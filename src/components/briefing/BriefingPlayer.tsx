@@ -127,7 +127,7 @@ export function BriefingPlayer({
     return (
       <section aria-labelledby={headingId} className={cardClass({ flush: true, className: "brf" })}>
         <div className={`flex flex-wrap items-center gap-4 py-5 ${cardPadX}`}>
-          <Face seed={seed} size={variant === "compact" ? 52 : 60} speaking={writing} orb={writing ? "listening" : "idle"} />
+          <Face seed={seed} size={variant === "compact" ? 52 : 60} speaking={writing} orb={writing ? "thinking" : "idle"} />
           <div className="min-w-0 flex-[1_1_16rem]">
             <p className="text-[13px] font-semibold text-ink-3">Your briefing</p>
             <H id={headingId} className="display text-[22px] leading-tight text-ink">
@@ -466,8 +466,9 @@ function ReadyPlayer({
   );
 }
 
-/** The agent's face, its live orb: it talks while the briefing plays and rests when paused (one
-    still frame under reduced motion); a ring breathes around it while it speaks. */
+/** The agent's face, its live plush: it thinks while the briefing is being written, talks while it
+    plays and rests when paused (a still picture under reduced motion); a ring breathes around it
+    while it speaks. */
 function Face({ seed, size, speaking, orb }: { seed: string; size: number; speaking: boolean; orb: OrbState }) {
   return (
     <span className={`brf-face relative inline-grid shrink-0 place-items-center ${speaking ? "is-speaking" : ""}`} style={{ width: size + 12, height: size + 12 }} aria-hidden>

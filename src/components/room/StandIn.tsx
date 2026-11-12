@@ -159,7 +159,7 @@ export function StandInDialog({
       <div className="si-dialog">
         <div className="si-head">
           <span className="cx-agent-badge si-face" aria-hidden="true">
-            {face ? <AgentOrb seed={face.seed} mode="live" size={40} /> : <Robot size={18} />}
+            {face ? <AgentOrb seed={face.seed} size={40} /> : <Robot size={18} />}
           </span>
           <p className="si-sub">{name} sent their agent instead of joining. It listens and takes notes for them.</p>
         </div>

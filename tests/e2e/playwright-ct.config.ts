@@ -48,5 +48,15 @@ export default defineConfig({
       },
     },
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  // CT_GL=metal (or d3d11, gl, vulkan) draws WebGL on the real GPU for screenshots and timings;
+  // by default headless Chromium draws it in software (SwiftShader), which is what CI has.
+  projects: [
+    {
+      name: "chromium",
+      use: {
+        ...devices["Desktop Chrome"],
+        launchOptions: process.env.CT_GL ? { args: [`--use-angle=${process.env.CT_GL}`, "--enable-gpu", "--ignore-gpu-blocklist"] } : {},
+      },
+    },
+  ],
 });

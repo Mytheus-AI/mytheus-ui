@@ -6,9 +6,10 @@ import { AgentOrb, type OrbState } from "@/components/agent/AgentOrb";
 import type { AgentPersonality } from "@/lib/api/meeting-agenda-types";
 import { PERSONALITY_LABEL, type AgentFace } from "@/lib/realtime/agent-persona";
 
-/* Your agent heads your sidebar (ADR-0038 D11): its live glass orb, its name (or "{first name}'s
-   agent") and its personality preset, with a way to change them. The orb listens while the room
-   is on the record and talks while your notes are being written. The name is a display label
+/* Your agent heads your sidebar (ADR-0038 D11): its live plush face, its name (or "{first name}'s
+   agent") and its personality preset, with a way to change them. It listens while the room is on
+   the record (looking toward whoever is speaking, when a tile says so) and talks while your notes
+   are being written. The name is a display label
    only; nothing here is sent anywhere. */
 
 export function AgentHead({
@@ -23,7 +24,7 @@ export function AgentHead({
   return (
     <div className="agent-head">
       <span className="agent-head-face" aria-hidden="true">
-        <AgentOrb seed={face.seed} mode="live" state={state} size={44} />
+        <AgentOrb seed={face.seed} mode="live" state={state} size={44} speaker=".thumb.is-speaking" />
       </span>
       <span className="agent-head-text">
         <span className="agent-head-name">{face.name}</span>

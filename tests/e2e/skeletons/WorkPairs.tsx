@@ -228,7 +228,7 @@ function ProfilePage() {
             <Button disabled>Save name</Button>
           </div>
         </SectionCard>
-        <SectionCard title="Your doodle" description="The face teammates see next to your name.">
+        <SectionCard title="Your face" description="The face teammates see next to your name.">
           <div className="px-4 py-5 sm:px-[22px]">
             <div className="grid grid-cols-6 gap-2">
               {Array.from({ length: 6 }, (_, i) => (

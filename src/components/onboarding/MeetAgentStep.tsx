@@ -161,6 +161,7 @@ export function MeetAgentStep({
             }}
             label="Its face"
             size="sm"
+            followInput={`#${IDS.agent_name}`}
           />
           {errors.agent_avatar_seed ? (
             <p role="alert" className="mt-1.5 text-[13px] text-priority-high">

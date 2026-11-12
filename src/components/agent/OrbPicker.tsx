@@ -5,11 +5,12 @@ import { Shuffle } from "@phosphor-icons/react";
 import { randomDoodleSeed } from "@/lib/doodle";
 import { AgentOrb } from "./AgentOrb";
 
-/* Choose your agent's face: one big preview, a strip of glass creatures, and Shuffle, which deals
-   a fresh strip and picks its first. Every option is just a seed (the same field the doodle used,
-   `agent_avatar_seed`), so saving goes through the existing action unchanged. The strip is a
-   radio group (arrow keys move and select, one tab stop) and the preview is the selected option,
-   so what you see is what saves. People pick doodles in DoodlePicker; this one is agents only. */
+/* Choose your agent's face: a large live preview of the selected character, a strip of plush
+   candidates, and Shuffle, which deals a fresh strip and picks its first. Every option is just a
+   seed (`agent_avatar_seed`), so saving goes through the existing action unchanged. The strip is
+   a radio group (arrow keys move and select, one tab stop) and the preview is the selected
+   option, so what you see is what saves. The preview is alive: it watches the pointer, winks when
+   clicked and, given `followInput`, watches what you type. People pick theirs in DoodlePicker. */
 
 function deal(count: number, keep?: string): string[] {
   const fresh = Array.from({ length: count }, () => randomDoodleSeed());
@@ -21,12 +22,15 @@ export function OrbPicker({
   onChange,
   label = "Its face",
   size = "md",
+  followInput,
 }: {
   value: string;
   onChange: (seed: string) => void;
   label?: string;
   /** "sm" fits the onboarding form; "md" fits settings */
   size?: "sm" | "md";
+  /** a selector for the form's text fields: the preview's eyes follow the caret while you type */
+  followInput?: string;
 }) {
   // Dealt on the client only: random seeds in the server render would never match the browser's.
   const [options, setOptions] = useState<string[]>([]);
@@ -64,17 +68,16 @@ export function OrbPicker({
     refs.current[next]?.focus();
   };
 
-  const bigPx = size === "md" ? 96 : 72;
+  const bigPx = size === "md" ? 128 : 96;
   const smallPx = size === "md" ? 44 : 36;
 
   return (
     <div className="flex items-center gap-4 sm:gap-5">
       <span
-        key={value}
-        className="doodle-pop block shrink-0 overflow-hidden rounded-full bg-surface shadow-[0_14px_30px_-18px_rgba(40,30,20,0.55)] ring-[3px] ring-surface"
+        className="block shrink-0 overflow-hidden rounded-full bg-surface shadow-[0_14px_30px_-18px_rgba(40,30,20,0.55)] ring-[3px] ring-surface"
         style={{ width: bigPx, height: bigPx }}
       >
-        <AgentOrb seed={value} size={bigPx} label="Your agent's face" />
+        <AgentOrb seed={value} mode="live" size={bigPx} label="Your agent's face" followInput={followInput} />
       </span>
 
       <div className="min-w-0 flex-1">
