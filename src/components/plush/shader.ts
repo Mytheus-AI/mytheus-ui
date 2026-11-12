@@ -73,6 +73,7 @@ uniform vec2 uSprout;    // where the stem leaves the head
 uniform float uHop, uSq, uTilt, uBlinkL, uBlinkR, uWink, uThink, uListen, uSpeak, uLevel, uMouth;
 uniform float uGround;   // 1 draws the shadow and colour bounce under the character
 uniform float uPaper;    // 1 on a light surface: the shadow keeps the prototype's warm cast
+uniform float uStage;    // 1 draws the listening ripples and the speaking arcs (frames too small to hold them: 0)
 flat in vec3 vEL;
 flat in vec3 vER;
 flat in vec3 vM;
@@ -191,7 +192,7 @@ void main(){
     float sh=exp(-(g.x*g.x*1.5+g.z*g.z*2.4)*spread)*.42/spread;
     float sh2=exp(-(g.x*g.x*5.+g.z*g.z*9.)*spread)*.25/spread;
     o=over(o, base*.9, exp(-(g.x*g.x*.8+g.z*g.z*1.2))*.13);
-    float li=uListen;
+    float li=uListen*uStage;
     if(li>.01){
       float rr=sqrt(g.x*g.x+g.z*g.z*1.7);
       float env=smoothstep(.70,.95,rr)*smoothstep(1.75,1.15,rr);
@@ -285,7 +286,7 @@ void main(){
     float grain=noise(vec3(uv*185.,fid*7.));
     o=over(o, mix(base,vec3(1.),.18), halo*halo*(.2+.8*grain)*.85);
   }
-  if(gSpk>.01&&!hit){
+  if(gSpk*uStage>.01&&!hit){
     vec3 pw=ro+rd*((ro.z-.2)/(-rd.z)); vec2 v=pw.xy-vec2(0.,-.12+gHop);
     float r=length(v), ang=abs(atan(v.y,abs(v.x)));
     float sector=smoothstep(.60,.28,ang);

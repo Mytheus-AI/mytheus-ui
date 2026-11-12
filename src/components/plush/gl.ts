@@ -32,6 +32,7 @@ const UNIFORMS = [
   "uMouth",
   "uGround",
   "uPaper",
+  "uStage",
 ] as const;
 type UniformName = (typeof UNIFORMS)[number];
 
@@ -48,6 +49,8 @@ export interface PlushDraw {
   ground: boolean;
   /** on a light surface the shadow keeps the prototype's warm cast */
   paper: boolean;
+  /** the listening ripples and the speaking arcs, which need a frame large enough to hold them */
+  stage?: boolean;
 }
 
 export interface PlushProgram {
@@ -128,7 +131,7 @@ function finishPlushProgram(gl: WebGL2RenderingContext, program: WebGLProgram, v
   for (const name of UNIFORMS) u[name] = gl.getUniformLocation(program, name);
 
   return {
-    draw({ spec, pose, view, time, width, height, ground, paper }) {
+    draw({ spec, pose, view, time, width, height, ground, paper, stage = true }) {
       const fit = PLUSH_FIT[spec.shape];
       gl.viewport(0, 0, width, height);
       gl.useProgram(program);
@@ -158,6 +161,7 @@ function finishPlushProgram(gl: WebGL2RenderingContext, program: WebGLProgram, v
       gl.uniform2f(u.uLook, pose.look[0], pose.look[1]);
       gl.uniform1f(u.uGround, ground ? 1 : 0);
       gl.uniform1f(u.uPaper, paper ? 1 : 0);
+      gl.uniform1f(u.uStage, stage ? 1 : 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     },

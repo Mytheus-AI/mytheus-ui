@@ -47,8 +47,9 @@ const isTextField = (el: unknown): el is HTMLInputElement | HTMLTextAreaElement 
 
 /** Full eye travel is reached this far from the character, in CSS pixels (the prototype's cell). */
 const REACH = 420;
-/** Boxes at least this wide zoom out for the listening ripples and the speaking arcs. */
-const WIDE_FROM = 56;
+/** Boxes at least this wide zoom out to show the listening ripples and the speaking arcs; smaller
+    ones (the sidebar head, the briefing face) keep the character large and leave them out. */
+const WIDE_FROM = 96;
 /** The thinking spark orbits out to 1.21 units, the sound arcs to 1.44, the ripples further. */
 const THINK_SPAN = 2.56;
 const VOICE_SPAN = 3.0;
@@ -250,7 +251,7 @@ export function PlushLive({
       view.span = span;
       view.cx = base.cx * (1 - k);
       view.cy = base.cy + (PLUSH_STAGE_VIEW.cy - base.cy) * k;
-      draw.draw({ spec, pose, view, time: motion.time, width: el.width, height: el.height, ground: true, paper: !dark });
+      draw.draw({ spec, pose, view, time: motion.time, width: el.width, height: el.height, ground: true, paper: !dark, stage: rect.width >= WIDE_FROM });
       if (!drawn) {
         drawn = true;
         setReady(true);
