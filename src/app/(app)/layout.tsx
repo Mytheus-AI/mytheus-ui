@@ -29,11 +29,11 @@ export const metadata: Metadata = {
  */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   // The agent rides along with the org context: one more gateway read, on the docker network.
-  // A failed read leaves the sidebar's agent tab generic rather than failing the shell.
+  // A failed read leaves the sidebar's Myte tab generic rather than failing the shell.
   const [orgContext, profile] = await Promise.all([resolveOrgContext(), fetchMyProfile()]);
   if (!orgContext) redirect("/sign-in");
 
-  // Backfill the name Mytheus stores (briefings, "{first name}'s agent") from Clerk when the two
+  // Backfill the name Mytheus stores (briefings, "{first name}'s Myte") from Clerk when the two
   // differ. Not awaited and never throws: the shell renders without waiting on it.
   void myClerkFullName()
     .then((fullName) => syncDisplayName(profile, fullName))
@@ -49,7 +49,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <OrgProvider value={orgContext}>
       <AppShell agent={agent}>
-        {/* In every meeting at once: your agent's live interruptions, on every app page. */}
+        {/* In every meeting at once: your Myte's live interruptions, on every app page. */}
         <LiveInterruptions />
         {children}
       </AppShell>

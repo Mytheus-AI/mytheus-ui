@@ -31,7 +31,7 @@ const PLANS: Plan[] = [
     name: "Free",
     price: "$0",
     priceSub: "for small teams trying it out",
-    tagline: "Your own meeting agent, for real meetings, not a demo.",
+    tagline: "Your own Myte, for real meetings, not a demo.",
     cta: { label: "Get started free", href: "/dashboard" },
     bullets: [
       "Up to 5 seats",
@@ -100,7 +100,7 @@ const FAQ = [
     q: "What is the agent allowance?",
     a: (
       <p>
-        It is what your agents spend thinking: notes, labels, answers and insights all draw from it. Free includes
+        It is what your Mytes spend thinking: notes, labels, answers and insights all draw from it. Free includes
         200k tokens per seat each month, Pro includes 4M, and Enterprise pools a custom amount across the organization.
       </p>
     ),
@@ -127,7 +127,7 @@ const FAQ = [
     q: "Does a bot join our calls on any plan?",
     a: (
       <p>
-        No. Mytheus is its own meeting platform, so every participant gets an agent without a bot joining, on every
+        No. Mytheus is its own meeting platform, so every participant gets a Myte without a bot joining, on every
         plan.
       </p>
     ),
@@ -289,7 +289,7 @@ export default function Page() {
             </table>
           </div>
           <p className="mt-5 max-w-[72ch] text-[15px] leading-relaxed text-ink-3">
-            The agent allowance is what your agents spend thinking: notes, labels, answers, and insights all draw from
+            The agent allowance is what your Mytes spend thinking: notes, labels, answers, and insights all draw from
             it. Free stops at its cap so you&rsquo;re never billed by surprise; Pro meters what you use past the
             included amount at published rates, so work never stops mid-meeting.
           </p>
@@ -308,7 +308,7 @@ export default function Page() {
 
       <CloseCTA
         title="Start free. Bring the team when it sticks."
-        lead="Every seat gets its own agent from the first meeting. Move to Pro when the memory starts to matter."
+        lead="Every seat gets its own Myte from the first meeting. Move to Pro when the memory starts to matter."
         secondaryHref="/enterprise"
         secondaryLabel="Talk to the team about Enterprise"
       />

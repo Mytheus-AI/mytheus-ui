@@ -44,7 +44,7 @@ export function StageBar({
   /** You host or created the meeting: the controls are yours. */
   steers: boolean;
   nameOf: (id: string) => string;
-  /** People who sent their agent instead of coming, so an item they own says so. */
+  /** People who sent their Myte instead of coming, so an item they own says so. */
   standInIds: ReadonlySet<string>;
   /** The host's way to add an agenda when there is none. */
   onAddAgenda?: () => void;
@@ -139,7 +139,7 @@ export function StageBar({
   const ownerLabel = (item: AgendaItem | null) => {
     if (!item?.owner_user_id) return null;
     const name = nameOf(item.owner_user_id);
-    return standInIds.has(item.owner_user_id) ? `${name}'s agent` : name;
+    return standInIds.has(item.owner_user_id) ? `${name}'s Myte` : name;
   };
 
   const timeClass = view.over ? " is-over" : view.nearlyOver ? " is-near" : "";

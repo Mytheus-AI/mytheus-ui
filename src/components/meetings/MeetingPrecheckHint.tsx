@@ -19,7 +19,7 @@ import {
 import { notifyError, notifySuccess } from "@/lib/toast";
 
 /* "Should this be a meeting?" inside the new-meeting dialog (only-Mytheus wave, contract section
-   3). As you type the title and agenda, your agent quietly checks, about 700 ms after you stop:
+   3). As you type the title and agenda, your Myte quietly checks, about 700 ms after you stop:
    whether this was already decided, whether some agenda items are only status updates (one button
    asks their owners for a status instead), and which recent meetings covered it.
 
@@ -156,7 +156,7 @@ export function MeetingPrecheckHint({
               <h3 id="precheck-h" className="text-[15px] font-semibold leading-snug text-ink">
                 Before you schedule it
               </h3>
-              <p className="font-display text-[14px] italic leading-snug text-ink-3">Your agent checked what the team already has</p>
+              <p className="font-display text-[14px] italic leading-snug text-ink-3">Your Myte checked what the team already has</p>
             </div>
             <Button
               type="button"
@@ -269,5 +269,5 @@ function liveSummary(r: MeetingPrecheck, statusCount: number): string {
   if (r.already_decided.length > 0) parts.push("this may already be decided");
   if (statusCount > 0) parts.push(`${statusCount} agenda ${statusCount === 1 ? "item looks" : "items look"} like status updates`);
   if (r.recent_meetings.length > 0) parts.push("recent meetings covered it");
-  return parts.length ? `Hint from your agent: ${parts.join(", ")}.` : "";
+  return parts.length ? `Hint from your Myte: ${parts.join(", ")}.` : "";
 }

@@ -1,5 +1,5 @@
 /**
- * A briefing from your agent ("Beyond the meeting", Layer 1): the pure rules the player, Home,
+ * A briefing from your Myte ("Beyond the meeting", Layer 1): the pure rules the player, Home,
  * the after page, the settings and the tests share. No React, no browser globals at import time.
  *
  * - Where "open the moment" goes for each point (`momentHref`, `momentLabel`).
@@ -104,7 +104,7 @@ export function voicesFor<T extends VoiceLike>(voices: readonly T[], language: s
 
 /**
  * The voice for this briefing: the remembered one when the device has it for this language, else
- * a stable pick for this agent among the best voices of the language (so two people's agents tend
+ * a stable pick for this agent among the best voices of the language (so two people's Mytes tend
  * to sound different, and one agent never changes its voice between briefings).
  */
 export function pickVoice<T extends VoiceLike>(
@@ -203,7 +203,7 @@ export function unavailableCopy(reason: Briefing["reason"]): string {
     case "budget":
       return "Your workspace has used its agent budget for now, so this briefing was not written. An admin can raise the budget.";
     case "timeout":
-      return "Your agent could not be reached in time. Nothing was lost; ask again.";
+      return "Your Myte could not be reached in time. Nothing was lost; ask again.";
     default:
       return "Something went wrong while it was being written. Nothing was lost; ask again.";
   }

@@ -50,7 +50,7 @@ export function ListeningCard({ profile }: { profile: UserProfile | null }) {
         <p className="text-[15px] text-ink-3">Your profile could not be loaded right now. Try again in a moment.</p>
       ) : !role ? (
         <div className="rounded-ctl bg-signal-soft px-4 py-3.5">
-          <p className="text-[15px] font-semibold text-signal-ink">Your agent is not listening yet.</p>
+          <p className="text-[15px] font-semibold text-signal-ink">Your Myte is not listening yet.</p>
           <p className="mt-1 text-[14px] text-ink-2">It needs your role to know what matters to you.</p>
           <LinkButton href="/onboarding/profile" size="sm" className="mt-3">
             Tell it what you do

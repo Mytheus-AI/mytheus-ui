@@ -1,6 +1,6 @@
 /* Linked meetings, hosts and agendas (mytheus-docs ADR-0038 D11): the agenda editor (New meeting
    dialog and meeting page), the meeting page's Agenda and Carried forward cards, and in the room
-   your agent's head, the shared live agenda, nudges and the agent badges on the tiles.
+   your Myte's head, the shared live agenda, nudges and the agent badges on the tiles.
 
    Tokens only, radii 12 / 20 / 28 and full, both app themes through the token set. Scoped to
    .mx-meet like the rest of the meeting surfaces. */
@@ -128,7 +128,7 @@
 
 /* ================================================================ the room */
 
-/* Your agent heads the panel. */
+/* Your Myte heads the panel. */
 .mx-meet .agent-head-wrap { padding-top: 12px; }
 .mx-meet .agent-head {
   display: flex;
@@ -177,7 +177,7 @@
 /* A nudge is calm: the alert card's tint, no ring, no pin. */
 .mx-meet .nfy-card.is-nudge { min-height: 0; }
 
-/* Everyone's agent, a small face in their name tag. */
+/* Everyone's Myte, a small face in their name tag. */
 .mx-meet .cx-agent-badge {
   width: 18px;
   height: 18px;

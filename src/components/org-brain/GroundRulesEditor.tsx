@@ -24,9 +24,9 @@ export function GroundRulesHonesty({ className = "" }: { className?: string }) {
     <div className={`flex items-start gap-3 rounded-ctl bg-priority-medium-soft px-4 py-3.5 ${className}`}>
       <Info size={20} weight="fill" className="mt-0.5 shrink-0 text-priority-medium" aria-hidden />
       <p className="text-[14px] leading-relaxed text-ink-2">
-        <span className="font-semibold text-ink">This is an instruction to the agents, not a guarantee.</span> When a stretch of a meeting
-        is mainly about one of these topics, agents are told to keep no note, suggestion or action from it. Transcripts are still
-        recorded as usual, and an agent can misjudge what a conversation is about. For anything that must never be captured, do not
+        <span className="font-semibold text-ink">This is an instruction to the Mytes, not a guarantee.</span> When a stretch of a meeting
+        is mainly about one of these topics, Mytes are told to keep no note, suggestion or action from it. Transcripts are still
+        recorded as usual, and a Myte can misjudge what a conversation is about. For anything that must never be captured, do not
         discuss it in a recorded meeting.
       </p>
     </div>
@@ -53,7 +53,7 @@ export function GroundRulesEditor({ initial, canEdit }: { initial: string[]; can
             ))}
           </ul>
         ) : (
-          <p className="text-[15px] text-ink-3">No topics are set. Agents keep notes on everything said in a meeting.</p>
+          <p className="text-[15px] text-ink-3">No topics are set. Mytes keep notes on everything said in a meeting.</p>
         )}
         <GroundRulesHonesty />
       </div>
@@ -76,7 +76,7 @@ export function GroundRulesEditor({ initial, canEdit }: { initial: string[]; can
       setSaved(res.data.never_record_topics);
       setTopics(res.data.never_record_topics);
       notifySuccess(res.data.never_record_topics.length ? "Ground rules saved" : "Ground rules saved with no topics", {
-        description: res.data.never_record_topics.length ? "Agents follow them from the next meeting." : "No topics are off limits.",
+        description: res.data.never_record_topics.length ? "Mytes follow them from the next meeting." : "No topics are off limits.",
       });
     } else {
       setError(res.fieldErrors?.never_record_topics ?? null);
@@ -142,7 +142,7 @@ export function GroundRulesEditor({ initial, canEdit }: { initial: string[]; can
         </CardFoot>
       </form>
 
-      <aside className="grid gap-4 xl:sticky xl:top-4" aria-label="How agents treat these topics">
+      <aside className="grid gap-4 xl:sticky xl:top-4" aria-label="How Mytes treat these topics">
         <GroundRulesHonesty />
         <div className={cardClass({ tone: "well" })}>
           <p className="text-[15px] font-semibold text-ink">What changes in a meeting</p>

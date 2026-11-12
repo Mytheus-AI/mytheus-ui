@@ -281,7 +281,7 @@ function WelcomePage() {
         </Card>
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
           <Card as="section" flush aria-labelledby="never-h">
-            <CardHead id="never-h" title="What agents never note" />
+            <CardHead id="never-h" title="What Mytes never note" />
             <CardBody>
               <ul className="flex flex-wrap gap-2">
                 {["Salaries", "Health", "Hiring decisions"].map((t) => (
@@ -291,18 +291,18 @@ function WelcomePage() {
                 ))}
               </ul>
               <p className="mt-3 max-w-[68ch] text-[14px] leading-relaxed text-ink-3">
-                Agents are told to keep no notes, suggestions or actions when a meeting is mainly about these. It is an instruction to them, not a guarantee, and the transcript is still recorded.
+                Mytes are told to keep no notes, suggestions or actions when a meeting is mainly about these. It is an instruction to them, not a guarantee, and the transcript is still recorded.
               </p>
             </CardBody>
           </Card>
           <Card as="section" tone="well" aria-labelledby="next-h">
             <h2 id="next-h" className="display text-[22px] text-ink">
-              Your agent is ready
+              Your Myte is ready
             </h2>
             <p className="mt-2 text-[15px] leading-relaxed text-ink-2">It already knows all of the above, and it listens for your work in every meeting you join.</p>
             <div className="mt-4">
               <LinkButton href="/agent" variant="outline">
-                Meet your agent
+                Meet your Myte
               </LinkButton>
             </div>
           </Card>
@@ -338,7 +338,7 @@ function AgentPage() {
         <CardHead
           id="watch-h"
           title="Topics you watch"
-          description="When one of these comes up in a meeting you are not in, your agent tells you. It only covers meetings you are allowed to see, and never confidential ones."
+          description="When one of these comes up in a meeting you are not in, your Myte tells you. It only covers meetings you are allowed to see, and never confidential ones."
         />
         <CardBody>
           <div className="h-11 rounded-ctl border border-line-2" />
@@ -360,7 +360,7 @@ function CapturePage() {
     <div className="mx-auto w-full max-w-[1360px]">
       <PageHead
         title="Capture"
-        context="Bring calls on Google Meet, Microsoft Teams and Zoom into Mytheus, with no bot joining. Your agent, notes, decisions and minutes work on them like any Mytheus meeting."
+        context="Bring calls on Google Meet, Microsoft Teams and Zoom into Mytheus, with no bot joining. Your Myte, notes, decisions and minutes work on them like any Mytheus meeting."
         action={<LinkButton href="/api/capture/extension"><span aria-hidden className="h-[18px] w-[18px]" />Download for Chrome</LinkButton>}
       />
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px] xl:gap-6">
@@ -469,7 +469,7 @@ function BriefingsPage() {
     <Page>
       <PageHead
         title="Your briefings"
-        context="Your agent tells you what changed for you, who is waiting on you, your promises and what is still open. Only you hear these."
+        context="Your Myte tells you what changed for you, who is waiting on you, your promises and what is still open. Only you hear these."
       />
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px] xl:gap-6">
         <div className="min-w-0">

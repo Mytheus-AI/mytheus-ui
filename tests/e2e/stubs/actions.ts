@@ -66,7 +66,7 @@ let askFailures = 0;
 export async function askAgent(question: string) {
   // "offline" fails once, as an unreachable rag-service would, so the test can retry.
   if (question.includes("offline") && askFailures++ === 0) {
-    return { ok: false as const, reason: "unavailable" as const, message: "Your agent could not answer just now. Try again in a moment." };
+    return { ok: false as const, reason: "unavailable" as const, message: "Your Myte could not answer just now. Try again in a moment." };
   }
   return {
     ok: true as const,
@@ -193,8 +193,8 @@ export async function loadConsentReceipt(meetingId: string) {
       consent_required: true,
       consented: true,
       consented_at: "2026-11-11T09:59:00Z",
-      consent_version: "room-notice-2026-11-11.2",
-      current_version: "room-notice-2026-11-11.2",
+      consent_version: "room-notice-2026-11-12",
+      current_version: "room-notice-2026-11-12",
       recording: false,
       clauses: [
         { key: "transcript", title: "A transcript is kept", body: "What is said is transcribed with who said it." },

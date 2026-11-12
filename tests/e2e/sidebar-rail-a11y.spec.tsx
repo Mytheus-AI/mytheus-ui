@@ -43,7 +43,7 @@ for (const theme of ["light", "dark"] as const) {
 test("open: the panel still lays out as before", async ({ mount, page }) => {
   await mount(<SidebarHarness rail={false} />);
   const aside = page.getByRole("complementary", { name: "Primary" });
-  await expect(aside.getByText("Samar's agent")).toBeVisible();
+  await expect(aside.getByText("Samar's Myte")).toBeVisible();
   await expect(aside.getByText("Inbox")).toBeVisible();
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/open-light.png`, clip: { x: 0, y: 0, width: 300, height: 900 } });
 });

@@ -61,7 +61,7 @@ export const CRM_METRICS: { key: string; label: string; unit: string }[] = [
 export const OUTCOME_LABEL: Record<Outcome, string> = { hit: "Hit", partly: "Partly", missed: "Missed" };
 
 export const STATUS_LABEL: Record<BetStatus, string> = {
-  proposed: "Suggested by your agent",
+  proposed: "Suggested by your Myte",
   open: "Waiting for the check date",
   due: "Ready to score",
   resolved: "Scored",

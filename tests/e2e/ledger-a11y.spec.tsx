@@ -41,7 +41,7 @@ for (const theme of ["light", "dark"] as const) {
     await expect(page.getByRole("heading", { name: "Your week" })).toBeVisible();
     await expect(page.getByText(/is too full: 6 things due/)).toBeVisible();
     await expect(page.getByRole("heading", { name: "Asked of you" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Found by your agent" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Found by your Myte" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Overdue" })).toBeVisible();
     await expect(page.getByRole("link", { name: /Written in Slack.*Open the message in Slack/ }).first()).toHaveAttribute("target", "_blank");
     expect(await axe(page)).toEqual([]);

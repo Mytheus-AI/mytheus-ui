@@ -10,7 +10,7 @@ import type { Interruption } from "@/lib/api/listening-types";
 import { REASON_LABEL, heldReasonText, responseText } from "@/lib/listening";
 import { AnswerButtons, AnswerOutcome, useInterruptionResponses, type Answer } from "./responses";
 
-/* What your agent raised for you: every interruption, delivered or held. A delivered one whose
+/* What your Myte raised for you: every interruption, delivered or held. A delivered one whose
    meeting is still live keeps its three answers; anything else shows what happened. Held ones say
    why in plain words (quiet hours, a focus block, the hourly limit, interruptions off): they are
    in your evening digest instead. */
@@ -24,7 +24,7 @@ export function InterruptionList({ items: initial, nowIso, failed = false }: { i
 
   return (
     <Card as="section" flush aria-labelledby="raised-h">
-      <CardHead id="raised-h" title="What your agent raised" description="Only what needed you. Everything held back is in your evening digest." divided />
+      <CardHead id="raised-h" title="What your Myte raised" description="Only what needed you. Everything held back is in your evening digest." divided />
       {failed ? (
         <p className="px-4 py-5 text-[14px] text-ink-3 sm:px-[22px]">This list did not load. Nothing was lost: it is all still in your Inbox.</p>
       ) : items.length === 0 ? (
@@ -34,7 +34,7 @@ export function InterruptionList({ items: initial, nowIso, failed = false }: { i
             Nothing yet
           </p>
           <p className="mt-1 max-w-[56ch] text-[14px] leading-relaxed text-ink-3">
-            When your agent listens to a live meeting for you, it pulls you in only when a decision touches your topics, someone asks for you, or a
+            When your Myte listens to a live meeting for you, it pulls you in only when a decision touches your topics, someone asks for you, or a
             promise is made on your behalf.
           </p>
         </div>

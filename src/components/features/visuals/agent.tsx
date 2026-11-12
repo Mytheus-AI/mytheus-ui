@@ -2,7 +2,7 @@ import { HandPalm, Lock, Microphone, MonitorArrowUp, PhoneX, VideoCamera } from 
 import { Chip, Live, Win, WinBar } from "@/components/site/Section";
 import { APPEAR, AgentAv, Av, Avs, Demo, PanelLabel, TINT, dl, type Tint } from "@/components/features/atoms";
 
-/* Personal agent: the meeting room with no bot tile in the grid, and beside it your own agent's
+/* Your Myte: the meeting room with no bot tile in the grid, and beside it your own Myte's
    panel, tuned to your role (here, the engineering lead). When it scrolls in, one more note
    arrives for you. */
 
@@ -17,7 +17,7 @@ export function AgentVisual() {
   return (
     <Win
       className="mx-auto max-w-[1000px]"
-      label="A live Friday standup with four people and no bot in the grid. Beside it, your agent's private panel, tuned to your role as engineering lead, notes a proposed launch date and that your team needs two days after the code freeze."
+      label="A live Friday standup with four people and no bot in the grid. Beside it, your Myte's private panel, tuned to your role as engineering lead, notes a proposed launch date and that your team needs two days after the code freeze."
     >
       <WinBar
         title="Friday standup"
@@ -66,7 +66,7 @@ export function AgentVisual() {
         <Demo className="grid content-start gap-3 border-t border-line bg-surface-2 p-3.5 sm:p-[18px] md:border-l md:border-t-0">
           <div className="flex items-center gap-2.5 font-semibold text-ink">
             <AgentAv />
-            Your agent
+            Your Myte
             <Chip className="ml-auto">Listening</Chip>
           </div>
           <p className="-mt-1 text-[14px] text-ink-3">Tuned to your role: engineering lead</p>

@@ -6,12 +6,12 @@ import { WeeklyDigestCard } from "@/components/settings/WeeklyDigestCard";
 
 export const metadata: Metadata = { title: "Notifications | Mytheus" };
 
-/* Settings > Notifications: how your agent's alerts reach you, in the meeting, by email, and in
+/* Settings > Notifications: how your Myte's alerts reach you, in the meeting, by email, and in
    Slack once the workspace connects it; the weekly digest; and promise nudges. */
 export default function NotificationSettingsPage() {
   return (
     <>
-      <SectionBar title="Notifications" context="Which alerts from your agent reach you, and where. Everything still lands in your Inbox." />
+      <SectionBar title="Notifications" context="Which alerts from your Myte reach you, and where. Everything still lands in your Inbox." />
       <div className="grid gap-5">
         <NotificationPreferencesSection />
         <WeeklyDigestCard />

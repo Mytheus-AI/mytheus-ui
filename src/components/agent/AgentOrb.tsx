@@ -38,7 +38,7 @@ export function AgentOrb({
   state?: OrbState;
   /** the frame's size in CSS pixels; picks the still's resolution */
   size: number;
-  /** accessible name, e.g. "Samar's agent"; omit when a visible name sits beside it */
+  /** accessible name, e.g. "Samar's Myte"; omit when a visible name sits beside it */
   label?: string;
   className?: string;
   /** live only: a text field (or an element holding some) whose caret the eyes follow */

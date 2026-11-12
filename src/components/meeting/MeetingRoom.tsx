@@ -534,7 +534,7 @@ function Room({
       }
       socket.applyOffRecordState(res.wire);
       if (requestedBy) socket.settleOffRecordRequest(requestedBy);
-      toast("Off the record. Agents are paused and nothing is transcribed.", "success");
+      toast("Off the record. Mytes are paused and nothing is transcribed.", "success");
     },
     [offBusy, meeting.id, socket, toast],
   );
@@ -548,7 +548,7 @@ function Room({
       return;
     }
     socket.applyOffRecordState(res.wire);
-    toast("Back on the record. Transcription and agents have resumed.", "success");
+    toast("Back on the record. Transcription and Mytes have resumed.", "success");
   }, [offBusy, meeting.id, socket, toast]);
   const askOffRecord = useCallback(() => {
     void socket.requestOffRecord().then((ack) => {
@@ -577,8 +577,8 @@ function Room({
     const who = lastChange.by ? names[lastChange.by]?.name ?? "The host" : "The host";
     toast(
       lastChange.active
-        ? `${who} took the meeting off the record. Agents are paused and nothing is transcribed.`
-        : `${who} put the meeting back on the record. Transcription and agents have resumed.`,
+        ? `${who} took the meeting off the record. Mytes are paused and nothing is transcribed.`
+        : `${who} put the meeting back on the record. Transcription and Mytes have resumed.`,
       "info",
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per change, not per name update
@@ -655,7 +655,7 @@ function Room({
     [inCall, meeting.participants, meeting.hostUserId, meId, socket.hands, names],
   );
 
-  // Everyone's agent, for the tile badges; yours also heads the sidebar.
+  // Everyone's Myte, for the tile badges; yours also heads the sidebar.
   const myFace = useMemo<AgentFace | null>(
     () => (me ? agentFace(me.id, me.name || user.name, me.agentName, me.agentSeed) : null),
     [me, user.name],
@@ -712,7 +712,7 @@ function Room({
   );
 
   // "N agents listening": live from the room's "listeners" event, else from the participant list
-  // (whoever chose "my agent listens" and is not in the call).
+  // (whoever chose "my Myte listens" and is not in the call).
   const listening = useMemo(() => {
     const ids = socket.listeners ? socket.listeners.userIds : proxies.map((p) => p.userId);
     const away = ids.filter((id) => !here.has(id));
@@ -901,7 +901,7 @@ function Room({
     : socket.status === "disabled" || socket.status === "forbidden"
       ? "off"
       : "paused";
-  // Your agent's face: talking while a note is still streaming in, listening while the room is on
+  // Your Myte's face: talking while a note is still streaming in, listening while the room is on
   // the record, resting otherwise.
   const agentState: "idle" | "listening" | "speaking" = myNotes.some((n) => !n.final)
     ? "speaking"

@@ -2,7 +2,7 @@ import { Bone, ButtonBone, CardHeadSkeleton, ChipBone, Page, ShapeBone, TextBone
 
 /* A person's page while it loads, from the page's own frame: the phone-only back link, the header
    row (the 80px face, name, role and team chips, Email), then two columns from lg (1.35 to 1):
-   About and Recent meetings beside Skills and what their agent listens for. */
+   About and Recent meetings beside Skills and what their Myte listens for. */
 function Panel({ title, description, children }: { title: string; description?: boolean; children: React.ReactNode }) {
   return (
     <div aria-hidden className="relative overflow-hidden rounded-card border border-line bg-surface shadow-warm-1">

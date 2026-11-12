@@ -24,7 +24,7 @@ export type WorkspaceMemberView = {
   isYou: boolean;
   /** Their agent's chosen name, or null for "{first name}'s agent" (ADR-0038 D2, D3). */
   agentName: string | null;
-  /** Their agent's doodle seed, or null for the default derived from `id`. */
+  /** Their Myte's doodle seed, or null for the default derived from `id`. */
   agentSeed: string | null;
 };
 

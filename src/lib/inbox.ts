@@ -1,9 +1,9 @@
 /**
  * The Inbox: one list of everything waiting on you, merged from three reads.
  *
- *   - notifications   your agent's alerts and reminders (notification-service), read and unread
+ *   - notifications   your Myte's alerts and reminders (notification-service), read and unread
  *   - updates         status requests you owe ("how is it going?", core-api, pending)
- *   - review          what your agents detected in your meetings that nobody has confirmed or
+ *   - review          what your Mytes detected in your meetings that nobody has confirmed or
  *                     dismissed yet (`/bff/dashboard` `needs_review`)
  *
  * Pure, so the merge, the order, the filters and the counts are tested under `node --test` and

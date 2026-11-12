@@ -8,7 +8,7 @@ import { SectionTabs } from "@/components/app/SectionTabs";
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   return (
     <Page>
-      <PageHead title="Settings" context="How you appear, what reaches you, what your agent remembers, the tools it connects to, and how Mytheus looks. Only you see these." />
+      <PageHead title="Settings" context="How you appear, what reaches you, what your Myte remembers, the tools it connects to, and how Mytheus looks. Only you see these." />
       <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,880px)] lg:items-start lg:gap-10">
         <SectionTabs section="settings" label="Settings sections" orientation="vertical" />
         <div className="min-w-0">{children}</div>

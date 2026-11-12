@@ -46,7 +46,7 @@ export async function setAttendance(meetingId: string, draft: AttendanceDraft): 
     if (err instanceof ApiError) {
       if (err.isAuthFailure) return { ok: false, message: "Your session expired. Sign in again." };
       if (err.status === 403 || err.status === 404) {
-        return { ok: false, message: "Only people invited to this meeting can send their agent." };
+        return { ok: false, message: "Only people invited to this meeting can send their Myte." };
       }
       if (err.status === 409) return { ok: false, message: "This meeting has ended, so who attends can't change.", ended: true };
       if (err.status === 422) return { ok: false, message: "Some details weren't accepted. Check the update and questions." };

@@ -3,7 +3,7 @@ import { TextLink } from "@/components/ui/TextLink";
 import { fetchLatestEveningDigest } from "@/lib/api/listening";
 import { EveningDigestBody } from "./EveningDigestView";
 
-/* Home's evening digest (In every meeting at once): the latest paragraph about what your agent
+/* Home's evening digest (In every meeting at once): the latest paragraph about what your Myte
    heard in the meetings it listened to for you, or today's so far. A quiet day with nothing to
    say shows nothing at all (Home stays calm); a failed read says so in one line. Streamed under
    Suspense so it never holds the rest of Home. */

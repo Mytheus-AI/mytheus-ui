@@ -16,9 +16,9 @@ import {
 } from "./attendance-model";
 
 /* "Send my agent instead" on the meeting page (mytheus-docs ADR-0039 B5). Before the meeting
-   starts you choose: you attend, or your agent attends for you, carrying an update for the room
+   starts you choose: you attend, or your Myte attends for you, carrying an update for the room
    (everyone in the meeting sees it) and up to five questions (only you and the host see them).
-   Your agent listens and takes notes for you; you get a catch-up after.
+   Your Myte listens and takes notes for you; you get a catch-up after.
 
    Nothing is saved until you press the button, and it is easy to undo: "Go myself instead" puts
    you back until the meeting starts. Once it has started this shows what you chose, read only. */
@@ -34,7 +34,7 @@ export function AttendanceCard({
   saved: AttendanceSaved;
   /** Before the meeting starts. */
   editable: boolean;
-  /** Your agent's face and name. */
+  /** Your Myte's face and name. */
   agent: { name: string; seed: string };
   /** The host, named in the note about who sees the questions; null when you host. */
   hostName: string | null;
@@ -77,7 +77,7 @@ export function AttendanceCard({
   const choose = (attendance: Attendance) => {
     setMessage(null);
     if (attendance === "live") {
-      // Going back from a saved "send my agent" is its own explicit button, never a radio click.
+      // Going back from a saved "send my Myte" is its own explicit button, never a radio click.
       if (sending) return void save({ ...draft, attendance: "live" });
       setDraft(draftFrom(saved));
       setEditing(false);
@@ -108,7 +108,7 @@ export function AttendanceCard({
     <section className="mx-card mx-card-pad at" aria-labelledby={`${uid}-h`}>
       <div className="mx-card-head">
         <h2 className="mx-card-title" id={`${uid}-h`}>
-          {sending ? "Your agent is going for you" : "Can't make it?"}
+          {sending ? "Your Myte is going for you" : "Can't make it?"}
         </h2>
         {editable ? <span className="mx-card-note">You can change this until it starts</span> : null}
       </div>
@@ -146,7 +146,7 @@ export function AttendanceCard({
             onClick={() => choose("agent")}
           >
             <Robot size={16} aria-hidden="true" />
-            Send my agent
+            Send my Myte
           </button>
         </div>
       ) : null}
@@ -270,7 +270,7 @@ export function AttendanceCard({
         <div className="at-sent">
           <div className="at-sent-block">
             <h3 className="cf-sub">Your update</h3>
-            <p className="at-sent-text">{saved.proxyUpdate ?? "No update. Your agent listens and takes notes for you."}</p>
+            <p className="at-sent-text">{saved.proxyUpdate ?? "No update. Your Myte listens and takes notes for you."}</p>
           </div>
           {questionsShown.length > 0 ? (
             <div className="at-sent-block">

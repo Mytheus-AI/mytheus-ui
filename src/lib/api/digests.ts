@@ -1,6 +1,6 @@
 /**
  * The weekly "what changed for you" digest (only-Mytheus wave, contract section 5) on core-api.
- * Built Mondays for the previous ISO week, one per person, filtered by the topics your agent
+ * Built Mondays for the previous ISO week, one per person, filtered by the topics your Myte
  * listens for.
  *
  *   GET /api/v1/digests/latest        {digest | null, next_run_at}

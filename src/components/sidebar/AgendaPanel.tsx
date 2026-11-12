@@ -45,7 +45,7 @@ import type { MeetingSocketState } from "@/lib/realtime/useMeetingSocket";
    are blue (informs). Dismiss shows the next one, if any. Nothing about a nudge is saved.
 
    ADR-0039 C5: when an item owned by someone who sent their agent comes up, the host gets a blue
-   `proxy_update` nudge carrying that person's update in full, under their agent's face. */
+   `proxy_update` nudge carrying that person's update in full, under their Myte's face. */
 
 const STATUS_ICON: Record<AgendaStatus, Icon> = {
   pending: Circle,
@@ -168,7 +168,7 @@ export function AgendaPanel({
               })()
             )}
             {proxyFace && proxyNudge?.ownerId
-              ? `${nameOf(proxyNudge.ownerId)} sent their agent`
+              ? `${nameOf(proxyNudge.ownerId)} sent their Myte`
               : NUDGE_LABEL[nudge.type]}
             <span className="nfy-meta">Only you</span>
           </div>

@@ -37,19 +37,19 @@ const memory = (over: Partial<PersonMemory> = {}): PersonMemory => ({
 test("calibration reads as a plain sentence", () => {
   assert.equal(
     calibrationSentence({ agent: "PersonalListenerAgent", surface: 0.75, personal: true, samples: 10, dismissed: 4 }),
-    "Your agent shows notes above 0.75 because you dismissed 4 of the last 10.",
+    "Your Myte shows notes above 0.75 because you dismissed 4 of the last 10.",
   );
   assert.equal(
     calibrationSentence({ agent: "QuestionAgent", surface: 0.65, personal: true, samples: 12, dismissed: 0 }),
-    "Your agent shows suggested questions above 0.65 because you kept all of the last 12.",
+    "Your Myte shows suggested questions above 0.65 because you kept all of the last 12.",
   );
   assert.equal(
     calibrationSentence({ agent: "ContextGapAgent", surface: 0.7, personal: false, samples: 7 }),
-    "Your agent shows context fills above 0.70, the workspace setting. It tunes to you after 1 more context fill you keep or dismiss.",
+    "Your Myte shows context fills above 0.70, the workspace setting. It tunes to you after 1 more context fill you keep or dismiss.",
   );
   assert.equal(
     calibrationSentence({ agent: "PersonalListenerAgent", surface: 0.7, personal: false, samples: 0 }),
-    "Your agent shows notes above 0.70, the workspace setting. It tunes to you after 8 more notes you keep or dismiss.",
+    "Your Myte shows notes above 0.70, the workspace setting. It tunes to you after 8 more notes you keep or dismiss.",
   );
   assert.equal(thresholdLabel(1.4), "1.00");
   assert.equal(agentName("QuestionAgent"), "Suggested questions");

@@ -18,7 +18,7 @@ export const metadata: Metadata = { title: "Listening | Mytheus" };
 export const dynamic = "force-dynamic";
 
 /* Listening (Beyond the meeting, "In every meeting at once"). You are invited to more meetings
-   than you can attend; your agent listens to the ones you hand it and interrupts you only when
+   than you can attend; your Myte listens to the ones you hand it and interrupts you only when
    something needs you. This page is where that is decided and reviewed:
 
    - the week: every invited meeting with Attend / Agent listens / Skip, and the totals
@@ -26,7 +26,7 @@ export const dynamic = "force-dynamic";
    - your rules, which decide whole kinds of meetings at once;
    - the evening digest for a day (`?day=`, the latest by default), one paragraph with links to
      the moments;
-   - what your agent raised, delivered or held, with the three answers while a meeting is live.
+   - what your Myte raised, delivered or held, with the three answers while a meeting is live.
 
    Every panel is read on its own (`apiSafe`) and fails on its own. */
 
@@ -44,8 +44,8 @@ export default async function ListeningPage({ searchParams }: { searchParams: { 
   const zone = week.ok ? week.data.time_zone : "UTC";
   const today = localDate(nowIso, zone);
   const context = week.ok
-    ? `${summaryLine(week.data.summary)}. Your agent pulls you in only when something needs you.`
-    : "Which meetings you attend, which your agent listens to for you, and what it heard.";
+    ? `${summaryLine(week.data.summary)}. Your Myte pulls you in only when something needs you.`
+    : "Which meetings you attend, which your Myte listens to for you, and what it heard.";
 
   return (
     <Page>
@@ -69,7 +69,7 @@ export default async function ListeningPage({ searchParams }: { searchParams: { 
             variant="inline"
             className="!pt-[18px]"
             title="Your week did not load"
-            text="Your choices and rules are safe, and your agent keeps listening. Try again in a moment."
+            text="Your choices and rules are safe, and your Myte keeps listening. Try again in a moment."
             action={
               <LinkButton href={start ? `/meetings/listening?start=${start}` : "/meetings/listening"} variant="outline" size="sm">
                 Retry
@@ -85,7 +85,7 @@ export default async function ListeningPage({ searchParams }: { searchParams: { 
             <CardHead
               id="digest-h"
               title="Evening digest"
-              caption="What your agent heard while you were elsewhere"
+              caption="What your Myte heard while you were elsewhere"
               divided
             />
             <CardBody className="pt-4">
@@ -132,12 +132,12 @@ export default async function ListeningPage({ searchParams }: { searchParams: { 
           ) : null}
           <section aria-labelledby="privacy-h" className="rounded-card bg-bg-2 px-4 py-[18px] sm:px-6">
             <h2 id="privacy-h" className="display text-[20px] text-ink">
-              What your agent respects
+              What your Myte respects
             </h2>
             <ul className="mt-2 space-y-2 text-[14.5px] leading-relaxed text-ink-2">
               <li>It only listens to meetings you are invited to.</li>
               <li>Never to a confidential meeting, and never to anything said off the record.</li>
-              <li>The room sees how many agents are listening, so nobody is listened to without knowing.</li>
+              <li>The room sees how many Mytes are listening, so nobody is listened to without knowing.</li>
               <li>It says only what you wrote or saved beforehand. Everything else waits for you.</li>
             </ul>
           </section>

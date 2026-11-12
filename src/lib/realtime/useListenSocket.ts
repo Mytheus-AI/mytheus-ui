@@ -5,7 +5,7 @@
  * connection per tab, outside any meeting room, subscribed to the person's own channel
  * (`listen`). It carries two events:
  *
- *   - `agent-interrupt` {payload: Interruption}: your agent, listening to a live meeting you are
+ *   - `agent-interrupt` {payload: Interruption}: your Myte, listening to a live meeting you are
  *     not in, says something there needs you;
  *   - `view-status` {payload: MeetingView}: the host shared (or set aside) a view you sent.
  *

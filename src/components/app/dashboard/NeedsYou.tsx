@@ -15,7 +15,7 @@ import { warnAfterAccept } from "@/components/promises/ledger/accept-warning";
 import { graceful } from "@/lib/toast";
 import type { DashboardReviewItem } from "@/lib/api/types";
 
-/** The "Needs you" queue: `/bff/dashboard` `needs_review`, the decisions and tasks your agents
+/** The "Needs you" queue: `/bff/dashboard` `needs_review`, the decisions and tasks your Mytes
  *  detected in your meetings that nobody has confirmed or dismissed yet. Confirm is the only
  *  thing that commits (`core-api` writes the row and emits the event); Dismiss records nothing.
  *  Both go through the same Server Actions as the meeting room after a short grace period with
@@ -59,14 +59,14 @@ export function NeedsYou({ items, failed }: { items: DashboardReviewItem[]; fail
         </h2>
         <TextLink href="/inbox?filter=review">Open in Inbox</TextLink>
       </div>
-      <p className="-mt-2 mb-3 text-[14px] text-ink-3">Detected by your agents. Nothing is final until someone confirms.</p>
+      <p className="-mt-2 mb-3 text-[14px] text-ink-3">Detected by your Mytes. Nothing is final until someone confirms.</p>
 
       {failed ? (
         <div className={cardClass({ flush: true, className: "pt-[18px]" })}>
           <ErrorState
             variant="inline"
             title="We could not load what is waiting for you"
-            text="Nothing was lost. Your agents keep every detection until someone confirms or dismisses it."
+            text="Nothing was lost. Your Mytes keep every detection until someone confirms or dismisses it."
           />
         </div>
       ) : open.length > 0 ? (
@@ -108,7 +108,7 @@ export function NeedsYou({ items, failed }: { items: DashboardReviewItem[]; fail
         <EmptyState
           art="done"
           title="You are all caught up"
-          description="Decisions and tasks your agents detect in your meetings wait here until someone confirms or dismisses them."
+          description="Decisions and tasks your Mytes detect in your meetings wait here until someone confirms or dismisses them."
         />
       )}
     </section>

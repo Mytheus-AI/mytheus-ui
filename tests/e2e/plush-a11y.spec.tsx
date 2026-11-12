@@ -101,7 +101,7 @@ for (const theme of ["light", "dark"] as const) {
     await expect(page.locator('[data-plush="still"]')).toHaveCount(6);
 
     // accessible names on the labelled ones; the others are decorative
-    await expect(page.getByRole("img", { name: "Samar's agent" })).toBeVisible();
+    await expect(page.getByRole("img", { name: "Samar's Myte" })).toBeVisible();
     await expect(page.getByRole("img", { name: "Person 1" })).toBeVisible();
     await expect(page.getByRole("img", { name: "Small face" })).toBeVisible();
     await expect(page.locator('[data-plush="live"][aria-hidden="true"]')).toHaveCount(1);
@@ -185,7 +185,7 @@ test("plush: reduced motion shows the still only", async ({ mount, page }) => {
   await settled(page);
   await expect(page.locator("[data-plush] canvas")).toHaveCount(0);
   await expect(page.locator('[data-plush="still"] img')).toHaveCount(8);
-  await expect(page.getByRole("img", { name: "Samar's agent" })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Samar's Myte" })).toBeVisible();
   const frame = page.getByTestId("live-frame");
   await page.waitForTimeout(400);
   const a = await frame.screenshot();
@@ -217,7 +217,7 @@ test("plush: without WebGL2, every face is the SVG fallback", async ({ mount, pa
   await expect(page.locator("[data-plush] canvas")).toHaveCount(0);
   await expect(page.locator("[data-plush] img")).toHaveCount(0);
   // still named, still the same box, still some ink
-  await expect(page.getByRole("img", { name: "Samar's agent" })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Samar's Myte" })).toBeVisible();
   await expect(page.getByRole("img", { name: "Person 1" })).toBeVisible();
   expect((await page.getByTestId("still-0").boundingBox())!.width).toBe(44);
   expect(await inkShare(page, page.getByTestId("still-0"))).toBeGreaterThan(0.3);
@@ -239,14 +239,14 @@ test("plush: a lost shared context is rebuilt, so a new face is still a plush", 
   await expect(group.locator('[data-plush="fallback"]')).toHaveCount(0);
   await expect(group.locator('[data-plush="still"] img')).toHaveCount(7);
   // the live preview lost its canvas for good and shows its still instead
-  await expect(page.getByRole("img", { name: "Your agent's face" })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Your Myte's face" })).toBeVisible();
 });
 
 test("plush live: a click winks, typing is watched, Confirm celebrates, and it sleeps and wakes", async ({ mount, page }) => {
   await mount(<PlushHarness view="stage" box={240} drowsyAfter={0.6} asleepAfter={1.2} />);
   await settled(page);
   const stage = page.getByTestId("stage");
-  const live = page.getByRole("img", { name: "Your agent" });
+  const live = page.getByRole("img", { name: "Your Myte" });
   await expect(live.locator("canvas")).toHaveCount(1);
 
   // left alone it falls asleep: the picture stops changing much, then any activity wakes it
@@ -282,7 +282,7 @@ test("the agent face picker shows plush candidates, a live preview, shuffles, an
   await expect(group.locator('[data-plush="still"]')).toHaveCount(7);
   // The preview is live on a GPU. Headless Chromium draws WebGL on the CPU, where a plush never
   // runs live, so there it is the still; either way it is one named picture, larger than the strip.
-  const preview = page.getByRole("img", { name: "Your agent's face" });
+  const preview = page.getByRole("img", { name: "Your Myte's face" });
   await expect(preview).toBeVisible();
   const live = await gpu(page);
   await expect(preview.locator("canvas")).toHaveCount(live ? 1 : 0);

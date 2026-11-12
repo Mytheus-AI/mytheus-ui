@@ -11,7 +11,7 @@ export default function ListeningError({ error, reset }: { error: Error & { dige
       reset={reset}
       page="Listening"
       title="Listening did not load"
-      text="Your choices and rules are safe, and your agent keeps listening. Try again in a moment."
+      text="Your choices and rules are safe, and your Myte keeps listening. Try again in a moment."
     />
   );
 }

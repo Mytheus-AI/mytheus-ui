@@ -14,7 +14,7 @@ const TILES = [
   { name: "Priya", initial: "P", tone: s.sage, speaking: true },
   { name: "Maya", initial: "M", tone: s.peach },
   { name: "Diego", initial: "D", tone: s.ochre },
-  { name: "Raj's agent", tone: s.sky },
+  { name: "Raj's Myte", tone: s.sky },
 ];
 
 const CARRIED = [
@@ -41,7 +41,7 @@ export function HomeHero() {
           <Loop>on repeat.</Loop>
         </h1>
         <p className="mx-auto mt-[clamp(30px,3.8vw,50px)] max-w-[54ch] text-[clamp(1.12rem,1.7vw,1.32rem)] leading-relaxed text-ink-3">
-          Everyone gets their own agent. It listens, pulls out the decisions, and carries them into the next meeting, and
+          Everyone gets their own Myte, a personal AI agent. It listens, pulls out the decisions, and carries them into the next meeting, and
           the one after that.
         </p>
         <div className="mt-[26px] flex flex-wrap items-center justify-center gap-x-[26px] gap-y-3.5">
@@ -61,13 +61,13 @@ export function HomeHero() {
         <p className="mt-[18px] text-[15.5px] text-ink-3">Free to start. No bot in the room. Every answer cited.</p>
 
         <Stage glow className="mt-[clamp(36px,4.6vw,60px)] text-left">
-          <Win label="A Friday standup in Mytheus. Priya asks whether the launch date was ever settled. Her agent answers: August 12, decided on Tuesday in the Q3 launch sync, with one conflict still open.">
+          <Win label="A Friday standup in Mytheus. Priya asks whether the launch date was ever settled. Her Myte answers: August 12, decided on Tuesday in the Q3 launch sync, with one conflict still open.">
             <WinBar
               title="Friday standup"
               meta={<Live>Live, 09:32</Live>}
               right={
                 <AvStack
-                  label="Priya, Maya, Diego and Raj's agent"
+                  label="Priya, Maya, Diego and Raj's Myte"
                   people={[
                     { tone: "sage", initial: "P" },
                     { tone: "peach", initial: "M" },
@@ -112,11 +112,11 @@ export function HomeHero() {
                 </div>
               </div>
 
-              {/* your agent */}
+              {/* your Myte */}
               <div className="grid content-start gap-3 border-t border-line bg-surface-2 px-3 py-3.5 min-[821px]:border-l min-[821px]:border-t-0 min-[821px]:p-[18px]">
                 <div className="flex items-center gap-2.5 font-semibold text-ink">
                   <Av tone="accent" agent />
-                  Your agent
+                  Your Myte
                   <Chip className="ml-auto">Listening</Chip>
                 </div>
                 <div className={`${s.seq} rounded-ctl border border-line bg-surface px-4 py-3.5`} style={delay("2.4s")}>

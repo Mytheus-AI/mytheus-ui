@@ -135,8 +135,8 @@ for (const theme of ["light", "dark"] as const) {
 
     // The queue open, a private answer, then axe.
     await panel.getByRole("button", { name: /more waiting/ }).click();
-    await panel.getByRole("textbox", { name: "Ask your agent privately" }).fill("When does the beta ship?");
-    await panel.getByRole("button", { name: "Ask your agent", exact: true }).click();
+    await panel.getByRole("textbox", { name: "Ask your Myte privately" }).fill("When does the beta ship?");
+    await panel.getByRole("button", { name: "Ask your Myte", exact: true }).click();
     await expect(panel.getByText(/Launch moved to 2 December/)).toBeVisible();
     expect(await axe(page)).toEqual([]);
 
@@ -231,12 +231,12 @@ test("the Now slot shows one thing; the rest waits behind a count", async ({ mou
   await expect(panel.getByText("Nobody owns the sign-off yet.")).toBeVisible();
 });
 
-test("asking your agent is private, answered with sources, and can be retried", async ({ mount, page }) => {
+test("asking your Myte is private, answered with sources, and can be retried", async ({ mount, page }) => {
   await mount(<RoomHarness />);
   await ready(page);
   const panel = agent(page);
   await expect(panel.getByText("Only you").first()).toBeVisible();
-  const box = panel.getByRole("textbox", { name: "Ask your agent privately" });
+  const box = panel.getByRole("textbox", { name: "Ask your Myte privately" });
   await box.fill("What did we decide about pricing?");
   await box.press("Enter");
   await expect(panel.getByText(/Pricing stays at 25 dollars/)).toBeVisible();
@@ -260,7 +260,7 @@ test("asking your agent is private, answered with sources, and can be retried", 
   await box.fill("Are we offline?");
   await box.press("Enter");
   const retry = panel.getByRole("button", { name: "Try again" });
-  await expect(panel.getByText("Your agent could not answer just now. Try again in a moment.").first()).toBeVisible();
+  await expect(panel.getByText("Your Myte could not answer just now. Try again in a moment.").first()).toBeVisible();
   await retry.click();
   await expect(retry).toHaveCount(0);
   await expect(panel.getByRole("list", { name: "Sources" })).toHaveCount(2);

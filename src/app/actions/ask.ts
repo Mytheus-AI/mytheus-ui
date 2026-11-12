@@ -32,7 +32,7 @@ export async function askQuestion(question: string): Promise<AskResult> {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/* Ask your agent, live (polish program, Phase 1): the meeting room's private ask box. bff's
+/* Ask your Myte, live (polish program, Phase 1): the meeting room's private ask box. bff's
    `POST /api/v1/ask` through the gateway with the caller's own session; bff asks rag-service on
    their behalf, scoped to the meetings they took part in and the company brain. `meetingId`
    narrows it to this meeting. Read-only and private: nothing is posted to the room. */
@@ -52,11 +52,11 @@ export async function askAgent(question: string, meetingId: string | null = null
         return {
           ok: false,
           reason: "not_connected",
-          message: "Ask is not connected on this workspace yet. Your agent can answer once an admin connects it.",
+          message: "Ask is not connected on this workspace yet. Your Myte can answer once an admin connects it.",
         };
       }
       if (err.status === 422) return { ok: false, reason: "invalid", message: "That question is too long. Try a shorter one." };
     }
-    return { ok: false, reason: "unavailable", message: "Your agent could not answer just now. Try again in a moment." };
+    return { ok: false, reason: "unavailable", message: "Your Myte could not answer just now. Try again in a moment." };
   }
 }

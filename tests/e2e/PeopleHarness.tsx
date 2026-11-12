@@ -42,7 +42,7 @@ export function PeopleHarness({ theme = "light", state = "admin" }: { theme?: "l
         <EmptyState
           art="people"
           title="No departments or teams yet"
-          description="Start with a department, like Engineering, or a team. Say what each one does: agents use it to tune notes to every role and to spot who is missing from a meeting."
+          description="Start with a department, like Engineering, or a team. Say what each one does: Mytes use it to tune notes to every role and to spot who is missing from a meeting."
           action={
             <>
               <NewDepartmentButton departments={[]} variant="primary" />

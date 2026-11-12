@@ -25,7 +25,7 @@ const live = (over: object = {}) => ({
   meetingId: M1,
   content: "The team picked Acme as the vendor last Tuesday.",
   confidence: 0.82,
-  rationale: "Bob's agent had the decision from the prior sync.",
+  rationale: "Bob's Myte had the decision from the prior sync.",
   hop: "peer",
   responder: `user:${BOB}`,
   citations: [{ kind: "decision", decision_id: D1, meeting_id: M0 }],
@@ -41,10 +41,10 @@ test("a live fill becomes a card naming the responder from the room", () => {
   assert.equal(f.id, F1);
   assert.equal(f.hop, "peer");
   assert.equal(f.responderUserId, BOB);
-  assert.equal(f.rationale, "Bob's agent had the decision from the prior sync.");
+  assert.equal(f.rationale, "Bob's Myte had the decision from the prior sync.");
   assert.equal(
     contextFillHeadline(f, (id) => (id === BOB ? "Bob Lee" : null)),
-    "Context added from Bob Lee's agent",
+    "Context added from Bob Lee's Myte",
   );
 });
 
@@ -58,7 +58,7 @@ test("a knowledge base fill says so and never names a person", () => {
 test("an unknown responder never shows a raw id", () => {
   const s = applyLiveContextFill(emptyContextFillsState, live());
   const headline = contextFillHeadline(visibleContextFills(s)[0], noNames);
-  assert.equal(headline, "Context added from a teammate's agent");
+  assert.equal(headline, "Context added from a teammate's Myte");
   assert.ok(!headline.includes(BOB));
 });
 
@@ -80,7 +80,7 @@ test("live and re-hydrated copies merge once, and the server label fills in the 
   });
   const fills = visibleContextFills(s);
   assert.equal(fills.length, 1);
-  assert.equal(contextFillHeadline(fills[0], noNames), "Context added from Bob Lee's agent");
+  assert.equal(contextFillHeadline(fills[0], noNames), "Context added from Bob Lee's Myte");
   // the live copy's citations are kept: nothing but the label changes after arrival
   assert.equal(fills[0].citations.length, 1);
 });
@@ -94,7 +94,7 @@ test("re-hydrate after a reconnect brings back a fill that was missed live", () 
   });
   const fills = visibleContextFills(s);
   assert.deepEqual(fills.map((f) => f.id), [F2, F1]);
-  assert.equal(contextFillHeadline(fills[0], noNames), "Context added from Dana's agent");
+  assert.equal(contextFillHeadline(fills[0], noNames), "Context added from Dana's Myte");
   assert.equal(contextFillHeadline(fills[1], noNames), "Context added from your knowledge base");
 });
 

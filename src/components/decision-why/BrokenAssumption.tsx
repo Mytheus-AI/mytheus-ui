@@ -77,7 +77,7 @@ export function BrokenAssumption({
       if (res.code === "gone" || res.code === "conflict") onReread();
       return;
     }
-    notifySuccess("Decision re-confirmed", { description: "Your agent keeps watching this reason." });
+    notifySuccess("Decision re-confirmed", { description: "Your Myte keeps watching this reason." });
     onAssumption(res.data);
   };
 
@@ -168,7 +168,7 @@ export function BrokenAssumption({
         <p className="mt-4 flex max-w-[72ch] items-start gap-2 text-[14px] leading-relaxed text-ink-2">
           <Sparkle size={16} aria-hidden className="mt-0.5 shrink-0 text-signal" />
           <span>
-            <span className="font-semibold text-ink">Your agent: </span>
+            <span className="font-semibold text-ink">Your Myte: </span>
             {e.rationale}
           </span>
         </p>
@@ -280,7 +280,7 @@ export function BrokenAssumption({
         open={revisitOpen}
         onClose={() => setRevisitOpen(false)}
         title="Book a 15-minute revisit"
-        description="Your agent found the first time this week that suits everyone behind the decision, with the broken reason as the one agenda item."
+        description="Your Myte found the first time this week that suits everyone behind the decision, with the broken reason as the one agenda item."
         loadSlot={() => readRevisitSlot(a.id)}
         book={(start) => bookRevisit(a.id, start)}
         bookLabel="Book revisit"

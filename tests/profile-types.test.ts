@@ -152,10 +152,10 @@ test("fieldFromDetail picks the field the 422 names, longest name first", () => 
 });
 
 test("agent name and face defaults match ADR-0038 D2", () => {
-  assert.equal(agentDisplayName(null, "Maya Chen"), "Maya's agent");
-  assert.equal(agentDisplayName("  ", "Maya Chen"), "Maya's agent");
+  assert.equal(agentDisplayName(null, "Maya Chen"), "Maya's Myte");
+  assert.equal(agentDisplayName("  ", "Maya Chen"), "Maya's Myte");
   assert.equal(agentDisplayName("Pip", "Maya Chen"), "Pip");
-  assert.equal(agentDisplayName(null, ""), "Your agent");
+  assert.equal(agentDisplayName(null, ""), "Your Myte");
 
   const id = "8a1c2f0e-1111-4222-8333-944455556666";
   assert.equal(agentSeed(null, id), defaultDoodleSeed(`agent:${id}`));

@@ -88,7 +88,7 @@ export function RoomPanel({
   const tabs: { id: Tab; label: string; icon: ReactNode; count?: number; hot?: boolean; alert?: boolean }[] = [
     {
       id: "agent",
-      label: "Agent",
+      label: "Myte",
       icon: conflict ? <Warning size={16} weight="bold" aria-hidden /> : <Sparkle size={16} aria-hidden />,
       count: attention || undefined,
       hot: true,
@@ -115,8 +115,8 @@ export function RoomPanel({
           <button
             type="button"
             className={`mini-btn tap tip-left${conflict ? " is-alert" : ""}`}
-            data-tip={conflict ? "Conflict needs you" : "Agent"}
-            aria-label={`Open agent${conflict ? ", a conflict needs you" : attention ? `, ${attention} need you` : ""}`}
+            data-tip={conflict ? "Conflict needs you" : "Your Myte"}
+            aria-label={`Open your Myte${conflict ? ", a conflict needs you" : attention ? `, ${attention} need you` : ""}`}
             onClick={() => openAt("agent")}
           >
             {conflict ? <Warning size={20} weight="bold" aria-hidden /> : <Sparkle size={20} aria-hidden />}

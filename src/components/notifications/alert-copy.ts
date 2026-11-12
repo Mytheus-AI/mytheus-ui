@@ -136,7 +136,7 @@ export function describeNotification(row: FeedRowInput): FeedItem {
       // ADR-0039 C7 (amended): a watched topic informs, blue.
       priority: 3,
       title: topic ? `${topic} came up in ${meetingTitle}` : row.title || `A topic you watch came up in ${meetingTitle}`,
-      body: "You are not in this meeting. Your agent noticed it because you watch this topic.",
+      body: "You are not in this meeting. Your Myte noticed it because you watch this topic.",
       quote: snippet || null,
       href: safeLink(row.link) ?? meetingHref,
       linkLabel: "Open the meeting",
@@ -293,7 +293,7 @@ export function describeNotification(row: FeedRowInput): FeedItem {
   }
 
   // The promise ledger's notices (core-api): the capacity warning when something lands on a full
-  // day, a date someone asks to move, their answer, promises your agent found, a hand-off.
+  // day, a date someone asks to move, their answer, promises your Myte found, a hand-off.
   const ledger = promiseLedgerNotice(sourceEventId);
   if (ledger) {
     return {
@@ -309,7 +309,7 @@ export function describeNotification(row: FeedRowInput): FeedItem {
     };
   }
 
-  // In every meeting at once: a live interruption from your agent, and the evening digest.
+  // In every meeting at once: a live interruption from your Myte, and the evening digest.
   const interruptionId = interruptionIdOf(sourceEventId);
   if (interruptionId) {
     return {
@@ -322,7 +322,7 @@ export function describeNotification(row: FeedRowInput): FeedItem {
       body: row.body,
       quote: null,
       href: "/meetings/listening",
-      linkLabel: "See what your agent raised",
+      linkLabel: "See what your Myte raised",
     };
   }
   if (eveningDigestIdOf(sourceEventId)) {
@@ -331,7 +331,7 @@ export function describeNotification(row: FeedRowInput): FeedItem {
       sourceEventId,
       kind: "evening_digest",
       priority: 3,
-      title: row.title || "What your agent heard today",
+      title: row.title || "What your Myte heard today",
       body: row.body,
       quote: null,
       href: safeLink(row.link) ?? "/meetings/listening",
@@ -339,7 +339,7 @@ export function describeNotification(row: FeedRowInput): FeedItem {
     };
   }
 
-  // Decisions as bets: a bet whose check date came (score it), or one your agent suggested.
+  // Decisions as bets: a bet whose check date came (score it), or one your Myte suggested.
   const bet = parseBetSource(sourceEventId);
   if (bet) {
     return {
@@ -347,7 +347,7 @@ export function describeNotification(row: FeedRowInput): FeedItem {
       kind: "reminder",
       sourceEventId,
       priority: bet.stage === "due" ? 2 : 3,
-      title: row.title || (bet.stage === "due" ? "Time to score a bet" : "Your agent heard an expected outcome"),
+      title: row.title || (bet.stage === "due" ? "Time to score a bet" : "Your Myte heard an expected outcome"),
       body: row.body,
       quote: null,
       href: safeLink(row.link) ?? "/decisions/calls",
@@ -359,7 +359,7 @@ export function describeNotification(row: FeedRowInput): FeedItem {
   return {
     ...base,
     kind: isAlert ? "alert" : "reminder",
-    title: row.title || (isAlert ? "Your agent noticed something" : "Reminder"),
+    title: row.title || (isAlert ? "Your Myte noticed something" : "Reminder"),
     body: row.body,
     quote: null,
     href: safeLink(row.link) ?? meetingHref,
@@ -384,7 +384,7 @@ export function promiseLedgerNotice(
         ? { label: "Answer the request", title: "Someone asks to move a date", priority: 2 }
         : { label: "Open the promise", title: "Your new date was answered", priority: 3 };
     case "promise-found":
-      return { label: "Review them", title: "Your agent found a promise", priority: 3 };
+      return { label: "Review them", title: "Your Myte found a promise", priority: 3 };
     case "promise-handoff":
       return { label: "Review it", title: "A promise was handed to you", priority: 2 };
     default:

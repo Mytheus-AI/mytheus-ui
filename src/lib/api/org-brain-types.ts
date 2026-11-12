@@ -770,7 +770,7 @@ export function deriveReadiness(f: ReadinessFacts): Readiness {
       done: f.descriptionLength >= L.profile.descriptionReady,
       detail:
         f.descriptionLength >= L.profile.descriptionReady
-          ? "Agents know what the company does."
+          ? "Mytes know what the company does."
           : `A description of at least ${L.profile.descriptionReady} characters.`,
     },
     {
@@ -805,7 +805,7 @@ export function deriveReadiness(f: ReadinessFacts): Readiness {
         f.membersWithoutRole === null
           ? "Not checked yet."
           : f.membersWithoutRole === 0
-            ? "Every member told their agent their role."
+            ? "Every member told their Myte their role."
             : `${plural(f.membersWithoutRole, "member")} without a role.`,
     },
   ];

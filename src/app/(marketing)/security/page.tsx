@@ -28,7 +28,7 @@ const PRINCIPLES = [
   {
     icon: <CheckSquareOffset />,
     title: "No silent writes",
-    body: "The agent persists a decision or action only when you confirm it. Nothing is saved to memory behind your back.",
+    body: "Your Myte persists a decision or action only when you confirm it. Nothing is saved to memory behind your back.",
   },
 ];
 

@@ -314,7 +314,7 @@ export function ControlBar({
                               : "Ask to go off the record"}
                       </strong>
                       <small>
-                        {offRecord.active ? "Agents are paused and nothing is transcribed." : "Pauses every agent and the transcript."}
+                        {offRecord.active ? "Mytes are paused and nothing is transcribed." : "Pauses every Myte and the transcript."}
                       </small>
                     </span>
                   </button>

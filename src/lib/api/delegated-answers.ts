@@ -1,11 +1,11 @@
 /**
- * Delegated answers (only-Mytheus wave, contract section 2) on core-api. When you send your agent
+ * Delegated answers (only-Mytheus wave, contract section 2) on core-api. When you send your Myte
  * instead (ADR-0039 B5), it answers questions in the room only from statements you pre-approved;
  * anything else gets "{First name} didn't pre-approve an answer to that."
  *
  *   GET /api/v1/meetings/{id}/delegated-answers       your statements, and whether they can change
  *   PUT /api/v1/meetings/{id}/delegated-answers       {statements}; 409 once the meeting is over
- *   GET /api/v1/meetings/{id}/delegated-answers/log   what YOUR agent said (only you see it)
+ *   GET /api/v1/meetings/{id}/delegated-answers/log   what YOUR Myte said (only you see it)
  *
  * SERVER-ONLY, inherited from `lib/api/client.ts`.
  */

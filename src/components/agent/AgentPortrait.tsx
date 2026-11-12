@@ -42,12 +42,12 @@ export function AgentPortrait({
         </div>
 
         <div className="min-w-0 text-center md:text-left">
-          <p className="text-[12.5px] font-semibold text-signal-ink">Your agent</p>
+          <p className="text-[12.5px] font-semibold text-signal-ink">Your Myte</p>
           <h1 id="agent-name" className={`${pageTitleClass} mt-1 break-words`}>
             {name}
           </h1>
           <p className="mt-2 text-[15px] text-ink-2">
-            Works for {ownerFirstName} in every meeting they join, and writes in a {preset.label.toLowerCase()} voice.
+            Your personal AI agent. It works for {ownerFirstName} in every meeting they join, takes notes only they see, and writes in a {preset.label.toLowerCase()} voice.
           </p>
 
           <figure className="mt-4 text-left">

@@ -52,12 +52,12 @@ for (const theme of ["light", "dark"] as const) {
 
   test(`every state reads clearly (${theme})`, async ({ mount, page }) => {
     await mount(<BriefingHarness theme={theme} view="states" />);
-    await expect(page.getByRole("heading", { name: "A briefing from your agent" }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "A briefing from your Myte" }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "Juniper is writing your briefing" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Nothing needs you right now" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Your briefing could not be written" })).toBeVisible();
     await expect(page.getByText(/used its agent budget/)).toBeVisible();
-    await expect(page.getByText("Your agent can brief you on this meeting once it has ended.")).toBeVisible();
+    await expect(page.getByText("Your Myte can brief you on this meeting once it has ended.")).toBeVisible();
     await expect(page.getByText(/Briefings after meetings are off/)).toBeVisible();
     expect(await axe(page)).toEqual([]);
   });
@@ -142,7 +142,7 @@ test("settings: switches, length and the voice", async ({ mount, page }) => {
   await page.getByRole("radio", { name: /Short/ }).click();
   await expect(page.getByRole("radio", { name: /Short/ })).toHaveAttribute("aria-checked", "true");
   await page.getByRole("combobox", { name: "Juniper's voice on this device" }).click();
-  await expect(page.getByRole("option", { name: /Matched to your agent/ })).toBeVisible();
+  await expect(page.getByRole("option", { name: /Matched to your Myte/ })).toBeVisible();
   await page.getByRole("option", { name: /Samantha/ }).click();
   await expect(page.getByText("Voice remembered")).toBeVisible();
 });

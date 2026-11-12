@@ -58,7 +58,7 @@ export default async function RecordPage({ params }: { params: { meetingId: stri
                 receipt={receipt.data}
                 fallback={
                   <p className="receipt-note">
-                    The call shows the full notice before you join: the transcript is kept with the meeting, your agent&rsquo;s
+                    The call shows the full notice before you join: the transcript is kept with the meeting, your Myte&rsquo;s
                     notes are yours, nothing is decided without someone confirming it, chat is kept, and anyone can ask to go
                     off the record.
                   </p>
@@ -94,7 +94,7 @@ export default async function RecordPage({ params }: { params: { meetingId: stri
               <EmptyState
                 inCard
                 title="Never off the record"
-                description="The host or the meeting's creator can take a meeting off the record from the call, and anyone in it can ask them to. While it is, nothing is transcribed or kept and every agent pauses."
+                description="The host or the meeting's creator can take a meeting off the record from the call, and anyone in it can ask them to. While it is, nothing is transcribed or kept and every Myte pauses."
               />
             ) : (
               <ol className="grid gap-3">

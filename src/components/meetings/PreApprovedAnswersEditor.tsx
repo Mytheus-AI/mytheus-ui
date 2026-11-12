@@ -8,7 +8,7 @@ import { CharCount, FieldMsg, fieldClass } from "@/components/ui/Form";
 import { addStatement, uncoveredAnswer } from "@/lib/delegated-answers";
 import { notifyError, notifySuccess } from "@/lib/toast";
 
-/* The list of statements your agent may answer from (only-Mytheus wave, contract section 2).
+/* The list of statements your Myte may answer from (only-Mytheus wave, contract section 2).
    Type a statement and press Enter (or Add); remove one with its X. Each change saves at once, so
    there is no Save button to forget; a failed save puts the list back and says so, with Retry.
    Read only once the meeting has started. */
@@ -95,7 +95,7 @@ export function PreApprovedAnswersEditor({
   return (
     <div>
       <p className="max-w-[68ch] text-[14px] leading-relaxed text-ink-3">
-        Your agent answers only from these. Anything else gets: <span className="text-ink-2">&ldquo;{fallback}&rdquo;</span>
+        Your Myte answers only from these. Anything else gets: <span className="text-ink-2">&ldquo;{fallback}&rdquo;</span>
       </p>
 
       {list.length > 0 ? (
@@ -125,8 +125,8 @@ export function PreApprovedAnswersEditor({
       ) : (
         <p className="mt-3.5 rounded-ctl border border-dashed border-line-2 bg-surface-2 px-3.5 py-3 text-[14px] leading-relaxed text-ink-3">
           {editable
-            ? `No statements yet. Without any, your agent answers every question with the line above.`
-            : "You didn't pre-approve any answers, so your agent answered every question with the line above."}
+            ? `No statements yet. Without any, your Myte answers every question with the line above.`
+            : "You didn't pre-approve any answers, so your Myte answered every question with the line above."}
         </p>
       )}
 
@@ -162,7 +162,7 @@ export function PreApprovedAnswersEditor({
                 <FieldMsg
                   id={`${uid}-msg`}
                   error={error}
-                  hint={full ? `That's the most your agent can carry.` : "Press Enter to add. Each one saves at once."}
+                  hint={full ? `That's the most your Myte can carry.` : "Press Enter to add. Each one saves at once."}
                 />
                 <span id={`${uid}-count`} className="mt-1.5">
                   <CharCount n={text.length} max={limits.charsMax} />

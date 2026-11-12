@@ -74,18 +74,18 @@ test("the keyboard reaches every control in order, and tabs and popovers behave"
     if (name) order.push(name);
   }
   const at = (label: string) => order.findIndex((n) => n.startsWith(label));
-  for (const label of ["Call", "Copy meeting link", "Side panel", "Microphone", "Camera", "Raise hand", "Send a reaction", "Off the record", "Live captions", "Caption language", "Grid view", "More options", "Leave or end the meeting", "Agent"]) {
+  for (const label of ["Call", "Copy meeting link", "Side panel", "Microphone", "Camera", "Raise hand", "Send a reaction", "Off the record", "Live captions", "Caption language", "Grid view", "More options", "Leave or end the meeting", "Myte"]) {
     expect(at(label), `${label} is reachable by Tab (got ${order.join(" | ")})`).toBeGreaterThanOrEqual(0);
   }
   // Top bar, then the stage's controls, then the panel.
   expect(at("Copy meeting link")).toBeLessThan(at("Microphone"));
   expect(at("Microphone")).toBeLessThan(at("Camera"));
-  expect(at("Leave or end the meeting")).toBeLessThan(at("Agent"));
+  expect(at("Leave or end the meeting")).toBeLessThan(at("Myte"));
   // The live decision card is in the panel and its Confirm is reachable.
   expect(order.some((n) => n === "Confirm")).toBe(true);
 
   // Tabs: arrow keys move between Agent, Chat and People.
-  const agentTab = page.getByRole("tab", { name: /Agent/ });
+  const agentTab = page.getByRole("tab", { name: /Myte/ });
   await agentTab.focus();
   await page.keyboard.press("ArrowRight");
   await expect(page.getByRole("tab", { name: /Chat/ })).toBeFocused();
@@ -93,8 +93,8 @@ test("the keyboard reaches every control in order, and tabs and popovers behave"
   await page.keyboard.press("End");
   await expect(page.getByRole("tab", { name: /People/ })).toHaveAttribute("aria-selected", "true");
   // People lists the call, the agent sent instead, and who was invited but is not here.
-  await expect(page.getByRole("heading", { name: "Agents attending" })).toBeVisible();
-  await expect(page.getByRole("list", { name: "Agents attending" }).getByText("Attending for Sarah Okafor")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Mytes attending" })).toBeVisible();
+  await expect(page.getByRole("list", { name: "Mytes attending" }).getByText("Attending for Sarah Okafor")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Invited, not here" })).toBeVisible();
   await expect(page.getByRole("list", { name: "Invited, not here" }).getByText("Priya Nair")).toBeVisible();
 
@@ -160,11 +160,11 @@ test("chat goes through the meeting link, shows history, and every (re)connect a
   await page.evaluate(() => {
     window.__gateway!.drop();
   });
-  await expect(page.getByRole("status").filter({ hasText: "Agent paused, captions reconnecting" })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Myte paused, captions reconnecting" })).toBeVisible();
   await page.evaluate(() => {
     window.__gateway!.connect();
   });
-  await expect(page.getByText("Agent paused, captions reconnecting")).toBeHidden();
+  await expect(page.getByText("Myte paused, captions reconnecting")).toBeHidden();
   const tokens = await page.evaluate(() => window.__gateway!.tokens);
   expect(tokens.length).toBe(before + 1);
   expect(new Set(tokens).size).toBe(tokens.length);
@@ -219,7 +219,7 @@ test("the agenda stage bar shows the item, its time and the next one, and the ho
   }, MEETING_ID);
   await expect(bar.getByText("Now, 2 of 2")).toBeVisible();
   // Sarah sent her agent and owns this item: her question comes up for the host to raise.
-  const questions = page.getByRole("region", { name: "Questions from Sarah Okafor's agent" });
+  const questions = page.getByRole("region", { name: "Questions from Sarah Okafor's Myte" });
   await expect(questions).toBeVisible();
   await questions.getByRole("button", { name: /Raise in chat/ }).click();
   await expect(questions.getByText("Raised in chat")).toBeVisible();
@@ -243,10 +243,10 @@ test("a late joiner gets the catch-up line and can open it", async ({ mount, pag
 test("the stand-in tile shows the update and asks the agent through a dialog", async ({ mount, page }) => {
   await mount(<RoomHarness />);
   await expect(page.getByText("QA signed off on the beta.").first()).toBeVisible();
-  await page.getByRole("button", { name: /Ask Sarah Okafor's agent/ }).click();
+  await page.getByRole("button", { name: /Ask Sarah Okafor's Myte/ }).click();
   const dialog = page.getByRole("dialog", { name: /standing in for Sarah Okafor/ });
   await expect(dialog).toBeVisible();
-  await dialog.getByRole("textbox", { name: /Ask Sarah Okafor.s agent/ }).fill("What did we decide on pricing?");
+  await dialog.getByRole("textbox", { name: /Ask Sarah Okafor.s Myte/ }).fill("What did we decide on pricing?");
   await dialog.getByRole("button", { name: "Ask" }).click();
   await expect(dialog.getByText("Pricing stays flat for Q1")).toBeVisible();
   expect(await axe(page)).toEqual([]);

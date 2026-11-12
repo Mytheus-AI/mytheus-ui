@@ -29,7 +29,7 @@ export function AgentHead({
       <span className="agent-head-text">
         <span className="agent-head-name">{face.name}</span>
         <span className="agent-head-meta">
-          Your agent{personality ? `, ${PERSONALITY_LABEL[personality].toLowerCase()}` : ""}
+          Your Myte{personality ? `, ${PERSONALITY_LABEL[personality].toLowerCase()}` : ""}
         </span>
       </span>
       <Link
@@ -37,7 +37,7 @@ export function AgentHead({
         target="_blank"
         rel="noopener"
         className="cx-icon-btn sm tap tip-below tip-end"
-        data-tip="Agent settings"
+        data-tip="Myte settings"
         aria-label={`${face.name} settings (opens in a new tab)`}
       >
         <GearSix size={18} aria-hidden />

@@ -51,7 +51,7 @@ export function AgentWorkspace({
           </div>
         </section>
       </div>
-      <aside aria-label="What your agent knows and kept" className="hidden space-y-5 xl:sticky xl:top-2 xl:block">
+      <aside aria-label="What your Myte knows and kept" className="hidden space-y-5 xl:sticky xl:top-2 xl:block">
         {aside}
       </aside>
     </div>

@@ -85,7 +85,7 @@ const DIGEST: EveningDigest = {
   minutes_saved: 135,
   created_at: "2026-11-11T18:05:00Z",
   paragraph: [
-    { text: "Your agent sat in on 2 meetings for you today. In " },
+    { text: "Your Myte sat in on 2 meetings for you today. In " },
     { text: "Pricing review (3pm)", href: `/meetings/${M(3)}` },
     { text: ", the team agreed the SMB floor and asked for your margin model. Decided: " },
     { text: "SMB tier discount floor is 15%", href: `/meetings/${M(3)}/transcript#t=125` },
@@ -183,7 +183,7 @@ export function ListeningHarness({ view, theme = "light" }: { view: ListeningVie
       {view === "rules-empty" ? <RulesPanel rules={[]} templates={null} /> : null}
       {view === "digest" ? (
         <Card as="section" flush aria-labelledby="digest-h">
-          <CardHead id="digest-h" title="Evening digest" caption="What your agent heard while you were elsewhere" divided />
+          <CardHead id="digest-h" title="Evening digest" caption="What your Myte heard while you were elsewhere" divided />
           <CardBody className="pt-4">
             <EveningDigestBody digest={DIGEST} />
           </CardBody>
@@ -205,7 +205,7 @@ export function ListeningHarness({ view, theme = "light" }: { view: ListeningVie
       {view === "inbox-row" ? (
         <Card flush>
           <div className="px-4 py-4 sm:px-[22px]">
-            <p className="text-[12.5px] font-semibold text-ink-3">Your agent, from a live meeting</p>
+            <p className="text-[12.5px] font-semibold text-ink-3">Your Myte, from a live meeting</p>
             <h3 className="mt-0.5 text-[15px] font-semibold text-ink">{INTERRUPTION.title}</h3>
             <InboxInterruption interruption={INTERRUPTION} />
           </div>

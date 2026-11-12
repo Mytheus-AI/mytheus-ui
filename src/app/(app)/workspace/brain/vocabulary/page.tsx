@@ -14,7 +14,7 @@ export default async function VocabularyPage() {
     <section aria-label="Vocabulary">
       <BrainSectionHead
         title="Vocabulary"
-        lead="The words an outsider would not know: product names, codenames, acronyms, customers. Agents understand them, and live captions learn to spell them."
+        lead="The words an outsider would not know: product names, codenames, acronyms, customers. Mytes understand them, and live captions learn to spell them."
       />
       {!canEdit ? (
         <div className="mb-4">

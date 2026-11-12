@@ -52,7 +52,7 @@ const STEPS: { title: string; body: string; dl: string; strokes: Stroke[] }[] = 
   },
   {
     title: "Remember",
-    body: "A decision on Monday becomes context your agents reuse on Friday.",
+    body: "A decision on Monday becomes context your Mytes reuse on Friday.",
     dl: "2s",
     strokes: [
       {

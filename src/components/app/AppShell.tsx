@@ -40,7 +40,7 @@ export function AppShell({
   agent = null,
 }: {
   children: React.ReactNode;
-  /** The signed-in person's agent, for the sidebar's agent tab. Null: the tab is drawn generic. */
+  /** The signed-in person's Myte, for the sidebar's Myte tab. Null: the tab is drawn generic. */
   agent?: SidebarAgent | null;
   /** A meeting the signed-in person is in, for the sidebar's in-call card. None is wired yet. */
   liveCall?: LiveCall | null;

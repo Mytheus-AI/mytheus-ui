@@ -8,7 +8,7 @@ import "@/styles/meeting-brain.css";
    with the two-column pair and the people rail.
 
    The page has two shapes: scheduled or live (When, your choice and brief; the agenda and what
-   your agent will do; Invited) and ended (the recap, the agenda and the thread; Took part, plus
+   your Myte will do; Invited) and ended (the recap, the agenda and the thread; Took part, plus
    the briefing, minutes and recording sections above the columns when you were in it). This is
    the frame both share, drawn with the scheduled cards: the head and the three columns sit in the
    same place either way. */

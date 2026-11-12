@@ -62,7 +62,7 @@ export function LiveTranscript({
       <div className="ltx-head">
         <button type="button" className="nfy-act is-quiet tap" onClick={onClose}>
           <ArrowLeft size={14} weight="bold" aria-hidden />
-          Back to your agent
+          Back to your Myte
         </button>
         <Link href={`/meetings/${meetingId}/transcript`} target="_blank" rel="noopener" className="ltx-full tap">
           Full transcript

@@ -235,7 +235,7 @@ export function NotesView({
           {when}
           <span className="mx-chip is-accent">
             <Sparkle size={14} weight="fill" aria-hidden />
-            Your agent is taking notes
+            Your Myte is taking notes
           </span>
         </p>
 
@@ -246,7 +246,7 @@ export function NotesView({
             <small>Only you can see these</small>
           </h3>
           {notes.length === 0 ? (
-            <p className="nv-empty">Your agent writes notes here every 30 seconds or so, for the parts that matter to you.</p>
+            <p className="nv-empty">Your Myte writes notes here every 30 seconds or so, for the parts that matter to you.</p>
           ) : (
             <ul className="nv-notes">
               {notes.map((n) => (
@@ -268,7 +268,7 @@ export function NotesView({
               <>
                 <EmptyLine />
                 <p className="nv-empty">
-                  When anyone confirms a decision the agent heard, it appears here for everyone.
+                  When anyone confirms a decision a Myte heard, it appears here for everyone.
                 </p>
               </>
             ) : (

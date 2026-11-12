@@ -250,7 +250,7 @@ export default async function WelcomePage() {
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
           {/* what agents leave alone */}
           <Card as="section" flush aria-labelledby="never-h">
-            <CardHead id="never-h" title="What agents never note" />
+            <CardHead id="never-h" title="What Mytes never note" />
             <CardBody>
               {never.length ? (
                 <>
@@ -262,7 +262,7 @@ export default async function WelcomePage() {
                     ))}
                   </ul>
                   <p className="mt-3 max-w-[68ch] text-[14px] leading-relaxed text-ink-3">
-                    Agents are told to keep no notes, suggestions or actions when a meeting is mainly about these. It is an instruction to
+                    Mytes are told to keep no notes, suggestions or actions when a meeting is mainly about these. It is an instruction to
                     them, not a guarantee, and the transcript is still recorded.
                   </p>
                 </>
@@ -275,16 +275,16 @@ export default async function WelcomePage() {
           {/* next step */}
           <Card as="section" tone="well" aria-labelledby="next-h">
             <h2 id="next-h" className="display text-[22px] text-ink">
-              {me?.role ? "Your agent is ready" : "One thing to do next"}
+              {me?.role ? "Your Myte is ready" : "One thing to do next"}
             </h2>
             <p className="mt-2 text-[15px] leading-relaxed text-ink-2">
               {me?.role
                 ? "It already knows all of the above, and it listens for your work in every meeting you join."
-                : "Tell your agent what you do. It knows the company now; your role tells it what to keep for you."}
+                : "Tell your Myte what you do. It knows the company now; your role tells it what to keep for you."}
             </p>
             <div className="mt-4">
               <LinkButton href={me?.role ? "/agent" : "/onboarding/profile"} variant={me?.role ? "outline" : "primary"}>
-                {me?.role ? "Meet your agent" : "Add your role"}
+                {me?.role ? "Meet your Myte" : "Add your role"}
               </LinkButton>
             </div>
           </Card>

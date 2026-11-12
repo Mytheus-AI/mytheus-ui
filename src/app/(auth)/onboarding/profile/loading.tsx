@@ -8,8 +8,8 @@ export default function Loading() {
     <OnboardingLoading
       label="Loading your profile"
       stage={{
-        title: "Your agent listens for your work.",
-        lead: "An engineer and a PM leave the same meeting with different notes. Tell your agent what you do, and it keeps what matters to you.",
+        title: "Your Myte listens for your work.",
+        lead: "An engineer and a PM leave the same meeting with different notes. Tell your Myte what you do, and it keeps what matters to you.",
       }}
     >
       <StepHeaderSkeleton title="w-40" />

@@ -9,7 +9,7 @@ import { APPEAR, Demo, PanelLabel, dl } from "@/components/features/atoms";
    stand in for the services: no third-party logos. */
 
 const TOOLS: { icon: ReactNode; name: string; does: string; on: boolean }[] = [
-  { icon: <CalendarBlank size={20} />, name: "Google Calendar", does: "Brings your meetings in, so your agent is ready before you join.", on: true },
+  { icon: <CalendarBlank size={20} />, name: "Google Calendar", does: "Brings your meetings in, so your Myte is ready before you join.", on: true },
   { icon: <Hash size={20} />, name: "Slack", does: "Sends confirmed decisions and tasks to #launch and to owners by DM.", on: true },
   { icon: <Kanban size={20} />, name: "Linear", does: "Turns confirmed action items into issues.", on: true },
   { icon: <Kanban size={20} />, name: "Jira", does: "One tracker per workspace. Disconnect Linear to switch.", on: false },

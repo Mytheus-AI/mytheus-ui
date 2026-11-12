@@ -8,7 +8,7 @@ import { resolveOrgContext } from "@/lib/api/org-context";
 import { cardState } from "@/lib/integrations";
 
 /* Promise nudges (only-Mytheus wave, contract section 4): when a task you promised by a date is
-   linked to a Jira issue that is still open after that date, your agent tells you first, privately;
+   linked to a Jira issue that is still open after that date, your Myte tells you first, privately;
    two days later, if it is still open, the meeting's host hears about it. Nothing to switch: this
    card explains the rule and says whether Jira is connected, because without it nothing runs.
    Integrations are an admin read; for everyone else the card says who connects Jira. */
@@ -32,7 +32,7 @@ export async function PromiseNudgesCard() {
       title="Promise nudges"
       headingId="promise-nudges-h"
       headingLevel={3}
-      description="When a task you promised by a date is still open in Jira after it, your agent nudges you before anyone else hears."
+      description="When a task you promised by a date is still open in Jira after it, your Myte nudges you before anyone else hears."
     >
       <div className="grid md:grid-cols-2 md:divide-x md:divide-line">
         <InfoRow icon={<Bell size={18} />} title="You first, privately">

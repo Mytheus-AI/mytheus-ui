@@ -57,7 +57,7 @@ for (const theme of ["light", "dark"] as const) {
 
 test("keep a suggested bet from the keyboard", async ({ mount, page }) => {
   await mount(<BetsHarness view="bet-proposed" />);
-  await expect(page.getByText("Your agent heard an expected outcome in the meeting")).toBeVisible();
+  await expect(page.getByText("Your Myte heard an expected outcome in the meeting")).toBeVisible();
   await page.getByRole("button", { name: "Keep this expectation" }).focus();
   await page.keyboard.press("Enter");
   await expect(page.getByText("Expectation kept")).toBeVisible();

@@ -26,8 +26,8 @@ export type AttendanceErrors = {
 export const ATTENDANCE_MESSAGES = {
   updateTooLong: `Keep your update to ${ATTENDANCE_LIMITS.updateMax} characters.`,
   questionTooLong: `Keep each question to ${ATTENDANCE_LIMITS.questionMax} characters.`,
-  tooManyQuestions: `Your agent can carry at most ${ATTENDANCE_LIMITS.questionsMax} questions.`,
-  nothingToCarry: "Add an update or a question for your agent to bring.",
+  tooManyQuestions: `Your Myte can carry at most ${ATTENDANCE_LIMITS.questionsMax} questions.`,
+  nothingToCarry: "Add an update or a question for your Myte to bring.",
 } as const;
 
 export type AttendanceValidation = { ok: true; body: AttendancePut } | { ok: false; errors: AttendanceErrors };

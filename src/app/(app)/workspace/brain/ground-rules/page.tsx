@@ -14,7 +14,7 @@ export default async function GroundRulesPage() {
     <section aria-label="Ground rules">
       <BrainSectionHead
         title="Ground rules"
-        lead="Topics agents must leave alone: no notes, no suggestions, no actions from a stretch of a meeting that is mainly about one of them."
+        lead="Topics Mytes must leave alone: no notes, no suggestions, no actions from a stretch of a meeting that is mainly about one of them."
       />
       {!canEdit ? (
         <div className="mb-4">

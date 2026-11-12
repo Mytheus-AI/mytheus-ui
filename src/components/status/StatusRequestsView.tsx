@@ -31,7 +31,7 @@ export function StatusRequestsView({
     <Explainer id="how-h" title="How this works">
       <ol className="space-y-3">
         {[
-          "An hour before a meeting that follows up an earlier one, your agent asks about each open action you own from it.",
+          "An hour before a meeting that follows up an earlier one, your Myte asks about each open action you own from it.",
           "Pick on track, blocked or done, and add a line if it helps.",
           "Your answer is shown with the action in the meeting, so nobody has to ask in the room.",
         ].map((t, i) => (
@@ -53,7 +53,7 @@ export function StatusRequestsView({
         liveContext
         context={
           waiting === 0
-            ? "Nothing waiting on you. Your agent asks here before a meeting follows up on something you own."
+            ? "Nothing waiting on you. Your Myte asks here before a meeting follows up on something you own."
             : `${waiting} waiting on you. One line each is enough.`
         }
       />
@@ -78,7 +78,7 @@ export function StatusRequestsView({
                   inCard
                   art="updates"
                   title="Nothing to answer"
-                  description="An hour before a follow-up meeting, your agent asks here how your actions from the last one are going."
+                  description="An hour before a follow-up meeting, your Myte asks here how your actions from the last one are going."
                 />
               </div>
             )

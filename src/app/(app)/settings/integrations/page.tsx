@@ -40,7 +40,7 @@ export default async function IntegrationsSettingsPage({
     <>
       <SectionBar
         title="Integrations"
-        context="Calendar, Slack and one project tracker for agents, plus HubSpot, Notion and Confluence for sharing what the workspace confirms."
+        context="Calendar, Slack and one project tracker for your Myte, plus HubSpot, Notion and Confluence for sharing what the workspace confirms."
       />
       <div className="grid gap-5">
         <IntegrationsPanel load={load} banner={banner} people={people} />

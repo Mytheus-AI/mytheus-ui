@@ -14,7 +14,7 @@ import { saveListeningPreferences } from "@/app/actions/listening";
 import type { FocusBlock, ListeningPreferences, ListeningPreferencesView } from "@/lib/api/listening-types";
 import { DAY_SHORT, clock, focusBlockError, focusBlockLabel, rightNowLine } from "@/lib/listening";
 
-/* When your agent may interrupt you (In every meeting at once). One form: the switches and fields
+/* When your Myte may interrupt you (In every meeting at once). One form: the switches and fields
    change a draft, and "Save changes" writes it (with Undo); nothing is half-saved. What it holds:
 
    - interruptions on or off, and at most N an hour (whatever is over the limit is held for the
@@ -127,7 +127,7 @@ export function ListeningSettings({ initial, loaded }: { initial: ListeningPrefe
         title="Interruptions"
         headingId="interruptions-h"
         headingLevel={3}
-        description="While a meeting you are not in is live, your agent listens for you and pulls you in only when something needs you."
+        description="While a meeting you are not in is live, your Myte listens for you and pulls you in only when something needs you."
       >
         <div className="px-4 py-4 sm:px-[22px]" aria-live="polite">
           {loaded ? (
@@ -136,7 +136,7 @@ export function ListeningSettings({ initial, loaded }: { initial: ListeningPrefe
             <Note tone="warning">We could not load your settings, so the defaults are shown. Saving writes what you see.</Note>
           )}
         </div>
-        <InlineRow label="Let my agent interrupt me" labelId={ids.on} help="Off: nothing interrupts you; what your agent hears waits for your evening digest.">
+        <InlineRow label="Let my Myte interrupt me" labelId={ids.on} help="Off: nothing interrupts you; what your Myte hears waits for your evening digest.">
           <Toggle labelledBy={ids.on} checked={draft.interruptions_enabled} onChange={(v) => set({ interruptions_enabled: v })} />
         </InlineRow>
         <FieldRow label="At most" htmlFor={ids.per} help="More than this in an hour is held for later, never lost.">
@@ -209,7 +209,7 @@ export function ListeningSettings({ initial, loaded }: { initial: ListeningPrefe
         title="Evening digest"
         headingId="evening-digest-h"
         headingLevel={3}
-        description="One paragraph each evening about every meeting your agent listened to for you, with links to the moments. On Home and in your Inbox."
+        description="One paragraph each evening about every meeting your Myte listened to for you, with links to the moments. On Home and in your Inbox."
       >
         <InlineRow label="Send me the evening digest" labelId={ids.digest}>
           <Toggle labelledBy={ids.digest} checked={draft.digest_enabled} onChange={(v) => set({ digest_enabled: v })} />

@@ -39,7 +39,7 @@ export default async function MeetingRoomPage({
       { name: m.name, imageUrl: m.imageUrl, agentName: m.agentName, agentSeed: m.agentSeed },
     ]),
   );
-  // You, by internal user id: your agent heads the sidebar, and the host's agenda controls and
+  // You, by internal user id: your Myte heads the sidebar, and the host's agenda controls and
   // nudges are yours when you host or created the meeting (ADR-0038 D6, D11).
   const you = members?.find((m) => m.isYou);
   const me = you

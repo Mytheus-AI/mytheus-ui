@@ -309,7 +309,7 @@ export function SettleOutcomes({ settlement: s, onChange }: { settlement: Settle
         open={slotOpen}
         onClose={() => setSlotOpen(false)}
         title="Meet to settle it"
-        description={`Your agent found the first 15 minutes that suit you and ${them}, with the clash as the one agenda item.`}
+        description={`Your Myte found the first 15 minutes that suit you and ${them}, with the clash as the one agenda item.`}
         loadSlot={() => readSettleSlot(s.id)}
         book={(start) => bookSettleMeeting(s.id, start)}
         bookLabel="Book meeting"

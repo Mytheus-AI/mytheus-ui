@@ -5,7 +5,7 @@ import { ApiError } from "@/lib/api/client";
 import { deleteMemory, patchMemory } from "@/lib/api/memory";
 import { MAX_TOPIC_LABEL, type MemoryUpdate, type PersonMemory } from "@/lib/memory";
 
-/* Settings > Agent memory: change what your agent remembers. Every call is the caller's own
+/* Settings > Agent memory: change what your Myte remembers. Every call is the caller's own
    memory (core-api keys it on the verified user), so nothing here names a person. */
 
 const PATH = "/settings/memory";
@@ -52,7 +52,7 @@ export async function forgetEverything(): Promise<ForgetResult> {
   try {
     await deleteMemory();
   } catch (err) {
-    return failure(err, "Your agent's memory could not be cleared just now. Nothing was forgotten. Try again.");
+    return failure(err, "Your Myte's memory could not be cleared just now. Nothing was forgotten. Try again.");
   }
   revalidatePath(PATH);
   return { ok: true };

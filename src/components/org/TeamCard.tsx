@@ -99,7 +99,7 @@ export function TeamCard({ team, edit }: TeamCardProps) {
             onClick={editor.describe}
             className="w-full rounded-ctl border border-dashed border-line-2 px-3.5 py-3 text-left text-[14px] text-ink-3 transition-colors duration-150 hover:border-ink-4 hover:bg-surface-2 hover:text-ink-2"
           >
-            <span className="font-semibold text-ink-2">Add what this team does.</span> Agents use it to tune notes to the people on it.
+            <span className="font-semibold text-ink-2">Add what this team does.</span> Mytes use it to tune notes to the people on it.
           </button>
         ) : (
           <p className="text-[14px] text-ink-3">No description yet.</p>

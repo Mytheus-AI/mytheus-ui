@@ -54,7 +54,7 @@ import { LedgerRow, ReviewRow } from "./LedgerRow";
 
    - your week first: a capacity bar of what each day already holds;
    - what people asked of you (a date someone who owes you something wants to move);
-   - what your agent found in your messages, waiting for your yes;
+   - what your Myte found in your messages, waiting for your yes;
    - then the ledger itself, grouped by when things are due, filtered by where they were said
      and who they were promised to. Each row is kept, renegotiated, handed off or dropped, and
      every one of those answers with a toast that can undo it.
@@ -362,7 +362,7 @@ export function PromiseLedger({
       return;
     }
     setCapture(res.capture);
-    notifySuccess(res.capture.slack_enabled ? "Your agent will look in Slack" : "Your agent stopped looking in Slack");
+    notifySuccess(res.capture.slack_enabled ? "Your Myte will look in Slack" : "Your Myte stopped looking in Slack");
   };
 
   /* ---- derived ---- */
@@ -403,7 +403,7 @@ export function PromiseLedger({
       </Card>
 
       <Card as="section" flush aria-labelledby="sources-h">
-        <CardHead id="sources-h" title="Where your agent looks" />
+        <CardHead id="sources-h" title="Where your Myte looks" />
         <ul className="divide-y divide-line border-t border-line text-[14px]">
           <li className="flex items-start gap-3 px-4 py-3 sm:px-[22px]">
             <VideoCamera size={18} aria-hidden className="mt-0.5 shrink-0 text-ink-3" />
@@ -508,7 +508,7 @@ export function PromiseLedger({
             .
           </span>
         </p>
-        <p>Before you say yes to a date, your agent checks your week. When a day is full it offers a better one, and can ask the person waiting for you in one tap.</p>
+        <p>Before you say yes to a date, your Myte checks your week. When a day is full it offers a better one, and can ask the person waiting for you in one tap.</p>
       </Explainer>
     </>
   );
@@ -565,7 +565,7 @@ export function PromiseLedger({
           <Card as="section" flush aria-labelledby="review-h">
             <CardHead
               id="review-h"
-              title="Found by your agent"
+              title="Found by your Myte"
               description="Promises it heard in your messages, or a colleague handed you. Confirm the ones you meant."
               right={<Count n={review.length} label="to review" tone="accent" />}
             />
@@ -589,7 +589,7 @@ export function PromiseLedger({
           <EmptyState
             art="promises"
             title="No promises yet"
-            description="When you say you will do something in a meeting, in a recorded conversation or in Slack, your agent writes it down here, privately. You can add one by hand too."
+            description="When you say you will do something in a meeting, in a recorded conversation or in Slack, your Myte writes it down here, privately. You can add one by hand too."
             action={
               <Button onClick={() => setAdding(true)}>
                 <Plus size={16} weight="bold" aria-hidden />
@@ -717,7 +717,7 @@ export function PromiseLedger({
               {review.length === 0 && capture.slack_enabled && slack === "connected" ? (
                 <p className="flex items-center gap-2 px-1 text-[13.5px] text-ink-3">
                   <Sparkle size={14} aria-hidden />
-                  Your agent is reading the Slack messages you post for promises. Nothing new to review.
+                  Your Myte is reading the Slack messages you post for promises. Nothing new to review.
                 </p>
               ) : null}
             </section>

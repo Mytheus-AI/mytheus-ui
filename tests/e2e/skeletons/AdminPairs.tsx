@@ -109,7 +109,7 @@ function WorkspaceOverview() {
         <CardHead
           id="brain-heading"
           title="Company brain"
-          description="What every agent knows about the company: what it does, its words, who owns what, its goals and what is off limits."
+          description="What every Myte knows about the company: what it does, its words, who owns what, its goals and what is off limits."
           right={<TextLink href="/workspace/brain">Open the company brain</TextLink>}
         />
         <div className="px-4 pb-[18px] sm:px-[22px]">
@@ -281,10 +281,10 @@ function WorkspaceAgents() {
   return (
     <div className="flex flex-col gap-5">
       <SectionBar
-        title="Agent collaboration"
-        context="During a meeting, an agent can ask a teammate's agent for context its person is missing. Choose how far that reaches. Every request, allowed or refused, shows in the audit log."
+        title="Myte collaboration"
+        context="During a meeting, a Myte can ask a teammate's Myte for context its person is missing. Choose how far that reaches. Every request, allowed or refused, shows in the audit log."
       />
-      <SectionCard title="Who agents may ask" headingLevel={2} headingId="level-heading" description="Applies to everyone in the workspace, whatever their role.">
+      <SectionCard title="Who Mytes may ask" headingLevel={2} headingId="level-heading" description="Applies to everyone in the workspace, whatever their role.">
         <AgentCollaborationControl current="same_team" />
       </SectionCard>
       <SectionCard title="Current grants" headingLevel={2} headingId="grants-heading" description="The rules behind the setting above. No rule means no access, and a deny rule always wins.">
@@ -311,14 +311,14 @@ function WorkspaceData() {
     <div className="flex flex-col gap-5">
       <SectionBar
         title="Data and privacy"
-        context="How long the workspace keeps what is said, what is redacted, how sure agents must be, and the requests that act on all of it. Every change is written to the audit log."
+        context="How long the workspace keeps what is said, what is redacted, how sure Mytes must be, and the requests that act on all of it. Every change is written to the audit log."
       />
       <form className="flex flex-col gap-6">
         <SectionCard title="Retention" headingLevel={2} headingId="retention-heading" description="How long transcripts and notes are kept before they are deleted for good. Blank keeps them until someone deletes them.">
           <FieldRow label="Transcripts" help="Days, 7 to 3650." htmlFor="rt">
             <TextInput id="rt" defaultValue="365" />
           </FieldRow>
-          <FieldRow label="Notes" help="Agent notes kept in the background log. Days, 7 to 3650." htmlFor="rn">
+          <FieldRow label="Notes" help="Myte notes kept in the background log. Days, 7 to 3650." htmlFor="rn">
             <TextInput id="rn" defaultValue="90" />
           </FieldRow>
         </SectionCard>
@@ -327,7 +327,7 @@ function WorkspaceData() {
             <Toggle checked onChange={() => undefined} labelledBy="pii-label" />
           </InlineRow>
         </SectionCard>
-        <SectionCard title="Agent confidence" headingLevel={2} headingId="confidence-heading" description="Above the show threshold an agent's suggestion appears in the meeting; between the two it is only logged; below the log threshold it is dropped. Defaults are 0.7 and 0.4.">
+        <SectionCard title="Myte confidence" headingLevel={2} headingId="confidence-heading" description="Above the show threshold a Myte's suggestion appears in the meeting; between the two it is only logged; below the log threshold it is dropped. Defaults are 0.7 and 0.4.">
           <div>
             <Table caption="Confidence thresholds" head={["Agent", "Show above", "Log from"]}>
               {["Decisions", "Action items", "Suggested questions", "Context fills"].map((a) => (
@@ -724,7 +724,7 @@ const ENTRIES: Record<string, Entry> = {
   "brain-about": {
     skeleton: () => <BrainAboutLoading />,
     page: () => (
-      <BrainSection title="About the company" lead="A few plain sentences on what the company does and for whom. Every agent reads this before it listens to a meeting.">
+      <BrainSection title="About the company" lead="A few plain sentences on what the company does and for whom. Every Myte reads this before it listens to a meeting.">
         <div>
           <AboutEditor initial={PROFILE} canEdit />
         </div>
@@ -734,7 +734,7 @@ const ENTRIES: Record<string, Entry> = {
   "brain-vocabulary": {
     skeleton: () => <BrainVocabularyLoading />,
     page: () => (
-      <BrainSection title="Vocabulary" lead="The words an outsider would not know: product names, codenames, acronyms, customers. Agents understand them, and live captions learn to spell them.">
+      <BrainSection title="Vocabulary" lead="The words an outsider would not know: product names, codenames, acronyms, customers. Mytes understand them, and live captions learn to spell them.">
         <VocabularyEditor initial={TERMS} canEdit />
       </BrainSection>
     ),
@@ -742,7 +742,7 @@ const ENTRIES: Record<string, Entry> = {
   "brain-owners": {
     skeleton: () => <BrainOwnersLoading />,
     page: () => (
-      <BrainSection title="Who owns what" lead="A topic and the one person who owns it. Agents suggest them as the owner of a new action and as the person to ask.">
+      <BrainSection title="Who owns what" lead="A topic and the one person who owns it. Mytes suggest them as the owner of a new action and as the person to ask.">
         <OwnersEditor initial={OWNERS} members={MEMBER_OPTIONS} canEdit />
       </BrainSection>
     ),
@@ -750,7 +750,7 @@ const ENTRIES: Record<string, Entry> = {
   "brain-goals": {
     skeleton: () => <BrainGoalsLoading />,
     page: () => (
-      <BrainSection title="Goals" lead="What matters now, most important first. Hosts tie agenda items to a goal, and agents weigh what they keep against these.">
+      <BrainSection title="Goals" lead="What matters now, most important first. Hosts tie agenda items to a goal, and Mytes weigh what they keep against these.">
         <GoalsEditor initial={GOALS} members={MEMBER_OPTIONS} canEdit defaultPeriod="2026-Q4" />
       </BrainSection>
     ),
@@ -766,7 +766,7 @@ const ENTRIES: Record<string, Entry> = {
   "brain-ground-rules": {
     skeleton: () => <BrainGroundRulesLoading />,
     page: () => (
-      <BrainSection title="Ground rules" lead="Topics agents must leave alone: no notes, no suggestions, no actions from a stretch of a meeting that is mainly about one of them.">
+      <BrainSection title="Ground rules" lead="Topics Mytes must leave alone: no notes, no suggestions, no actions from a stretch of a meeting that is mainly about one of them.">
         <GroundRulesEditor initial={RULES} canEdit />
       </BrainSection>
     ),

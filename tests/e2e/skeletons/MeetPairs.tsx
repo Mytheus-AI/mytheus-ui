@@ -176,12 +176,12 @@ function MeetingDetailStub() {
                 </span>
               </div>,
             )}
-            {card("Your agent and this meeting", rows([["Attend yourself", "You join the call"], ["Send your agent", "It listens and reports back"], ["Skip it", "Nothing is kept for you"]]))}
+            {card("Your Myte and this meeting", rows([["Attend yourself", "You join the call"], ["Send your Myte", "It listens and reports back"], ["Skip it", "Nothing is kept for you"]]))}
           </div>
           <div className="md-col">
             {card("Agenda", rows([["What moved", "10 min, Maya"], ["What is stuck", "15 min, Raj"], ["Next steps", "5 min, Priya"]]), "0 of 3 done")}
             {card(
-              "What your agent will do",
+              "What your Myte will do",
               <>
                 <p className="mx-help">It joins the call with you. What it writes shows in your sidebar during the call and is yours only.</p>
                 <ul className="md-plan">
@@ -401,7 +401,7 @@ const DIGEST: EveningDigest = {
   minutes_saved: 135,
   created_at: "2026-11-11T18:05:00Z",
   paragraph: [
-    { text: "Your agent sat in on 2 meetings for you today. In " },
+    { text: "Your Myte sat in on 2 meetings for you today. In " },
     { text: "Pricing review (3pm)", href: `/meetings/${M(3)}` },
     { text: ", the team agreed the SMB floor and asked for your margin model. Decided: " },
     { text: "SMB tier discount floor is 15%", href: `/meetings/${M(3)}/transcript#t=125` },
@@ -446,7 +446,7 @@ function ListeningStub() {
     <Page>
       <PageHead
         title="Listening"
-        context="8 meetings this week: you attend 3, your agent listens to 4, you skip 1. Your agent pulls you in only when something needs you."
+        context="8 meetings this week: you attend 3, your Myte listens to 4, you skip 1. Your Myte pulls you in only when something needs you."
         action={
           <LinkButton href="/settings/listening" variant="outline">
             <GearSix size={16} aria-hidden />
@@ -459,7 +459,7 @@ function ListeningStub() {
       <div className="mt-5 grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0 space-y-5">
           <Card as="section" flush>
-            <CardHead title="Evening digest" caption="What your agent heard while you were elsewhere" divided />
+            <CardHead title="Evening digest" caption="What your Myte heard while you were elsewhere" divided />
             <CardBody className="pt-4">
               <EveningDigestBody digest={DIGEST} />
             </CardBody>
@@ -469,11 +469,11 @@ function ListeningStub() {
         <aside aria-label="Rules" className="min-w-0 space-y-5">
           <RulesPanel rules={WEEK.rules} templates={[]} />
           <section className="rounded-card bg-bg-2 px-4 py-[18px] sm:px-6">
-            <h2 className="display text-[20px] text-ink">What your agent respects</h2>
+            <h2 className="display text-[20px] text-ink">What your Myte respects</h2>
             <ul className="mt-2 space-y-2 text-[14.5px] leading-relaxed text-ink-2">
               <li>It only listens to meetings you are invited to.</li>
               <li>Never to a confidential meeting, and never to anything said off the record.</li>
-              <li>The room sees how many agents are listening, so nobody is listened to without knowing.</li>
+              <li>The room sees how many Mytes are listening, so nobody is listened to without knowing.</li>
               <li>It says only what you wrote or saved beforehand. Everything else waits for you.</li>
             </ul>
           </section>
@@ -543,7 +543,7 @@ function DecisionStub() {
                 </ul>
               </CardBody>
             </Card>
-            <Note>Only confirmed decisions appear in a lineage. Nothing your agent proposed is saved until someone confirms it.</Note>
+            <Note>Only confirmed decisions appear in a lineage. Nothing your Myte proposed is saved until someone confirms it.</Note>
           </div>
         }
       >
@@ -584,10 +584,10 @@ function CollaborationsStub() {
   return (
     <Page>
       <PageHead
-        title="Agent collaboration"
+        title="Myte collaboration"
         context={
           <>
-            When someone&rsquo;s agent needed context they were missing, it asked another agent or their own knowledge base. Every request is
+            When someone&rsquo;s Myte needed context they were missing, it asked another Myte or their own knowledge base. Every request is
             logged here, including the ones policy refused. What was shared is never shown here.
           </>
         }
@@ -619,8 +619,8 @@ function CollaborationsStub() {
               {rows.map((i) => (
                 <tr key={i}>
                   <td className="whitespace-nowrap px-5 py-3.5 text-[12.5px] text-ink-3">3:4{i} PM</td>
-                  <td className="max-w-[300px] px-5 py-3.5">Raj&rsquo;s agent to Maya&rsquo;s</td>
-                  <td className="whitespace-nowrap px-5 py-3.5 text-ink-2">Agent to agent</td>
+                  <td className="max-w-[300px] px-5 py-3.5">Raj&rsquo;s Myte to Maya&rsquo;s</td>
+                  <td className="whitespace-nowrap px-5 py-3.5 text-ink-2">Myte to Myte</td>
                   <td className="whitespace-nowrap px-5 py-3.5 text-ink-2">A fact</td>
                   <td className="whitespace-nowrap px-5 py-3.5 text-ink-2">This meeting</td>
                   <td className="px-5 py-3.5">
@@ -635,11 +635,11 @@ function CollaborationsStub() {
             {rows.slice(0, 3).map((i) => (
               <li key={i} className="px-4 py-4 text-[14px]">
                 <div className="flex items-center justify-between gap-3">
-                  <span>Raj&rsquo;s agent to Maya&rsquo;s</span>
+                  <span>Raj&rsquo;s Myte to Maya&rsquo;s</span>
                   <Chip tone="ok">Answered</Chip>
                 </div>
                 <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[12.5px]">
-                  {[["Where", "Agent to agent"], ["Asked for", "A fact"], ["Scope", "This meeting"], ["When", "3:40 PM, 420 ms"]].map(([a, b]) => (
+                  {[["Where", "Myte to Myte"], ["Asked for", "A fact"], ["Scope", "This meeting"], ["When", "3:40 PM, 420 ms"]].map(([a, b]) => (
                     <div key={a}>
                       <dt className="text-ink-3">{a}</dt>
                       <dd className="text-ink-2">{b}</dd>
@@ -673,7 +673,7 @@ function RecordStub() {
           <CardHead title="Your receipt" caption="Only you can see this." divided />
           <CardBody>
             <ul className="mt-4 flex flex-col gap-3 text-[15px] text-ink-2">
-              {["The transcript is kept with the meeting.", "Your agent's notes are yours.", "Nothing is decided without someone confirming it.", "Anyone can ask to go off the record."].map((t) => (
+              {["The transcript is kept with the meeting.", "Your Myte's notes are yours.", "Nothing is decided without someone confirming it.", "Anyone can ask to go off the record."].map((t) => (
                 <li key={t} className="flex items-start gap-3">
                   <ShieldCheck size={20} aria-hidden />
                   {t}
@@ -762,7 +762,7 @@ const ENTRIES: Record<string, Entry> = {
       <Page>
         <PageHead
           title="Meetings"
-          context="Every call on your calendar, what your agent captured, and where to pick it up."
+          context="Every call on your calendar, what your Myte captured, and where to pick it up."
           action={<NewMeeting members={[]} recent={[]} me={{ id: "u-maya", name: "Maya Chen" }} templates={[]} goals={[]} />}
         />
         <SectionTabs section="meetings" label="Meetings sections" exact={["/meetings"]} className="mb-5" />

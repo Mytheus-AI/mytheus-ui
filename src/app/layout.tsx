@@ -9,11 +9,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Mytheus: every meeting, on repeat",
   description:
-    "Mytheus gives every participant a personal AI agent that captures role-relevant notes, suggests questions in real time, detects conflicts, and manages follow-ups. Agents that collaborate across meetings.",
+    "Mytheus gives every participant a Myte, a personal AI agent that captures role-relevant notes, suggests questions in real time, detects conflicts, and manages follow-ups. Mytes that collaborate across meetings.",
   openGraph: {
     title: "Mytheus: every meeting, on repeat",
     description:
-      "A personal AI agent for every participant. Real-time intelligence that collaborates across meetings.",
+      "A Myte for every participant: a personal AI agent with real-time intelligence that collaborates across meetings.",
     type: "website",
   },
 };

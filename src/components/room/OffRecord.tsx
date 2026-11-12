@@ -45,7 +45,7 @@ export function OffRecordBanner({
       <div className="offrec-copy">
         <strong>{since ? `Off the record since ${since}` : "Off the record"}</strong>
         <span>
-          Agents are paused and nothing is transcribed or kept.
+          Mytes are paused and nothing is transcribed or kept.
           {by ? ` ${by === "You" ? "You" : by} took the meeting off the record${asked ? ` when ${asked === "You" ? "you" : asked} asked` : ""}.` : ""}
         </span>
       </div>
@@ -83,7 +83,7 @@ export function OffRecordAsks({
       </span>
       <p>
         <strong>{name}</strong> asks to go off the record
-        {others > 0 ? ` (and ${others} more ${others === 1 ? "person" : "people"})` : ""}. Agents pause and nothing is
+        {others > 0 ? ` (and ${others} more ${others === 1 ? "person" : "people"})` : ""}. Mytes pause and nothing is
         transcribed until you go back on the record.
       </p>
       <div className="offrec-ask-acts">
@@ -131,7 +131,7 @@ export function WhatIsRecorded({
         <p className={`offrec-now${offRecord.active ? " is-off" : ""}`}>
           {offRecord.active ? <EyeSlash size={16} aria-hidden /> : <ShieldCheck size={16} aria-hidden />}
           {offRecord.active
-            ? "Right now the meeting is off the record: nothing is transcribed or kept, and agents are paused."
+            ? "Right now the meeting is off the record: nothing is transcribed or kept, and Mytes are paused."
             : "Right now the meeting is on the record. Anyone can ask the host to go off the record."}
         </p>
         <h3 className="offrec-h">Your receipt</h3>

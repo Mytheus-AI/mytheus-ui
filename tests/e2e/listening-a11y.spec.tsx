@@ -57,14 +57,14 @@ test("the week: arrow keys change a choice, the headline recounts, Undo puts it 
   const group = page.getByRole("radiogroup", { name: "Your choice for Pricing review" });
   await group.getByRole("radio", { name: "Attend" }).focus();
   await page.keyboard.press("ArrowRight");
-  await expect(group.getByRole("radio", { name: "Agent listens" })).toBeChecked();
-  await expect(page.getByText("Your agent listens to Pricing review")).toBeVisible();
-  await expect(page.getByText(/agent listens to 5/)).toBeVisible();
+  await expect(group.getByRole("radio", { name: "Myte listens" })).toBeChecked();
+  await expect(page.getByText("Your Myte listens to Pricing review")).toBeVisible();
+  await expect(page.getByText(/your Myte listens to 5/)).toBeVisible();
   await page.getByRole("button", { name: "Undo" }).click();
   await expect(group.getByRole("radio", { name: "Attend" })).toBeChecked();
   // a confidential meeting takes no agent, and says why
   const board = page.getByRole("radiogroup", { name: "Your choice for Board prep" });
-  await expect(board.getByRole("radio", { name: "Agent listens" })).toBeDisabled();
+  await expect(board.getByRole("radio", { name: "Myte listens" })).toBeDisabled();
 });
 
 test("a live interruption shows once, and holding the line pre-picks the matching line", async ({ mount, page }) => {
@@ -79,14 +79,14 @@ test("a live interruption shows once, and holding the line pre-picks the matchin
   await expect(page.getByText("Pricing for your segment is being decided in the 3pm right now.")).toHaveCount(1);
   expect(await axe(page, "body")).toEqual([]);
   await page.getByRole("button", { name: "Hold the line" }).click();
-  const dialog = page.getByRole("dialog", { name: "Let your agent hold the line" });
+  const dialog = page.getByRole("dialog", { name: "Let your Myte hold the line" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("checkbox", { name: /No discount above 10%/ })).toBeChecked();
   await expect(dialog.getByRole("checkbox", { name: /No new contractors/ })).not.toBeChecked();
   await expect(dialog.getByRole("checkbox", { name: /pricing page stays public/ })).toBeChecked();
   expect(await axe(page, "body")).toEqual([]);
   await dialog.getByRole("button", { name: "Hold the line", exact: true }).click();
-  await expect(page.getByText("Your agent is holding the line")).toBeVisible();
+  await expect(page.getByText("Your Myte is holding the line")).toBeVisible();
   await expect(dialog).toBeHidden();
 });
 
@@ -133,7 +133,7 @@ test("rules: the dialog previews the rule as a sentence and reports how many mee
   await mount(<ListeningHarness view="rules-empty" />);
   await page.getByRole("button", { name: "Add that rule" }).click();
   const dialog = page.getByRole("dialog", { name: "New rule" });
-  await expect(dialog.getByText("Your agent listens to every recurring meeting with “status” in the title, except ones you host.")).toBeVisible();
+  await expect(dialog.getByText("Your Myte listens to every recurring meeting with “status” in the title, except ones you host.")).toBeVisible();
   expect(await axe(page, "body")).toEqual([]);
   await dialog.getByRole("button", { name: "Add rule" }).click();
   await expect(page.getByText("Applied to 3 upcoming meetings.")).toBeVisible();
@@ -142,16 +142,16 @@ test("rules: the dialog previews the rule as a sentence and reports how many mee
 test("room: listening agents are counted live, passive ones get no tile, the host shares a view", async ({ mount, page }) => {
   await mount(<RoomHarness passiveListener />);
   await page.waitForFunction(() => Boolean(window.__gateway?.meetingId));
-  const chip = page.getByRole("button", { name: /2 agents listening/ });
+  const chip = page.getByRole("button", { name: /2 Mytes listening/ });
   await expect(chip).toBeVisible();
   await chip.click();
-  await expect(page.getByText("Priya Nair’s agent")).toBeVisible();
+  await expect(page.getByText("Priya Nair’s Myte")).toBeVisible();
   await page.keyboard.press("Escape");
   await page.evaluate(
     ([meetingId]) => window.__gateway!.push("listeners", { meetingId, payload: { count: 3, userIds: ["u-sarah", "u-priya", "u-raj-2"] } }),
     [MEETING_ID] as const,
   );
-  await expect(page.getByRole("button", { name: /3 agents listening/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /3 Mytes listening/ })).toBeVisible();
   // the views tray, read on mount for the host
   const tray = page.getByRole("region", { name: "Views from people who are not here" });
   await expect(tray.getByText("Keep SMB at 10% off. 15% breaks the margin model.")).toBeVisible();

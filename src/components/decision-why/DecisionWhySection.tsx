@@ -119,7 +119,7 @@ export function DecisionWhySection({
     if (!res.ok) return res.message;
     if (id === "new") {
       setLoad((prev) => (prev.ok ? { ok: true, data: { ...prev.data, assumptions: [...prev.data.assumptions, res.data] } } : prev));
-      notifySuccess("Reason added", { description: "Your agent watches it from now on." });
+      notifySuccess("Reason added", { description: "Your Myte watches it from now on." });
     } else {
       replace(res.data);
       notifySuccess("Reason saved");
@@ -152,9 +152,9 @@ export function DecisionWhySection({
         description={
           why
             ? why.can_edit
-              ? "The reasons this decision rests on. Your agent watches each one and tells you if one stops being true."
-              : `The reasons this decision rests on. Your agent watches each one and tells ${why.owner?.name ?? "its owner"} if one stops being true.`
-            : "The reasons this decision rests on, watched by your agent."
+              ? "The reasons this decision rests on. Your Myte watches each one and tells you if one stops being true."
+              : `The reasons this decision rests on. Your Myte watches each one and tells ${why.owner?.name ?? "its owner"} if one stops being true.`
+            : "The reasons this decision rests on, watched by your Myte."
         }
         right={opts.right}
         divided
@@ -193,7 +193,7 @@ export function DecisionWhySection({
   const data = load.data;
   const sources = (
     <CardFoot className="rounded-b-card !gap-y-1.5 text-[13px] text-ink-3">
-      <span className="sr-only">Sources your agent watches:</span>
+      <span className="sr-only">Sources your Myte watches:</span>
       <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
         {sourcesLine(data.sources).map((s) => {
           const on = s.state === "connected" || s.state === "watched";
@@ -230,7 +230,7 @@ export function DecisionWhySection({
           </div>
         </div>
         <p className="mt-4 font-display text-[16px] italic text-ink-3">
-          {slow ? "This is taking longer than usual. Your agent is still reading the decision." : "Reading the decision for the reasons behind it"}
+          {slow ? "This is taking longer than usual. Your Myte is still reading the decision." : "Reading the decision for the reasons behind it"}
         </p>
         {slow ? (
           <Button type="button" size="sm" variant="outline" className="mt-3" onClick={() => void retry()} disabled={retrying}>
@@ -317,8 +317,8 @@ export function DecisionWhySection({
             <p className="text-[15px] font-semibold text-ink">No reasons recorded yet</p>
             <p className="mt-1 max-w-[62ch] text-[14px] leading-relaxed text-ink-3">
               {data.can_edit
-                ? "Your agent didn't hear a reason it could watch in what was said. Add what this decision rests on, and you will hear from your agent if one stops being true."
-                : `Your agent didn't hear a reason it could watch in what was said. ${data.owner?.name ?? "The decision's owner"} can add them.`}
+                ? "Your Myte didn't hear a reason it could watch in what was said. Add what this decision rests on, and you will hear from your Myte if one stops being true."
+                : `Your Myte didn't hear a reason it could watch in what was said. ${data.owner?.name ?? "The decision's owner"} can add them.`}
             </p>
           </div>
         </div>

@@ -42,7 +42,7 @@ export function TenantSettingsForm({ initial }: { initial: SettingsFormInput }) 
             defaultValue={initial.retention_days_transcripts}
           />
         </SettingsRow>
-        <SettingsRow label="Notes" help={`Agent notes kept in the background log. Days, ${RETENTION_MIN} to ${RETENTION_MAX}.`} htmlFor="retention_days_worklogs">
+        <SettingsRow label="Notes" help={`Myte notes kept in the background log. Days, ${RETENTION_MIN} to ${RETENTION_MAX}.`} htmlFor="retention_days_worklogs">
           <TextInput
             id="retention_days_worklogs"
             name="retention_days_worklogs"
@@ -65,10 +65,10 @@ export function TenantSettingsForm({ initial }: { initial: SettingsFormInput }) 
       </SectionCard>
 
       <SectionCard
-        title="Agent confidence"
+        title="Myte confidence"
         headingLevel={2}
         headingId="confidence-heading"
-        description={`Above the show threshold an agent's suggestion appears in the meeting; between the two it is only logged; below the log threshold it is dropped. Defaults are ${DEFAULT_SURFACE} and ${DEFAULT_SILENT}.`}
+        description={`Above the show threshold a Myte's suggestion appears in the meeting; between the two it is only logged; below the log threshold it is dropped. Defaults are ${DEFAULT_SURFACE} and ${DEFAULT_SILENT}.`}
       >
         <div>
           <table className="mx-table w-full border-collapse text-left text-[14px]">

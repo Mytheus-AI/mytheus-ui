@@ -59,7 +59,7 @@ import type { InboxArm } from "@/lib/inbox-server";
 import type { StatusRequestView } from "@/lib/api/personal-types";
 import type { FeedItem } from "@/components/notifications/alert-copy";
 
-/* The Inbox: notifications, the updates you owe and your agents' detections waiting for review,
+/* The Inbox: notifications, the updates you owe and your Mytes' detections waiting for review,
    in one list ordered by what needs you first (lib/inbox.ts). Filter chips narrow it by kind.
 
    Every row has one primary verb, shown as its button and run by `e`: Mark read for a
@@ -82,7 +82,7 @@ const FILTERS: { key: InboxFilter; label: string }[] = [
 const ARM_LABEL: Record<InboxArm, string> = {
   notifications: "notifications",
   updates: "the updates you owe",
-  review: "your agents' detections",
+  review: "your Mytes' detections",
 };
 
 const PRIORITY_TILE: Record<1 | 2 | 3, string> = {
@@ -111,7 +111,7 @@ const NOTE_ICON = {
 const NOTE_LABEL = {
   topic_watch: "Topic you watch",
   already_decided: "Already decided",
-  alert: "Agent alert",
+  alert: "Myte alert",
   reminder: "Reminder",
   decision_changed: "Decision changed",
   promise_drift: "Promise past due",
@@ -122,7 +122,7 @@ const NOTE_LABEL = {
   last_word: "Your last word",
   agreement_check: "Private question",
   late_contribution: "Late contribution",
-  interruption: "Your agent, from a live meeting",
+  interruption: "Your Myte, from a live meeting",
   evening_digest: "Evening digest",
 } as const;
 
@@ -341,7 +341,7 @@ export function InboxView({ initial, failed, nowIso }: { initial: InboxItem[]; f
   const context =
     counts.all === 0
       ? "You are all caught up. New alerts, updates you owe and detections to review land here."
-      : `${counts.all} waiting on you. Alerts from your agent, updates you owe and what your agents detected.`;
+      : `${counts.all} waiting on you. Alerts from your Myte, updates you owe and what your Mytes detected.`;
 
   let index = -1;
   const renderRow = (item: InboxItem) => {
@@ -443,10 +443,10 @@ export function InboxView({ initial, failed, nowIso }: { initial: InboxItem[]; f
             title={filter === "all" ? "Nothing waiting on you" : `No ${FILTERS.find((f) => f.key === filter)?.label.toLowerCase()} right now`}
             description={
               filter === "review"
-                ? "Decisions and tasks your agents detect in your meetings wait here until someone confirms or dismisses them."
+                ? "Decisions and tasks your Mytes detect in your meetings wait here until someone confirms or dismisses them."
                 : filter === "updates"
-                  ? "An hour before a follow-up meeting, your agent asks here how your actions from the last one are going."
-                  : "Alerts from your agent, updates you owe and detections to review all land here."
+                  ? "An hour before a follow-up meeting, your Myte asks here how your actions from the last one are going."
+                  : "Alerts from your Myte, updates you owe and detections to review all land here."
             }
           />
         )
@@ -584,7 +584,7 @@ function ReviewRow({
         </Link>
       </div>
       <h3 className="mt-2.5 max-w-[75ch] text-[15px] font-semibold leading-snug text-ink">{r.content}</h3>
-      <p className="mt-1 text-[14px] text-ink-3">Detected by your agents. Nothing is final until someone confirms.</p>
+      <p className="mt-1 text-[14px] text-ink-3">Detected by your Mytes. Nothing is final until someone confirms.</p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Button size="sm" onClick={onConfirm}>
           <Check size={15} weight="bold" aria-hidden />

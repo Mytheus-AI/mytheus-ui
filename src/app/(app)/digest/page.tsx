@@ -19,7 +19,7 @@ export const metadata: Metadata = { title: "Weekly digest | Mytheus" };
 export const dynamic = "force-dynamic";
 
 /* Your weekly digest (only-Mytheus wave, contract section 5): what changed for you last week,
-   filtered by the topics your agent listens for. Built every Monday morning for the week before.
+   filtered by the topics your Myte listens for. Built every Monday morning for the week before.
 
    - The latest week by default; `?week={id}` a past one; `?preview=1` this week so far (not saved).
    - No digest yet: says when the first arrives and offers the preview.
@@ -110,7 +110,7 @@ export default async function DigestPage({ searchParams }: { searchParams: Recor
           title="Your first digest is on its way"
           description={
             <>
-              Every Monday morning your agent gathers what changed for you the week before: decisions on your topics, decisions
+              Every Monday morning your Myte gathers what changed for you the week before: decisions on your topics, decisions
               that were replaced, tasks assigned and closed, and promises coming due.
               {nextRun ? (
                 <>
@@ -155,7 +155,7 @@ export default async function DigestPage({ searchParams }: { searchParams: Recor
               </>
             ) : (
               <p className="text-[14px] text-ink-3">
-                Your agent isn&rsquo;t listening for any topics yet, so this covers everything you took part in.{" "}
+                Your Myte isn&rsquo;t listening for any topics yet, so this covers everything you took part in.{" "}
                 <TextLink href="/agent">Add topics</TextLink>
               </p>
             )}

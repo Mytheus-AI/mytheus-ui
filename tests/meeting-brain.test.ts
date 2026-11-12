@@ -124,7 +124,7 @@ test("attending yourself needs nothing", () => {
   assert.deepEqual(v, { ok: true, body: { attendance: "live" } });
 });
 
-test("sending your agent needs an update or a question; blanks are dropped and text trimmed", () => {
+test("sending your Myte needs an update or a question; blanks are dropped and text trimmed", () => {
   const empty = validateAttendance({ attendance: "agent", update: "  ", questions: ["", " "] });
   assert.ok(!empty.ok && empty.errors.form === ATTENDANCE_MESSAGES.nothingToCarry);
   const ok = validateAttendance({ attendance: "agent", update: " Beta is on track. ", questions: ["", " When do we launch? "] });

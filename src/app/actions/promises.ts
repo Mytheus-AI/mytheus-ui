@@ -92,7 +92,7 @@ export async function checkCapacity(
   try {
     return { ok: true, check: await fetchCapacityCheck(dueDate, zone(tz), exclude) };
   } catch (err) {
-    return failure(err, "Your agent could not check that day just now.");
+    return failure(err, "Your Myte could not check that day just now.");
   }
 }
 

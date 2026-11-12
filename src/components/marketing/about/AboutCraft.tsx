@@ -60,7 +60,7 @@ export function AboutCraft() {
               <p className="kicker">Flagship</p>
               <h3 className="display mt-2 text-[clamp(2rem,4vw,2.75rem)]">Mytheus</h3>
               <p className="mt-4 max-w-[44ch] text-[17px] leading-relaxed text-ink-2">
-                A meeting platform where every participant brings a personal AI agent, one that captures the room live
+                A meeting platform where every participant brings a Myte, a personal AI agent that captures the room live
                 and remembers it across every meeting after.
               </p>
               <Link
@@ -70,8 +70,8 @@ export function AboutCraft() {
                 Explore Mytheus
               </Link>
             </div>
-            <Win label="An agent's panel in Mytheus listing three things carried into this meeting from earlier ones: launch targeted for August 12, QA needs 2 more days after freeze, both from Tuesday, and pricing locked at $49 from April 3.">
-              <WinBar title="Your agent" right={<Chip>Listening</Chip>} />
+            <Win label="A Myte's panel in Mytheus listing three things carried into this meeting from earlier ones: launch targeted for August 12, QA needs 2 more days after freeze, both from Tuesday, and pricing locked at $49 from April 3.">
+              <WinBar title="Your Myte" right={<Chip>Listening</Chip>} />
               <div className="bg-surface-2 px-5 py-5">
                 <p className="text-[14px] font-semibold text-ink-3">Carried into this meeting</p>
                 <ul className="mt-2">

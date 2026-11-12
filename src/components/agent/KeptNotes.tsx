@@ -22,7 +22,7 @@ export function KeptNotes({ notes }: { notes: DashboardNote[] | null }) {
           compact
           art="notes"
           title="Nothing kept yet"
-          description="Your agent starts keeping notes in your next meeting, and only you see them."
+          description="Your Myte starts keeping notes in your next meeting, and only you see them."
         />
       ) : (
         <CardBody>

@@ -91,7 +91,7 @@ export function AgendaEditor({
   return (
     <div className="ag-ed">
       {rows.length === 0 ? (
-        <p className="ag-ed-empty">No agenda yet. Add the topics to cover and the agents will track them during the call.</p>
+        <p className="ag-ed-empty">No agenda yet. Add the topics to cover and the meeting agent tracks them during the call.</p>
       ) : (
         <ol className="ag-ed-list">
           {rows.map((row, i) => {

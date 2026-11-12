@@ -23,14 +23,14 @@ export default async function BriefingsPage() {
     <Page>
       <PageHead
         title="Your briefings"
-        context="Your agent tells you what changed for you, who is waiting on you, your promises and what is still open. Only you hear these."
+        context="Your Myte tells you what changed for you, who is waiting on you, your promises and what is still open. Only you hear these."
       />
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px] xl:gap-6">
         <div className="min-w-0">
           {latest.kind === "live" ? (
             <BriefingPlayer initial={newest} canRequest enabled={latest.data.enabled} preferences={prefs} variant="full" />
           ) : (
-            <ErrorState title="Your briefing could not be loaded" text="Nothing was lost. Your agent keeps your briefings; this page returns when it can be read." />
+            <ErrorState title="Your briefing could not be loaded" text="Nothing was lost. Your Myte keeps your briefings; this page returns when it can be read." />
           )}
         </div>
         <aside aria-label="Earlier briefings" className="min-w-0">

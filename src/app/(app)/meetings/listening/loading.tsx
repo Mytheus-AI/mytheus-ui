@@ -4,12 +4,12 @@ import { Bone, ButtonBone, CardHeadSkeleton, ListCardSkeleton, Page, PageHeadSke
 
 /* Listening while it loads, from the page's own frame: the title row with Interruptions and lines,
    the All meetings / Listening tabs, the week card (its head, the four totals, the seven days from
-   xl and the day list below), then the evening digest and what your agent raised beside your rules
+   xl and the day list below), then the evening digest and what your Myte raised beside your rules
    and the privacy well. */
 
 export default function Loading() {
   return (
-    <Page label="Loading what your agent listens to">
+    <Page label="Loading what your Myte listens to">
       <PageHeadSkeleton title="w-36" context={["w-[560px]", "w-[300px]"]} narrow={["w-[40%]"]} action={["Interruptions and lines"]} />
       <TabsSkeleton labels={MEETINGS_TABS.map((t) => t.label)} className="mb-5" />
 
@@ -26,7 +26,7 @@ export default function Loading() {
           }
         />
         <div className="grid grid-cols-2 gap-px bg-line sm:grid-cols-4">
-          {["Attend", "Agent listens", "Skip", "Time back"].map((c) => (
+          {["Attend", "Myte listens", "Skip", "Time back"].map((c) => (
             <div key={c} className="bg-surface px-4 py-3 sm:px-[22px]">
               <TextBone className="text-[13px] font-semibold" widths={["w-20"]} />
               <TextBone className="display mt-0.5 text-[26px]" widths={["w-10"]} />

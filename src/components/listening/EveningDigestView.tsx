@@ -4,7 +4,7 @@ import { Chip } from "@/components/ui/Chip";
 import type { EveningDigest } from "@/lib/api/listening-types";
 import { dayLabel, digestSegments, savedLabel } from "@/lib/listening";
 
-/* The evening digest: one paragraph per day about everything your agent heard in the meetings it
+/* The evening digest: one paragraph per day about everything your Myte heard in the meetings it
    listened to for you, with each meeting and each decision a link to its moment. Server-safe (no
    hooks), so Home and the Listening page render it in the first paint. */
 
@@ -39,7 +39,7 @@ export function EveningDigestBody({ digest, showDay = true }: { digest: EveningD
       <DigestParagraph digest={digest} className={showDay ? "mt-2" : ""} />
       {digest.status === "ready" && digest.meeting_count > 0 ? (
         <p className="mt-3 text-[13.5px] text-ink-3">
-          {listened} covered by your agent, {savedLabel(digest.minutes_saved)} back.
+          {listened} covered by your Myte, {savedLabel(digest.minutes_saved)} back.
         </p>
       ) : null}
     </div>

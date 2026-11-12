@@ -49,7 +49,7 @@ const STEPS: { key: StepKey; label: string; hint: string }[] = [
   { key: "words", label: "Your words", hint: "Names outsiders would not know" },
   { key: "owners", label: "Who owns what", hint: "Who to ask about what" },
   { key: "goal", label: "One goal", hint: "What matters this quarter" },
-  { key: "done", label: "Ready", hint: "How ready your agents are" },
+  { key: "done", label: "Ready", hint: "How ready your Mytes are" },
 ];
 type Outcome = "saved" | "skipped";
 
@@ -130,7 +130,7 @@ function Known({
   return (
     <aside aria-labelledby="known-h" className={cardClass()}>
       <h2 id="known-h" className="text-[14px] font-semibold text-ink-3">
-        What your agents know so far
+        What your Mytes know so far
       </h2>
       {empty ? (
         <p className="mt-3 font-display text-[17px] italic leading-snug text-ink-3">
@@ -508,9 +508,9 @@ export function SetupFlow({
             {key === "done" ? (
               <div>
                 <p className="text-[14px] font-semibold text-signal-ink">All set for now</p>
-                <h1 className="display mt-1.5 text-[clamp(28px,3vw,34px)] text-ink">Your agents know {orgName}</h1>
+                <h1 className="display mt-1.5 text-[clamp(28px,3vw,34px)] text-ink">Your Mytes know {orgName}</h1>
                 <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-ink-3">
-                  From the next meeting on, every agent reads what you saved. The meter shows what is left; each open check links to
+                  From the next meeting on, every Myte reads what you saved. The meter shows what is left; each open check links to
                   the page that finishes it, in the company brain in the Workspace console.
                 </p>
                 <div className="mt-6">
@@ -531,7 +531,7 @@ export function SetupFlow({
                   <StepFrame
                     index={step}
                     title="What does the company do?"
-                    lead="Say it the way you would to a new hire. Agents read this before every meeting, so they know what your work is about."
+                    lead="Say it the way you would to a new hire. Mytes read this before every meeting, so they know what your work is about."
                     busy={busy}
                     primary="Save and continue"
                     onSkip={skip}
@@ -627,7 +627,7 @@ export function SetupFlow({
                   <StepFrame
                     index={step}
                     title="Which words would a new hire not know?"
-                    lead="Product names, codenames, acronyms. Agents learn what they mean, and captions learn to spell them. A few now is plenty; paste a list into any row to add many."
+                    lead="Product names, codenames, acronyms. Mytes learn what they mean, and captions learn to spell them. A few now is plenty; paste a list into any row to add many."
                     busy={busy}
                     primary={termRows.some((r) => r.term.trim()) ? "Save and continue" : "Continue"}
                     onSkip={skip}
@@ -736,7 +736,7 @@ export function SetupFlow({
                   <StepFrame
                     index={step}
                     title="Who owns what?"
-                    lead="A topic and the one person to ask about it. Agents suggest them as owners of new actions. Three or four is a good start."
+                    lead="A topic and the one person to ask about it. Mytes suggest them as owners of new actions. Three or four is a good start."
                     busy={busy}
                     primary={ownerRows.some((r) => r.topic.trim()) ? "Save and continue" : "Continue"}
                     onSkip={skip}
@@ -824,7 +824,7 @@ export function SetupFlow({
                   <StepFrame
                     index={step}
                     title="What matters most right now?"
-                    lead="One goal is enough. Hosts tie agenda items to it, and agents keep what moves it forward."
+                    lead="One goal is enough. Hosts tie agenda items to it, and Mytes keep what moves it forward."
                     busy={busy}
                     primary={goalTitle.trim() ? "Save and finish" : "Finish"}
                     onSkip={skip}

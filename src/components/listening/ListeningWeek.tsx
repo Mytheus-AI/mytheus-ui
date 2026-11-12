@@ -18,7 +18,7 @@ import { ChoiceControl } from "./ChoiceControl";
    and the headline recounts; if the server refuses it the meeting goes back and says why. Undo
    puts back what was there: your earlier choice, or what your rules say. */
 
-const CONFIDENTIAL = "Confidential meeting: no agent listens. Attend or skip.";
+const CONFIDENTIAL = "Confidential meeting: no Myte listens. Attend or skip.";
 
 function time(iso: string | null | undefined, zone: string): string {
   if (!iso) return "";
@@ -54,7 +54,7 @@ export function ListeningWeekView({ week, today }: { week: ListeningWeek; today:
       if (!back.ok) return notifyError(back.message);
       setMeetings((list) => withChoice(list, m.meeting_id, back.data.choice, back.data.source));
     };
-    notifySuccess(next === "agent_listens" ? `Your agent listens to ${m.title}` : next === "skip" ? `Skipping ${m.title}` : `Attending ${m.title}`, {
+    notifySuccess(next === "agent_listens" ? `Your Myte listens to ${m.title}` : next === "skip" ? `Skipping ${m.title}` : `Attending ${m.title}`, {
       undo: () => void undo(),
     });
   };
@@ -92,7 +92,7 @@ export function ListeningWeekView({ week, today }: { week: ListeningWeek; today:
         <div className="px-4 py-10 text-center sm:px-[22px]">
           <p className="display text-[20px] text-ink">No meetings this week</p>
           <p className="mx-auto mt-1 max-w-[46ch] text-[14px] leading-relaxed text-ink-3">
-            Meetings you are invited to show up here, each with a choice: attend, let your agent listen, or skip.
+            Meetings you are invited to show up here, each with a choice: attend, let your Myte listen, or skip.
           </p>
           <LinkButton href="/meetings" variant="outline" size="sm" className="mt-4">
             See all meetings
@@ -198,7 +198,7 @@ export function ListeningWeekView({ week, today }: { week: ListeningWeek; today:
 function Totals({ summary }: { summary: ReturnType<typeof summarize> }) {
   const cells = [
     { label: "Attend", value: String(summary.attend) },
-    { label: "Agent listens", value: String(summary.agent_listens) },
+    { label: "Myte listens", value: String(summary.agent_listens) },
     { label: "Skip", value: String(summary.skip) },
     { label: "Time back", value: savedLabel(summary.minutes_saved) },
   ];

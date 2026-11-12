@@ -21,14 +21,14 @@ export const CHOICES: AttendanceChoice[] = ["attend", "agent_listens", "skip"];
 
 export const CHOICE_LABEL: Record<AttendanceChoice, string> = {
   attend: "Attend",
-  agent_listens: "Agent listens",
+  agent_listens: "Myte listens",
   skip: "Skip",
 };
 
 /** What each choice does, in one plain sentence. */
 export const CHOICE_HELP: Record<AttendanceChoice, string> = {
   attend: "You go yourself.",
-  agent_listens: "Your agent listens for you and pulls you in only when something needs you.",
+  agent_listens: "Your Myte listens for you and pulls you in only when something needs you.",
   skip: "Nobody listens for you. The shared minutes are on the meeting page after.",
 };
 
@@ -61,10 +61,10 @@ export function savedLabel(minutes: number): string {
   return `${Number.isInteger(hours) ? hours : hours.toFixed(1)} ${hours === 1 ? "hour" : "hours"}`;
 }
 
-/** "This week: attend 12, agent listens to 28, saved 19 hours". */
+/** "This week: attend 12, your Myte listens to 28, saved 19 hours". */
 export function summaryLine(s: WeekSummary, scope = "This week"): string {
   if (s.invited === 0) return `${scope}: no meetings you are invited to.`;
-  const parts = [`attend ${s.attend}`, `agent listens to ${s.agent_listens}`];
+  const parts = [`attend ${s.attend}`, `your Myte listens to ${s.agent_listens}`];
   if (s.skip) parts.push(`skip ${s.skip}`);
   return `${scope}: ${parts.join(", ")}, saved ${savedLabel(s.minutes_saved)}`;
 }
@@ -158,7 +158,7 @@ export function heldReasonText(reason: string | null | undefined): string {
 const RESPONSE: Record<string, string> = {
   joined: "You joined",
   view_sent: "You sent your view",
-  holding_line: "Your agent held the line",
+  holding_line: "Your Myte held the line",
   dismissed: "You let it go",
 };
 
@@ -284,7 +284,7 @@ export function clock(hhmm: string): string {
 
 /** The live line under the settings: who can reach you right now. */
 export function rightNowLine(view: { interruptible_now?: boolean; quiet_reason?: string | null; quiet_until?: string | null }, untilText?: string | null): string {
-  if (view.interruptible_now !== false) return "Right now your agent can interrupt you when something needs you.";
+  if (view.interruptible_now !== false) return "Right now your Myte can interrupt you when something needs you.";
   if (view.quiet_reason === "disabled") return "Right now interruptions are off. Everything waits for your evening digest.";
   const why = view.quiet_reason === "quiet_hours" ? "quiet hours" : view.quiet_reason === "focus_block" ? "a focus block" : "the hourly limit";
   return untilText ? `Right now interruptions are held until ${untilText} (${why}).` : `Right now interruptions are held (${why}).`;
@@ -332,11 +332,11 @@ export function dayLabel(day: string): string {
 
 const RULE_VERB: Record<AttendanceChoice, string> = {
   attend: "You attend",
-  agent_listens: "Your agent listens to",
+  agent_listens: "Your Myte listens to",
   skip: "You skip",
 };
 
-/** "Your agent listens to every recurring meeting with “status” in the title, of type Status update, you do not host." */
+/** "Your Myte listens to every recurring meeting with “status” in the title, of type Status update, you do not host." */
 export function ruleSummary(rule: {
   choice: AttendanceChoice;
   title_contains?: string | null;
@@ -378,7 +378,7 @@ export function parseListeners(raw: unknown): { count: number; userIds: string[]
   return { count: Math.floor(p.count), userIds: ids };
 }
 
-/** "3 agents listening", "1 agent listening". */
+/** "3 Mytes listening", "1 Myte listening". */
 export function listeningLabel(n: number): string {
-  return `${n} ${n === 1 ? "agent" : "agents"} listening`;
+  return `${n} ${n === 1 ? "Myte" : "Mytes"} listening`;
 }

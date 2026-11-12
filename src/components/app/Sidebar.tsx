@@ -82,7 +82,7 @@ const AGENT: Lay = {
 /** A meeting the signed-in person is in right now, for the in-call card. */
 export type LiveCall = { href: string; title: string };
 
-/** The signed-in person's agent as the sidebar draws it. */
+/** The signed-in person's Myte as the sidebar draws it. */
 export type SidebarAgent = { name: string; seed: string };
 
 /* Up/Down move between the sidebar's items, Home/End jump to the ends. */
@@ -113,7 +113,7 @@ export function Sidebar({
   drawer?: boolean;
   /** shown as the in-call card; null hides it */
   liveCall?: LiveCall | null;
-  /** the person's agent for the agent tab; null draws it from their name */
+  /** the person's Myte for the agent tab; null draws it from their name */
   agent?: SidebarAgent | null;
   onToggleRail?: () => void;
   onNavigate?: () => void;
@@ -280,7 +280,7 @@ export function Sidebar({
       </Link>
 
       <AgentTab
-        agent={agent ?? { name: `${user.name.split(" ")[0] || "Your"}'s agent`, seed: defaultDoodleSeed(`agent:${user.id}`) }}
+        agent={agent ?? { name: user.name.split(" ")[0] ? `${user.name.split(" ")[0]}'s Myte` : "Your Myte", seed: defaultDoodleSeed(`agent:${user.id}`) }}
         active={current === AGENT_ITEM.href}
         layout={lay(AGENT)}
         label={label}
@@ -322,8 +322,8 @@ export function Sidebar({
   );
 }
 
-/* Your agent's own row: its face in a static dashed coral orbit (it is listening on your behalf),
-   its name, and "Your agent" in the accent ink. No other row has a face or an orbit, so it reads
+/* Your Myte's own row: its face in a static dashed coral orbit (it is listening on your behalf),
+   its name, and "Your Myte" in the accent ink. No other row has a face or an orbit, so it reads
    as a someone, not a screen. Open: the orbit closes into a solid ring and the row turns to a
    white card like any current item. */
 function AgentTab({
@@ -345,8 +345,8 @@ function AgentTab({
       onClick={onNavigate}
       data-sb-item=""
       aria-current={active ? "page" : undefined}
-      aria-label={`${agent.name}, your agent`}
-      title={`${agent.name}, your agent`}
+      aria-label={`${agent.name}, your Myte`}
+      title={`${agent.name}, your Myte`}
       className={`relative mb-3.5 flex min-h-[52px] shrink-0 items-center rounded-card transition-[background-color,transform] duration-150 motion-safe:active:scale-[0.98] ${layout} ${
         active ? "bg-surface" : "hover:bg-bg-2"
       }`}
@@ -361,7 +361,7 @@ function AgentTab({
       </span>
       <span className={`sb-fade min-w-0 flex-1 ${label}`}>
         <span className="block truncate text-[14px] font-semibold leading-tight text-ink">{agent.name}</span>
-        <span className="block text-[12.5px] font-medium text-signal-ink">Your agent</span>
+        <span className="block text-[12.5px] font-medium text-signal-ink">Your Myte</span>
       </span>
     </Link>
   );

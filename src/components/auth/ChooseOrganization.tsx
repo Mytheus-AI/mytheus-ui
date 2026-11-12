@@ -172,7 +172,7 @@ export function ChooseOrganization() {
         ) : null
       }
     >
-      <StepHeader kicker="Set up your workspace" title="Where will your agent work?">
+      <StepHeader kicker="Set up your workspace" title="Where will your Myte work?">
         Join the workspace your team already uses, or start a new one.
       </StepHeader>
 

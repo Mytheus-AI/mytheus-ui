@@ -10,7 +10,7 @@ import { TopicWatchCard } from "@/components/watch/TopicWatchCard";
 import { Page, PageHead } from "@/components/ui/Page";
 import { ErrorState } from "@/components/ui/ErrorState";
 
-export const metadata: Metadata = { title: "Your agent | Mytheus" };
+export const metadata: Metadata = { title: "Your Myte | Mytheus" };
 
 /**
  * Your agent's own page (ADR-0038 D2, D11): who it is (a live portrait that follows the form),
@@ -44,8 +44,8 @@ export default async function AgentPage() {
         <AgentWorkspace profile={profile} personName={personName} aside={aside} />
       ) : (
         <div className="space-y-5">
-          <PageHead title="Your agent" />
-          <ErrorState title="Your agent's details could not be loaded" text="Its notes and settings are safe. Try again in a moment." />
+          <PageHead title="Your Myte" />
+          <ErrorState title="Your Myte's details could not be loaded" text="Its notes and settings are safe. Try again in a moment." />
           <div className="grid items-start gap-5 lg:grid-cols-2">{aside}</div>
         </div>
       )}

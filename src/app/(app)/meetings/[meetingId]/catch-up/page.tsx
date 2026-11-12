@@ -38,9 +38,9 @@ export const metadata: Metadata = { title: "Catch-up | Mytheus" };
 export const dynamic = "force-dynamic";
 
 /* The catch-up (mytheus-docs ADR-0039 B8), for someone who sent their agent or missed the
-   meeting: the link the "your agent's catch-up" reminder opens. Built to be read in a minute: one
+   meeting: the link the "your Myte's catch-up" reminder opens. Built to be read in a minute: one
    summary sentence, then what you now own first (the thing you must act on), then what was
-   decided, how far the agenda got with the meeting agent's notes, the notes your agent kept for
+   decided, how far the agenda got with the meeting agent's notes, the notes your Myte kept for
    you and the questions it carried. Three columns on a wide screen, two on a laptop, one on a
    phone. A server component on the shared frame (Page, PageHead, Card); the topbar breadcrumb
    reads Meetings, the meeting, Catch-up, so the page carries no back link of its own. */
@@ -96,7 +96,7 @@ export default async function CatchUpPage({ params }: { params: { meetingId: str
           </Chip>
           {sentAgent ? (
             <Chip tone="low" icon={<Robot size={14} aria-hidden="true" />}>
-              Your agent attended for you
+              Your Myte attended for you
             </Chip>
           ) : null}
         </div>
@@ -113,7 +113,7 @@ export default async function CatchUpPage({ params }: { params: { meetingId: str
       ) : catchUp && catchUp.reason === "none" ? (
         <EmptyState
           title="This catch-up isn't for you"
-          description="It is for people who sent their agent or missed the meeting. The meeting page has the recap, the transcript and what was kept."
+          description="It is for people who sent their Myte or missed the meeting. The meeting page has the recap, the transcript and what was kept."
           action={<LinkButton href={`/meetings/${meeting.id}`}>Open the meeting</LinkButton>}
         />
       ) : (
@@ -218,11 +218,11 @@ function CatchUpBody({ c, nameOf, face }: { c: MeetingCatchUp; nameOf: (id: stri
             />
             <CardBody>
               {c.my_questions.length === 0 ? (
-                <p className="br-empty">You didn&rsquo;t send any questions with your agent.</p>
+                <p className="br-empty">You didn&rsquo;t send any questions with your Myte.</p>
               ) : (
                 <>
                   <p className="text-[14px] leading-normal text-ink-3">
-                    Your agent carried these. Look for the answers in the decisions and notes here.
+                    Your Myte carried these. Look for the answers in the decisions and notes here.
                   </p>
                   <ol className="cf-list cu-qs">
                     {c.my_questions.map((q, i) => (
@@ -263,7 +263,7 @@ function CatchUpBody({ c, nameOf, face }: { c: MeetingCatchUp; nameOf: (id: stri
             />
             <CardBody>
               {c.my_notes.length === 0 ? (
-                <p className="br-empty">Your agent kept no notes for you from this one.</p>
+                <p className="br-empty">Your Myte kept no notes for you from this one.</p>
               ) : (
                 <ul className="cu-notes">
                   {c.my_notes.map((n) => (

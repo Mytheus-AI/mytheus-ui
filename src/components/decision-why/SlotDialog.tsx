@@ -10,7 +10,7 @@ import { FieldMsg, fieldClass } from "@/components/ui/Form";
 import { Bone } from "@/components/ui/Page";
 import type { Act, BookedMeeting, SlotProposal } from "@/lib/api/why-blast-types";
 
-/* Book a short meeting your agent proposed: it reads the proposal (the first free slot for
+/* Book a short meeting your Myte proposed: it reads the proposal (the first free slot for
    everyone), shows the time and the people, lets you pick another time, then books. Used for a
    15-minute revisit of a decision whose reason broke, and for two owners settling a clash. */
 
@@ -110,15 +110,15 @@ export function SlotDialog({
         <div role="status" aria-label="Finding a time" className="space-y-3">
           <Bone className="h-[72px] w-full" />
           <Bone className="h-4 w-2/3" />
-          <span className="sr-only">Your agent is finding a time that suits everyone</span>
-          <p className="text-[14px] text-ink-3">Your agent is finding a time that suits everyone.</p>
+          <span className="sr-only">Your Myte is finding a time that suits everyone</span>
+          <p className="text-[14px] text-ink-3">Your Myte is finding a time that suits everyone.</p>
         </div>
       ) : (
         <div className="space-y-5">
           <div className="rounded-card bg-bg-2 px-4 py-3.5">
             <p className="flex items-center gap-2 text-[13px] font-semibold text-ink-3">
               <CalendarCheck size={16} aria-hidden />
-              Your agent proposes
+              Your Myte proposes
             </p>
             <p className="mt-1 text-[17px] font-semibold text-ink">{dayTime(slot.start)}</p>
             <p className="mt-0.5 flex items-center gap-1.5 text-[14px] text-ink-3">

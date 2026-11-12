@@ -11,7 +11,7 @@ export function SidebarHarness({ rail = true, theme = "light" }: { rail?: boolea
       }}
     >
       <div className="mx-app bg-bg" style={{ position: "relative", height: 900, width: 320 }} data-theme={theme}>
-        <Sidebar rail={rail} inboxCount={3} agent={{ name: "Samar's agent", seed: "agent:u-samar" }} onToggleRail={() => {}} />
+        <Sidebar rail={rail} inboxCount={3} agent={{ name: "Samar's Myte", seed: "agent:u-samar" }} onToggleRail={() => {}} />
       </div>
     </OrgProvider>
   );

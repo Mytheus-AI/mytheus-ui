@@ -122,7 +122,7 @@ test("create flows ask what it does and say why", async ({ mount, page }) => {
   await expect(dialog.getByLabel("Name")).toBeFocused();
   const what = dialog.getByLabel("What does it do?");
   await expect(what).toHaveAttribute("placeholder", /Owns CI, deploys/);
-  await expect(dialog.getByText(/Agents read this to tune notes to each person's role and to suggest stakeholders/)).toBeVisible();
+  await expect(dialog.getByText(/Mytes read this to tune notes to each person's role and to suggest stakeholders/)).toBeVisible();
   // the department choice is the custom Dropdown, never a native select
   await expect(dialog.locator("select")).toHaveCount(0);
   await expect(dialog.getByRole("button", { name: "Create team" })).toBeDisabled();

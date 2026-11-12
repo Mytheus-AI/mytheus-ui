@@ -13,10 +13,10 @@ import { REASON_LABEL, SeenIds, parseInterruption } from "@/lib/listening";
 import { useInterruptionResponses } from "./responses";
 
 /* Live interruptions, app-wide (mounted once in the app layout; the call room has its own
-   socket and is not under it). While a meeting you are not in is live and your agent listens to
+   socket and is not under it). While a meeting you are not in is live and your Myte listens to
    it for you, the agent interrupts you only when something there needs you: a decision on your
    topics or what you own, a question for you, a promise made on your behalf. It arrives as one
-   toast with three answers (Join now, Send a view, Let my agent hold the line) and is also in
+   toast with three answers (Join now, Send a view, Let my Myte hold the line) and is also in
    your Inbox, so closing the toast loses nothing. Quiet hours, focus blocks and the hourly limit
    are applied on the server: what is held never reaches this socket.
 
@@ -69,7 +69,7 @@ export function LiveInterruptions() {
     const v = raw as Partial<MeetingView> | null;
     if (!v || typeof v.id !== "string" || (v.status !== "shared" && v.status !== "dismissed")) return;
     if (!seen.current.first(`view:${v.id}:${v.status}`)) return;
-    const what = v.kind === "hold_line" ? "the line your agent is holding" : "your view";
+    const what = v.kind === "hold_line" ? "the line your Myte is holding" : "your view";
     notifyInfo(v.status === "shared" ? `The host shared ${what} with the room` : `The host set ${what} aside`);
   }, []);
 
@@ -92,7 +92,7 @@ export function InterruptionToast({
   onDismiss: () => void;
 }) {
   return (
-    <div className="w-full min-w-0" role="group" aria-label={`Your agent: ${i.title}`}>
+    <div className="w-full min-w-0" role="group" aria-label={`Your Myte: ${i.title}`}>
       <div className="flex items-start gap-3">
         <span aria-hidden className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-ctl bg-priority-high-soft text-priority-high">
           <Robot size={18} weight="fill" />

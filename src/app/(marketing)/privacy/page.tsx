@@ -9,7 +9,7 @@ const SECTIONS: LegalSection[] = [
     title: "Overview",
     body: (
       <p>
-        Mytheus is its own meeting platform where every participant gets a personal AI agent that captures notes,
+        Mytheus is its own meeting platform where every participant gets a Myte, a personal AI agent that captures notes,
         decisions, and actions and builds lasting meeting memory. This policy explains what information we collect,
         how we use it, and the choices you have. We designed Mytheus so that you own your meeting content and your
         memory, and so that nothing is saved to your memory unless you confirm it.
@@ -27,7 +27,7 @@ const SECTIONS: LegalSection[] = [
         </li>
         <li>
           <strong>Meeting content you create in Mytheus.</strong> The meetings you run on Mytheus and the notes,
-          decisions, actions, and memory your agent helps you capture and that you choose to save.
+          decisions, actions, and memory your Myte helps you capture and that you choose to save.
         </li>
         <li>
           <strong>Usage and diagnostics.</strong> Technical information such as log data, device and browser
@@ -42,18 +42,18 @@ const SECTIONS: LegalSection[] = [
     body: (
       <ul>
         <li>To provide, maintain, and secure the Mytheus service.</li>
-        <li>To power your agent&apos;s suggested notes, decisions, actions, and the meeting memory you choose to keep.</li>
+        <li>To power your Myte&apos;s suggested notes, decisions, actions, and the meeting memory you choose to keep.</li>
         <li>To improve the reliability and quality of the product, diagnose issues, and prevent abuse.</li>
       </ul>
     ),
   },
   {
     id: "your-agent-and-your-data",
-    title: "Your agent and your data",
+    title: "Your Myte and your data",
     body: (
       <p>
-        Your agent processes your meetings to suggest notes, decisions, and actions in the moment. Nothing is written
-        to your memory until you confirm it: the agent never persists a decision or action silently. You own your
+        Your Myte processes your meetings to suggest notes, decisions, and actions in the moment. Nothing is written
+        to your memory until you confirm it: your Myte never persists a decision or action silently. You own your
         meeting content and memory, and you can export or delete it at any time.
       </p>
     ),

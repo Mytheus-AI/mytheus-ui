@@ -17,7 +17,7 @@ export function FacesHarness({ theme = "light" }: { theme?: "light" | "dark" }) 
         </section>
         <section aria-label="Agents" style={{ display: "flex", gap: 12, alignItems: "center" }}>
           <span style={{ display: "block", width: 44, height: 44, borderRadius: 999, overflow: "hidden" }}>
-            <AgentOrb seed="ic5kget9wh" size={44} label="Maya's agent" />
+            <AgentOrb seed="ic5kget9wh" size={44} label="Maya's Myte" />
           </span>
         </section>
         <section aria-label="Picker" style={{ maxWidth: 560 }}>

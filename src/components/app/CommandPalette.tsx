@@ -26,7 +26,7 @@ import { readRecent, rememberRecent } from "@/lib/recent";
 import { toggleTheme } from "@/lib/prefs";
 
 /* Cmd/Ctrl+K. Searches your meetings, people, decisions, recent items and every screen, runs
-   actions (new meeting, new task, switch theme, switch workspace, open your agent), or sends free
+   actions (new meeting, new task, switch theme, switch workspace, open your Myte), or sends free
    text to Ask. Meetings, people and decisions come from the same reads their screens use
    (`paletteIndex`, read once when the palette first opens), so it never shows anything the caller
    cannot already see. Ranking lives in `lib/palette.ts` (tested).
@@ -104,7 +104,7 @@ export function CommandPalette({ open, onClose, agentName = null }: { open: bool
       { key: "a:task", group: "actions", label: "New task", href: NEW_TASK_HREF, icon: "task", keywords: "create add to do action" },
       { key: "a:theme", group: "actions", label: "Switch light or dark theme", action: "theme", icon: "moon", keywords: "dark mode appearance toggle" },
       { key: "a:workspace", group: "actions", label: "Switch workspace", href: "/onboarding/organization?switch=1", icon: "swap", keywords: "organization change invitation" },
-      { key: "a:agent", group: "actions", label: agentName ? `Open ${agentName}` : "Open your agent", href: "/agent", icon: "agent", keywords: "your agent profile" },
+      { key: "a:agent", group: "actions", label: agentName ? `Open ${agentName}` : "Open your Myte", href: "/agent", icon: "agent", keywords: "your myte agent profile" },
     );
     for (const i of allNavItems(user.role === "admin"))
       out.push({ key: `p:${i.href}`, group: "pages", label: i.label, href: i.href, keywords: i.keywords, icon: `nav:${i.href}` });

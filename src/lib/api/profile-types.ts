@@ -191,7 +191,7 @@ export function validateProfile(input: ProfileInput, opts: { onboarding?: boolea
   const ignore_topics = cleanList(input.ignore_topics);
   const errors: FieldErrors<ProfileField> = {};
 
-  if (opts.onboarding && !role) errors.role = "Add your role, so your agent knows what to listen for.";
+  if (opts.onboarding && !role) errors.role = "Add your role, so your Myte knows what to listen for.";
   else if (role.length > LIMITS.role) errors.role = `Keep the role under ${LIMITS.role} characters.`;
 
   if (opts.onboarding && bio.length < LIMITS.bioMinOnboarding)
@@ -272,7 +272,7 @@ export function agentDisplayName(agentName: string | null | undefined, personNam
   const named = agentName?.trim();
   if (named) return named;
   const first = personName.trim().split(/\s+/)[0];
-  return first ? `${first}'s agent` : "Your agent";
+  return first ? `${first}'s Myte` : "Your Myte";
 }
 
 /** The agent's doodle: the chosen seed, else one derived from the person's `users.id`. */

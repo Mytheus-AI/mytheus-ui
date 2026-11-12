@@ -99,9 +99,9 @@ test("rows from items keep order, owner and minutes; planned minutes add up", ()
 });
 
 test("agent persona defaults: name from first name, stable seed from user id, balanced preset", () => {
-  assert.equal(agentDisplayName(null, "Maya Patel"), "Maya's agent");
+  assert.equal(agentDisplayName(null, "Maya Patel"), "Maya's Myte");
   assert.equal(agentDisplayName("  Juniper ", "Maya Patel"), "Juniper");
-  assert.equal(agentDisplayName("", ""), "Their agent");
+  assert.equal(agentDisplayName("", ""), "Their Myte");
   const seed = agentSeedFor(null, ME);
   assert.match(seed, /^[a-z0-9]{4,32}$/);
   assert.equal(agentSeedFor(undefined, ME), seed);

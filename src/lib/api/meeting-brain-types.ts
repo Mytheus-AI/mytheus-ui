@@ -55,7 +55,7 @@ export interface DraftedAgendaItem {
   source: DraftSource;
 }
 
-/* ---------------------------------------------------------------- B5 send your agent instead */
+/* ---------------------------------------------------------------- B5 send your Myte instead */
 
 export type Attendance = "live" | "agent";
 

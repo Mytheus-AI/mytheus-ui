@@ -120,8 +120,8 @@ function BriefPreview({ b, nameOf }: { b: MeetingBrief; nameOf: (id: string) => 
         <p className="mt-2.5 flex items-center gap-2 text-[14px] text-ink-3">
           <Robot size={15} aria-hidden className="shrink-0" />
           {b.proxies.length === 1
-            ? `${nameOf(b.proxies[0].user_id)} is sending their agent.`
-            : `${b.proxies.length} people are sending their agents.`}
+            ? `${nameOf(b.proxies[0].user_id)} is sending their Myte.`
+            : `${b.proxies.length} people are sending their Mytes.`}
         </p>
       ) : null}
     </>

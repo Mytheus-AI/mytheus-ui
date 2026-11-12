@@ -10,16 +10,16 @@ import { Chip } from "@/components/ui/Chip";
 import { Note } from "@/components/ui/Note";
 import { notifyError, notifySuccess } from "@/lib/toast";
 
-/* The workspace's "Agent collaboration" level: how far one person's agent may ask another
-   person's agent for context during a meeting. One choice, saved with one button; the server
+/* The workspace's "Agent collaboration" level: how far one person's Myte may ask another
+   person's Myte for context during a meeting. One choice, saved with one button; the server
    action turns it into grant changes on identity-tenant-service. "Save level" answers with a
    "Level saved" toast whose Undo puts the previous level back (when there was a plain one). */
 
 const OPTIONS: { value: CollaborationLevel; label: string; help: string }[] = [
-  { value: "off", label: "Off", help: "Agents never ask each other. Each agent only uses its own person's knowledge base." },
-  { value: "same_team", label: "Same team", help: "An agent may ask the agents of people on the same team." },
-  { value: "department", label: "Department", help: "An agent may ask the agents of people in the same department, teams included." },
-  { value: "org", label: "Whole org", help: "An agent may ask the agent of anyone in this workspace." },
+  { value: "off", label: "Off", help: "Mytes never ask each other. Each Myte only uses its own person's knowledge base." },
+  { value: "same_team", label: "Same team", help: "A Myte may ask the Mytes of people on the same team." },
+  { value: "department", label: "Department", help: "A Myte may ask the Mytes of people in the same department, teams included." },
+  { value: "org", label: "Whole org", help: "A Myte may ask the Myte of anyone in this workspace." },
 ];
 
 export function AgentCollaborationControl({ current }: { current: CurrentLevel }) {
@@ -60,7 +60,7 @@ export function AgentCollaborationControl({ current }: { current: CurrentLevel }
       }}
     >
       <fieldset className="grid gap-2.5 px-4 py-4 sm:grid-cols-2 sm:px-[22px] md:py-[18px]">
-        <legend className="sr-only">Agent collaboration level</legend>
+        <legend className="sr-only">Myte collaboration level</legend>
         {OPTIONS.map((o) => {
           const on = choice === o.value;
           return (

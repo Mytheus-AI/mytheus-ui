@@ -2,7 +2,7 @@
  * ContextGapAgent context fills in the meeting room (Phase P10, plan 3.5, P10 contract 7 and 8).
  *
  * A fill is context the agent found for THIS participant when the conversation referred to
- * something they did not have: from a teammate's agent (hop `peer` or `related_meeting`) or from
+ * something they did not have: from a teammate's Myte (hop `peer` or `related_meeting`) or from
  * their own knowledge base (hop `rag`). It is private: `realtime-gateway` sends "agent-context"
  * only to the requester's sockets, and `core-api` serves it only to the requester. Two sources
  * feed this, merged by fill id:
@@ -186,7 +186,7 @@ export function visibleContextFills(state: ContextFillsState): ContextFill[] {
 
 /**
  * The card's headline. A knowledge-base fill: "Context added from your knowledge base". A peer or
- * related-meeting fill: "Context added from {name}'s agent", named from the room's member list
+ * related-meeting fill: "Context added from {name}'s Myte", named from the room's member list
  * first (live cards carry only an id), then the server's label, then "a teammate". A raw id never
  * reaches the copy.
  */
@@ -195,5 +195,5 @@ export function contextFillHeadline(fill: ContextFill, nameOf: (userId: string) 
   const fromRoom = fill.responderUserId ? nameOf(fill.responderUserId) : null;
   const label = fill.responderLabel && fill.responderLabel !== "Knowledge base" ? fill.responderLabel : null;
   const name = fromRoom || label;
-  return name ? `Context added from ${name}'s agent` : "Context added from a teammate's agent";
+  return name ? `Context added from ${name}'s Myte` : "Context added from a teammate's Myte";
 }

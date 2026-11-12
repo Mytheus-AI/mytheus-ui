@@ -25,14 +25,14 @@ for (const theme of ["light", "dark"] as const) {
   test(`memory and erasure progress have no axe violations (${theme})`, async ({ mount, page }) => {
     await mount(<MemoryHarness theme={theme} />);
     await expect(page.getByRole("heading", { name: "Topics it follows" })).toBeVisible();
-    await expect(page.getByText("Your agent shows notes above 0.75 because you dismissed 4 of the last 10.")).toBeVisible();
+    await expect(page.getByText("Your Myte shows notes above 0.75 because you dismissed 4 of the last 10.")).toBeVisible();
     await expect(page.getByText("2 of 5 stores done")).toBeVisible();
     expect(await axe(page)).toEqual([]);
   });
 
   test(`the empty memory reads clearly (${theme})`, async ({ mount, page }) => {
     await mount(<MemoryHarness theme={theme} empty />);
-    await expect(page.getByText("Your agent has not learned anything yet")).toBeVisible();
+    await expect(page.getByText("Your Myte has not learned anything yet")).toBeVisible();
     await expect(page.getByText(/It tunes to you after 8 more notes/)).toBeVisible();
     expect(await axe(page)).toEqual([]);
   });
@@ -53,13 +53,13 @@ for (const theme of ["light", "dark"] as const) {
     await page.getByRole("dialog").getByRole("button", { name: "Forget everything", exact: true }).click();
     await expect(page.getByRole("dialog")).toBeHidden();
     await expect(page.getByText("Memory cleared")).toBeVisible();
-    await expect(page.getByText("Your agent has not learned anything yet")).toBeVisible();
+    await expect(page.getByText("Your Myte has not learned anything yet")).toBeVisible();
   });
 }
 
 test("pin, forget, unmute and the learning switch", async ({ mount, page }) => {
   await mount(<MemoryHarness />);
-  const topics = page.getByRole("list", { name: "Topics your agent follows" });
+  const topics = page.getByRole("list", { name: "Topics your Myte follows" });
 
   await page.getByRole("button", { name: "Forget Hiring plan" }).click();
   await expect(topics.getByText("Hiring plan")).toHaveCount(0);
@@ -101,7 +101,7 @@ test("a refused change rolls back and says why", async ({ mount, page }) => {
   await field.fill("Refuse me");
   await field.press("Enter");
   await expect(page.getByText("Your change could not be saved just now. Try again in a moment.")).toBeVisible();
-  await expect(page.getByRole("list", { name: "Topics your agent follows" }).getByText("Refuse me")).toHaveCount(0);
+  await expect(page.getByRole("list", { name: "Topics your Myte follows" }).getByText("Refuse me")).toHaveCount(0);
 });
 
 test("open items link into My work and the meetings", async ({ mount, page }) => {

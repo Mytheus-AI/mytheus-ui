@@ -27,7 +27,7 @@ export function addStatement(
   if (clean.length > limits.charsMax) return { ok: false, message: `Keep each statement to ${limits.charsMax} characters.` };
   if (list.some((s) => keyOf(s) === keyOf(clean))) return { ok: false, message: "That one is already on the list." };
   if (list.length >= limits.statementsMax) {
-    return { ok: false, message: `Your agent can carry at most ${limits.statementsMax} statements.` };
+    return { ok: false, message: `Your Myte can carry at most ${limits.statementsMax} statements.` };
   }
   return { ok: true, list: [...list, clean] };
 }
@@ -60,7 +60,7 @@ export function checkStatements(
   if (!Array.isArray(list)) return { ok: false, message: "Those statements could not be read." };
   const statements = normalizeStatements(list.filter((s): s is string => typeof s === "string"));
   if (statements.length > limits.statementsMax) {
-    return { ok: false, message: `Your agent can carry at most ${limits.statementsMax} statements.` };
+    return { ok: false, message: `Your Myte can carry at most ${limits.statementsMax} statements.` };
   }
   if (statements.some((s) => s.length > limits.charsMax)) {
     return { ok: false, message: `Keep each statement to ${limits.charsMax} characters.` };
@@ -82,7 +82,7 @@ export function uncoveredAnswer(name: string | null | undefined): string {
 /** "4 questions, 3 answered from your statements". */
 export function logSummary(entries: readonly DelegatedAnswerEntry[]): string {
   const n = entries.length;
-  if (n === 0) return "Nobody asked your agent anything.";
+  if (n === 0) return "Nobody asked your Myte anything.";
   const covered = entries.filter((e) => e.covered).length;
   const asked = `${n} ${n === 1 ? "question" : "questions"}`;
   if (covered === n) return `${asked}, all answered from your statements.`;

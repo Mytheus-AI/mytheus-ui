@@ -9,13 +9,13 @@ import { ChatCircleText, Ear, EyeSlash, LockSimple, Scales, Signature, VideoCame
    - audio and video are recorded only when the deployment records calls (`RECORDING_ENABLED`, read
      from meeting-service's session); otherwise speech goes to the transcription provider and is not
      kept as audio;
-   - your agent's notes are yours only (`worklogs`, private to you);
+   - your Myte's notes are yours only (`worklogs`, private to you);
    - decisions and action items are saved only when someone confirms one; chat is kept with the
      meeting;
    - the agreement itself is stored with its time and this notice's version
      (`meeting_participants.consented_at` / `consent_version`), once per person per meeting;
    - anyone can ask to go off the record (polish wave 3): until it ends nothing is transcribed or
-     kept and every agent pauses, and the transcript shows only that a gap happened.
+     kept and every Myte pauses, and the transcript shows only that a gap happened.
 
    meeting-service keeps every version's words (`services/meeting_service/consent_notices.py`) so a
    person's receipt shows what they agreed to; a new version must be added there in the same change.
@@ -23,7 +23,7 @@ import { ChatCircleText, Ear, EyeSlash, LockSimple, Scales, Signature, VideoCame
    Change the words and you must change CONSENT_VERSION, so the stored version keeps naming the
    text the person actually read. */
 
-export const CONSENT_VERSION = "room-notice-2026-11-11.2";
+export const CONSENT_VERSION = "room-notice-2026-11-12";
 
 export function ConsentTerms({ recording }: { recording: boolean | null }) {
   return (
@@ -52,8 +52,8 @@ export function ConsentTerms({ recording }: { recording: boolean | null }) {
       <li>
         <LockSimple size={18} aria-hidden />
         <div>
-          <strong>Your agent&rsquo;s notes are yours</strong>
-          <span>Only you can see the notes your agent takes for you.</span>
+          <strong>Your Myte&rsquo;s notes are yours</strong>
+          <span>Only you can see the notes your Myte takes for you.</span>
         </div>
       </li>
       <li>
@@ -76,7 +76,7 @@ export function ConsentTerms({ recording }: { recording: boolean | null }) {
           <strong>You can go off the record</strong>
           <span>
             Anyone can ask the host to go off the record. Until it ends, nothing said is transcribed or kept and every
-            agent pauses; the transcript shows only that a gap happened.
+            Myte pauses; the transcript shows only that a gap happened.
           </span>
         </div>
       </li>

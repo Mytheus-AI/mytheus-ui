@@ -1,6 +1,6 @@
 import { SettingsPanelSkeleton } from "@/components/settings/SettingsSkeleton";
 
-/* The Notifications panel while it loads: alerts from your agent, the weekly digest and promise
+/* The Notifications panel while it loads: alerts from your Myte, the weekly digest and promise
    nudges, as NotificationPreferencesForm, WeeklyDigestForm and PromiseNudgesCard draw them. */
 export default function Loading() {
   return (

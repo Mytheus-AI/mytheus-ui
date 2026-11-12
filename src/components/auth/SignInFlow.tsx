@@ -39,7 +39,7 @@ type Step = "start" | "factor-one" | "factor-two" | "forgot-password" | "sso-cal
 const STAGE: Record<Exclude<Step, "sso-callback" | "task">, StageCopy> = {
   start: {
     title: "Pick up where the room left off.",
-    lead: "Your agent kept the thread while you were away. Decisions, owners and open questions are waiting.",
+    lead: "Your Myte kept the thread while you were away. Decisions, owners and open questions are waiting.",
   },
   "factor-one": {
     title: "Pick up where the room left off.",
@@ -51,7 +51,7 @@ const STAGE: Record<Exclude<Step, "sso-callback" | "task">, StageCopy> = {
   },
   "forgot-password": {
     title: "A new password. The same memory.",
-    lead: "Resetting your password changes how you get in. Nothing your agent remembers is touched.",
+    lead: "Resetting your password changes how you get in. Nothing your Myte remembers is touched.",
   },
 };
 
@@ -236,7 +236,7 @@ function StartStep({ go }: { go: (p: string) => void }) {
   return (
     <>
       <StepHeader title="Welcome back.">
-        Sign in to see what your agent caught since your last meeting.
+        Sign in to see what your Myte caught since your last meeting.
       </StepHeader>
 
       {errors.form ? <FormAlert>{errors.form}</FormAlert> : null}

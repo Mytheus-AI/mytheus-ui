@@ -25,7 +25,7 @@ const note = (id: string, title: string, over: Partial<FeedItem> = {}): FeedItem
 
 const ITEMS = toInboxItems(
   {
-    notifications: [note("n-1", "Your agent flagged a clash with the launch date"), note("n-2", "Priya shared the onboarding notes", { unread: false, priority: 3 })],
+    notifications: [note("n-1", "Your Myte flagged a clash with the launch date"), note("n-2", "Priya shared the onboarding notes", { unread: false, priority: 3 })],
     reviews: [
       { id: "r-1", kind: "decision", content: "Ship the beta on 2 December", meeting_id: "m-1", meeting_title: "Weekly sync", created_at: "2026-11-10T16:00:00.000Z" },
       { id: "r-2", kind: "action", content: "Diego drafts the pricing page", meeting_id: "m-1", meeting_title: "Weekly sync", created_at: "2026-11-10T16:02:00.000Z" },

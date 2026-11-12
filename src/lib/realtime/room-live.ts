@@ -238,7 +238,7 @@ export interface Invitee {
 
 export interface PeopleGroups {
   inCall: Array<PersonIn & { host: boolean; handAt: string | null }>;
-  /** Someone who sent their agent instead of coming, and is not here after all. */
+  /** Someone who sent their Myte instead of coming, and is not here after all. */
   agents: Array<{ id: string; name: string; agentName: string }>;
   /** Invited, not in the call, and did not send an agent. */
   absent: Array<{ id: string; name: string; host: boolean }>;

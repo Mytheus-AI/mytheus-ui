@@ -44,7 +44,7 @@ export function fetchMeetingHealth(meetingId: string): Promise<BrainRead<Meeting
   return read(`/bff/meetings/${seg(meetingId)}/health`, toHealth);
 }
 
-/** The catch-up (B8), for someone who sent their agent or missed the meeting. */
+/** The catch-up (B8), for someone who sent their Myte or missed the meeting. */
 export function fetchMeetingCatchUp(meetingId: string): Promise<BrainRead<MeetingCatchUp>> {
   return read(`/bff/meetings/${seg(meetingId)}/catch-up`, toCatchUp);
 }

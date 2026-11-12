@@ -1,7 +1,7 @@
 import { fetchBriefingSettings, fetchMeetingBriefing } from "@/lib/api/briefings";
 import { BriefingPlayer, BriefingUnavailable } from "./BriefingPlayer";
 
-/* The after page: your agent's briefing about this meeting (or Brief me, once it has ended).
+/* The after page: your Myte's briefing about this meeting (or Brief me, once it has ended).
    Nothing at all for someone who was not in it: the briefing is personal. */
 export async function MeetingBriefingSection({ meetingId }: { meetingId: string }) {
   const [read, settings] = await Promise.all([fetchMeetingBriefing(meetingId), fetchBriefingSettings()]);

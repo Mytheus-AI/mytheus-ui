@@ -23,7 +23,7 @@ export async function TopicWatchCard({ className = "" }: { className?: string })
       <CardHead
         id="watch-h"
         title="Topics you watch"
-        description="When one of these comes up in a meeting you are not in, your agent tells you. It only covers meetings you are allowed to see, and never confidential ones."
+        description="When one of these comes up in a meeting you are not in, your Myte tells you. It only covers meetings you are allowed to see, and never confidential ones."
       />
       {watches === null ? (
         <ErrorState variant="inline" title="We could not load your topics" text="They are safe. Try again in a moment." />

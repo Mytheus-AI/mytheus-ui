@@ -38,8 +38,8 @@ export function NewTaskDialog({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<{ message: string; field?: "content" | "due_date" } | null>(null);
   const [notConnected, setNotConnected] = useState(false);
-  // Promise ledger: before you take a task with a date, your agent checks that day of your week.
-  // Only your own week: when the owner is someone else, their agent warns them when it lands.
+  // Promise ledger: before you take a task with a date, your Myte checks that day of your week.
+  // Only your own week: when the owner is someone else, their Myte warns them when it lands.
   const forMe = !assignee || assignee === me;
   const tz = useViewerZone();
   const { check, checking } = useCapacityCheck(open && forMe ? due : "", tz);
@@ -219,7 +219,7 @@ export function NewTaskDialog({
             {forMe ? (
               <CapacityNote check={check} checking={checking} onUseSuggested={setDue} />
             ) : due ? (
-              <p className="text-[13px] text-ink-3">Their own agent checks their week when the task lands. Their load stays private to them.</p>
+              <p className="text-[13px] text-ink-3">Their own Myte checks their week when the task lands. Their load stays private to them.</p>
             ) : null}
             {error && !error.field ? <FieldMsg id={`${uid}-msg`} error={error.message} /> : null}
             <div className="mt-1 flex flex-wrap justify-end gap-2">

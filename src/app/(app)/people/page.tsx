@@ -22,7 +22,7 @@ export const metadata: Metadata = { title: "People | Mytheus" };
    delete departments and teams and choose who is on them; core-api enforces that on every write,
    and everyone else sees the page read-only. */
 
-const AGENTS_LINE = "Your agents read this structure, and what each part does, to tune notes to each role and to suggest missing stakeholders.";
+const AGENTS_LINE = "Your Mytes read this structure, and what each part does, to tune notes to each role and to suggest missing stakeholders.";
 
 export default async function PeoplePage() {
   const [ctx, members, structure] = await Promise.all([resolveOrgContext(), listMembers(), loadOrgStructure()]);
@@ -82,7 +82,7 @@ export default async function PeoplePage() {
           title="No departments or teams yet"
           description={
             isAdmin
-              ? "Start with a department, like Engineering, or a team. Say what each one does: agents use it to tune notes to every role and to spot who is missing from a meeting."
+              ? "Start with a department, like Engineering, or a team. Say what each one does: Mytes use it to tune notes to every role and to spot who is missing from a meeting."
               : "Once an admin sets up departments and teams, they and the people on them appear here."
           }
           action={

@@ -18,7 +18,7 @@ const COLS: { title: string; links: { label: string; href: string }[] }[] = [
     ],
   },
   {
-    title: "Your agent",
+    title: "Your Myte",
     links: FEATURES.filter((f) => AGENT.includes(f.slug)).map((f) => ({ label: f.nav, href: `/features/${f.slug}` })),
   },
   {

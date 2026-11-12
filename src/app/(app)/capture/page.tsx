@@ -98,7 +98,7 @@ export default async function CapturePage() {
     <div className="mx-auto w-full max-w-[1360px]">
       <PageHead
         title="Capture"
-        context="Bring calls on Google Meet, Microsoft Teams and Zoom into Mytheus, with no bot joining. Your agent, notes, decisions and minutes work on them like any Mytheus meeting."
+        context="Bring calls on Google Meet, Microsoft Teams and Zoom into Mytheus, with no bot joining. Your Myte, notes, decisions and minutes work on them like any Mytheus meeting."
         action={download}
       >
         {!configured ? (

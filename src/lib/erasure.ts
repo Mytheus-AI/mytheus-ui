@@ -24,7 +24,7 @@ export function confirmMatches(typed: string, phrase: string): boolean {
 const ERASED_LABEL: Record<string, [string, string]> = {
   notes: ["note", "notes"],
   promises: ["promise", "promises"],
-  agent_questions: ["agent question", "agent questions"],
+  agent_questions: ["Myte question", "Myte questions"],
   chat_messages: ["chat message", "chat messages"],
   status_requests: ["status request", "status requests"],
   speaker_attributions: ["speaker link", "speaker links"],
@@ -68,9 +68,9 @@ export function erasureErrorMessage(kind: ErasureKind, status: number, reason: s
 export type ErasureStoreRow = { store: string; status: "pending" | "completed"; completed_at?: string | null; counts?: Record<string, number> };
 
 const STORE_LABEL: Record<string, { name: string; help: string }> = {
-  core_api: { name: "Workspace records", help: "Notes, promises, chat, agent memory and links" },
+  core_api: { name: "Workspace records", help: "Notes, promises, chat, Myte memory and links" },
   transcript_chunks: { name: "Transcripts", help: "What was said, or who said it" },
-  vectors: { name: "AI search index", help: "What Ask and your agents search by meaning" },
+  vectors: { name: "AI search index", help: "What Ask and every Myte search by meaning" },
   search_index: { name: "Keyword search", help: "What search finds by words" },
   knowledge_graph: { name: "Knowledge graph", help: "Links between people, decisions and topics" },
 };

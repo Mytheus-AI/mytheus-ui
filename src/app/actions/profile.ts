@@ -76,7 +76,7 @@ async function patchMe<F extends ProfileField | PersonaField>(
       return { ok: false, message: "Some details weren't accepted. Check them and try again." };
     }
     if (err instanceof ApiError && err.status === 403)
-      return { ok: false, message: "Only you can change your own agent and profile." };
+      return { ok: false, message: "Only you can change your own Myte and profile." };
     if (err instanceof ApiError && err.isAuthFailure)
       return { ok: false, message: "Your session ended. Sign in again, then save." };
     return { ok: false, message: "Your changes could not be saved just now. Try again in a moment." };
@@ -108,7 +108,7 @@ export async function saveAgentPersona(input: PersonaInput): Promise<SaveResult<
 
 /**
  * Tell Mytheus the caller's real name after they change it in Clerk, so everything the backend
- * writes (briefings, "{first name}'s agent", owner names) uses it instead of a name made from
+ * writes (briefings, "{first name}'s Myte", owner names) uses it instead of a name made from
  * the email. Self only; the API stores a blank name as NULL. Never throws: the Clerk save has
  * already happened, and the next app render's sync retries a name that did not land here.
  */

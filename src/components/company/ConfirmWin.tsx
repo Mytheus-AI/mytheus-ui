@@ -6,7 +6,7 @@ export function ConfirmWin({ className = "" }: { className?: string }) {
   return (
     <Win
       className={className}
-      label="A captured decision in Mytheus, Q3 launch targeted for August 12, waiting for a person to confirm it before it is saved. Below it, context from Raj's agent and an open conflict with the QA window."
+      label="A captured decision in Mytheus, Q3 launch targeted for August 12, waiting for a person to confirm it before it is saved. Below it, context from Raj's Myte and an open conflict with the QA window."
     >
       <WinBar title="Q3 launch sync" meta="3 captured" />
       <ul className="grid gap-2.5 bg-surface-2 p-4 sm:p-5">
@@ -20,7 +20,7 @@ export function ConfirmWin({ className = "" }: { className?: string }) {
         </li>
         <li className="rounded-ctl border border-line bg-surface px-4 py-3.5">
           <Chip tone="low">Context</Chip>
-          <p className="mt-1.5 font-medium leading-snug text-ink">From Raj&apos;s agent: QA needs 2 more days after the freeze.</p>
+          <p className="mt-1.5 font-medium leading-snug text-ink">From Raj&apos;s Myte: QA needs 2 more days after the freeze.</p>
         </li>
         <li className="rounded-ctl border border-line bg-surface px-4 py-3.5">
           <Chip tone="high">Conflict</Chip>

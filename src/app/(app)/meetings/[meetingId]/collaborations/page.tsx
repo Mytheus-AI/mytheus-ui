@@ -18,9 +18,9 @@ import {
   type CollaborationRow,
 } from "@/lib/api/context-fills";
 
-export const metadata: Metadata = { title: "Agent collaboration | Mytheus" };
+export const metadata: Metadata = { title: "Myte collaboration | Mytheus" };
 
-/* The agent collaboration log (Phase P10, plan 3.5): every time one participant's agent asked
+/* The agent collaboration log (Phase P10, plan 3.5): every time one participant's Myte asked
    another agent, or its own knowledge base, for context during this meeting. Reads core-api's
    `GET /api/v1/meetings/:id/collaborations` (`agent_collaborations`), newest first, one page at a
    time. Meeting participants and workspace admins see it; anyone else gets core-api's 404, shown
@@ -138,10 +138,10 @@ export default async function CollaborationsPage({
   return (
     <Page>
       <PageHead
-        title="Agent collaboration"
+        title="Myte collaboration"
         context={
           <>
-            When someone&rsquo;s agent needed context they were missing, it asked another agent or their own knowledge base. Every request is
+            When someone&rsquo;s Myte needed context they were missing, it asked another Myte or their own knowledge base. Every request is
             logged here, including the ones policy refused. What was shared is never shown here.
           </>
         }
@@ -165,8 +165,8 @@ export default async function CollaborationsPage({
 
             {rows.length === 0 ? (
               <EmptyState
-                title={cursor ? "No older requests" : "No agent collaboration in this meeting"}
-                description="Agents only ask for context when the conversation refers to something a participant was missing."
+                title={cursor ? "No older requests" : "No Myte collaboration in this meeting"}
+                description="Mytes only ask for context when the conversation refers to something a participant was missing."
               />
             ) : (
               <Card as="section" flush aria-label="Collaboration log">

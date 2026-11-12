@@ -18,7 +18,7 @@ export default async function WorkspaceLayout({ children }: { children: React.Re
 
   return (
     <Page>
-      <PageHead title="Workspace" context={`Who is in ${ctx.org.name || "your workspace"}, what its agents know, what it uses, and how its data is kept.`} />
+      <PageHead title="Workspace" context={`Who is in ${ctx.org.name || "your workspace"}, what its Mytes know, what it uses, and how its data is kept.`} />
       <SectionTabs
         section="workspace"
         label="Workspace sections"

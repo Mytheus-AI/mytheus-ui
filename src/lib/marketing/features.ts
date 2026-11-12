@@ -37,16 +37,16 @@ export const FEATURES: FeatureDef[] = [
   // PersonalListenerAgent
   {
     slug: "personal-agent",
-    nav: "Personal agent",
-    eyebrow: "Personal agent",
-    title: "A meeting agent that works",
+    nav: "Your Myte",
+    eyebrow: "Your Myte",
+    title: "A Myte that works",
     accent: "for you.",
     blurb:
-      "Everyone in the meeting gets their own AI agent, tuned to their role and their work. Not one shared bot writing the same notes for everybody.",
+      "Everyone in the meeting gets their own Myte, a personal AI agent tuned to their role and their work. Not one shared bot writing the same notes for everybody.",
     visual: "agent",
     benefitsTitle: "One meeting, a different set of notes for each person.",
     benefitsLead:
-      "Your agent knows what you do, keeps what it captures to itself, and never shows up as a tile in the call.",
+      "Your Myte knows what you do, keeps what it captures to itself, and never shows up as a tile in the call.",
     benefits: [
       {
         title: "Tuned to your role",
@@ -54,14 +54,14 @@ export const FEATURES: FeatureDef[] = [
       },
       {
         title: "Private by default",
-        body: "What your agent captures is yours. You share a note, a decision or an action when you choose to. Nothing goes to the room on your behalf.",
+        body: "What your Myte captures is yours. You share a note, a decision or an action when you choose to. Nothing goes to the room on your behalf.",
       },
       {
         title: "No bot in the room",
-        body: "There is no recording link to admit and no bot tile in the video grid. Your agent comes with you, quietly, into every meeting you join.",
+        body: "There is no recording link to admit and no bot tile in the video grid. Your Myte comes with you, quietly, into every meeting you join.",
       },
     ],
-    note: "Your agent drafts and you decide. Nothing is saved, assigned or shared until you confirm it with one tap.",
+    note: "Your Myte drafts and you decide. Nothing is saved, assigned or shared until you confirm it with one tap.",
   },
   // PersonalListenerAgent (worklogs)
   {
@@ -87,7 +87,7 @@ export const FEATURES: FeatureDef[] = [
       },
       {
         title: "Signal over noise",
-        body: "Your agent surfaces what it is confident matters to you. Borderline lines are logged quietly instead of crowding the notes.",
+        body: "Your Myte surfaces what it is confident matters to you. Borderline lines are logged quietly instead of crowding the notes.",
       },
     ],
     note: "Notes stream live over the meeting connection. If your network drops, the durable copy is rebuilt when you reconnect, so a missed moment never means lost notes.",
@@ -100,7 +100,7 @@ export const FEATURES: FeatureDef[] = [
     title: "The right question at the",
     accent: "right moment.",
     blurb:
-      "Your agent listens for gaps and suggests the question you would wish you had asked, color-coded by how urgently it matters.",
+      "Your Myte listens for gaps and suggests the question you would wish you had asked, color-coded by how urgently it matters.",
     visual: "suggestions",
     benefitsTitle: "Ask it before the meeting moves on.",
     benefitsLead:
@@ -112,11 +112,11 @@ export const FEATURES: FeatureDef[] = [
       },
       {
         title: "Suggested, never spoken",
-        body: "Your agent never talks in your meeting. Suggestions stay in your private sidebar until you decide what to do with them.",
+        body: "Your Myte never talks in your meeting. Suggestions stay in your private sidebar until you decide what to do with them.",
       },
       {
         title: "Filtered for confidence",
-        body: "Only suggestions your agent is confident in appear mid-meeting. The rest are logged quietly, so your attention is not spent on maybes.",
+        body: "Only suggestions your Myte is confident in appear mid-meeting. The rest are logged quietly, so your attention is not spent on maybes.",
       },
     ],
     note: "Suggestions are private to you and disappear when you dismiss them. Nothing about them is stored in your organization's record unless you act on one.",
@@ -141,14 +141,14 @@ export const FEATURES: FeatureDef[] = [
       },
       {
         title: "Confirmed by you",
-        body: "Every detected decision offers Confirm, Edit and Dismiss. Only a confirm makes it real, so the agent never commits the room to anything on its own.",
+        body: "Every detected decision offers Confirm, Edit and Dismiss. Only a confirm makes it real, so a Myte never commits the room to anything on its own.",
       },
       {
         title: "Traceable lineage",
         body: "Decisions link to the decisions they follow from. When Q3 planning reopens a Q2 call, the whole chain is one click away.",
       },
     ],
-    note: "Dismissed detections leave no trace in your organization's record. Edited ones save exactly what you approved, not what the agent guessed.",
+    note: "Dismissed detections leave no trace in your organization's record. Edited ones save exactly what you approved, not what your Myte guessed.",
   },
   // ActionAgent
   {
@@ -184,29 +184,29 @@ export const FEATURES: FeatureDef[] = [
     slug: "context-gaps",
     nav: "Cross-meeting answers",
     eyebrow: "Cross-meeting context",
-    title: "Your agent asks the agents that were",
+    title: "Your Myte asks the Mytes that were",
     accent: "there.",
     blurb:
-      "Missing context mid-meeting? Your agent asks another participant's agent and brings back the answer, cited to the exact meeting it came from.",
+      "Missing context mid-meeting? Your Myte asks another participant's Myte and brings back the answer, cited to the exact meeting it came from.",
     visual: "exchange",
     benefitsTitle: "Answers from meetings you were not in.",
     benefitsLead:
-      "When the room mentions “the pricing call”, your agent fills the gap while the conversation is still going.",
+      "When the room mentions “the pricing call”, your Myte fills the gap while the conversation is still going.",
     benefits: [
       {
         title: "Answers from meetings you missed",
-        body: "Your agent asks the agents of the people who were in that meeting, and brings the answer back while it still matters.",
+        body: "Your Myte asks the Mytes of the people who were in that meeting, and brings the answer back while it still matters.",
       },
       {
         title: "Sourced, always",
-        body: "Every answer arrives with its citation: which meeting, when, and who said it. You never have to take the agent's word for it.",
+        body: "Every answer arrives with its citation: which meeting, when, and who said it. You never have to take a Myte's word for it.",
       },
       {
         title: "Your team's memory",
         body: "The more your team meets, the more there is to draw on. Context builds up across meetings instead of disappearing after each one.",
       },
     ],
-    note: "Agents share only what their owners' access allows, and every answer carries its source so you can check it yourself.",
+    note: "Mytes share only what their owners' access allows, and every answer carries its source so you can check it yourself.",
   },
   // ProactiveAgent
   {
@@ -220,7 +220,7 @@ export const FEATURES: FeatureDef[] = [
     visual: "capacity",
     benefitsTitle: "A warning while the room can still change course.",
     benefitsLead:
-      "Your agent checks new assignments and decisions against what your team has already agreed and already has on its plate.",
+      "Your Myte checks new assignments and decisions against what your team has already agreed and already has on its plate.",
     benefits: [
       {
         title: "Workload warnings",
@@ -232,7 +232,7 @@ export const FEATURES: FeatureDef[] = [
       },
       {
         title: "Stakeholder and dependency alerts",
-        body: "Deciding without the person who owns the area, or on top of something blocked? Your agent names who is missing and what is in the way.",
+        body: "Deciding without the person who owns the area, or on top of something blocked? Your Myte names who is missing and what is in the way.",
       },
     ],
     note: "Insights are warnings, not vetoes. The room always decides. Red is kept for act-now moments, so a red flag keeps meaning something.",
@@ -302,7 +302,7 @@ export const FEATURES: FeatureDef[] = [
     title: "Your organization's",
     accent: "memory.",
     blurb:
-      "People, meetings, decisions, actions and topics, connected into one graph your agents use to answer with context.",
+      "People, meetings, decisions, actions and topics, connected into one graph your Mytes use to answer with context.",
     visual: "graph",
     benefitsTitle: "Memory with structure, not a folder of documents.",
     benefitsLead: "Each confirmed decision knows where it was made, who owns it and what it led to.",
@@ -317,7 +317,7 @@ export const FEATURES: FeatureDef[] = [
       },
       {
         title: "Context that compounds",
-        body: "Every meeting adds connections. Six months in, your agents can answer questions no single person could, because the graph remembers what people forget.",
+        body: "Every meeting adds connections. Six months in, your Mytes can answer questions no single person could, because the graph remembers what people forget.",
       },
     ],
     note: "The graph is per organization and isolated by design. Your record is never pooled with anyone else's.",
@@ -338,7 +338,7 @@ export const FEATURES: FeatureDef[] = [
     benefits: [
       {
         title: "Calendar-aware",
-        body: "Meetings come from your Google Calendar, and what your agent prepares is ready before you join. No copying invite links.",
+        body: "Meetings come from your Google Calendar, and what your Myte prepares is ready before you join. No copying invite links.",
       },
       {
         title: "Slack, where follow-up lives",
@@ -359,6 +359,6 @@ export function getFeature(slug: string): FeatureDef {
   return f;
 }
 
-/** The features that make up "your agent"; the rest are the platform. Read by the footer, the
+/** The features that make up "your Myte"; the rest are the platform. Read by the footer, the
     nav and the /features hub so the grouping is defined once. */
 export const AGENT_SLUGS = ["personal-agent", "live-notes", "smart-questions", "decisions", "action-items", "context-gaps"];

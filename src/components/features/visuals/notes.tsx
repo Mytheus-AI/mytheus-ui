@@ -1,7 +1,7 @@
 import { Chip, Win, WinBar } from "@/components/site/Section";
 import { APPEAR, Av, Avs, Demo, TIMED, dl } from "@/components/features/atoms";
 
-/* Live notes: what you typed on the left, what your agent wrote on the right, joined by one
+/* Live notes: what you typed on the left, what your Myte wrote on the right, joined by one
    straight thread with a bead per row. When it scrolls in, the thread fills top to bottom and each
    row's clean note appears as the line reaches it. */
 
@@ -43,7 +43,7 @@ export function NotesVisual() {
         <div className="hidden grid-cols-[minmax(0,.72fr)_48px_minmax(0,1.28fr)] pb-1 pt-[18px] text-[14px] font-semibold text-ink-3 md:grid">
           <span className="text-right">What you typed</span>
           <span />
-          <span>What your agent wrote</span>
+          <span>What your Myte wrote</span>
         </div>
         <div className="relative">
           <span aria-hidden className={`${LINE_POS} bg-line-2`} />

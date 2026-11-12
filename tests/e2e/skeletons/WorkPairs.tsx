@@ -194,7 +194,7 @@ function PersonPage() {
             </div>
           </Card>
           <Card as="section" flush>
-            <CardHead title="What their agent listens for" description="Topics from the role taxonomy. Their agent surfaces notes on these first." />
+            <CardHead title="What their Myte listens for" description="Topics from the role taxonomy. Their Myte surfaces notes on these first." />
             <div className="flex flex-wrap gap-2 px-4 pb-[18px] sm:px-[22px]">
               {["Release dates", "Incidents"].map((t) => (
                 <Chip key={t} tone="accent">
@@ -217,7 +217,7 @@ function Panel({ children }: { children: ReactNode }) {
 function ProfilePage() {
   return (
     <>
-      <SectionBar title="Profile" context="How you appear to teammates, and what your agent knows about you." />
+      <SectionBar title="Profile" context="How you appear to teammates, and what your Myte knows about you." />
       <div className="grid gap-5">
         <SectionCard title="Your account" description="How you appear to teammates in meetings, transcripts and tasks.">
           <div className="flex flex-wrap items-center gap-4 px-4 py-4 sm:px-[22px] md:py-5">
@@ -237,7 +237,7 @@ function ProfilePage() {
             </div>
           </div>
         </SectionCard>
-        <SectionCard title="What your agent knows about you" description="Your role and your work tune what your agent captures. An engineer and a PM leave the same meeting with different notes.">
+        <SectionCard title="What your Myte knows about you" description="Your role and your work tune what your Myte captures. An engineer and a PM leave the same meeting with different notes.">
           <FieldRow label="Role" htmlFor="pf-role" help="As your team would say it.">
             <Input id="pf-role" label="Role" defaultValue="Product manager" />
           </FieldRow>
@@ -261,7 +261,7 @@ function ProfilePage() {
 
 function NudgesCard() {
   return (
-    <SectionCard title="Promise nudges" headingLevel={3} description="When a task you promised by a date is still open in Jira after it, your agent nudges you before anyone else hears.">
+    <SectionCard title="Promise nudges" headingLevel={3} description="When a task you promised by a date is still open in Jira after it, your Myte nudges you before anyone else hears.">
       <div className="grid md:grid-cols-2 md:divide-x md:divide-line">
         <InfoRow icon={<Bell size={18} />} title="You first, privately">
           The day after the due date, if the linked Jira ticket is still open, only you get a note in your Inbox.
@@ -280,7 +280,7 @@ function NudgesCard() {
 /* IntegrationsPanel's own JSX (its Connect button is a form-status button React 18 cannot mount
    here): the two agent cards, the project tracker, and Share and export. */
 const PROVIDERS = [
-  ["Google Calendar", "Meetings on the installer's primary calendar sync in, with attendees matched to people in this workspace, so agents can prepare before you join."],
+  ["Google Calendar", "Meetings on the installer's primary calendar sync in, with attendees matched to people in this workspace, so Mytes can prepare before you join."],
   ["Slack", "Prep briefs before a meeting, summaries after it and action reminders arrive as direct messages from the Mytheus app."],
 ];
 const REACH = [
@@ -386,7 +386,7 @@ const ENTRIES: Record<string, Entry> = {
     () => <NotificationsLoading />,
     () => (
       <>
-        <SectionBar title="Notifications" context="Which alerts from your agent reach you, and where. Everything still lands in your Inbox." />
+        <SectionBar title="Notifications" context="Which alerts from your Myte reach you, and where. Everything still lands in your Inbox." />
         <div className="grid gap-5">
           <NotificationPreferencesForm initial={mergePreferences([])} loaded email="connected" />
           <WeeklyDigestForm initial={{ weekly_enabled: true, email_enabled: false }} loaded emailConfigured />
@@ -399,7 +399,7 @@ const ENTRIES: Record<string, Entry> = {
     () => <ListeningLoading />,
     () => (
       <>
-        <SectionBar title="Listening" context="When your agent may pull you out of what you are doing, and what it may say for you." action={<TextLink href="/meetings/listening">Choose which meetings</TextLink>} />
+        <SectionBar title="Listening" context="When your Myte may pull you out of what you are doing, and what it may say for you." action={<TextLink href="/meetings/listening">Choose which meetings</TextLink>} />
         <div className="grid gap-5">
           <ListeningSettings initial={PREFS} loaded />
           <PositionsEditor initial={POSITIONS} loaded />
@@ -411,7 +411,7 @@ const ENTRIES: Record<string, Entry> = {
     () => <MemoryLoading />,
     () => (
       <>
-        <SectionBar title="What your agent remembers" context="What it learned from the notes and suggestions you keep or dismiss, and the questions you ask. Only you see this, and you can change any of it." />
+        <SectionBar title="What your Myte remembers" context="What it learned from the notes and suggestions you keep or dismiss, and the questions you ask. Only you see this, and you can change any of it." />
         <MemoryPanel initial={MEMORY_FIXTURE} />
       </>
     ),
@@ -420,7 +420,7 @@ const ENTRIES: Record<string, Entry> = {
     () => <BriefingsLoading />,
     () => (
       <>
-        <SectionBar title="Briefings" context="When your agent briefs you, how long, in which language and in what voice. Only you hear your briefings." />
+        <SectionBar title="Briefings" context="When your Myte briefs you, how long, in which language and in what voice. Only you hear your briefings." />
         <BriefingSettingsPanel initial={BRIEFING_SETTINGS} agentName="Juniper" agentSeed="agent-seed-juniper" personality="friendly" />
       </>
     ),
@@ -429,7 +429,7 @@ const ENTRIES: Record<string, Entry> = {
     () => <IntegrationsLoading />,
     () => (
       <>
-        <SectionBar title="Integrations" context="Calendar, Slack and one project tracker for agents, plus HubSpot, Notion and Confluence for sharing what the workspace confirms." />
+        <SectionBar title="Integrations" context="Calendar, Slack and one project tracker for your Myte, plus HubSpot, Notion and Confluence for sharing what the workspace confirms." />
         <div className="grid gap-5">
           <IntegrationsStub />
         </div>

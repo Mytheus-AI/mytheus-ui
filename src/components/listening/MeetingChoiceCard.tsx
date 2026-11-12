@@ -9,8 +9,8 @@ import type { AttendanceChoice, MeetingAttendanceChoice } from "@/lib/api/listen
 import { CHOICE_HELP } from "@/lib/listening";
 import { ChoiceControl } from "./ChoiceControl";
 
-/* Your choice for this meeting (In every meeting at once): attend, let your agent listen for you,
-   or skip. "Agent listens" is the same as sending your agent (the card under this one adds an
+/* Your choice for this meeting (In every meeting at once): attend, let your Myte listen for you,
+   or skip. "Agent listens" is the same as sending your Myte (the card under this one adds an
    update and questions for the room). A choice made here beats your rules; "Use my rules" puts the
    rules back in charge. A confidential meeting has no listening agent. */
 
@@ -46,7 +46,7 @@ export function MeetingChoiceCard({
   const choose = (next: AttendanceChoice) => {
     if (next === choice || busy) return;
     const before = state;
-    const message = next === "agent_listens" ? "Your agent will listen for you" : next === "skip" ? "Skipping this meeting" : "You're attending";
+    const message = next === "agent_listens" ? "Your Myte will listen for you" : next === "skip" ? "Skipping this meeting" : "You're attending";
     void apply(() => setAttendanceChoice(meetingId, next), message, () => {
       if (!before || before.source !== "manual") void apply(() => clearAttendanceChoice(meetingId), null);
       else void apply(() => setAttendanceChoice(meetingId, before.choice), null);
@@ -65,7 +65,7 @@ export function MeetingChoiceCard({
           value={choice}
           onChange={choose}
           label={`Your choice for ${title}`}
-          agentDisabledReason={confidential ? "This meeting is confidential, so no agent listens to it." : null}
+          agentDisabledReason={confidential ? "This meeting is confidential, so no Myte listens to it." : null}
           disabled={!editable || busy}
         />
       </div>
@@ -83,7 +83,7 @@ export function MeetingChoiceCard({
         ) : null}
         {state && state.agents_listening > 0 ? (
           <span>
-            {state.agents_listening} {state.agents_listening === 1 ? "agent listens" : "agents listen"} here.
+            {state.agents_listening} {state.agents_listening === 1 ? "Myte listens" : "Mytes listen"} here.
           </span>
         ) : null}
         <Link href="/meetings/listening" className="font-semibold text-ink-2 underline-offset-4 hover:underline">

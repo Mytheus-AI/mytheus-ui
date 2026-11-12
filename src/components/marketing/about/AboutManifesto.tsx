@@ -7,7 +7,7 @@ import { Flow } from "@/components/company/Flow";
 
 const MANIFESTO: { lead: string; key: string }[] = [
   { lead: "Ship in", key: "sprints." },
-  { lead: "Let agents do the", key: "remembering." },
+  { lead: "Let Mytes do the", key: "remembering." },
   { lead: "Motion is a", key: "feature." },
   { lead: "Small team,", key: "whole product." },
 ];

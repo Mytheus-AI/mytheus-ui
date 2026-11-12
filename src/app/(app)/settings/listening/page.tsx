@@ -9,7 +9,7 @@ import type { ListeningPreferencesView } from "@/lib/api/listening-types";
 export const metadata: Metadata = { title: "Listening | Settings | Mytheus" };
 export const dynamic = "force-dynamic";
 
-/* Settings > Listening (In every meeting at once): when your agent may interrupt you about a
+/* Settings > Listening (In every meeting at once): when your Myte may interrupt you about a
    meeting it listens to for you, your evening digest, and the lines it may hold for you. Which
    meetings it listens to is decided on Meetings > Listening. Both reads fail on their own: the
    form opens on the defaults and says so. */
@@ -35,7 +35,7 @@ export default async function ListeningSettingsPage() {
     <>
       <SectionBar
         title="Listening"
-        context="When your agent may pull you out of what you are doing, and what it may say for you."
+        context="When your Myte may pull you out of what you are doing, and what it may say for you."
         action={<TextLink href="/meetings/listening">Choose which meetings</TextLink>}
       />
       <div className="grid gap-5">
