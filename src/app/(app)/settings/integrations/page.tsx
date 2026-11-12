@@ -1,17 +1,19 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { IntegrationsPanel } from "@/components/settings/IntegrationsPanel";
-import { Note } from "@/components/ui/Note";
 import { SectionBar } from "@/components/ui/Page";
+import { apiOrigin } from "@/lib/api-access";
 import { resolveOrgContext } from "@/lib/api/org-context";
 import { loadIntegrations } from "@/lib/api/integrations";
 import { listMembers } from "@/lib/api/members";
-import { parseReturnState } from "@/lib/integrations";
+import { appOriginFrom, parseReturnState } from "@/lib/integrations";
 
 export const metadata: Metadata = { title: "Integrations | Mytheus" };
 export const dynamic = "force-dynamic";
 
-/* Owner and admin only (P12 contract section 3). The check here only decides what the page
-   offers; integration-service enforces the tier on every call. */
+/* Every member sees the same cards; only owners and admins can connect, disconnect or set one up.
+   The check here only decides what the page offers; integration-service enforces the tier on every
+   call (its list is admin-only, so a member's page does not ask for it). */
 export default async function IntegrationsSettingsPage({
   searchParams,
 }: {
@@ -20,30 +22,20 @@ export default async function IntegrationsSettingsPage({
   const ctx = await resolveOrgContext();
   const isAdmin = ctx?.user.role === "admin";
   const banner = parseReturnState(searchParams);
+  const h = headers();
+  // The OAuth redirect URL shown in "Set up" is this app's own callback page, on the host this
+  // page was served from (the server's APP_BASE_URL must name the same origin).
+  const appOrigin = appOriginFrom(h.get("x-forwarded-host") ?? h.get("host"), h.get("x-forwarded-proto"));
+  const api = apiOrigin(process.env.NEXT_PUBLIC_API_GATEWAY_URL ?? process.env.API_GATEWAY_URL);
 
-  if (!isAdmin) {
-    return (
-      <>
-        <SectionBar title="Integrations" context="Calendar, Slack, one project tracker, and the tools decision records and meeting notes can go to." />
-        <Note>
-          Only workspace owners and admins can connect integrations. Ask an admin to connect one; exporting a decision to Notion, Confluence or Slack works for
-          everyone once it is connected.
-        </Note>
-      </>
-    );
-  }
-
-  const [load, members] = await Promise.all([loadIntegrations(), listMembers()]);
+  const [load, members] = isAdmin ? await Promise.all([loadIntegrations(), listMembers()]) : [{ kind: "forbidden" as const }, null];
   const people = new Map((members ?? []).map((m) => [m.id, m.isYou ? `${m.name} (you)` : m.name]));
 
   return (
     <>
-      <SectionBar
-        title="Integrations"
-        context="Calendar, Slack and one project tracker for your Myte, plus HubSpot, Notion and Confluence for sharing what the workspace confirms."
-      />
-      <div className="grid gap-5">
-        <IntegrationsPanel load={load} banner={banner} people={people} />
+      <SectionBar title="Integrations" context="The tools your Mytes work with, and where the workspace shares what it confirms." />
+      <div className="grid gap-6">
+        <IntegrationsPanel load={load} banner={banner} people={people} canManage={isAdmin} appOrigin={appOrigin} apiOrigin={api} />
       </div>
     </>
   );

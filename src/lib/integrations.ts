@@ -214,6 +214,16 @@ export function scopeLabel(scope: string): string {
     commands: "Add shortcuts",
     "https://www.googleapis.com/auth/calendar.readonly": "Read calendars",
     "https://www.googleapis.com/auth/calendar.events.readonly": "Read events",
+    "https://www.googleapis.com/auth/drive.readonly": "Read files shared to meetings",
+    openid: "Sign in",
+    email: "See email address",
+    "channels:read": "See public channel names",
+    "groups:read": "See private channel names",
+    "im:history": "Read direct messages it is in",
+    "mpim:history": "Read group messages it is in",
+    oauth: "Connect",
+    "crm.objects.deals.read": "Read deals",
+    "read:confluence-content.summary": "See pages",
     "read:jira-work": "Read issues",
     "write:jira-work": "Create and update issues",
     "manage:jira-webhook": "Manage webhooks",
@@ -309,3 +319,173 @@ export function decisionChecksCopy(value: DecisionChecks | null | undefined): { 
   }
   return null;
 }
+
+/* ------------------------------------------------------------------------------------------------
+ * The settings page's view (the redesign of 2026-11-12). Every provider is one card with exactly
+ * one status chip and exactly one footer action, so the state below is what a card shows.
+ * ---------------------------------------------------------------------------------------------- */
+
+/**
+ * - `connected`: active at the provider (account, last sync, Disconnect).
+ * - `ready`: the server has app credentials and nothing is connected (Connect).
+ * - `needs_setup`: the server has no app credentials for it yet (Set up, for admins).
+ * - `error`: connected but failing at the provider (Reconnect).
+ * - `blocked`: Jira while another tracker is connected (one tracker per workspace).
+ * - `unknown`: the viewer may not read the connections (not an admin).
+ */
+export type ProviderView = "connected" | "ready" | "needs_setup" | "error" | "blocked" | "unknown";
+
+export function providerView(item: IntegrationItem | undefined, opts: { otherTrackerConnected?: boolean } = {}): ProviderView {
+  const state = cardState(item);
+  if (state.kind === "connected") return state.status === "active" ? "connected" : "error";
+  if (state.kind === "not_configured") return "needs_setup";
+  return opts.otherTrackerConnected ? "blocked" : "ready";
+}
+
+/** The one chip each state carries. */
+export const VIEW_CHIP: Record<ProviderView, { label: string; tone: "ok" | "neutral" | "outline" | "high" | "medium" }> = {
+  connected: { label: "Connected", tone: "ok" },
+  ready: { label: "Ready to connect", tone: "neutral" },
+  needs_setup: { label: "Needs setup", tone: "outline" },
+  error: { label: "Error", tone: "medium" },
+  blocked: { label: "Tracker in use", tone: "medium" },
+  unknown: { label: "Managed by admins", tone: "outline" },
+};
+
+/**
+ * The OAuth redirect URI integration-service sends to every provider (`config.redirect_uri` in
+ * mytheus-backend): the web app's own callback page. `appOrigin` is the origin this page was
+ * served from, which in production is the app host (`https://dashboard.mytheus.cloud`), the same
+ * value the server's `APP_BASE_URL` must hold.
+ */
+export const DEFAULT_APP_ORIGIN = "https://dashboard.mytheus.cloud";
+
+export function appOriginFrom(host: string | null | undefined, proto: string | null | undefined): string {
+  const h = (host ?? "").split(",")[0].trim().toLowerCase();
+  // A host header is only trusted as an origin when it looks like one (no path, no spaces).
+  if (!h || !/^[a-z0-9.-]+(:\d{1,5})?$/.test(h)) return DEFAULT_APP_ORIGIN;
+  const p = (proto ?? "").split(",")[0].trim().toLowerCase();
+  const scheme = p === "http" || p === "https" ? p : h.startsWith("localhost") || h.startsWith("127.0.0.1") ? "http" : "https";
+  return `${scheme}://${h}`;
+}
+
+export function callbackUrl(appOrigin: string, provider: ProviderKey): string {
+  return `${appOrigin.replace(/\/+$/, "")}/settings/integrations/callback/${provider}`;
+}
+
+/** What an admin needs to create the provider's app and hand its credentials to the server. */
+export interface SetupGuide {
+  provider: ProviderKey;
+  /** What the integration does, one or two sentences. */
+  does: string;
+  /** Where the app is created. */
+  console: { label: string; href: string };
+  /** Short, ordered steps at the provider, in plain words. */
+  steps: string[];
+  /** The OAuth scopes integration-service requests (`clients.py` in mytheus-backend). */
+  scopes: string[];
+  /** Said instead of a scope list when the provider has none. */
+  scopesNote?: string;
+  /** Other URLs to paste at the provider, on the API origin. */
+  apiUrls?: { label: string; path: string }[];
+  /** The env var names the server reads; values are never shown here. */
+  env: string[];
+}
+
+export const PUSH_COMMAND = "scripts/push-secrets.sh integrations";
+
+export const SETUP_GUIDES: Record<Exclude<ProviderKey, "linear">, SetupGuide> = {
+  google_calendar: {
+    provider: "google_calendar",
+    does: "Meetings on the installer's calendar sync in, with attendees matched to people here, so each Myte can prepare before you join.",
+    console: { label: "Google Cloud Console credentials", href: "https://console.cloud.google.com/apis/credentials" },
+    steps: [
+      "Enable the Google Calendar API and the Google Drive API for the project.",
+      "Create an OAuth client ID of type Web application.",
+      "Add the redirect URL below as an authorized redirect URI.",
+    ],
+    scopes: ["openid", "email", "https://www.googleapis.com/auth/calendar.readonly", "https://www.googleapis.com/auth/drive.readonly"],
+    env: ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
+  },
+  slack: {
+    provider: "slack",
+    does: "Prep briefs, summaries and action reminders arrive as direct messages, and messages that go against a decision are flagged to their writer.",
+    console: { label: "Slack apps", href: "https://api.slack.com/apps" },
+    steps: [
+      "Create a new app from scratch in your workspace.",
+      "Under OAuth and Permissions, add the redirect URL below and the bot token scopes.",
+      "Turn on Event Subscriptions and Interactivity with the URLs below; subscribe to the bot events message.channels, message.groups, message.im and message.mpim.",
+      "Add a message shortcut named Check against decisions with the callback ID check_against_decisions.",
+    ],
+    scopes: [
+      "chat:write",
+      "users:read",
+      "users:read.email",
+      "im:write",
+      "channels:history",
+      "groups:history",
+      "channels:read",
+      "groups:read",
+      "commands",
+      "im:history",
+      "mpim:history",
+    ],
+    apiUrls: [
+      { label: "Event Subscriptions request URL", path: "/webhooks/slack" },
+      { label: "Interactivity request URL", path: "/webhooks/slack/interactions" },
+    ],
+    env: ["SLACK_CLIENT_ID", "SLACK_CLIENT_SECRET", "SLACK_SIGNING_SECRET"],
+  },
+  jira: {
+    provider: "jira",
+    does: "Confirmed action items become Jira issues with a link back to the meeting, and closing an issue marks the action done here.",
+    console: { label: "Atlassian developer console", href: "https://developer.atlassian.com/console/myapps/" },
+    steps: [
+      "Create an OAuth 2.0 integration.",
+      "Under Permissions, add the Jira API and the scopes below.",
+      "Under Authorization, set the callback URL to the redirect URL below.",
+    ],
+    scopes: ["read:jira-work", "write:jira-work", "read:jira-user", "manage:jira-webhook", "offline_access"],
+    env: ["JIRA_CLIENT_ID", "JIRA_CLIENT_SECRET"],
+  },
+  hubspot: {
+    provider: "hubspot",
+    does: "When a meeting with people outside the workspace ends, its confirmed decisions and actions become one note on the matching companies and contacts.",
+    console: { label: "HubSpot developer apps", href: "https://app.hubspot.com/developer" },
+    steps: ["Create a public app in your developer account.", "Under Auth, add the redirect URL below and the scopes below."],
+    scopes: [
+      "oauth",
+      "crm.objects.companies.read",
+      "crm.objects.companies.write",
+      "crm.objects.contacts.read",
+      "crm.objects.contacts.write",
+      "crm.objects.deals.read",
+    ],
+    env: ["HUBSPOT_CLIENT_ID", "HUBSPOT_CLIENT_SECRET"],
+  },
+  notion: {
+    provider: "notion",
+    does: "Export a decision record, with what it follows from and what replaced it, as a page under any Notion page you share with Mytheus.",
+    console: { label: "Notion integrations", href: "https://www.notion.so/my-integrations" },
+    steps: [
+      "Create a new integration and make it public.",
+      "Give it the Read content, Update content and Insert content capabilities.",
+      "Add the redirect URL below as a redirect URI.",
+    ],
+    scopes: [],
+    scopesNote: "Notion has no OAuth scopes. Access is granted per page when someone connects.",
+    env: ["NOTION_CLIENT_ID", "NOTION_CLIENT_SECRET"],
+  },
+  confluence: {
+    provider: "confluence",
+    does: "Export a decision record, with its lineage, as a page in a Confluence space of your choice.",
+    console: { label: "Atlassian developer console", href: "https://developer.atlassian.com/console/myapps/" },
+    steps: [
+      "Create an OAuth 2.0 integration of its own (its callback URL differs from Jira's).",
+      "Under Permissions, add the Confluence API and the scopes below.",
+      "Under Authorization, add the redirect URL below as a callback URL.",
+    ],
+    scopes: ["read:confluence-space.summary", "read:confluence-content.summary", "write:confluence-content", "offline_access"],
+    env: ["CONFLUENCE_CLIENT_ID", "CONFLUENCE_CLIENT_SECRET"],
+  },
+};

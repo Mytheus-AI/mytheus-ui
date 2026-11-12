@@ -749,3 +749,8 @@ export async function saveDisplayName(): Promise<boolean> {
 export async function saveWorkingProfile() {
   return { ok: true as const };
 }
+
+// Settings > Integrations: Connect and Disconnect are form actions (React 18 cannot run them; the
+// spec checks the form's fields instead).
+export async function connectProvider(_formData: FormData) {}
+export async function disconnectProvider(_formData: FormData) {}

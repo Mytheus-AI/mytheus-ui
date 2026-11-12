@@ -42,6 +42,7 @@ export default defineConfig({
           { find: /^@\/components\/room\/actions$/, replacement: stub("room-actions.ts") },
           { find: /^@\/components\/room\/stage-actions$/, replacement: stub("stage-actions.ts") },
           { find: /^@\/app\/actions\/.*$/, replacement: stub("actions.ts") },
+          { find: /^@\/components\/admin\/FormSubmit$/, replacement: stub("form-submit.tsx") },
           { find: /^@\/lib\/fonts$/, replacement: stub("fonts.ts") },
           { find: /^@\//, replacement: `${path.resolve(root, "src")}/` },
         ],

@@ -3,7 +3,7 @@ import { ArrowLeft, Bell, EnvelopeSimple, UserCircle } from "@phosphor-icons/rea
 import { Shell, type Theme } from "./Shell";
 import { NOW } from "./fixtures";
 import { Page, PageHead, SectionBar, pageTitleClass } from "../../../src/components/ui/Page";
-import { Card, CardHead, SectionCard, cardClass } from "../../../src/components/ui/Card";
+import { Card, CardHead, SectionCard } from "../../../src/components/ui/Card";
 import { Chip } from "../../../src/components/ui/Chip";
 import { Avatar } from "../../../src/components/ui/Avatar";
 import { buttonClass, Button } from "../../../src/components/ui/Button";
@@ -45,6 +45,8 @@ import ListeningLoading from "../../../src/app/(app)/settings/listening/loading"
 import MemoryLoading from "../../../src/app/(app)/settings/memory/loading";
 import BriefingsLoading from "../../../src/app/(app)/settings/briefings/loading";
 import IntegrationsLoading from "../../../src/app/(app)/settings/integrations/loading";
+import { IntegrationsPanel } from "../../../src/components/settings/IntegrationsPanel";
+import { normalizeIntegrations } from "../../../src/lib/integrations";
 import ApiLoading from "../../../src/app/(app)/settings/api/loading";
 import AppearanceLoading from "../../../src/app/(app)/settings/appearance/loading";
 import { CAPACITY, LEDGER, TODAY } from "../ledger-fixture";
@@ -277,84 +279,13 @@ function NudgesCard() {
   );
 }
 
-/* IntegrationsPanel's own JSX (its Connect button is a form-status button React 18 cannot mount
-   here): the two agent cards, the project tracker, and Share and export. */
-const PROVIDERS = [
-  ["Google Calendar", "Meetings on the installer's primary calendar sync in, with attendees matched to people in this workspace, so Mytes can prepare before you join."],
-  ["Slack", "Prep briefs before a meeting, summaries after it and action reminders arrive as direct messages from the Mytheus app."],
-];
-const REACH = [
-  ["HubSpot", "When a meeting with people outside the workspace ends, its confirmed decisions and actions are added as one note on the matching HubSpot companies and contacts. Confidential meetings never go to the CRM."],
-  ["Notion", "Export a decision record, with what it follows from and what replaced it, as a page under any Notion page you share with Mytheus."],
-  ["Confluence", "Export a decision record, with its lineage, as a page in a Confluence space of your choice."],
-];
-function ProviderStub({ name, description }: { name: string; description: string }) {
-  return (
-    <li className={cardClass({ className: "flex flex-col gap-4" })}>
-      <div className="flex items-start gap-3.5">
-        <span className="grid h-[46px] w-[46px] shrink-0 place-items-center rounded-ctl bg-bg-2 text-ink" aria-hidden="true" />
-        <div className="min-w-0 flex-1">
-          <h3 className="text-[17px] font-semibold leading-snug text-ink">{name}</h3>
-          <p className="mt-1 text-[14px] leading-relaxed text-ink-3">{description}</p>
-        </div>
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        <Chip tone="outline">Not connected</Chip>
-      </div>
-      <div className="mt-auto border-t border-line pt-4">
-        <Button>Connect</Button>
-      </div>
-    </li>
-  );
-}
-function IntegrationsStub() {
-  return (
-    <>
-      <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))] gap-5">
-        {PROVIDERS.map(([n, d]) => (
-          <ProviderStub key={n} name={n} description={d} />
-        ))}
-      </ul>
-      <SectionCard
-        title="Project tracker"
-        description="One tracker per workspace. Only action items someone has confirmed become issues, and an issue closed in the tracker marks the action done here."
-      >
-        <div className="flex flex-col gap-4 px-4 py-4 sm:px-[22px] md:py-[18px]">
-          <div className="grid gap-2.5">
-            {["Jira", "Linear"].map((o) => (
-              <div key={o} className="flex flex-wrap items-start gap-3 rounded-ctl border border-line-2 bg-surface px-4 py-3.5">
-                <span aria-hidden="true" className="mt-0.5 grid h-[18px] w-[18px] shrink-0 rounded-full border-2 border-ink-3" />
-                <span className="mt-0.5 h-5 w-5 shrink-0" />
-                <span className="min-w-0 flex-[1_1_12rem]">
-                  <span className="block text-[15px] font-semibold text-ink">{o}</span>
-                  <span className="mt-0.5 block text-[14px] leading-snug text-ink-3">
-                    {o === "Jira" ? "Confirmed action items become Jira issues, with a link back to the meeting." : "Linear is not supported yet."}
-                  </span>
-                </span>
-              </div>
-            ))}
-          </div>
-          <div className="border-t border-line pt-4">
-            <Button>Connect</Button>
-          </div>
-        </div>
-      </SectionCard>
-      <section className="flex flex-col gap-3">
-        <div>
-          <h2 className="display text-[22px] text-ink">Share and export</h2>
-          <p className="mt-1 max-w-[70ch] text-[15px] leading-relaxed text-ink-3">
-            Send what the workspace confirmed to the tools other people already read. Each one is optional and independent of the others.
-          </p>
-        </div>
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-5">
-          {REACH.map(([n, d]) => (
-            <ProviderStub key={n} name={n} description={d} />
-          ))}
-        </ul>
-      </section>
-    </>
-  );
-}
+/* Settings > Integrations, every tool configured and none connected (each card's action is Connect). */
+const READY_LOAD = {
+  kind: "live" as const,
+  items: normalizeIntegrations(
+    ["google_calendar", "slack", "jira", "linear", "hubspot", "notion", "confluence"].map((provider) => ({ provider, configured: provider !== "linear", status: null })),
+  ),
+};
 
 type Entry = { skeleton: () => ReactNode; page: () => ReactNode };
 const panel = (skeleton: () => ReactNode, page: () => ReactNode): Entry => ({ skeleton: () => <Panel>{skeleton()}</Panel>, page: () => <Panel>{page()}</Panel> });
@@ -429,9 +360,9 @@ const ENTRIES: Record<string, Entry> = {
     () => <IntegrationsLoading />,
     () => (
       <>
-        <SectionBar title="Integrations" context="Calendar, Slack and one project tracker for your Myte, plus HubSpot, Notion and Confluence for sharing what the workspace confirms." />
-        <div className="grid gap-5">
-          <IntegrationsStub />
+        <SectionBar title="Integrations" context="The tools your Mytes work with, and where the workspace shares what it confirms." />
+        <div className="grid gap-6">
+          <IntegrationsPanel load={READY_LOAD} banner={null} people={new Map()} canManage appOrigin="https://dashboard.mytheus.cloud" apiOrigin="https://api.mytheus.cloud" />
         </div>
       </>
     ),
