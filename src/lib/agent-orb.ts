@@ -44,7 +44,7 @@ export const ORB_HUES: readonly OrbHue[] = [
   { deep: "#04302a", mid: "#12b386", rim: "#90ffdc", lite: "#7dffb0" }, // mint
   { deep: "#34105a", mid: "#b45ae6", rim: "#ffb4f2", lite: "#f09aff" }, // orchid
   { deep: "#081c66", mid: "#2c6cf0", rim: "#a4dcff", lite: "#62b4ff" }, // azure
-  { deep: "#1c0f56", mid: "#6a3fe6", rim: "#d0baff", lite: "#b48cff" }, // violet
+  { deep: "#4a0b22", mid: "#e5486e", rim: "#ffc2cf", lite: "#ff8fa8" }, // rose
 ];
 
 export interface OrbTraits {
