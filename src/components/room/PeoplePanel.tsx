@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Crown, HandPalm, Megaphone, Microphone, MicrophoneSlash, Robot, X } from "@phosphor-icons/react";
 import { initials, toneOf } from "@/components/room/tone";
-import { Doodle } from "@/components/ui/Doodle";
+import { AgentOrb } from "@/components/agent/AgentOrb";
 import { handWait, ordinal, type PeopleGroups } from "@/lib/realtime/room-live";
 
 /* Who is here, the People tab of the room's panel (polish program, Phase 0): three groups.
@@ -133,7 +133,7 @@ export function PeoplePanel({
             {groups.agents.map((a) => (
               <li className="ppl-row is-agent" key={a.id}>
                 <span className="mx-av is-agent" aria-hidden>
-                  <Doodle seed={agentSeedOf(a.id)} className="block h-full w-full" />
+                  <AgentOrb seed={agentSeedOf(a.id)} size={36} />
                 </span>
                 <span className="ppl-name">
                   <strong>{a.agentName}</strong>

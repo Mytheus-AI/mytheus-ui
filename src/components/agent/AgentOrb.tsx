@@ -31,6 +31,8 @@ import {
 
 export type { OrbState };
 
+const FRAME_MS = 1000 / 30;
+
 function useHostTheme(ref: RefObject<HTMLElement>): OrbTheme | null {
   const [theme, setTheme] = useState<OrbTheme | null>(null);
   useEffect(() => {
@@ -133,6 +135,12 @@ export function AgentOrb({
     const loop = (now: number) => {
       raf = 0;
       if (!orb || disposed) return;
+      // 30 frames a second is plenty for a slow float and keeps an orb that stays on screen
+      // for a whole meeting light on the battery.
+      if (now - last < FRAME_MS - 2) {
+        schedule();
+        return;
+      }
       const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
       last = now;
       draw(now, dt);

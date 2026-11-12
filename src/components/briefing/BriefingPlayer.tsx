@@ -7,7 +7,7 @@ import { briefMe, briefingAudioUrl, markBriefingHeard, pollBriefing, saveBriefin
 import { Button } from "@/components/ui/Button";
 import { cardClass, cardPadX } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
-import { Doodle } from "@/components/ui/Doodle";
+import { AgentOrb, type OrbState } from "@/components/agent/AgentOrb";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { ErrorState, RetryButton } from "@/components/ui/ErrorState";
 import { useOrgContext } from "@/lib/org-context";
@@ -127,7 +127,7 @@ export function BriefingPlayer({
     return (
       <section aria-labelledby={headingId} className={cardClass({ flush: true, className: "brf" })}>
         <div className={`flex flex-wrap items-center gap-4 py-5 ${cardPadX}`}>
-          <Face seed={seed} size={variant === "compact" ? 52 : 60} speaking={writing} />
+          <Face seed={seed} size={variant === "compact" ? 52 : 60} speaking={writing} orb={writing ? "listening" : "idle"} />
           <div className="min-w-0 flex-[1_1_16rem]">
             <p className="text-[13px] font-semibold text-ink-3">Your briefing</p>
             <H id={headingId} className="display text-[22px] leading-tight text-ink">
@@ -303,7 +303,7 @@ function ReadyPlayer({
     <section aria-labelledby={headingId} className={cardClass({ flush: true, className: "brf" })} onKeyDown={onKey} aria-keyshortcuts="Space ArrowLeft ArrowRight">
       <div className={`brf-head ${cardPadX} pt-5`}>
         <div className="flex flex-wrap items-center gap-4">
-          <Face seed={seed} size={variant === "compact" ? 56 : 64} speaking={state.playing} />
+          <Face seed={seed} size={variant === "compact" ? 56 : 64} speaking={state.playing} orb={state.playing ? "speaking" : "idle"} />
           <div className="min-w-0 flex-[1_1_14rem]">
             <p className="text-[13px] font-semibold text-ink-3">{coverLine(briefing)}</p>
             <H id={headingId} className="display text-[22px] leading-tight text-ink sm:text-[24px]">
@@ -466,13 +466,14 @@ function ReadyPlayer({
   );
 }
 
-/** The agent's face; a ring breathes while it speaks (still under reduced motion). */
-function Face({ seed, size, speaking }: { seed: string; size: number; speaking: boolean }) {
+/** The agent's face, its live orb: it talks while the briefing plays and rests when paused (one
+    still frame under reduced motion); a ring breathes around it while it speaks. */
+function Face({ seed, size, speaking, orb }: { seed: string; size: number; speaking: boolean; orb: OrbState }) {
   return (
     <span className={`brf-face relative inline-grid shrink-0 place-items-center ${speaking ? "is-speaking" : ""}`} style={{ width: size + 12, height: size + 12 }} aria-hidden>
       <span className="brf-ring absolute inset-0 rounded-full" />
       <span className="relative block overflow-hidden rounded-full bg-surface shadow-warm-2 ring-2 ring-surface" style={{ width: size, height: size }}>
-        <Doodle seed={seed} className="block h-full w-full" />
+        <AgentOrb seed={seed} mode="live" state={orb} size={size} />
       </span>
     </span>
   );

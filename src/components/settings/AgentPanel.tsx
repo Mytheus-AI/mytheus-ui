@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { DoodlePicker } from "@/components/ui/DoodlePicker";
+import { OrbPicker } from "@/components/agent/OrbPicker";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { saveAgentPersona } from "@/app/actions/profile";
@@ -22,7 +22,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { FieldRow as SettingsRow, inputClass, textareaClass } from "@/components/ui/Form";
 import { notifyError, notifySuccess } from "@/lib/toast";
 
-/* Your agent (ADR-0038 D2): name, doodle face, personality and instructions, with the agent drawn
+/* Your agent (ADR-0038 D2): name, glass orb face, personality and instructions, with the agent drawn
    live beside the form (above it below xl). Saved with `saveAgentPersona`; the agent fields are
    self only on the API. A face left at the derived default is saved as NULL, so every surface
    (the meeting room included) keeps deriving the same one from `users.id`. */
@@ -152,7 +152,7 @@ export function AgentPanel({
           ) : null}
         </SettingsRow>
         <div className={`${cardPadX} py-4 md:py-[18px]`}>
-          <DoodlePicker value={form.seed} onChange={(s) => set("seed", s)} label="Its face" />
+          <OrbPicker value={form.seed} onChange={(s) => set("seed", s)} label="Its face" />
           {errors.agent_avatar_seed ? (
             <p className="mt-2 text-[14px] text-priority-high">{errors.agent_avatar_seed}</p>
           ) : null}

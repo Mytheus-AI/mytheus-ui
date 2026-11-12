@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { CaretUpDown, Plus, SidebarSimple, X } from "@phosphor-icons/react";
 import { useOrgContext } from "@/lib/org-context";
 import { Wordmark } from "@/components/site/Wordmark";
-import { Doodle } from "@/components/ui/Doodle";
+import { AgentOrb } from "@/components/agent/AgentOrb";
 import { defaultDoodleSeed } from "@/lib/doodle";
 import { buttonClass } from "@/components/ui/Button";
 import { countLabel } from "@/lib/inbox";
@@ -356,7 +356,7 @@ function AgentTab({
           <circle cx="19" cy="19" r="17.5" fill="none" stroke="var(--signal-line)" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
         <span className="block h-[30px] w-[30px] overflow-hidden rounded-full bg-surface ring-2 ring-surface">
-          <Doodle seed={agent.seed} className="block h-full w-full" />
+          <AgentOrb seed={agent.seed} size={30} />
         </span>
       </span>
       <span className={`sb-fade min-w-0 flex-1 ${label}`}>

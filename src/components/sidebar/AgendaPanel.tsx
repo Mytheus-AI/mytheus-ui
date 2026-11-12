@@ -18,7 +18,7 @@ import { setAgendaItemStatus } from "@/app/actions/agenda";
 import { useCallToast } from "@/components/call/CallToast";
 import { STATUS_LABEL, itemMeta, statusSourceText } from "@/components/meetings/agenda-status";
 import type { AgendaItem, AgendaStatus, NudgeType } from "@/lib/api/meeting-agenda-types";
-import { Doodle } from "@/components/ui/Doodle";
+import { AgentOrb } from "@/components/agent/AgentOrb";
 import {
   NUDGE_LABEL,
   agendaProgress,
@@ -159,7 +159,7 @@ export function AgendaPanel({
           <div className="nfy-kind">
             {proxyFace ? (
               <span className="cx-agent-badge nudge-face" aria-hidden="true">
-                <Doodle seed={proxyFace.seed} className="block h-full w-full" />
+                <AgentOrb seed={proxyFace.seed} size={22} />
               </span>
             ) : (
               (() => {

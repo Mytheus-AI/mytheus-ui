@@ -30,7 +30,7 @@ import { fetchMeetingCatchUp } from "@/lib/api/meeting-brain";
 import type { MeetingCatchUp } from "@/lib/api/meeting-brain-types";
 import { listMembers } from "@/lib/api/members";
 import { agentFace } from "@/lib/realtime/agent-persona";
-import { Doodle } from "@/components/ui/Doodle";
+import { AgentOrb } from "@/components/agent/AgentOrb";
 import "@/styles/meeting-agenda.css";
 import "@/styles/meeting-brain.css";
 
@@ -147,7 +147,7 @@ function CatchUpBody({ c, nameOf, face }: { c: MeetingCatchUp; nameOf: (id: stri
       <section className="cu-lead" aria-label="Summary">
         {face ? (
           <span className="cu-face" aria-hidden="true">
-            <Doodle seed={face.seed} className="block h-full w-full" />
+            <AgentOrb seed={face.seed} size={56} />
           </span>
         ) : null}
         <div className="cu-lead-text">
