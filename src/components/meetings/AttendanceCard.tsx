@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowCounterClockwise, Plus, Robot, Trash, User } from "@phosphor-icons/react";
-import { Doodle } from "@/components/ui/Doodle";
+import { AgentOrb } from "@/components/agent/AgentOrb";
 import { setAttendance, type AttendanceSaved } from "@/app/actions/attendance";
 import { ATTENDANCE_LIMITS, type Attendance } from "@/lib/api/meeting-brain-types";
 import {
@@ -115,7 +115,7 @@ export function AttendanceCard({
 
       <div className="at-who">
         <span className="at-face" aria-hidden="true">
-          <Doodle seed={agent.seed} className="block h-full w-full" />
+          <AgentOrb seed={agent.seed} size={48} />
         </span>
         <p className="mx-help">
           {sending

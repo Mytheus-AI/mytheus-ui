@@ -6,7 +6,7 @@ import { saveBriefingPreferences } from "@/app/actions/briefings";
 import { Toggle } from "@/components/settings/Toggle";
 import { Button } from "@/components/ui/Button";
 import { CardHead, cardClass, cardPadX } from "@/components/ui/Card";
-import { Doodle } from "@/components/ui/Doodle";
+import { AgentOrb } from "@/components/agent/AgentOrb";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { notifyError, notifySuccess } from "@/lib/toast";
 import {
@@ -192,7 +192,7 @@ export function BriefingSettingsPanel({
         />
         <div className={`flex flex-wrap items-center gap-4 py-4 ${cardPadX}`}>
           <span className="relative block h-14 w-14 shrink-0 overflow-hidden rounded-full bg-surface shadow-warm-2 ring-2 ring-surface" aria-hidden>
-            <Doodle seed={agentSeed} className="block h-full w-full" />
+            <AgentOrb seed={agentSeed} size={56} />
           </span>
           <div className="grid min-w-0 flex-[1_1_16rem] gap-3 sm:grid-cols-2">
             {initial.server_voice_connected ? (

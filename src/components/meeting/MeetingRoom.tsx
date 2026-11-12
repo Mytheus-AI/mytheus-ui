@@ -901,6 +901,13 @@ function Room({
     : socket.status === "disabled" || socket.status === "forbidden"
       ? "off"
       : "paused";
+  // Your agent's orb: talking while a note is still streaming in, listening while the room is on
+  // the record, resting otherwise.
+  const agentState: "idle" | "listening" | "speaking" = myNotes.some((n) => !n.final)
+    ? "speaking"
+    : liveState === "listening"
+      ? "listening"
+      : "idle";
   const meetingSeconds = useCallback(() => elapsedSeconds(startedAt, Date.now()), [startedAt]);
 
   const agenda = (
@@ -919,7 +926,7 @@ function Room({
   const sidebar = (variant: "full" | "rail") => (
     <AgentSidebar
       variant={variant}
-      head={variant === "full" && myFace ? <AgentHead face={myFace} personality={me?.personality ?? null} /> : undefined}
+      head={variant === "full" && myFace ? <AgentHead face={myFace} personality={me?.personality ?? null} state={agentState} /> : undefined}
       agenda={agenda}
       onAttentionChange={onAttention}
       id={variant === "full" ? SECTION_IDS.agent : "cx-rail-agent"}

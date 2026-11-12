@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { BackLink, FormAlert, PrimaryButton, StepHeader, TextButton, TextField } from "@/components/auth/fields";
-import { DoodlePicker } from "@/components/ui/DoodlePicker";
+import { OrbPicker } from "@/components/agent/OrbPicker";
 import { AgentPreviewCard } from "@/components/settings/AgentPreviewCard";
 import { PersonalityPicker } from "@/components/settings/PersonalityPicker";
 import { saveAgentPersona } from "@/app/actions/profile";
@@ -153,7 +153,7 @@ export function MeetAgentStep({
         />
 
         <div id={IDS.agent_avatar_seed} tabIndex={-1} className="rounded-ctl focus-visible:outline-none">
-          <DoodlePicker
+          <OrbPicker
             value={seed}
             onChange={(s) => {
               setSeed(s);

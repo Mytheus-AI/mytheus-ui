@@ -3,7 +3,7 @@
 import { useId, type CSSProperties, type ReactNode } from "react";
 import { HandPalm, MicrophoneSlash, Microphone, PushPin, UsersThree } from "@phosphor-icons/react";
 import { initials, toneOf } from "@/components/room/tone";
-import { Doodle } from "@/components/ui/Doodle";
+import { AgentOrb } from "@/components/agent/AgentOrb";
 import { useSpotlight } from "@/components/room/useSpotlight";
 import { ordinal } from "@/lib/realtime/room-live";
 
@@ -74,13 +74,13 @@ function handWords(tile: RoomTile): string | null {
   return tile.handPlace ? `hand raised, ${ordinal(tile.handPlace)} in line` : "hand raised";
 }
 
-/* A participant's agent, as a small doodle badge in their name tag. Its accessible name says
-   whose agent it is. */
+/* A participant's agent, as a small orb badge in their name tag. Its accessible name says whose
+   agent it is. */
 function AgentBadge({ agent }: { agent?: RoomTile["agent"] }) {
   if (!agent) return null;
   return (
     <span className="cx-agent-badge" role="img" aria-label={`Agent: ${agent.name}`} title={agent.name}>
-      <Doodle seed={agent.seed} className="block h-full w-full" />
+      <AgentOrb seed={agent.seed} size={22} />
     </span>
   );
 }
@@ -302,7 +302,7 @@ function ProxyBody({ tile, large = false }: { tile: RoomTile; large?: boolean })
       <span className="cx-tile-bg is-proxy" aria-hidden />
       <div className="cx-proxy-card">
         <span className="cx-proxy-face" aria-hidden>
-          {tile.agent ? <Doodle seed={tile.agent.seed} className="block h-full w-full" /> : null}
+          {tile.agent ? <AgentOrb seed={tile.agent.seed} mode="live" size={132} /> : null}
         </span>
         <p className="cx-proxy-for">Standing in for {forName}</p>
         <p id={`${uid}-u`} className={`cx-proxy-text${update ? "" : " is-empty"}`}>

@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { ChatCircleText, CheckCircle, Gavel, LockSimple, PaperPlaneRight, Robot, SealQuestion, X } from "@phosphor-icons/react";
 import { RoomDialog } from "@/components/room/RoomDialog";
 import { askStandIn } from "@/components/room/stage-actions";
-import { Doodle } from "@/components/ui/Doodle";
+import { AgentOrb } from "@/components/agent/AgentOrb";
 import type { StandInAnswerWire } from "@/lib/api/room-stage-types";
 import type { AgentFace } from "@/lib/realtime/agent-persona";
 import type { DueQuestions } from "@/lib/realtime/stage";
@@ -159,7 +159,7 @@ export function StandInDialog({
       <div className="si-dialog">
         <div className="si-head">
           <span className="cx-agent-badge si-face" aria-hidden="true">
-            {face ? <Doodle seed={face.seed} className="block h-full w-full" /> : <Robot size={18} />}
+            {face ? <AgentOrb seed={face.seed} mode="live" size={40} /> : <Robot size={18} />}
           </span>
           <p className="si-sub">{name} sent their agent instead of joining. It listens and takes notes for them.</p>
         </div>
