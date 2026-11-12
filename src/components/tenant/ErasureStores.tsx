@@ -1,13 +1,14 @@
 import { CheckCircle, CircleDashed } from "@phosphor-icons/react/ssr";
 import { erasureProgress, orderedStores, storeLabel, type ErasureStoreRow } from "@/lib/erasure";
+import { zonedFormat } from "@/lib/timezone-server";
 
 /* One erasure's per-store checklist (Workspace > Data and privacy). core-api's records finish with
    the request; transcripts, the AI search index, keyword search and the knowledge graph each
    report back when their service has run, so they read "Waiting" until then. The state is in the
    words and the icon shape (a filled check, a dashed ring), never in colour alone. */
 
-const time = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-const at = (iso: string | null | undefined) => (iso && !Number.isNaN(Date.parse(iso)) ? time.format(new Date(iso)) : null);
+const time = () => zonedFormat({ month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+const at = (iso: string | null | undefined) => (iso && !Number.isNaN(Date.parse(iso)) ? time().format(new Date(iso)) : null);
 
 export function ErasureStores({ id, progress: state, stores }: { id: string; progress?: string; stores?: ErasureStoreRow[] }) {
   const rows = orderedStores(stores);

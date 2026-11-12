@@ -14,6 +14,7 @@ import { grantSupportAccess, revokeSupportAccess } from "@/app/actions/tenant-ad
 import { loadSupportGrants } from "@/lib/api/admin-tenant";
 import { listMembers } from "@/lib/api/members";
 import { GRANT_DURATIONS, GRANT_SCOPES, grantState, type GrantState } from "@/lib/tenant-admin";
+import { zonedFormat } from "@/lib/timezone-server";
 
 export const metadata: Metadata = { title: "Support access | Mytheus" };
 export const dynamic = "force-dynamic";
@@ -22,8 +23,8 @@ export const dynamic = "force-dynamic";
    to a workspace. An owner or admin grants it here, to one staff member, for a fixed time, and can
    revoke it at any moment. Every grant, revoke and staff action under it is audited. */
 
-const dateTime = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-const fmt = (iso: string | null) => (iso && !Number.isNaN(Date.parse(iso)) ? dateTime.format(new Date(iso)) : "");
+const dateTime = () => zonedFormat({ month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+const fmt = (iso: string | null) => (iso && !Number.isNaN(Date.parse(iso)) ? dateTime().format(new Date(iso)) : "");
 const STATE_BADGE: Record<GrantState, { tone: ChipTone; label: string }> = {
   active: { tone: "ok", label: "Active" },
   expired: { tone: "neutral", label: "Expired" },

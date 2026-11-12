@@ -14,6 +14,7 @@ import { FormSubmit } from "@/components/admin/FormSubmit";
 import { FlagControls } from "@/components/ops/FlagRow";
 import { createFeatureFlag } from "@/app/actions/ops";
 import { loadFlags, loadOpsTenants } from "@/lib/api/admin-ops";
+import { zonedFormat } from "@/lib/timezone-server";
 
 export const metadata: Metadata = { title: "Feature flags | Mytheus" };
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ export const dynamic = "force-dynamic";
    tenant, which overrides the global value for it. Every change emits `admin-events` flag_changed
    and is written to the ops audit log. */
 
-const dateTime = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+const dateTime = () => zonedFormat({ month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
 export default async function OpsFlagsPage() {
   const [res, tenants] = await Promise.all([loadFlags(), loadOpsTenants()]);
@@ -83,7 +84,7 @@ export default async function OpsFlagsPage() {
                           )}
                         </td>
                         <td data-label="Updated" className="whitespace-nowrap px-5 py-3 tabular-nums text-ink-3">
-                          {Number.isNaN(Date.parse(f.updated_at)) ? "" : dateTime.format(new Date(f.updated_at))}
+                          {Number.isNaN(Date.parse(f.updated_at)) ? "" : dateTime().format(new Date(f.updated_at))}
                         </td>
                         <td className="py-3 pl-5 pr-[22px]">
                           <FlagControls id={f.id} flagKey={f.key} enabled={f.enabled} />

@@ -8,6 +8,7 @@ import type { MeetingBrief } from "@/lib/api/meeting-brain-types";
 import { listMembers } from "@/lib/api/members";
 import { briefLead } from "./BriefSection";
 import { LatestStatus } from "./LatestStatus";
+import { zonedFormat } from "@/lib/timezone-server";
 
 /* Your next meeting's brief on the dashboard (mytheus-docs ADR-0039 E): the next meeting you are
    in that starts within 24 hours (or is running now), what is yours to bring, and a link to the
@@ -16,7 +17,7 @@ import { LatestStatus } from "./LatestStatus";
    component, so it can stream in a Suspense boundary. */
 
 const DAY_MS = 24 * 60 * 60_000;
-const time = new Intl.DateTimeFormat("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" });
+const time = () => zonedFormat({ weekday: "short", hour: "numeric", minute: "2-digit" });
 
 function startsIn(start: Date, now: Date): string {
   const mins = Math.round((start.getTime() - now.getTime()) / 60000);
@@ -59,7 +60,7 @@ export async function MeetingBriefCard({ className = "" }: { className?: string 
       <CardHead
         id="brief-card-title"
         title="Your brief"
-        caption={`${next.title}, ${time.format(start)}`}
+        caption={`${next.title}, ${time().format(start)}`}
         right={<Chip tone="accent">{startsIn(start, now)}</Chip>}
       />
       <div className="border-t border-line px-4 pb-[18px] pt-3.5 sm:px-[22px]">

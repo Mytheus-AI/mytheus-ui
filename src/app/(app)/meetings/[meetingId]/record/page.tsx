@@ -12,6 +12,7 @@ import { apiSafe } from "@/lib/api/client";
 import { gapLength } from "@/lib/realtime/privacy";
 import type { ConsentReceiptRow, OffRecordStateRow } from "@/app/actions/off-record";
 import "@/components/room/room-privacy.css";
+import { zonedFormat } from "@/lib/timezone-server";
 
 export const metadata: Metadata = { title: "What is recorded | Mytheus" };
 
@@ -24,8 +25,8 @@ export const metadata: Metadata = { title: "What is recorded | Mytheus" };
 
 export const dynamic = "force-dynamic";
 
-const time = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" });
-const day = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric" });
+const time = () => zonedFormat({ hour: "numeric", minute: "2-digit" });
+const day = () => zonedFormat({ weekday: "short", month: "short", day: "numeric" });
 
 export default async function RecordPage({ params }: { params: { meetingId: string } }) {
   const meeting = await resolveCallMeeting(params.meetingId);
@@ -42,7 +43,7 @@ export default async function RecordPage({ params }: { params: { meetingId: stri
     <Page>
       <PageHead
         title="What is recorded"
-        context={`Your agreement for ${meeting.title}, ${day.format(new Date(meeting.startTime))}, and the stretches that were off the record.`}
+        context={`Your agreement for ${meeting.title}, ${day().format(new Date(meeting.startTime))}, and the stretches that were off the record.`}
         action={
           <LinkButton href={`/meetings/${meeting.id}`} variant="outline">
             Open the meeting
@@ -108,8 +109,8 @@ export default async function RecordPage({ params }: { params: { meetingId: stri
                     <div className="min-w-0">
                       <p className="text-[15px] font-semibold text-ink">
                         {s.ended_at
-                          ? `${time.format(new Date(s.started_at))} to ${time.format(new Date(s.ended_at))}, ${gapLength(s.duration_ms)}`
-                          : `Since ${time.format(new Date(s.started_at))}, still off the record`}
+                          ? `${time().format(new Date(s.started_at))} to ${time().format(new Date(s.ended_at))}, ${gapLength(s.duration_ms)}`
+                          : `Since ${time().format(new Date(s.started_at))}, still off the record`}
                       </p>
                       <p className="text-[14px] text-ink-2">Nothing said in this stretch was transcribed, indexed or seen by any agent.</p>
                     </div>
