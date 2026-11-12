@@ -2,7 +2,7 @@ import { cardClass, cardPadX } from "@/components/ui/Card";
 import { Bone, CardHeadSkeleton, CardSkeleton, ChipBone, Page, pageTitleClass, TextBone } from "@/components/ui/Page";
 
 /* The agent page while it loads, in AgentWorkspace's own grid: the portrait on its stage (the
-   148px face, "Your agent", the name as the title, the note in its voice), then "Make it yours"
+   148px face, "Your Myte", the name as the title, the note in its voice), then "Make it yours"
    and the form's two cards and footer; the side column (what it listens for, topics you watch,
    what it kept) sits beside it from xl and between the portrait and the form below xl, as the
    page puts it. */
@@ -54,7 +54,7 @@ function FieldRowSkeleton({ tall = false }: { tall?: boolean }) {
 
 export default function Loading() {
   return (
-    <Page className="pt-2" label="Loading your agent">
+    <Page className="pt-2" label="Loading your Myte">
       <div aria-hidden className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0 space-y-6">
           <div className="rounded-hero bg-bg-2 px-5 py-6 sm:px-7 sm:py-7 [&_.mx-bone]:bg-bg-3">
@@ -102,13 +102,14 @@ export default function Loading() {
                 <div className="divide-y divide-line border-t border-line">
                   <div className={`${cardPadX} py-4 md:py-[18px]`}>
                     <TextBone className="mb-3 text-[15px] font-semibold" widths={["w-24"]} />
-                    <div className="grid gap-2">
-                      {[0, 1, 2, 3, 4].map((i) => (
-                        <div key={i} className="flex items-start gap-3 rounded-ctl border border-line p-3.5">
+                    <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                      {[0, 1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className={`flex h-full items-start gap-3 rounded-ctl border p-3.5 ${i === 5 ? "border-dashed border-line-2" : "border-line"}`}>
                           <Bone className="mt-0.5 h-5 w-5 shrink-0 !rounded-full" />
                           <div className="min-w-0 flex-1">
                             <TextBone className="text-[15px] font-semibold" widths={["w-[45%]"]} />
-                            <TextBone className="mt-1.5 font-display text-[15px] italic leading-snug" widths={i === 2 ? ["w-[95%]", "w-[35%]"] : ["w-[75%]"]} narrow={["w-[50%]"]} />
+                            <TextBone className="mt-0.5 text-[14px]" widths={["w-[80%]"]} />
+                            {i < 5 ? <TextBone className="mt-1.5 font-display text-[15px] italic leading-snug" widths={["w-[95%]", "w-[60%]"]} narrow={["w-[50%]"]} /> : null}
                           </div>
                         </div>
                       ))}

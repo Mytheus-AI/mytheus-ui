@@ -58,8 +58,8 @@ export function AgentPanel({
 
   if (!profile || !saved || !form) {
     return (
-      <SectionCard title="Your agent">
-        <ErrorState variant="inline" className="pt-4" title="Your agent could not be loaded" text="Nothing was lost. Try again in a moment." />
+      <SectionCard title="Your Myte">
+        <ErrorState variant="inline" className="pt-4" title="Your Myte could not be loaded" text="Nothing was lost. Try again in a moment." />
       </SectionCard>
     );
   }
@@ -100,8 +100,8 @@ export function AgentPanel({
       setSaved(next);
       setForm(next);
       onChange?.(next);
-      if (isUndo) notifySuccess("Agent restored");
-      else notifySuccess("Agent saved", { description: "Your next notes use its new voice.", undo: () => void save(before, true) });
+      if (isUndo) notifySuccess("Myte restored");
+      else notifySuccess("Myte saved", { description: "Your next notes use its new voice.", undo: () => void save(before, true) });
       return;
     }
     setErrors(result.fieldErrors ?? {});
@@ -112,6 +112,14 @@ export function AgentPanel({
 
   const defaultName = agentDisplayName(null, user.name);
   const instructionsLength = form.instructions.trim().length;
+  /* "Your own" in the personality grid: keep the personality, go write the instructions. */
+  const focusInstructions = () => {
+    const el = document.getElementById("ag-instructions");
+    if (!el) return;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
+    el.focus({ preventScroll: true });
+  };
 
   return (
     <div className={`grid items-start gap-5 ${hidePreview ? "" : "xl:grid-cols-[minmax(0,1fr)_300px]"}`}>
@@ -129,7 +137,7 @@ export function AgentPanel({
 
       <SectionCard
         title="Who it is"
-        description="Your agent works only for you. Teammates see its name and face next to yours in meetings."
+        description="Your Myte works only for you. Teammates see its name and face next to yours in meetings."
         className={hidePreview ? "" : "xl:col-start-1 xl:row-start-1"}
       >
         <SettingsRow label="Name" htmlFor="ag-name" help={`Leave it blank to keep "${defaultName}".`}>
@@ -180,6 +188,8 @@ export function AgentPanel({
             onChange={(p) => set("personality", p)}
             legend="Personality"
             legendClassName="mb-3 block text-[15px] font-semibold text-ink"
+            layout="grid"
+            own={{ active: instructionsLength > 0, onPick: focusInstructions }}
           />
         </div>
         <SettingsRow
@@ -219,7 +229,7 @@ export function AgentPanel({
       <div className={cardClass({ flush: true, className: "xl:col-start-1 xl:row-start-3" })}>
         <FormFooter className="!border-t-0">
           <Button disabled={!dirty || saving} onClick={() => void save(form)}>
-            {saving ? "Saving agent" : "Save agent"}
+            {saving ? "Saving Myte" : "Save Myte"}
           </Button>
           {dirty && !saving ? (
             <Button
