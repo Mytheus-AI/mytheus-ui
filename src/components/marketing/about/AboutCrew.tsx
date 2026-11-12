@@ -42,7 +42,7 @@ export function AboutCrew() {
             </li>
           ))}
         </ul>
-        <p className="mt-12 font-display text-[1.2rem]  text-ink-3">
+        <p className="mt-12 font-display text-[1.2rem] italic text-ink-3">
           One thread, four hands on it.{" "}
           <Link
             href="/careers"

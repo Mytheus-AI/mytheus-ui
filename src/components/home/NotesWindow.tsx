@@ -111,7 +111,7 @@ export function NotesWindow() {
         <div className={s.npRows}>
           {ROWS.map((r, i) => (
             <div key={r.raw} className={`${s.npRow} ${isStatic || i < shown ? s.show : ""}`}>
-              <p className={`${s.raw} font-display  leading-[1.3] text-ink-3`}>{r.raw}</p>
+              <p className={`${s.raw} font-display italic leading-[1.3] text-ink-3`}>{r.raw}</p>
               <span aria-hidden className={s.bead} />
               <div className={s.clean}>
                 <Chip tone={r.tone}>{r.label}</Chip>
