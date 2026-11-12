@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* One system for every surface (marketing, auth, app, call). Warm cream stage, white surfaces,
-   one coral, dark controls; Inter Tight for display titles, Hanken Grotesk for everything else.
+   one coral, dark controls; Syne for display titles, Hanken Grotesk for everything else.
    The signature is a single coral line (the logo's stroke). Dark mode is scoped to
    `<html data-theme="dark">` in src/styles/app-theme.css. Rules: docs/DESIGN-ONELINE.md. */
 
@@ -87,12 +87,12 @@ body {
   /* The font files are loaded on <body> by next/font (src/lib/fonts.ts); these names are what
      every component reads. */
   --font-sans: var(--font-hanken), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-syne), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   background-color: var(--bg);
   color: var(--ink-2);
   font-family: var(--font-sans);
-  /* Only real faces: no faked bold or slanted type (src/lib/fonts.ts). */
+  /* Only real faces: Syne (display) ships 400 and 500 upright only, see src/lib/fonts.ts. */
   font-synthesis: none;
   font-size: 16px;
   line-height: 1.55;
@@ -103,9 +103,17 @@ body {
   overflow-x: clip;
 }
 
+/* The marketing home page alone keeps Newsreader for its titles and wordmark (src/lib/fonts.ts). */
+body:has([data-home-type]) {
+  --font-display: var(--font-newsreader), Georgia, "Times New Roman", serif;
+}
 
-/* Upright type everywhere: emphasis is carried by weight and colour, never italic. */
-em, i, cite, dfn, var, address { font-style: normal; }
+/* The dashboard: Inter Tight titles, and upright type throughout (emphasis by weight and colour,
+   never italic). Marketing and auth pages keep their own display faces. */
+.mx-app {
+  --font-display: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+}
+.mx-app :is(em, i, cite, dfn, var, address) { font-style: normal; }
 
 ::selection {
   background: var(--signal-soft);

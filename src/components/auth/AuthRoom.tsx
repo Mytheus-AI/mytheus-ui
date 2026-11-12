@@ -132,7 +132,7 @@ function Table({ label, rh }: { label?: string; rh: number }) {
           textAnchor="middle"
           fill="var(--ink-2)"
           fontSize="27"
-          fontStyle=""
+          fontStyle="italic"
           fontWeight={500}
           style={{ fontFamily: "var(--font-display)" }}
         >
@@ -344,7 +344,7 @@ export function AuthCrowd({ you }: { you?: string | "empty" }) {
           <Doodle key={seated} seed={seated} className="doodle-pop block h-full w-full" />
         </span>
       ) : null}
-      <span className="ml-3 font-display text-[15px]  text-ink-3">{seated ? "and you" : "your team, remembered"}</span>
+      <span className="ml-3 font-display text-[15px] italic text-ink-3">{seated ? "and you" : "your team, remembered"}</span>
     </div>
   );
 }

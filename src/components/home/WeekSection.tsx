@@ -30,7 +30,7 @@ const STRANDS = [
 ];
 
 const card = "flex-1 rounded-card border border-line bg-surface px-5 py-[18px] shadow-warm-2";
-const when = "font-display text-[1.05rem]  text-ink-3";
+const when = "font-display text-[1.05rem] italic text-ink-3";
 const title = "mb-3 mt-0.5 font-display text-[1.4rem] font-medium tracking-[-0.015em] text-ink";
 
 export function WeekSection() {

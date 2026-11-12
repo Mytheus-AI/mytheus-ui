@@ -45,7 +45,7 @@ export function TasksVisual() {
             >
               <div className="min-w-0">
                 <p className="font-medium leading-[1.35] text-ink">{r.task}</p>
-                {r.quote ? <p className="mt-0.5 font-display text-[1.05rem]  text-ink-3">{r.quote}</p> : null}
+                {r.quote ? <p className="mt-0.5 font-display text-[1.05rem] italic text-ink-3">{r.quote}</p> : null}
               </div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 lg:contents">
                 <span className="flex items-center gap-2 text-[15px] text-ink-2">

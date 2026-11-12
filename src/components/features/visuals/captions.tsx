@@ -51,7 +51,7 @@ export function CaptionsVisual() {
               </Swap>
             </p>
             <Swap className="mt-0.5 text-[1.06rem] leading-[1.45]">
-              <span style={dl(1.4)} className={` text-ink-3 ${SWAP_OUT}`}>
+              <span style={dl(1.4)} className={`italic text-ink-3 ${SWAP_OUT}`}>
                 okay lock the price at forty nine and I&rsquo;ll
               </span>
               <span style={dl(1.4)} className={`text-ink ${SWAP_IN}`}>

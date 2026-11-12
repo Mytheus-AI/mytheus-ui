@@ -24,7 +24,7 @@ export function DecisionVisual() {
           <PanelLabel>Said in the room</PanelLabel>
           <div className="grid grid-cols-[30px_minmax(0,1fr)] gap-x-3">
             <Av name="Maya" />
-            <p className="font-display text-[1.24rem]  leading-[1.3] text-ink-2">
+            <p className="font-display text-[1.24rem] italic leading-[1.3] text-ink-2">
               &ldquo;Okay, let&rsquo;s lock pricing at $49 for Q3 and move on.&rdquo;
             </p>
           </div>
