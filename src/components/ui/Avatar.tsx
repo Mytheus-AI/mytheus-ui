@@ -4,11 +4,10 @@ import { Doodle } from "./Doodle";
 /* Every person in the product has a face, never a pair of initials.
 
    Order of preference:
-   1. `seed`: the face the person chose (Clerk `unsafeMetadata.doodle`), drawn as their plush
-      character (Doodle, a still from the shared renderer).
-   2. `src`: their picture. Once someone has a face this is the same plush, uploaded to Clerk as
-      a transparent PNG; otherwise an uploaded or Google photo.
-   3. The default face for `id` (pass the person's email: it is the key every surface shares,
+   1. `seed`: the doodle the person chose (Clerk `unsafeMetadata.doodle`). Drawn as vector, so it
+      stays crisp at every size.
+   2. `src`: an uploaded or Google photo.
+   3. The default doodle for `id` (pass the person's email: it is the key every surface shares,
       so a teammate's view and the person's own sidebar draw the same face) or, failing that,
       `name`. Mock and sample data only carry names, so they get a consistent face per name.
    Clerk's generic placeholder picture counts as no picture. */

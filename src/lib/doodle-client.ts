@@ -1,8 +1,6 @@
 "use client";
 
-import { plushStillBlob } from "@/components/plush/stills";
-import { defaultDoodleSeed, isDoodleSeed } from "./doodle";
-import { PLUSH_VERSION } from "./plush";
+import { defaultDoodleSeed, doodleSvgString, isDoodleSeed } from "./doodle";
 
 /* Saving a doodle, browser side.
 
@@ -20,21 +18,39 @@ type ClerkUserLike = {
   setProfileImage: (params: { file: Blob }) => Promise<unknown>;
 };
 
-/** The face as a square PNG (Clerk takes raster images): the seed's plush character, on a
- *  transparent background like every other still. Rejects when this browser cannot draw it. */
-export function doodlePng(seed: string, size = 512): Promise<Blob> {
-  return plushStillBlob(seed, size);
+/** Rasterise a doodle to a square PNG. Clerk takes raster images, not SVG. */
+export async function doodlePng(seed: string, size = 512): Promise<Blob> {
+  const svg = doodleSvgString(seed, size);
+  const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  const img = new Image();
+  img.decoding = "async";
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error("Could not draw the doodle."));
+    img.src = url;
+  });
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Could not draw the doodle.");
+  ctx.drawImage(img, 0, 0, size, size);
+  return new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Could not draw the doodle."))), "image/png"),
+  );
 }
 
-/* `doodleImage` records which picture Clerk holds. Before the plush characters it was the bare
-   seed (and the picture was an ink doodle); the prefix marks a plush upload, so an account whose
-   stored picture is still the old drawing gets its plush uploaded once, the next time it signs in. */
-const imageMark = (seed: string) => `plush${PLUSH_VERSION}:${seed}`;
+/* `doodleImage` records which picture Clerk holds. For a while people wore plush characters and
+   their uploaded picture was a plush (marked `plush1:<seed>`); before that it was the bare seed.
+   The `doodle2:` mark means "this seed's ink doodle is the picture", so anyone whose stored
+   picture is a plush (or older) gets their doodle uploaded once, on their next signed-in page.
+   Plush characters are for agents only and never become a person's picture. */
+const imageMark = (seed: string) => `doodle2:${seed}`;
 
 /** Store the seed and upload the matching picture. `doodleImage` records which seed the
  *  uploaded picture shows, so a half-finished save is finished later rather than left stale. */
 export async function saveDoodle(user: ClerkUserLike, seed: string): Promise<void> {
-  if (!isDoodleSeed(seed)) throw new Error("That face could not be saved.");
+  if (!isDoodleSeed(seed)) throw new Error("That doodle could not be saved.");
   // Draw first: a browser that cannot draw the picture must not store a seed without one.
   const file = await doodlePng(seed);
   await user.update({ unsafeMetadata: { ...user.unsafeMetadata, doodle: seed } });
