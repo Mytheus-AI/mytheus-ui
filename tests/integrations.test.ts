@@ -10,6 +10,7 @@ import {
   normalizeIntegrations,
   parseReturnState,
   safeHttpsUrl,
+  selectedTracker,
   trackerOptions,
 } from "../src/lib/integrations.ts";
 
@@ -25,39 +26,48 @@ const row = (provider: string, over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-test("PM radio: Jira selected, Linear shown but never selectable or connectable", () => {
-  const opts = trackerOptions(normalizeIntegrations({ items: [row("jira")] }));
+test("tracker: Jira shown by default, Linear selectable and connectable when configured", () => {
+  const opts = trackerOptions(normalizeIntegrations({ items: [row("jira"), row("linear")] }));
   const jira = opts.find((o) => o.key === "jira")!;
   const linear = opts.find((o) => o.key === "linear")!;
   assert.equal(opts.length, 2);
   assert.equal(jira.selected, true);
   assert.equal(jira.canConnect, true);
   assert.equal(linear.selected, false);
-  assert.equal(linear.selectable, false);
-  assert.equal(linear.canConnect, false);
-  assert.equal(linear.reason, "not_available");
+  assert.equal(linear.selectable, true);
+  assert.equal(linear.canConnect, true);
 });
 
-test("PM radio: Linear stays disabled even if the server lists it as configured", () => {
-  const opts = trackerOptions(normalizeIntegrations([row("jira"), row("linear")]));
-  assert.equal(opts.find((o) => o.key === "linear")!.canConnect, false);
+test("tracker: ?tracker=linear shows Linear; a connected tracker always wins", () => {
+  const items = normalizeIntegrations([row("jira"), row("linear")]);
+  assert.equal(selectedTracker(items, "linear"), "linear");
+  assert.equal(selectedTracker(items, "github"), "jira");
+  const jiraLive = normalizeIntegrations([row("jira", { status: "active" }), row("linear")]);
+  assert.equal(selectedTracker(jiraLive, "linear"), "jira");
 });
 
-test("PM radio: unconfigured Jira cannot be connected", () => {
+test("tracker: unconfigured cannot be connected", () => {
   const jira = trackerOptions(normalizeIntegrations([row("jira", { configured: false })]))[0];
   assert.equal(jira.canConnect, false);
   assert.equal(jira.reason, "not_configured");
-  // Missing from the list entirely reads the same way.
-  assert.equal(trackerOptions(new Map())[0].reason, "not_configured");
+  assert.equal(trackerOptions(new Map())[1].reason, "not_configured");
 });
 
-test("PM radio: a connected Jira has no Connect; another tracker connected blocks Jira", () => {
-  const connected = trackerOptions(normalizeIntegrations([row("jira", { status: "active" })]))[0];
-  assert.equal(connected.canConnect, false);
-  assert.equal(connected.reason, "connected");
-  const blocked = trackerOptions(normalizeIntegrations([row("jira"), row("linear", { status: "active" })]))[0];
-  assert.equal(blocked.canConnect, false);
-  assert.equal(blocked.reason, "other_tracker_connected");
+test("tracker: one connected blocks the other, both ways", () => {
+  const linearLive = trackerOptions(normalizeIntegrations([row("jira"), row("linear", { status: "active" })]));
+  assert.equal(linearLive[0].reason, "other_tracker_connected");
+  assert.equal(linearLive[1].reason, "connected");
+  const jiraLive = trackerOptions(normalizeIntegrations([row("jira", { status: "active" }), row("linear")]));
+  assert.equal(jiraLive[0].reason, "connected");
+  assert.equal(jiraLive[1].reason, "other_tracker_connected");
+  assert.equal(jiraLive[1].canConnect, false);
+});
+
+test("tracker: Linear has a setup guide with its webhook URL and three env vars", () => {
+  const g = SETUP_GUIDES.linear;
+  assert.deepEqual(g.env, ["LINEAR_CLIENT_ID", "LINEAR_CLIENT_SECRET", "LINEAR_WEBHOOK_SECRET"]);
+  assert.deepEqual(g.apiUrls, [{ label: "Webhook URL", path: "/webhooks/linear" }]);
+  assert.ok(isConnectable("linear"));
 });
 
 test("card state follows configured and status", () => {
@@ -84,7 +94,8 @@ test("return state: connected, disconnected, errors, and nothing", () => {
   assert.deepEqual(parseReturnState({ connected: "slack" }), { tone: "success", provider: "slack", message: "Slack is connected." });
   assert.equal(parseReturnState({ connected: ["jira", "slack"] })!.tone, "success");
   assert.equal(parseReturnState({ disconnected: "google_calendar" })!.tone, "info");
-  assert.equal(parseReturnState({ connected: "linear" }), null);
+  assert.deepEqual(parseReturnState({ connected: "linear" }), { tone: "success", provider: "linear", message: "Linear is connected." });
+  assert.equal(parseReturnState({ connected: "github" }), null);
   assert.equal(parseReturnState({ connected: "<script>" }), null);
   assert.equal(parseReturnState({}), null);
   const denied = parseReturnState({ error: "access_denied" })!;
@@ -108,11 +119,12 @@ test("only https redirect targets and only the three built providers are accepte
   assert.equal(safeHttpsUrl("/relative"), null);
   assert.equal(safeHttpsUrl(undefined), null);
   assert.equal(isConnectable("jira"), true);
-  assert.equal(isConnectable("linear"), false);
+  assert.equal(isConnectable("linear"), true);
+  assert.equal(isConnectable("github"), false);
 });
 
 test("callback: provider validated before any call; code and state required", () => {
-  assert.deepEqual(readCallback("linear", { code: "c", state: "s" }), { kind: "done", location: "/settings/integrations?error=invalid_provider" });
+  assert.deepEqual(readCallback("github", { code: "c", state: "s" }), { kind: "done", location: "/settings/integrations?error=invalid_provider" });
   assert.deepEqual(readCallback("../oauth", { code: "c", state: "s" }), { kind: "done", location: "/settings/integrations?error=invalid_provider" });
   assert.deepEqual(readCallback("slack", { code: "c" }), { kind: "done", location: "/settings/integrations?error=invalid_state" });
   assert.deepEqual(readCallback("slack", { code: "c", state: "x".repeat(5000) }), { kind: "done", location: "/settings/integrations?error=invalid_state" });
@@ -199,6 +211,7 @@ test("every connectable provider has a setup guide with an https console link, e
     google_calendar: ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
     slack: ["SLACK_CLIENT_ID", "SLACK_CLIENT_SECRET", "SLACK_SIGNING_SECRET"],
     jira: ["JIRA_CLIENT_ID", "JIRA_CLIENT_SECRET"],
+    linear: ["LINEAR_CLIENT_ID", "LINEAR_CLIENT_SECRET", "LINEAR_WEBHOOK_SECRET"],
     hubspot: ["HUBSPOT_CLIENT_ID", "HUBSPOT_CLIENT_SECRET"],
     notion: ["NOTION_CLIENT_ID", "NOTION_CLIENT_SECRET"],
     confluence: ["CONFLUENCE_CLIENT_ID", "CONFLUENCE_CLIENT_SECRET"],

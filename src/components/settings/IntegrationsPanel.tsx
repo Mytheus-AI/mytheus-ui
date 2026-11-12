@@ -37,17 +37,17 @@ import type { IntegrationsLoad } from "@/lib/api/integrations";
      Needs setup       the server has none; admins get "Set up" (what to create, the redirect
                        URL, the scopes, the env var names), others "Ask an admin to set this up"
      Error             connected but failing at the provider; Reconnect
-     Coming soon       Linear, as a disabled segment of the tracker choice (never a chip)
 
    Every figure comes from integration-service's `GET /integrations`. No token is ever shown: the
    server never returns one and the view model has no field for it. Server component: Connect and
    Disconnect are form actions, so they work without client JS; the submit buttons, the setup
-   dialog and "More" are the client islands. */
+   dialog and "More" are the client islands. The tracker card shows Jira or Linear (ADR-0044):
+   the choice is two links (`?tracker=`), so it needs no client state either. */
 
 const dateTime = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 const fmt = (iso: string | null) => (iso && !Number.isNaN(Date.parse(iso)) ? dateTime.format(new Date(iso)) : null);
 
-type CardMeta = { key: Exclude<ProviderKey, "linear">; name: string; description: string; icon: Icon };
+type CardMeta = { key: ProviderKey; name: string; description: string; icon: Icon };
 
 const FOR_MYTES: CardMeta[] = [
   {
@@ -160,12 +160,12 @@ function bodyFor(view: ProviderView, name: string, item: IntegrationItem | undef
       </>
     );
   }
-  if (view === "blocked") return <Quiet>Another project tracker is connected. Disconnect it before connecting Jira.</Quiet>;
+  if (view === "blocked") return <Quiet>Another project tracker is connected. Disconnect it before connecting {name}.</Quiet>;
   return null;
 }
 
 /** The one footer action for a state. */
-function actionFor(view: ProviderView, provider: Exclude<ProviderKey, "linear">, name: string, ctx: Ctx): ReactNode {
+function actionFor(view: ProviderView, provider: ProviderKey, name: string, ctx: Ctx): ReactNode {
   if (!ctx.canManage || view === "unknown") {
     return <Quiet>{view === "connected" ? "Connected by a workspace admin" : "Ask an admin to set this up"}</Quiet>;
   }
@@ -208,42 +208,51 @@ function ProviderCard({ meta, load, ctx }: { meta: CardMeta; load: IntegrationsL
 
 /* ---------------- the project tracker ---------------- */
 
-/** Jira or Linear, as a two-segment choice. Linear is not built: a disabled segment marked
-    "Coming soon", never a second chip (R8: one tracker; Linear is never connectable). */
-function TrackerChoice() {
+const SEGMENT =
+  "flex h-8 items-center justify-center rounded-full px-4 text-[14px] font-semibold transition-[background-color,color,box-shadow] duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal";
+
+/** Jira or Linear, as a two-segment choice. Each segment is a link (`?tracker=`), so switching
+    needs no client JS; a connected tracker is always the one shown, and the other segment says
+    the workspace already has a tracker. */
+function TrackerChoice({ options }: { options: ReturnType<typeof trackerOptions> }) {
+  const locked = options.some((o) => o.reason === "connected");
   return (
-    <fieldset className="w-full min-w-0">
-      <legend className="sr-only">Tracker</legend>
-      <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-1 rounded-full bg-bg-2 p-1">
-        <label className="flex h-8 cursor-pointer items-center justify-center rounded-full px-4 text-[14px] font-semibold text-ink-2 transition-[background-color,color,box-shadow] duration-150 has-[:checked]:bg-surface has-[:checked]:text-ink has-[:checked]:shadow-warm-1 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-signal">
-          <input type="radio" name="pm-tracker" value="jira" defaultChecked className="sr-only" />
-          Jira
-        </label>
-        <label className="flex h-8 min-w-0 cursor-not-allowed items-center justify-center gap-1.5 rounded-full px-3 text-[14px] text-ink-3">
-          <input type="radio" name="pm-tracker" value="linear" disabled aria-describedby="linear-soon" className="sr-only" />
-          <span className="font-semibold">Linear</span>
-          <span id="linear-soon" className="truncate text-[13px]">
-            Coming soon
-          </span>
-        </label>
+    <nav aria-label="Tracker" className="w-full min-w-0">
+      <div className="grid grid-cols-2 gap-1 rounded-full bg-bg-2 p-1">
+        {options.map((o) =>
+          o.selected ? (
+            <span key={o.key} aria-current="true" className={`${SEGMENT} bg-surface text-ink shadow-warm-1`}>
+              {o.name}
+            </span>
+          ) : locked ? (
+            <span key={o.key} className={`${SEGMENT} cursor-not-allowed text-ink-3`} title="One tracker per workspace">
+              {o.name}
+            </span>
+          ) : (
+            <a key={o.key} href={`?tracker=${o.key}`} className={`${SEGMENT} text-ink-2 hover:text-ink`}>
+              {o.name}
+            </a>
+          ),
+        )}
       </div>
-    </fieldset>
+    </nav>
   );
 }
 
-function TrackerCard({ load, ctx }: { load: IntegrationsLoad; ctx: Ctx }) {
-  const jira = load.kind === "live" ? load.items.get("jira") : undefined;
-  const otherTrackerConnected = load.kind === "live" && trackerOptions(load.items)[0].reason === "other_tracker_connected";
-  const view = viewFor(load, "jira", { otherTrackerConnected });
+function TrackerCard({ load, ctx, tracker }: { load: IntegrationsLoad; ctx: Ctx; tracker?: string }) {
+  const options = trackerOptions(load.kind === "live" ? load.items : new Map(), tracker);
+  const chosen = options.find((o) => o.selected) ?? options[0];
+  const item = load.kind === "live" ? load.items.get(chosen.key) : undefined;
+  const view = viewFor(load, chosen.key, { otherTrackerConnected: chosen.reason === "other_tracker_connected" });
   return (
     <Card
       meta={TRACKER}
       view={view}
-      body={bodyFor(view, "Jira", jira, ctx)}
+      body={bodyFor(view, chosen.name, item, ctx)}
       footer={
         <>
-          <TrackerChoice />
-          {actionFor(view, "jira", "Jira", ctx)}
+          <TrackerChoice options={options} />
+          {actionFor(view, chosen.key, chosen.name, ctx)}
         </>
       }
     />
@@ -273,6 +282,7 @@ export function IntegrationsPanel({
   canManage,
   appOrigin,
   apiOrigin,
+  tracker,
 }: {
   load: IntegrationsLoad;
   banner: ReturnBanner;
@@ -284,6 +294,8 @@ export function IntegrationsPanel({
   appOrigin: string;
   /** the API origin, for Slack's event and interactivity URLs */
   apiOrigin: string;
+  /** `?tracker=`: which tracker the tracker card shows when none is connected */
+  tracker?: string;
 }) {
   const ctx: Ctx = { canManage: canManage && load.kind !== "forbidden", appOrigin, apiOrigin, people };
 
@@ -316,7 +328,7 @@ export function IntegrationsPanel({
         {FOR_MYTES.map((m) => (
           <ProviderCard key={m.key} meta={m} load={load} ctx={ctx} />
         ))}
-        <TrackerCard load={load} ctx={ctx} />
+        <TrackerCard load={load} ctx={ctx} tracker={tracker} />
       </Group>
 
       <Group id="share-export" title="Share and export" lead="Send what the workspace confirmed to the tools other people already read. Each one is optional.">

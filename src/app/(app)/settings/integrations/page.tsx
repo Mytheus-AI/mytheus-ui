@@ -30,12 +30,13 @@ export default async function IntegrationsSettingsPage({
 
   const [load, members] = isAdmin ? await Promise.all([loadIntegrations(), listMembers()]) : [{ kind: "forbidden" as const }, null];
   const people = new Map((members ?? []).map((m) => [m.id, m.isYou ? `${m.name} (you)` : m.name]));
+  const tracker = typeof searchParams.tracker === "string" ? searchParams.tracker : undefined;
 
   return (
     <>
       <SectionBar title="Integrations" context="The tools your Mytes work with, and where the workspace shares what it confirms." />
       <div className="grid gap-6">
-        <IntegrationsPanel load={load} banner={banner} people={people} canManage={isAdmin} appOrigin={appOrigin} apiOrigin={api} />
+        <IntegrationsPanel load={load} banner={banner} people={people} canManage={isAdmin} appOrigin={appOrigin} apiOrigin={api} tracker={tracker} />
       </div>
     </>
   );

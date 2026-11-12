@@ -121,7 +121,7 @@ test("the email channel says when the server cannot send email", () => {
 
 test("HubSpot, Notion and Confluence connect like the R8 providers, with Not available yet when unconfigured", () => {
   for (const p of ["hubspot", "notion", "confluence"]) assert.equal(isConnectable(p), true);
-  assert.equal(isConnectable("linear"), false);
+  assert.equal(isConnectable("github"), false); // Linear is connectable since ADR-0044
   const items = normalizeIntegrations([{ provider: "notion", configured: false, status: null }]);
   assert.deepEqual(cardState(items.get("notion")), { kind: "not_configured" });
   assert.deepEqual(parseReturnState({ connected: "hubspot" }), { tone: "success", provider: "hubspot", message: "HubSpot is connected." });

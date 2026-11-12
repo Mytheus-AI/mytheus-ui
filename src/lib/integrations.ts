@@ -1,10 +1,10 @@
 /**
  * Integration settings, as pure functions (Phase P12, plan 3.14, P12 contract sections 0 and 3).
  *
- * Guardrail R8: Google Calendar, Slack, and ONE project tracker. The tracker is a single radio:
- * Jira is the one that is built and is selected; Linear is shown as an option that is not
- * available, so its Connect can never be pressed. A provider the server has no app credentials
- * for is "Not configured" and cannot be connected either.
+ * Guardrail R8: Google Calendar, Slack, and ONE project tracker, Jira or Linear (Linear built by
+ * ADR-0044). The tracker card shows one of the two at a time; a connected tracker is always the
+ * one shown, and while one is connected the other cannot be. A provider the server has no app
+ * credentials for is "Needs setup" and cannot be connected.
  *
  * Nothing in here ever sees token material: the server's list carries status, scopes and who
  * installed it, never a token, and the view model below has no field a token could land in.
@@ -33,7 +33,7 @@ export interface IntegrationItem {
 export type DecisionChecks = "on" | "needs_reconnect";
 
 export const PROVIDERS: readonly ProviderKey[] = ["google_calendar", "slack", "jira", "linear", "hubspot", "notion", "confluence"];
-export const CONNECTABLE: readonly ProviderKey[] = ["google_calendar", "slack", "jira", "hubspot", "notion", "confluence"];
+export const CONNECTABLE: readonly ProviderKey[] = ["google_calendar", "slack", "jira", "linear", "hubspot", "notion", "confluence"];
 /** Phase 4 reach: the CRM a meeting note goes to, and the two tools a decision record can be
  *  exported to. Outside R8, so connecting one never blocks another. */
 export const REACH: readonly ProviderKey[] = ["hubspot", "notion", "confluence"];
@@ -52,7 +52,7 @@ export function isProvider(v: unknown): v is ProviderKey {
   return typeof v === "string" && (PROVIDERS as readonly string[]).includes(v);
 }
 
-/** Only these can ever be connected; Linear is not built (R8, contract section 0). */
+/** Only these can ever be connected (R8 plus the reach providers). */
 export function isConnectable(v: unknown): v is ProviderKey {
   return typeof v === "string" && (CONNECTABLE as readonly string[]).includes(v);
 }
@@ -103,7 +103,7 @@ export function normalizeIntegrations(raw: unknown): Map<ProviderKey, Integratio
 export interface TrackerOption {
   key: TrackerKey;
   name: string;
-  /** Selectable at all (Linear never is). */
+  /** Selectable at all (both are, since ADR-0044). */
   selectable: boolean;
   /** The radio's current choice. */
   selected: boolean;
@@ -113,28 +113,35 @@ export interface TrackerOption {
   reason: "not_available" | "not_configured" | "other_tracker_connected" | "connected" | null;
 }
 
+const TRACKERS: readonly TrackerKey[] = ["jira", "linear"];
+const isLive = (i: IntegrationItem | undefined) => i?.status === "active" || i?.status === "degraded";
+
+export function isTracker(v: unknown): v is TrackerKey {
+  return typeof v === "string" && (TRACKERS as readonly string[]).includes(v);
+}
+
+/** The tracker the card shows: a connected one always wins (one tracker per workspace), else the
+ *  one asked for in `?tracker=`, else Jira. */
+export function selectedTracker(items: Map<ProviderKey, IntegrationItem>, requested?: unknown): TrackerKey {
+  const live = TRACKERS.find((k) => isLive(items.get(k)));
+  if (live) return live;
+  return isTracker(requested) ? requested : "jira";
+}
+
 /**
- * The R8 single radio. Jira is the only built tracker, so it is always the selected option and
- * Linear is always shown disabled as "Not available". Selecting Jira disables Linear's Connect
- * (plan 3.14 acceptance). If the server ever reports a Linear connection (not built, but the
- * canon enum allows it), Jira's Connect turns off too: one tracker per workspace.
+ * The R8 tracker choice: Jira or Linear, never both. Each can be connected when it is configured,
+ * not yet connected, and the other is not connected.
  */
-export function trackerOptions(items: Map<ProviderKey, IntegrationItem>): TrackerOption[] {
-  const jira = items.get("jira");
-  const linear = items.get("linear");
-  const connected = (i: IntegrationItem | undefined) => i?.status === "active" || i?.status === "degraded";
-  const jiraConnected = connected(jira);
-  const linearConnected = connected(linear);
-
-  let jiraReason: TrackerOption["reason"] = null;
-  if (jiraConnected) jiraReason = "connected";
-  else if (linearConnected) jiraReason = "other_tracker_connected";
-  else if (!jira?.configured) jiraReason = "not_configured";
-
-  return [
-    { key: "jira", name: "Jira", selectable: true, selected: true, canConnect: jiraReason === null, reason: jiraReason },
-    { key: "linear", name: "Linear", selectable: false, selected: false, canConnect: false, reason: "not_available" },
-  ];
+export function trackerOptions(items: Map<ProviderKey, IntegrationItem>, requested?: unknown): TrackerOption[] {
+  const chosen = selectedTracker(items, requested);
+  return TRACKERS.map((key) => {
+    const other: TrackerKey = key === "jira" ? "linear" : "jira";
+    let reason: TrackerOption["reason"] = null;
+    if (isLive(items.get(key))) reason = "connected";
+    else if (isLive(items.get(other))) reason = "other_tracker_connected";
+    else if (!items.get(key)?.configured) reason = "not_configured";
+    return { key, name: PROVIDER_NAME[key], selectable: true, selected: key === chosen, canConnect: reason === null, reason };
+  });
 }
 
 /** The banner after the OAuth round trip (`?connected={provider}` or `?error=...`), or after
@@ -394,7 +401,7 @@ export interface SetupGuide {
 
 export const PUSH_COMMAND = "scripts/push-secrets.sh integrations";
 
-export const SETUP_GUIDES: Record<Exclude<ProviderKey, "linear">, SetupGuide> = {
+export const SETUP_GUIDES: Record<ProviderKey, SetupGuide> = {
   google_calendar: {
     provider: "google_calendar",
     does: "Meetings on the installer's calendar sync in, with attendees matched to people here, so each Myte can prepare before you join.",
@@ -447,6 +454,19 @@ export const SETUP_GUIDES: Record<Exclude<ProviderKey, "linear">, SetupGuide> = 
     ],
     scopes: ["read:jira-work", "write:jira-work", "read:jira-user", "manage:jira-webhook", "offline_access"],
     env: ["JIRA_CLIENT_ID", "JIRA_CLIENT_SECRET"],
+  },
+  linear: {
+    provider: "linear",
+    does: "Confirmed action items become Linear issues with a link back to the meeting, and completing an issue marks the action done here.",
+    console: { label: "Linear OAuth applications", href: "https://linear.app/settings/api/applications/new" },
+    steps: [
+      "Create a new OAuth application in your Linear workspace settings.",
+      "Add the redirect URL below as a callback URL.",
+      "Turn on Webhooks with the URL below and the Issues data change event; copy the signing secret.",
+    ],
+    scopes: ["read", "write", "issues:create"],
+    apiUrls: [{ label: "Webhook URL", path: "/webhooks/linear" }],
+    env: ["LINEAR_CLIENT_ID", "LINEAR_CLIENT_SECRET", "LINEAR_WEBHOOK_SECRET"],
   },
   hubspot: {
     provider: "hubspot",

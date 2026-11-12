@@ -81,14 +81,14 @@ test("needs setup: one chip and one action per card, no long paragraph", async (
   await expect(page.getByText("Not available yet")).toHaveCount(0);
 });
 
-test("tracker: Jira chosen, Linear a disabled Coming soon segment, never a chip", async ({ mount, page }) => {
+test("tracker: Jira shown by default, Linear one link away, never a second chip", async ({ mount, page }) => {
   await mount(<IntegrationsHarness scenario="mixed" />);
   const tracker = card(page, "Project tracker");
-  await expect(tracker.getByRole("radio", { name: "Jira" })).toBeChecked();
-  const linear = tracker.getByRole("radio", { name: /Linear/ });
-  await expect(linear).toBeDisabled();
-  await expect(linear).toHaveAccessibleDescription("Coming soon");
+  const choice = tracker.getByRole("navigation", { name: "Tracker" });
+  await expect(choice.getByText("Jira")).toHaveAttribute("aria-current", "true");
+  await expect(choice.getByRole("link", { name: "Linear" })).toHaveAttribute("href", "?tracker=linear");
   await expect(tracker.getByText(/Ready to connect$/)).toHaveCount(1);
+  await expect(tracker.getByText("Coming soon")).toHaveCount(0);
   expect(await submits(page, tracker.getByRole("button", { name: "Connect Jira" }))).toEqual(["provider=jira"]);
 });
 
@@ -110,11 +110,14 @@ test("ready, connected and error each offer their one action", async ({ mount, p
   expect(await submits(page, card(page, "Notion").getByRole("button", { name: "Connect Notion" }))).toEqual(["provider=notion"]);
 });
 
-test("another tracker connected blocks Jira with a reason", async ({ mount, page }) => {
+test("a connected Linear is the tracker shown, and Jira cannot be chosen", async ({ mount, page }) => {
   await mount(<IntegrationsHarness scenario="other-tracker" />);
   const tracker = card(page, "Project tracker");
+  const choice = tracker.getByRole("navigation", { name: "Tracker" });
+  await expect(choice.getByText("Linear")).toHaveAttribute("aria-current", "true");
+  await expect(choice.getByRole("link")).toHaveCount(0);
   await expect(tracker.getByRole("button", { name: /Connect Jira/ })).toHaveCount(0);
-  await expect(tracker.getByText("Disconnect the other tracker first")).toBeVisible();
+  await expect(tracker.getByRole("button", { name: "Disconnect Linear" })).toBeVisible();
 });
 
 test("a member sees the cards and is told to ask an admin, with no buttons", async ({ mount, page }) => {
