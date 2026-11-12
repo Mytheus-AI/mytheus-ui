@@ -8,6 +8,7 @@ import { SectionTabs } from "@/components/app/SectionTabs";
 import "@/styles/meeting-hub.css";
 import "@/styles/meeting-agenda.css";
 import "@/styles/meeting-brain.css";
+import "@/styles/meeting-invites.css";
 
 /* The meetings hub. A Server Component that reads the caller's meetings and the workspace's
    members from core-api and hands plain data to one client island for the tabs, search, the
