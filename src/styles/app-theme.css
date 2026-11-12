@@ -5,7 +5,10 @@
    layout put on their root. It redefines the SAME custom properties the existing Tailwind
    tokens already read (bg, ink, line, signal, ...), so every screen restyles without touching
    its markup, and the marketing site, which shares those variable names, is left exactly as it
-   was. Dark mode is `.mx-app[data-theme="dark"]`, set before paint by an inline script and flipped by `ThemeToggle`. */
+   was. Dark mode is `<html data-theme="dark">`, set before paint by the root layout's inline
+   script (components/app/theme-init.ts) and flipped by `ThemeToggle` and Settings > Appearance.
+   The auth pages (`.mx-auth`) take the same dark set, so sign-in and onboarding follow the app.
+   `.mx-app[data-theme="dark"]` on the root itself still works, for the component test harnesses. */
 
 .mx-app {
   /* Light tokens are the global ones in globals.css :root. Only app-only values live here. */
@@ -14,8 +17,13 @@
   color: var(--ink-2);
   color-scheme: light;
 }
+.mx-auth {
+  color-scheme: light;
+}
 
-.mx-app[data-theme="dark"] {
+:root[data-theme="dark"] :is(.mx-app, .mx-auth),
+.mx-app[data-theme="dark"],
+.mx-auth[data-theme="dark"] {
   /* Wells, table heads and hairlines each get their own value in dark mode, so a well on a card,
      a table head on a card and a line on either stay visible (in the first dark set --surface-2
      equalled --bg-2 and --line equalled --bg-3, and wells vanished). */
@@ -62,7 +70,18 @@
 }
 
 /* The dark pill (`bg-pill`) flips to cream in dark mode, so its label must flip to ink. */
+:root[data-theme="dark"] :is(.mx-app, .mx-auth) .bg-pill.text-white,
 .mx-app[data-theme="dark"] .bg-pill.text-white { color: var(--pill-on); }
+
+/* Past the end of a short page (overscroll, the gap under a dialog) the canvas shows; in dark
+   mode it must be dark too on the app and auth pages. The marketing site has no dark set. */
+:root[data-theme="dark"]:has(.mx-app, .mx-auth) {
+  background-color: #1a1816;
+  color-scheme: dark;
+}
+:root[data-theme="dark"]:has(.mx-app, .mx-auth) body {
+  background-color: #1a1816;
+}
 
 /* Type: the app's titles are smaller than the marketing ones, so they sit one weight heavier. */
 .mx-app .display { font-weight: 600; letter-spacing: -0.015em; line-height: 1.08; }

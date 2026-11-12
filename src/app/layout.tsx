@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { hanken, newsreader } from "@/lib/fonts";
+import { THEME_INIT } from "@/components/app/theme-init";
+import { ThemeSync } from "@/components/app/ThemeSync";
 import "./globals.css";
 
 // One type pair for every surface: Hanken Grotesk carries the interface and body copy,
@@ -38,10 +40,13 @@ export default function RootLayout({
       <html lang="en" suppressHydrationWarning>
         <head>
           <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
+          {/* The colour theme, on <html> before first paint, so no route change can lose it. */}
+          <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
         </head>
         <body
           className={`${hanken.variable} ${newsreader.variable} antialiased`}
         >
+          <ThemeSync />
           {children}
         </body>
       </html>

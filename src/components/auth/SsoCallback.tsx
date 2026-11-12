@@ -7,6 +7,7 @@ import { Doodle } from "@/components/ui/Doodle";
 import { Wordmark } from "@/components/site/Wordmark";
 import { authFontClass } from "@/lib/fonts";
 import { AFTER_AUTH_URL } from "./clerk-helpers";
+import "@/styles/app-theme.css";
 import "@/styles/auth.css";
 
 /* ================================================================== */

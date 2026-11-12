@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { THEME_INIT } from "@/components/app/theme-init";
 import { Wordmark } from "@/components/site/Wordmark";
 import { SignedInAs } from "./SignedInAs";
 
@@ -10,7 +9,6 @@ import { SignedInAs } from "./SignedInAs";
 export function ConsentFrame({ children, email }: { children: ReactNode; email?: string | null }) {
   return (
     <div className="mx-app flex min-h-dvh flex-col bg-bg text-ink-2" suppressHydrationWarning>
-      <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
       <header className="mx-auto flex w-full max-w-[1180px] items-center justify-between gap-4 px-4 pt-5 sm:px-8 sm:pt-6">
         <span aria-label="Mytheus" className="inline-flex">
           <Wordmark size={22} textClassName="text-[20px]" />

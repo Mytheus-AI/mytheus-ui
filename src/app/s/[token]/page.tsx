@@ -16,7 +16,6 @@ import {
   UsersThree,
 } from "@phosphor-icons/react/ssr";
 import { Chip } from "@/components/meetings/Chip";
-import { THEME_INIT } from "@/components/app/theme-init";
 import { Wordmark } from "@/components/site/Wordmark";
 import { LocalTime } from "@/components/share/LocalTime";
 import {
@@ -56,7 +55,6 @@ const MARKETING = (process.env.NEXT_PUBLIC_MARKETING_ORIGIN ?? "").replace(/\/$/
 function Frame({ children }: { children: ReactNode }) {
   return (
     <div className="mx-app sh" suppressHydrationWarning>
-      <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
       <header className="sh-top">
         <a href={MARKETING} className="sh-brand" aria-label="Mytheus">
           <Wordmark size={22} textClassName="text-[20px]" />

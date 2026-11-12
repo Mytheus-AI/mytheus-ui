@@ -3,7 +3,7 @@
 
    Everything sits under `.mx-meet`, which the Meetings layout and the call layout put on their
    root, so nothing here reaches another screen. Colours, radii and shadows read the global tokens
-   (src/app/globals.css); the dark set flips them under `.mx-app[data-theme="dark"]`
+   (src/app/globals.css); the dark set flips them under `<html data-theme="dark">`
    (src/styles/app-theme.css), so this file holds no hex; the one dark-only value (the video
    letterbox) is set just below the scope. Radii are the system's four, read from the global
    tokens: --radius-pill 12 for controls (Tailwind `rounded-ctl`), --radius-card 20 for cards,
@@ -31,6 +31,8 @@
   -webkit-font-smoothing: antialiased;
 }
 
+:root[data-theme="dark"] .mx-app .mx-meet,
+:root[data-theme="dark"] .mx-app.mx-meet,
 .mx-app[data-theme="dark"] .mx-meet,
 .mx-app.mx-meet[data-theme="dark"] { --mx-video: var(--bg); }
 

@@ -6,6 +6,7 @@ import { LockSimple } from "@phosphor-icons/react";
 import { Wordmark } from "@/components/site/Wordmark";
 import { authFontClass } from "@/lib/fonts";
 import { AuthCrowd, AuthRoom, type SceneProps } from "./AuthRoom";
+import "@/styles/app-theme.css";
 import "@/styles/auth.css";
 
 /* ================================================================== */

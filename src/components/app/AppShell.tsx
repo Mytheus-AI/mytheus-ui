@@ -13,7 +13,6 @@ import { Toaster } from "@/components/ui/Toaster";
 import { inboxCount as readInboxCount } from "@/app/actions/inbox";
 import { INBOX_COUNT_EVENT } from "@/lib/inbox";
 import { appFontClass } from "@/lib/fonts";
-import { THEME_INIT } from "@/components/app/theme-init";
 
 /* The authenticated shell. On desktop the nav is an icon rail or a labelled column (the user's
    choice, remembered); below lg it becomes an overlay drawer opened from the Topbar. Route
@@ -23,7 +22,7 @@ import { THEME_INIT } from "@/components/app/theme-init";
    (read after load, again when the route changes or the window regains focus, at most every 30
    seconds, and set directly by the Inbox as you triage it through the `mx-inbox-count` event),
    the topbar breadcrumb's state, and the one toast surface. The `.mx-app` root scopes the redesigned theme (see
-   styles/app-theme.css); the inline script sets light/dark before first paint so there is no
+   styles/app-theme.css); the root layout sets light/dark on <html> before first paint so there is no
    flash.
 
    h-dvh (not min-h-dvh) so <main> is the scroll container: the Topbar stays reachable on long
@@ -173,7 +172,6 @@ export function AppShell({
     <MyAgentProvider value={agent ?? null}>
     <CrumbProvider>
     <div suppressHydrationWarning className={`mx-app ${appFontClass} flex h-dvh bg-bg ${sbSynced ? "" : "sb-instant"}`}>
-      <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
       <a
         href="#main"
         className="sr-only z-[90] rounded-ctl bg-pill px-4 py-2.5 text-[14px] font-semibold text-pill-on focus:not-sr-only focus:fixed focus:left-3 focus:top-3"

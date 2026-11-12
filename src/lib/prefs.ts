@@ -38,10 +38,34 @@ export function resolvedTheme(): "light" | "dark" {
   return typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-/** Writes the choice and applies it to the `.mx-app` root (no re-render needed). */
+/** Writes the resolved theme to `<html data-theme>`, where the dark token set reads it. */
+export function applyTheme() {
+  document.documentElement.setAttribute("data-theme", resolvedTheme());
+}
+
+/** Writes the choice and applies it (no re-render needed). "system" clears the saved choice. */
 export function setThemeChoice(choice: ThemeChoice) {
   write(THEME_KEY, choice === "system" ? null : choice);
-  document.querySelector(".mx-app")?.setAttribute("data-theme", resolvedTheme());
+  applyTheme();
+}
+
+/** Keeps `<html data-theme>` in step with the OS setting (while the choice is "system") and with
+    a choice made in another tab. Returns the unsubscribe. */
+export function watchTheme(): () => void {
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  const onMedia = () => {
+    if (themeChoice() === "system") applyTheme();
+  };
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === THEME_KEY || e.key === null) applyTheme();
+  };
+  media.addEventListener("change", onMedia);
+  window.addEventListener("storage", onStorage);
+  applyTheme();
+  return () => {
+    media.removeEventListener("change", onMedia);
+    window.removeEventListener("storage", onStorage);
+  };
 }
 
 export function toggleTheme() {

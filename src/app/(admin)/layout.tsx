@@ -8,7 +8,6 @@ import { buttonClass } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { ThemeToggle } from "@/components/app/ThemeToggle";
 import { appFontClass } from "@/lib/fonts";
-import { THEME_INIT } from "@/components/app/theme-init";
 import { Toaster } from "@/components/ui/Toaster";
 import "@/styles/app-theme.css";
 
@@ -29,7 +28,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <OrgProvider value={orgContext ?? undefined}>
       <div suppressHydrationWarning className={`mx-app ${appFontClass} min-h-dvh bg-bg`}>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
         <a
           href="#admin-main"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-3 focus:z-50 focus:rounded-ctl focus:bg-pill focus:px-4 focus:py-2.5 focus:text-[14px] focus:font-semibold focus:text-pill-on"

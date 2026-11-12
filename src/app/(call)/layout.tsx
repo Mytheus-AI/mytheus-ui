@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { OrgProvider } from "@/lib/org-context";
 import { resolveOrgContext } from "@/lib/api/org-context";
 import { appFontClass } from "@/lib/fonts";
-import { THEME_INIT } from "@/components/app/theme-init";
 import "@/styles/app-theme.css";
 import "@/styles/meeting.css";
 
@@ -22,7 +21,6 @@ export default async function CallLayout({ children }: { children: React.ReactNo
   return (
     <OrgProvider value={orgContext}>
       <div suppressHydrationWarning className={`mx-app mx-meet ${appFontClass} min-h-dvh bg-bg`}>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
         {children}
       </div>
     </OrgProvider>

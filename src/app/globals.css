@@ -5,7 +5,7 @@
 /* One system for every surface (marketing, auth, app, call). Warm cream stage, white surfaces,
    one coral, dark controls; Newsreader for display titles, Hanken Grotesk for everything else.
    The signature is a single coral line (the logo's stroke). Dark mode is scoped to
-   `.mx-app[data-theme="dark"]` in src/styles/app-theme.css. Rules: docs/DESIGN-ONELINE.md. */
+   `<html data-theme="dark">` in src/styles/app-theme.css. Rules: docs/DESIGN-ONELINE.md. */
 
 :root {
   /* Surfaces */
@@ -476,7 +476,8 @@ body {
    WebKit draws the same look through ::-webkit-scrollbar, on fine pointers only, so phones and
    tablets keep their native overlay bars and momentum scrolling untouched. */
 :root,
-.mx-app {
+.mx-app,
+.mx-auth {
   --sb-thumb: color-mix(in srgb, var(--ink-4) 62%, transparent);
   --sb-thumb-hover: color-mix(in srgb, var(--signal-line) 78%, transparent);
   --sb-track: transparent;

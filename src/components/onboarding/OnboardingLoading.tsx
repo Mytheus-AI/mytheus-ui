@@ -5,6 +5,7 @@ import { LockSimple } from "@phosphor-icons/react";
 import { AuthCrowd, AuthRoom } from "@/components/auth/AuthRoom";
 import { authFontClass } from "@/lib/fonts";
 import { Bone, LoadingLabel, TextBone } from "@/components/ui/Page";
+import "@/styles/app-theme.css";
 import "@/styles/auth.css";
 
 /* An onboarding step while its server data loads, in the step's own frame: AuthShell's layout
