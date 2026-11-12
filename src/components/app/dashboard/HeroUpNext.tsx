@@ -14,6 +14,8 @@ const shell =
   "overflow-hidden rounded-hero border border-[color-mix(in_srgb,var(--signal-line)_22%,var(--line))] bg-wash text-ink-2 shadow-warm-2";
 const pad = "px-[18px] pb-[22px] pt-5 sm:px-7 sm:pb-7 sm:pt-[26px]";
 const titleClass = "display mb-3.5 mt-[18px] max-w-[22ch] text-[clamp(26px,3vw,30px)] text-ink";
+/* The meeting's own name is the point of the card, so it is set larger than the empty-state line. */
+const meetingTitleClass = "display my-4 max-w-[22ch] break-words text-[clamp(32px,4.2vw,44px)] text-ink sm:my-3 sm:self-center";
 const btn = "max-[420px]:w-full";
 
 function People({ names }: { names: string[] }) {
@@ -127,51 +129,72 @@ export function HeroUpNext({
 
   return (
     <section aria-labelledby="hero-title" className={`${shell} ${pad}`}>
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-2">
-          {live ? (
-            <Chip tone="high">
-              <Broadcast size={14} weight="fill" aria-hidden />
-              {next.inPerson ? "Recording in person" : "Live now"}
-            </Chip>
-          ) : (
-            <Chip tone="solid">
-              <Clock size={14} weight="fill" aria-hidden />
-              Up next <RelativeStart startIso={next.startTime} initialNow={nowMs} />
-            </Chip>
-          )}
-          {next.startTime ? (
-            <Chip tone="glass">
-              <LocalTime iso={next.startTime} endIso={next.endTime} variant="range" />
-            </Chip>
-          ) : null}
+      {/* From sm up, two columns at the card's usual height. Left: chips at the top, details at the
+          bottom, and the title in a middle row between two equal rows, so it sits at the card's
+          vertical middle. Right: the countdown with the action under it. On a phone it stacks:
+          chips and countdown, title, details, action. */}
+      <div className="grid grid-cols-1 sm:min-h-[172px] sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-x-6">
+        <div className="flex min-w-0 flex-col sm:grid sm:grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+          <div className="flex items-start justify-between gap-4 sm:self-start">
+            <div className="flex flex-wrap items-center gap-2">
+              {live ? (
+                <Chip tone="high">
+                  <Broadcast size={14} weight="fill" aria-hidden />
+                  {next.inPerson ? "Recording in person" : "Live now"}
+                </Chip>
+              ) : (
+                <Chip tone="solid">
+                  <Clock size={14} weight="fill" aria-hidden />
+                  Up next <RelativeStart startIso={next.startTime} initialNow={nowMs} />
+                </Chip>
+              )}
+              {next.startTime ? (
+                <Chip tone="glass">
+                  <LocalTime iso={next.startTime} endIso={next.endTime} variant="range" />
+                </Chip>
+              ) : null}
+            </div>
+            {!live && next.startTime ? (
+              <div className="sm:hidden">
+                <CountdownDigits startIso={next.startTime} initialNow={nowMs} />
+              </div>
+            ) : null}
+          </div>
+
+          <h2 id="hero-title" className={meetingTitleClass}>
+            {next.title}
+          </h2>
+
+          <div className="sm:self-end">
+            {next.participants && next.participants.length > 0 ? <People names={next.participants} /> : null}
+            <p className="text-[14px] font-medium text-ink-2">{meta}</p>
+          </div>
         </div>
-        {!live && next.startTime ? <CountdownDigits startIso={next.startTime} initialNow={nowMs} /> : null}
-      </div>
 
-      <h2 id="hero-title" className={titleClass}>
-        {next.title}
-      </h2>
-
-      {next.participants && next.participants.length > 0 ? <People names={next.participants} /> : null}
-      <p className="text-[14px] font-medium text-ink-2">{meta}</p>
-
-      <div className="mt-[22px] flex flex-wrap gap-2.5">
-        {live && !next.inPerson ? (
-          <>
-            <LinkButton href={`/meetings/${next.id}/room`} variant="primary" size="lg" className={btn}>
-              <VideoCamera size={18} weight="bold" aria-hidden />
-              Join the call
-            </LinkButton>
-            <LinkButton href={`/meetings/${next.id}`} variant="outline" size="lg" className={btn}>
-              Meeting details
-            </LinkButton>
-          </>
-        ) : (
-          <LinkButton href={`/meetings/${next.id}`} variant="primary" size="lg" className={btn}>
-            Open meeting
-          </LinkButton>
-        )}
+        <div className="mt-[22px] flex flex-col gap-3 sm:mt-0 sm:items-end">
+          {!live && next.startTime ? (
+            <div className="hidden sm:block">
+              <CountdownDigits startIso={next.startTime} initialNow={nowMs} />
+            </div>
+          ) : null}
+          <div className="flex flex-wrap gap-2.5 sm:justify-end">
+            {live && !next.inPerson ? (
+              <>
+                <LinkButton href={`/meetings/${next.id}/room`} variant="primary" size="lg" className={btn}>
+                  <VideoCamera size={18} weight="bold" aria-hidden />
+                  Join the call
+                </LinkButton>
+                <LinkButton href={`/meetings/${next.id}`} variant="outline" size="lg" className={btn}>
+                  Meeting details
+                </LinkButton>
+              </>
+            ) : (
+              <LinkButton href={`/meetings/${next.id}`} variant="primary" size="lg" className={btn}>
+                Open meeting
+              </LinkButton>
+            )}
+          </div>
+        </div>
       </div>
     </section>
   );

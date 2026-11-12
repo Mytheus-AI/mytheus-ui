@@ -43,28 +43,32 @@ export default function DashboardLoading() {
       <div className="grid grid-cols-1 items-start gap-6 min-[1101px]:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]">
         <div aria-hidden className="flex min-w-0 flex-col gap-7">
           <div className="overflow-hidden rounded-hero border border-line bg-bg-2 px-[18px] [&_.mx-bone]:bg-bg-3 pb-[22px] pt-5 shadow-warm-2 sm:px-7 sm:pb-7 sm:pt-[26px]">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <ChipBone label="Up next in 2 hours" className="!bg-bg-3" />
-                <ChipBone label="11:00 to 11:45" className="!bg-bg-3" />
+            <div className="grid grid-cols-1 sm:min-h-[172px] sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-x-6">
+              <div className="flex min-w-0 flex-col sm:grid sm:grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+                <div className="flex flex-wrap items-center gap-2 sm:self-start">
+                  <ChipBone label="Up next in 2 hours" className="!bg-bg-3" />
+                  <ChipBone label="11:00 to 11:45" className="!bg-bg-3" />
+                </div>
+                <TextBone className="display my-4 max-w-[22ch] text-[clamp(32px,4.2vw,44px)] sm:my-3 sm:self-center" widths={["w-[90%]"]} />
+                <div className="sm:self-end">
+                  <div className="mb-1 flex items-center gap-3">
+                    <span className="flex -space-x-2">
+                      {[0, 1, 2, 3].map((i) => (
+                        <Bone key={i} className="h-8 w-8 !rounded-full bg-bg-3 ring-2 ring-surface" />
+                      ))}
+                    </span>
+                    <TextBone className="text-[14px] font-medium" widths={["w-40"]} />
+                  </div>
+                  <TextBone className="text-[14px] font-medium" widths={["w-56"]} />
+                </div>
               </div>
-              <div className="shrink-0">
-                <TextBone className="display text-[36px] leading-none sm:text-[44px]" widths={["w-24"]} />
-                <TextBone className="mt-1 text-[12.5px] font-semibold" widths={["ml-auto w-16"]} />
+              <div className="mt-[22px] flex flex-col gap-3 sm:mt-0 sm:items-end">
+                <div className="hidden shrink-0 sm:block">
+                  <TextBone className="display text-[36px] leading-none sm:text-[44px]" widths={["w-24"]} />
+                  <TextBone className="mt-1 text-[12.5px] font-semibold" widths={["ml-auto w-16"]} />
+                </div>
+                <ButtonBone label="Open meeting" size="lg" className="max-[420px]:w-full" />
               </div>
-            </div>
-            <TextBone className="display mb-3.5 mt-[18px] max-w-[22ch] text-[clamp(26px,3vw,30px)]" widths={["w-[90%]"]} />
-            <div className="mb-1 flex items-center gap-3">
-              <span className="flex -space-x-2">
-                {[0, 1, 2, 3].map((i) => (
-                  <Bone key={i} className="h-8 w-8 !rounded-full bg-bg-3 ring-2 ring-surface" />
-                ))}
-              </span>
-              <TextBone className="text-[14px] font-medium" widths={["w-40"]} />
-            </div>
-            <TextBone className="text-[14px] font-medium" widths={["w-56"]} />
-            <div className="mt-[22px] flex flex-wrap gap-2.5">
-              <ButtonBone label="Open meeting" size="lg" className="max-[420px]:w-full" />
             </div>
           </div>
           <CardSkeleton rows={2} />
