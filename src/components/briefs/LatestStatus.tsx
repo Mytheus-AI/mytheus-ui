@@ -16,7 +16,7 @@ function answeredAt(iso: string | null): string | null {
 
 export function LatestStatus({ status, ownerName }: { status: LatestStatusValue | null | undefined; ownerName?: string | null }) {
   if (!status) {
-    return <span className="text-[12.5px] italic text-ink-3">No status update yet</span>;
+    return <span className="text-[12.5px]  text-ink-3">No status update yet</span>;
   }
   const at = answeredAt(status.answered_at);
   return (

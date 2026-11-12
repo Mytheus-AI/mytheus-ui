@@ -15,7 +15,7 @@
  *  3. Only the tail is shown. A caption strip is a "what was just said" surface; the full record
  *     is the transcript view (§3.8 step 2).
  *
- * Interims are rendered dimmer and italic rather than hidden. Hiding them until final would
+ * Interims are rendered dimmer and  rather than hidden. Hiding them until final would
  * cost the entire latency benefit of interims - the p95 < 2 s promise is about the interim, not
  * the final - and showing them identically to finals would misrepresent provisional text as
  * settled.

@@ -78,7 +78,7 @@ export function PersonalityPicker({
                     <span className="text-[14px] text-ink-3">{p.blurb}</span>
                   </span>
                 )}
-                <span id={descId} className="mt-1.5 block font-display text-[15px] italic leading-snug text-ink-2">
+                <span id={descId} className="mt-1.5 block font-display text-[15px]  leading-snug text-ink-2">
                   <span className="sr-only">{p.blurb} A note would read: </span>
                   &ldquo;{p.sample}&rdquo;
                 </span>

@@ -153,7 +153,7 @@ export function BlastRadiusSection({ decisionId, initial }: { decisionId: string
             <Bone className="h-8 w-[52%] !rounded-full" />
           </div>
         </div>
-        <p className="mt-4 font-display text-[16px] italic text-ink-3">
+        <p className="mt-4 font-display text-[16px]  text-ink-3">
           {slow ? "This is taking longer than usual. Your Myte is still working it out." : "Working out what this decision touches"}
         </p>
         {slow ? (

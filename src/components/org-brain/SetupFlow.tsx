@@ -133,7 +133,7 @@ function Known({
         What your Mytes know so far
       </h2>
       {empty ? (
-        <p className="mt-3 font-display text-[17px] italic leading-snug text-ink-3">
+        <p className="mt-3 font-display text-[17px]  leading-snug text-ink-3">
           Only your people and your meetings. Each answer you save shows up here.
         </p>
       ) : (

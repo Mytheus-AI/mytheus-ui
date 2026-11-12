@@ -60,7 +60,7 @@ export function NotesVisual() {
                 key={r.raw}
                 className={`relative grid grid-cols-[30px_minmax(0,1fr)] items-start py-[13px] md:grid-cols-[minmax(0,.72fr)_48px_minmax(0,1.28fr)] md:items-center md:py-[17px] ${last ? "max-md:overflow-hidden" : ""}`}
               >
-                <p className="col-start-2 font-display text-[1.1rem] italic leading-[1.3] text-ink-3 md:col-start-1 md:row-start-1 md:text-right md:text-[1.24rem]">
+                <p className="col-start-2 font-display text-[1.1rem]  leading-[1.3] text-ink-3 md:col-start-1 md:row-start-1 md:text-right md:text-[1.24rem]">
                   {r.raw}
                 </p>
                 <span className="relative z-[1] col-start-1 row-span-2 row-start-1 mt-[7px] justify-self-start md:col-start-2 md:row-span-1 md:mt-0 md:justify-self-center">

@@ -66,7 +66,7 @@ export default function Loading() {
                 <TextBone className="mt-2 text-[15px]" widths={["mx-auto w-[85%] md:mx-0"]} narrow={["mx-auto w-[60%]"]} />
                 <div className="mt-4 rounded-card border border-line bg-surface px-4 py-3.5 shadow-warm-1 sm:px-[22px] [&_.mx-bone]:bg-bg-2">
                   <TextBone className="text-[12.5px] font-semibold" widths={["w-40"]} />
-                  <TextBone className="mt-1.5 font-display text-[17px] italic leading-snug" widths={["w-[95%]", "w-[50%]"]} narrow={["w-[40%]"]} />
+                  <TextBone className="mt-1.5 font-display text-[17px]  leading-snug" widths={["w-[95%]", "w-[50%]"]} narrow={["w-[40%]"]} />
                 </div>
               </div>
             </div>
@@ -109,7 +109,7 @@ export default function Loading() {
                           <div className="min-w-0 flex-1">
                             <TextBone className="text-[15px] font-semibold" widths={["w-[45%]"]} />
                             <TextBone className="mt-0.5 text-[14px]" widths={["w-[80%]"]} />
-                            {i < 5 ? <TextBone className="mt-1.5 font-display text-[15px] italic leading-snug" widths={["w-[95%]", "w-[60%]"]} narrow={["w-[50%]"]} /> : null}
+                            {i < 5 ? <TextBone className="mt-1.5 font-display text-[15px]  leading-snug" widths={["w-[95%]", "w-[60%]"]} narrow={["w-[50%]"]} /> : null}
                           </div>
                         </div>
                       ))}

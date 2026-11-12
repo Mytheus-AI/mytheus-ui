@@ -87,11 +87,11 @@
 .mx-meet .tr-who { display: flex; align-items: center; gap: 8px; min-width: 0; padding-top: 1px; color: var(--ink); font-size: 14px; }
 .mx-meet .tr-who b { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mx-meet .tr-who .mx-av { width: 26px; height: 26px; font-size: 12.5px; }
-.mx-meet .tr-who.is-unk b { color: var(--mx-medium-ink); font-style: italic; }
+.mx-meet .tr-who.is-unk b { color: var(--mx-medium-ink); font-style: normal; }
 .mx-meet .tr-who.is-unk .mx-av { background: var(--priority-medium-soft); color: var(--mx-medium-ink); box-shadow: inset 0 0 0 1.5px var(--priority-medium); }
 .mx-meet .tr-body { min-width: 0; }
 .mx-meet .tr-text { color: var(--ink-2); font-size: 15px; line-height: 1.6; overflow-wrap: anywhere; }
-.mx-meet .tr-text.is-interim { color: var(--ink-3); font-style: italic; }
+.mx-meet .tr-text.is-interim { color: var(--ink-3); font-style: normal; }
 .mx-meet .tr-text mark { padding: 0 2px; border-radius: 999px; background: color-mix(in srgb, var(--signal-line) 30%, transparent); color: var(--ink); }
 .mx-meet .tr-text mark[data-current] { background: var(--pill); color: var(--pill-on); }
 .mx-meet .tr-linked { margin-top: 4px; color: var(--signal-ink); font-size: 12.5px; font-weight: 600; }

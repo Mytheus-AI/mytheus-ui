@@ -103,7 +103,7 @@ export function InterruptionToast({
           </p>
           <p className="mt-0.5 text-[15px] font-semibold leading-snug text-ink">{i.title}</p>
           {i.quote ? (
-            <p className="mt-1.5 line-clamp-2 font-display text-[14.5px] font-normal italic leading-snug text-ink-2">&ldquo;{i.quote}&rdquo;</p>
+            <p className="mt-1.5 line-clamp-2 font-display text-[14.5px] font-normal  leading-snug text-ink-2">&ldquo;{i.quote}&rdquo;</p>
           ) : null}
         </div>
         <button

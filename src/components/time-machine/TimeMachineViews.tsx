@@ -51,7 +51,7 @@ function MeetingLink({ m, className = "" }: { m: MeetingAtDate | null | undefine
 }
 
 function Withheld({ what = "A decision from a meeting you were not in" }: { what?: string }) {
-  return <span className="italic text-ink-3">{what}</span>;
+  return <span className=" text-ink-3">{what}</span>;
 }
 
 function RefLine({ r, strike = false }: { r: DecisionRef | null | undefined; strike?: boolean }) {
@@ -72,7 +72,7 @@ function Quote({ text, who }: { text: string | null | undefined; who: string | n
     <figure className="flex gap-2.5 rounded-ctl bg-bg-2 px-3 py-2.5">
       <Quotes size={16} weight="fill" aria-hidden className="mt-0.5 shrink-0 text-signal-ink" />
       <div className="min-w-0">
-        <blockquote className="font-display text-[15.5px] italic leading-snug text-ink">{text}</blockquote>
+        <blockquote className="font-display text-[15.5px]  leading-snug text-ink">{text}</blockquote>
         {who ? <figcaption className="mt-0.5 text-[12.5px] text-ink-3">{who}</figcaption> : null}
       </div>
     </figure>

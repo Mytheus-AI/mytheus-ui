@@ -181,7 +181,7 @@ export function ResumePointPin({
             {resumeHeadline(p)}
           </h3>
           {!canReplay && cutQuote ? (
-            <p className="mt-1 font-display text-[14.5px] italic leading-snug text-ink-2">
+            <p className="mt-1 font-display text-[14.5px]  leading-snug text-ink-2">
               <span className="sr-only">Their last words: </span>&ldquo;{cutQuote}&rdquo;
             </p>
           ) : null}
@@ -224,7 +224,7 @@ export function ResumePointPin({
             {p.positions.map((pos, i) => (
               <li key={i} className="rounded-ctl bg-surface-2 px-3 py-2 text-[13.5px] leading-snug text-ink-2">
                 <span className="font-semibold text-ink">{pos.name ?? "Someone"}</span>
-                <span className="mt-0.5 block font-display italic">&ldquo;{clip(pos.quote, 140)}&rdquo;</span>
+                <span className="mt-0.5 block font-display ">&ldquo;{clip(pos.quote, 140)}&rdquo;</span>
               </li>
             ))}
           </ul>

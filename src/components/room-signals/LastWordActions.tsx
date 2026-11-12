@@ -79,7 +79,7 @@ export function LastWordActions({
   return (
     <div className="mt-2.5">
       {quote ? (
-        <blockquote className="max-w-[75ch] rounded-ctl bg-bg-2 px-3.5 py-2.5 font-display text-[15px] italic leading-snug text-ink-2">
+        <blockquote className="max-w-[75ch] rounded-ctl bg-bg-2 px-3.5 py-2.5 font-display text-[15px]  leading-snug text-ink-2">
           <span className="sr-only">What you started to say: </span>&ldquo;{quote}&rdquo;
         </blockquote>
       ) : null}

@@ -277,7 +277,7 @@
 .mx-meet .sb-catchup.is-loading { display: flex; align-items: center; min-height: 32px; }
 .mx-meet .sb-catchup.is-error { display: flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 14px; }
 .mx-meet .sb-catchup-row { display: flex; align-items: center; gap: 6px; }
-.mx-meet .sb-catchup-text { flex: 1; min-width: 0; color: var(--ink); font-family: var(--font-display); font-style: italic; font-size: 15px; }
+.mx-meet .sb-catchup-text { flex: 1; min-width: 0; color: var(--ink); font-family: var(--font-display); font-style: normal; font-size: 15px; }
 .mx-meet .sb-catchup-list { padding: 6px 0 4px; }
 .mx-meet .sb-catchup-list[hidden] { display: none; }
 .mx-meet .sb-catchup-now { margin-bottom: 6px; color: var(--ink-2); font-size: 14px; }

@@ -513,7 +513,7 @@ function NotificationRow({
         </p>
         <h3 className={`mt-0.5 text-[15px] leading-snug text-ink ${n.unread ? "font-semibold" : "font-medium"}`}>{n.title}</h3>
         {n.quote ? (
-          <blockquote className="mt-2 max-w-[75ch] rounded-ctl bg-bg-2 px-3.5 py-2.5 font-display text-[15px] italic leading-snug text-ink-2">
+          <blockquote className="mt-2 max-w-[75ch] rounded-ctl bg-bg-2 px-3.5 py-2.5 font-display text-[15px]  leading-snug text-ink-2">
             {n.quote}
           </blockquote>
         ) : null}
@@ -656,7 +656,7 @@ function AgreementRow({ n, notificationId }: { n: FeedItem; notificationId: stri
   return (
     <>
       {n.agreementCheck ? (
-        <p className="mt-2 max-w-[75ch] rounded-ctl bg-bg-2 px-3.5 py-2.5 font-display text-[15px] italic leading-snug text-ink-2">
+        <p className="mt-2 max-w-[75ch] rounded-ctl bg-bg-2 px-3.5 py-2.5 font-display text-[15px]  leading-snug text-ink-2">
           <span className="sr-only">The decision: </span>
           {n.agreementCheck.decision_content}
           <span className="mt-1 block font-sans text-[12.5px] not-italic text-ink-3">From {n.agreementCheck.meeting_title}</span>

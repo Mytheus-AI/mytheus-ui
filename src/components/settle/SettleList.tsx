@@ -29,7 +29,7 @@ function Row({ s }: { s: Settlement }) {
           {s.theirs.visible && s.theirs.content ? (
             <span className="mt-0.5 block text-[15px] leading-snug text-ink-2">{s.theirs.content}</span>
           ) : (
-            <span className="mt-0.5 flex items-center gap-1.5 text-[15px] italic leading-snug text-ink-3">
+            <span className="mt-0.5 flex items-center gap-1.5 text-[15px]  leading-snug text-ink-3">
               <EyeSlash size={15} aria-hidden className="shrink-0" />
               Wording not shared
             </span>

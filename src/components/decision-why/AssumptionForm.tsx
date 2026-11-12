@@ -166,7 +166,7 @@ export function AssumptionForm({
             placeholder="If they hold the price at forty, we sign this quarter."
             aria-invalid={Boolean(fieldErr("quote"))}
             aria-describedby={describe("quote")}
-            className={`${textareaClass} mt-2 font-display italic`}
+            className={`${textareaClass} mt-2 font-display `}
           />
           <FieldMsg id={describe("quote")} error={fieldErr("quote")} />
         </div>

@@ -20,7 +20,7 @@ import type { Assumption, Evidence, Person } from "@/lib/api/why-blast-types";
 import { KIND_LABEL, resolutionLine, watchParts, watchState, type WatchPart } from "@/lib/decision-why";
 
 /* One reason a decision rests on, as a calm row: the kind, what has to stay true, the words it was
-   said in (the quiet italic voice) and by whom, what the agent watches it against, and its state.
+   said in (the quiet  voice) and by whom, what the agent watches it against, and its state.
    The owner gets Edit and Remove; earlier breaks fold into a small history. */
 
 const WATCH_ICON: Record<WatchPart["kind"], Icon> = { date: CalendarBlank, value: ChartLineUp, jira: Ticket, deal: Handshake };
@@ -28,7 +28,7 @@ const WATCH_ICON: Record<WatchPart["kind"], Icon> = { date: CalendarBlank, value
 export function Said({ quote, by, className = "" }: { quote: string; by: Person | null; className?: string }) {
   return (
     <figure className={`min-w-0 ${className}`}>
-      <blockquote className="font-display text-[16px] italic leading-snug text-ink-2">&ldquo;{quote}&rdquo;</blockquote>
+      <blockquote className="font-display text-[16px]  leading-snug text-ink-2">&ldquo;{quote}&rdquo;</blockquote>
       {by ? <figcaption className="mt-1 text-[13px] font-semibold text-ink-3">{by.name}</figcaption> : null}
     </figure>
   );

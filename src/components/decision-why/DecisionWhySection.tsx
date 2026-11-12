@@ -229,7 +229,7 @@ export function DecisionWhySection({
             </div>
           </div>
         </div>
-        <p className="mt-4 font-display text-[16px] italic text-ink-3">
+        <p className="mt-4 font-display text-[16px]  text-ink-3">
           {slow ? "This is taking longer than usual. Your Myte is still reading the decision." : "Reading the decision for the reasons behind it"}
         </p>
         {slow ? (

@@ -227,7 +227,7 @@ function ChallengeRow({ challenge: c, nowIso, onDismiss }: { challenge: Decision
           <Chip tone={STATUS_TONE[c.status]}>{CHALLENGE_STATUS_LABEL[c.status]}</Chip>
         </p>
         <blockquote
-          className={`mt-2 max-w-[75ch] rounded-ctl bg-bg-2 px-3.5 py-2.5 font-display text-[15px] italic leading-snug ${
+          className={`mt-2 max-w-[75ch] rounded-ctl bg-bg-2 px-3.5 py-2.5 font-display text-[15px]  leading-snug ${
             dismissed ? "text-ink-3" : "text-ink-2"
           }`}
         >
@@ -279,7 +279,7 @@ function RequestBody({ request: r, nowIso }: { request: ReopenRequest; nowIso: s
         </span>
       </p>
       {r.quote ? (
-        <blockquote className="mt-2 max-w-[75ch] rounded-ctl bg-bg-2 px-3.5 py-2.5 font-display text-[15px] italic leading-snug text-ink-2">
+        <blockquote className="mt-2 max-w-[75ch] rounded-ctl bg-bg-2 px-3.5 py-2.5 font-display text-[15px]  leading-snug text-ink-2">
           {r.quote}
         </blockquote>
       ) : null}

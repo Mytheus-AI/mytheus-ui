@@ -40,7 +40,7 @@ export function CapacityVisual() {
       <div className="border-b border-line px-[22px] py-5">
         <div className="grid grid-cols-[30px_minmax(0,1fr)] gap-x-3">
           <Av name="Maya" />
-          <p className="font-display text-[1.2rem] italic leading-[1.3] text-ink-2">
+          <p className="font-display text-[1.2rem]  leading-[1.3] text-ink-2">
             &ldquo;Sarah can pick up the onboarding flow too.&rdquo;
           </p>
         </div>

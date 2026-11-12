@@ -99,7 +99,7 @@
 .mx-meet .ag-title { color: var(--ink); font-size: 15px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
 .mx-meet .ag-item.is-skipped .ag-title { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--line-2); }
 .mx-meet .ag-meta { color: var(--ink-3); font-size: 14px; }
-.mx-meet .ag-note { display: flex; gap: 6px; align-items: flex-start; margin-top: 4px; color: var(--ink-2); font-family: var(--font-display); font-style: italic; font-size: 15px; line-height: 1.45; }
+.mx-meet .ag-note { display: flex; gap: 6px; align-items: flex-start; margin-top: 4px; color: var(--ink-2); font-family: var(--font-display); font-style: normal; font-size: 15px; line-height: 1.45; }
 .mx-meet .ag-note svg { flex-shrink: 0; margin-top: 4px; color: var(--signal-ink); }
 .mx-meet .ag-src { color: var(--ink-3); font-size: 12.5px; }
 .mx-meet .ag-status { padding-top: 1px; }
@@ -161,7 +161,7 @@
 .mx-meet .agenda-status { font-weight: 650; color: var(--ink-2); }
 .mx-meet .agenda-status.is-in_progress { color: var(--signal-ink); }
 .mx-meet .agenda-status.is-covered { color: var(--ok); }
-.mx-meet .agenda-note { display: flex; gap: 6px; align-items: flex-start; color: var(--ink-2); font-family: var(--font-display); font-style: italic; font-size: 14px; line-height: 1.45; }
+.mx-meet .agenda-note { display: flex; gap: 6px; align-items: flex-start; color: var(--ink-2); font-family: var(--font-display); font-style: normal; font-size: 14px; line-height: 1.45; }
 .mx-meet .agenda-note svg { flex-shrink: 0; margin-top: 4px; color: var(--signal-ink); }
 .mx-meet .agenda-src { color: var(--ink-3); font-size: 12.5px; }
 .mx-meet .agenda-item .nfy-acts { margin-top: 4px; }

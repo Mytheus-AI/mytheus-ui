@@ -121,7 +121,7 @@ export function ReviewRow({
         <div className="min-w-0 flex-[1_1_100%] sm:flex-1">
           <p className="text-[15px] font-medium leading-snug text-ink">{p.content}</p>
           {p.source.quote ? (
-            <blockquote className="mt-1.5 border-l-0 font-display text-[15px] italic leading-snug text-ink-3">&ldquo;{p.source.quote}&rdquo;</blockquote>
+            <blockquote className="mt-1.5 border-l-0 font-display text-[15px]  leading-snug text-ink-3">&ldquo;{p.source.quote}&rdquo;</blockquote>
           ) : null}
           <PromiseMeta p={p} today={today} />
         </div>

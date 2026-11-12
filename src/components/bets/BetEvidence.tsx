@@ -42,7 +42,7 @@ export function BetEvidenceList({ evidence }: { evidence: Evidence[] }) {
                 {e.meeting_title && e.visible ? <span className="truncate">{e.meeting_title}</span> : null}
                 {e.occurred_at ? <time dateTime={e.occurred_at}>{formatDay(e.occurred_at)}</time> : null}
               </span>
-              <span className={`mt-0.5 block text-[14.5px] leading-snug ${e.visible ? "text-ink" : "italic text-ink-3"}`}>{e.title}</span>
+              <span className={`mt-0.5 block text-[14.5px] leading-snug ${e.visible ? "text-ink" : " text-ink-3"}`}>{e.title}</span>
               {e.detail ? <span className="mt-1 block text-[14px] leading-relaxed text-ink-3">{e.detail}</span> : null}
             </span>
             <span className="flex shrink-0 items-center gap-2">

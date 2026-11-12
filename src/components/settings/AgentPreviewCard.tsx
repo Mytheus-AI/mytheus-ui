@@ -43,7 +43,7 @@ export function AgentPreviewCard({
       </div>
       <div className="border-t border-line bg-surface-2 px-4 py-4 sm:px-[22px]">
         <p className="text-[12.5px] font-semibold text-ink-3">How a note would read</p>
-        <p className="mt-1.5 font-display text-[22px] italic leading-snug text-ink">&ldquo;{preset.sample}&rdquo;</p>
+        <p className="mt-1.5 font-display text-[22px]  leading-snug text-ink">&ldquo;{preset.sample}&rdquo;</p>
         {extra ? (
           <p className="mt-2.5 line-clamp-2 break-words text-[14px] leading-relaxed text-ink-3">
             <span className="font-semibold text-ink-2">Also follows: </span>
