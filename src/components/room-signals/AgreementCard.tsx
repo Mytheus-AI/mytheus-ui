@@ -95,7 +95,7 @@ export function AgreementCard({ read }: { read: SignalRead<DecisionAgreement> })
               <ul className="mt-2 flex flex-col gap-2.5">
                 {a.notes.map((n, i) => (
                   <li key={i} className="rounded-ctl bg-bg-2 px-3.5 py-2.5">
-                    <p className="font-display text-[15px] italic leading-snug text-ink-2">&ldquo;{n.text}&rdquo;</p>
+                    <p className="font-display text-[15px]  leading-snug text-ink-2">&ldquo;{n.text}&rdquo;</p>
                     <p className="mt-1 text-[12.5px] text-ink-3">
                       {n.author_name ?? "Unsigned"}, {NOTE_STANCE[n.answer]}
                     </p>

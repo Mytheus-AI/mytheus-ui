@@ -63,7 +63,7 @@ export function SiteFooter() {
             </svg>
             <span className="wordmark text-[clamp(2.3rem,4.6vw,3.6rem)] leading-none text-ink">Mytheus</span>
           </Link>
-          <p className="mt-5 max-w-[28ch] font-display text-[1.3rem] italic leading-snug text-ink-3">
+          <p className="mt-5 max-w-[28ch] font-display text-[1.3rem]  leading-snug text-ink-3">
             One line through every meeting your team has. You just followed it here.
           </p>
         </div>

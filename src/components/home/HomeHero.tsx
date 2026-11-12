@@ -121,7 +121,7 @@ export function HomeHero() {
                 </div>
                 <div className={`${s.seq} rounded-ctl border border-line bg-surface px-4 py-3.5`} style={delay("2.4s")}>
                   <small className="block text-[13.5px] text-ink-3">Priya asked</small>
-                  <q className="mb-2.5 mt-0.5 block font-display text-[1.15rem] italic leading-[1.3] text-ink-2">
+                  <q className="mb-2.5 mt-0.5 block font-display text-[1.15rem]  leading-[1.3] text-ink-2">
                     Did we ever settle the launch date?
                   </q>
                   <p className="font-semibold leading-[1.35] text-ink">Yes. August 12, decided on Tuesday.</p>

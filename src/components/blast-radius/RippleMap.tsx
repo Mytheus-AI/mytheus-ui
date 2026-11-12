@@ -167,7 +167,7 @@ export function RippleMap({
                     style={{ left: pos.x - 18, top: pos.y - 18, maxWidth: pos.maxW, ["--dl" as string]: nodeDelay(k, i) }}
                   >
                     <EffectDot effect={item.effect} />
-                    <span className={`truncate ${item.redacted ? "italic text-ink-3" : "font-medium text-ink"}`}>{itemLabel(item)}</span>
+                    <span className={`truncate ${item.redacted ? " text-ink-3" : "font-medium text-ink"}`}>{itemLabel(item)}</span>
                   </button>
                 );
               })}

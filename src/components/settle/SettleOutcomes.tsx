@@ -70,7 +70,7 @@ export function SettleOutcomes({ settlement: s, onChange }: { settlement: Settle
           {s.status === "kept_both" ? "Both decisions stand" : s.status === "meeting_booked" ? "You are meeting about it" : "One decision stands"}
         </h2>
         <p className="mt-2 text-[15px] leading-relaxed text-ink-2">{outcomeLine(s)}</p>
-        {r?.note ? <p className="mt-2 font-display text-[16px] italic leading-snug text-ink-2">&ldquo;{r.note}&rdquo;</p> : null}
+        {r?.note ? <p className="mt-2 font-display text-[16px]  leading-snug text-ink-2">&ldquo;{r.note}&rdquo;</p> : null}
         {s.status === "meeting_booked" && r?.meeting_id ? (
           <Link
             href={`/meetings/${r.meeting_id}`}

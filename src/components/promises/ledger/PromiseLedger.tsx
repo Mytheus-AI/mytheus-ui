@@ -544,7 +544,7 @@ export function PromiseLedger({
                     <p className="mt-1 text-[14px] text-ink-3">
                       <span className="font-semibold text-ink-2">{p.proposer_name ?? "A colleague"}</span> asks for {shortDay(p.proposed_due)}
                       {p.current_due ? ` instead of ${shortDay(p.current_due)}` : ""}.
-                      {p.note ? <span className="mt-1 block font-display italic">&ldquo;{p.note}&rdquo;</span> : null}
+                      {p.note ? <span className="mt-1 block font-display ">&ldquo;{p.note}&rdquo;</span> : null}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">

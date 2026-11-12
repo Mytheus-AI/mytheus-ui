@@ -195,7 +195,7 @@ export function DigestSections({ digest }: { digest: WeeklyDigest }) {
                 <SectionItems s={s} />
               </ul>
             ) : (
-              <p className="px-4 pb-[18px] font-display text-[15px] italic text-ink-3 sm:px-[22px]">{s.empty}</p>
+              <p className="px-4 pb-[18px] font-display text-[15px]  text-ink-3 sm:px-[22px]">{s.empty}</p>
             )}
           </Card>
         );

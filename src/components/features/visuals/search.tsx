@@ -73,7 +73,7 @@ export function SearchVisual() {
               </div>
               <div className="col-start-2 mt-2 flex items-start gap-2.5 md:col-start-3 md:mt-0">
                 <Av name={s.name} tint={s.tint} size={26} />
-                <p className="font-display text-[1.08rem] italic leading-[1.35] text-ink-2">&ldquo;{s.quote}&rdquo;</p>
+                <p className="font-display text-[1.08rem]  leading-[1.35] text-ink-2">&ldquo;{s.quote}&rdquo;</p>
               </div>
               <span className="col-start-2 mt-2 md:col-start-4 md:mt-0">
                 <Chip tone={s.tone}>{s.kind}</Chip>

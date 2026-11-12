@@ -238,7 +238,7 @@ function RuleDialog({
             <Toggle checked={d.hosted} onChange={(v) => set({ hosted: v })} labelledBy={`${uid}-host`} />
           </div>
         </div>
-        <p className="rounded-ctl bg-bg-2 px-3.5 py-3 font-display text-[15px] italic leading-snug text-ink-2" aria-live="polite">
+        <p className="rounded-ctl bg-bg-2 px-3.5 py-3 font-display text-[15px]  leading-snug text-ink-2" aria-live="polite">
           {preview}
         </p>
         <FieldMsg id={`${uid}-msg`} error={error} />

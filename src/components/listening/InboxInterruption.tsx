@@ -16,7 +16,7 @@ export function InboxInterruption({ interruption }: { interruption: Interruption
   return (
     <div className="mt-3">
       {interruption.quote ? (
-        <blockquote className="mb-3 max-w-[75ch] rounded-ctl bg-bg-2 px-3.5 py-2.5 font-display text-[15px] italic leading-snug text-ink-2">
+        <blockquote className="mb-3 max-w-[75ch] rounded-ctl bg-bg-2 px-3.5 py-2.5 font-display text-[15px]  leading-snug text-ink-2">
           &ldquo;{interruption.quote}&rdquo;
         </blockquote>
       ) : null}

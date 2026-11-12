@@ -16,7 +16,7 @@ export function ExchangeVisual() {
         <PanelLabel>Said in the room</PanelLabel>
         <div className="grid grid-cols-[30px_minmax(0,1fr)] gap-x-3">
           <Av name="Diego" tint="ochre" />
-          <p className="font-display text-[1.2rem] italic leading-[1.3] text-ink-2">
+          <p className="font-display text-[1.2rem]  leading-[1.3] text-ink-2">
             &ldquo;As we agreed on the pricing call, the rework is already owned.&rdquo;
           </p>
         </div>
@@ -25,7 +25,7 @@ export function ExchangeVisual() {
         <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-end gap-3">
           <span className="grid justify-items-center gap-1.5">
             <AgentAv size={44} />
-            <span className="font-display text-[1.02rem] italic text-ink-3">your Myte</span>
+            <span className="font-display text-[1.02rem]  text-ink-3">your Myte</span>
           </span>
           <svg aria-hidden viewBox="0 0 400 48" preserveAspectRatio="none" className="mb-[50px] h-12 w-full overflow-visible">
             <path
@@ -38,7 +38,7 @@ export function ExchangeVisual() {
           </svg>
           <span className="grid justify-items-center gap-1.5">
             <AgentAv size={44} />
-            <span className="whitespace-nowrap font-display text-[1.02rem] italic text-ink-3">Sarah&rsquo;s Myte</span>
+            <span className="whitespace-nowrap font-display text-[1.02rem]  text-ink-3">Sarah&rsquo;s Myte</span>
           </span>
         </div>
         <div className="mt-5 grid items-start gap-3.5 sm:grid-cols-[minmax(0,.8fr)_minmax(0,1.2fr)]">

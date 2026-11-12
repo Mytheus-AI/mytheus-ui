@@ -50,7 +50,7 @@ export async function WhatMyAgentSaid({ meetingId }: { meetingId: string }) {
               <LocalStamp iso={e.created_at} mode="time" />
             </p>
             <h3 className="mt-0.5 max-w-[68ch] text-[15px] font-semibold leading-snug text-ink">{e.question}</h3>
-            <blockquote className="mt-2 max-w-[68ch] rounded-ctl bg-bg-2 px-3.5 py-2.5 font-display text-[15px] italic leading-snug text-ink-2">
+            <blockquote className="mt-2 max-w-[68ch] rounded-ctl bg-bg-2 px-3.5 py-2.5 font-display text-[15px]  leading-snug text-ink-2">
               {e.answer}
             </blockquote>
             <div className="mt-2 flex flex-wrap items-start gap-x-2.5 gap-y-1.5">

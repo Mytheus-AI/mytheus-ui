@@ -52,7 +52,7 @@ export function Card({
   );
 }
 
-/** A card's title row: the 17px semibold title (optionally a quiet italic serif caption under it,
+/** A card's title row: the 17px semibold title (optionally a quiet  serif caption under it,
     or a line of description), and a control or count on the right. */
 export function CardHead({
   id,
@@ -88,7 +88,7 @@ export function CardHead({
         <Heading id={id} className={`text-[17px] font-semibold leading-snug ${tone === "danger" ? "text-priority-high" : "text-ink"}`}>
           {title}
         </Heading>
-        {caption ? <p className="font-display text-[15px] italic leading-snug text-ink-3">{caption}</p> : null}
+        {caption ? <p className="font-display text-[15px]  leading-snug text-ink-3">{caption}</p> : null}
         {description ? <p className="mt-1 max-w-[68ch] text-[14px] leading-relaxed text-ink-3">{description}</p> : null}
       </div>
       {right ? <div className="-my-1 flex shrink-0 items-center gap-2">{right}</div> : null}

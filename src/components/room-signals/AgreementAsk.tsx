@@ -167,7 +167,7 @@ export function AgreementAsk({
           </Chip>
           <Chip icon={<LockSimple size={13} />}>{check.share_name ? "With your name" : "Anonymous"}</Chip>
         </div>
-        {check.note ? <p className="mt-2 max-w-[75ch] font-display text-[15px] italic leading-snug text-ink-2">&ldquo;{check.note}&rdquo;</p> : null}
+        {check.note ? <p className="mt-2 max-w-[75ch] font-display text-[15px]  leading-snug text-ink-2">&ldquo;{check.note}&rdquo;</p> : null}
         {noteOpen ? (
           <>
             {noteFields}

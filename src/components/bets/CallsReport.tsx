@@ -362,7 +362,7 @@ export function CallsReport({ cal, mine, today }: { cal: Calibration; mine: MyBe
                     <OutcomeChip outcome={l.outcome} />
                     {CATEGORY_LABEL[l.category]}
                   </div>
-                  <p className="mt-1.5 flex gap-2 font-display text-[16px] italic leading-snug text-ink">
+                  <p className="mt-1.5 flex gap-2 font-display text-[16px]  leading-snug text-ink">
                     <Lightbulb size={16} aria-hidden className="mt-1 shrink-0 not-italic text-signal-ink" />
                     {l.lesson}
                   </p>

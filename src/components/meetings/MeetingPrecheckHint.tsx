@@ -156,7 +156,7 @@ export function MeetingPrecheckHint({
               <h3 id="precheck-h" className="text-[15px] font-semibold leading-snug text-ink">
                 Before you schedule it
               </h3>
-              <p className="font-display text-[14px] italic leading-snug text-ink-3">Your Myte checked what the team already has</p>
+              <p className="font-display text-[14px]  leading-snug text-ink-3">Your Myte checked what the team already has</p>
             </div>
             <Button
               type="button"
@@ -178,7 +178,7 @@ export function MeetingPrecheckHint({
                   This was already decided on {shortDate(d.decided_at, now)}
                   {d.superseded_by ? <Chip tone="medium">Changed later</Chip> : null}
                 </p>
-                <blockquote className="mt-1.5 rounded-ctl bg-surface px-3 py-2 font-display text-[15px] italic leading-snug text-ink-2">
+                <blockquote className="mt-1.5 rounded-ctl bg-surface px-3 py-2 font-display text-[15px]  leading-snug text-ink-2">
                   {d.content}
                 </blockquote>
                 <p className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[14px]">

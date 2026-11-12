@@ -99,7 +99,7 @@ function QuoteLine({ bet }: { bet: Bet }) {
     <figure className="flex gap-3 rounded-ctl border-l-0 bg-bg-2 px-3.5 py-3">
       <Quotes size={18} weight="fill" aria-hidden className="mt-0.5 shrink-0 text-signal-ink" />
       <div className="min-w-0">
-        <blockquote className="font-display text-[16px] italic leading-snug text-ink">{bet.quote}</blockquote>
+        <blockquote className="font-display text-[16px]  leading-snug text-ink">{bet.quote}</blockquote>
         <figcaption className="mt-1 text-[13px] text-ink-3">
           {bet.quote_speaker_name ? `${bet.quote_speaker_name}, in the meeting` : "Said in the meeting"}
         </figcaption>
@@ -340,7 +340,7 @@ export function DecisionBet({
           {bet.lesson ? (
             <figure className="rounded-ctl bg-bg-2 px-4 py-3.5">
               <figcaption className="text-[12.5px] font-semibold text-ink-3">The lesson</figcaption>
-              <p className="mt-1 font-display text-[17px] italic leading-snug text-ink">{bet.lesson}</p>
+              <p className="mt-1 font-display text-[17px]  leading-snug text-ink">{bet.lesson}</p>
             </figure>
           ) : null}
           <BetFacts bet={bet} today={today} />

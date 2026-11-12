@@ -53,7 +53,7 @@ export function AgentPortrait({
           <figure className="mt-4 text-left">
             <div className="rounded-card border border-line bg-surface px-4 py-3.5 shadow-warm-1 sm:px-[22px]">
               <figcaption className="text-[12.5px] font-semibold text-ink-3">How it writes your notes</figcaption>
-              <blockquote className="mt-1.5 font-display text-[17px] italic leading-snug text-ink">{preset.sample}</blockquote>
+              <blockquote className="mt-1.5 font-display text-[17px]  leading-snug text-ink">{preset.sample}</blockquote>
               {instructions ? (
                 <p className="mt-2 text-[14px] text-ink-3">
                   Also: <span className="text-ink-2">{instructions}</span>

@@ -34,7 +34,7 @@ export function AgentReads({ profile }: { profile: Pick<OrgProfile, "description
     <figure className={cardClass({ tone: "well" })}>
       <figcaption className="text-[12.5px] font-semibold text-ink-3">What every Myte reads</figcaption>
       {empty ? (
-        <p className="mt-3 font-display text-[17px] italic leading-snug text-ink-3">
+        <p className="mt-3 font-display text-[17px]  leading-snug text-ink-3">
           Nothing yet. Until this is filled in, Mytes know your people and your meetings, but not your company.
         </p>
       ) : (

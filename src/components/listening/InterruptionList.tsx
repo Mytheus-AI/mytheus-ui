@@ -59,7 +59,7 @@ export function InterruptionList({ items: initial, nowIso, failed = false }: { i
                       {i.status === "held" ? <Chip tone="outline">{heldReasonText(i.held_reason)}</Chip> : null}
                     </p>
                     <h3 className="mt-0.5 text-[15px] font-semibold leading-snug text-ink">{i.title}</h3>
-                    {i.quote ? <p className="mt-1 font-display text-[14.5px] italic leading-snug text-ink-2">&ldquo;{i.quote}&rdquo;</p> : null}
+                    {i.quote ? <p className="mt-1 font-display text-[14.5px]  leading-snug text-ink-2">&ldquo;{i.quote}&rdquo;</p> : null}
                     <p className="mt-1 flex flex-wrap items-center gap-x-3 text-[12.5px] text-ink-3">
                       <LocalWhen iso={i.created_at} nowIso={nowIso} mode="past" />
                       <Link href={`/meetings/${i.meeting_id}`} className="font-semibold text-ink-2 hover:underline">

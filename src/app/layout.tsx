@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import { hanken, newsreader, syne } from "@/lib/fonts";
+import { hanken, interTight } from "@/lib/fonts";
 import { THEME_INIT } from "@/components/app/theme-init";
 import { ThemeSync } from "@/components/app/ThemeSync";
 import "./globals.css";
 
 // One type pair for every surface: Hanken Grotesk carries the interface and body copy,
-// Syne is for display titles (the `.display` class) and the wordmark.
+// Inter Tight is for display titles (the `.display` class) and the wordmark.
 
 export const metadata: Metadata = {
   title: "Mytheus: every meeting, on repeat",
@@ -44,7 +44,7 @@ export default function RootLayout({
           <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
         </head>
         <body
-          className={`${hanken.variable} ${syne.variable} ${newsreader.variable} antialiased`}
+          className={`${hanken.variable} ${interTight.variable} antialiased`}
         >
           <ThemeSync />
           {children}

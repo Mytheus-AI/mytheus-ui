@@ -44,7 +44,7 @@ export function BetLessons({ hints, compact = false }: { hints: BetHints | null;
                   l.statement
                 )}
               </p>
-              {l.lesson ? <p className="mt-1 font-display text-[15px] italic leading-snug text-ink">{l.lesson}</p> : null}
+              {l.lesson ? <p className="mt-1 font-display text-[15px]  leading-snug text-ink">{l.lesson}</p> : null}
               {l.failed_assumption ? (
                 <p className="mt-1 text-[13.5px] text-ink-3">The assumption that failed: {l.failed_assumption}</p>
               ) : null}

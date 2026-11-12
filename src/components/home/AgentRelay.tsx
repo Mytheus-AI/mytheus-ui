@@ -85,7 +85,7 @@ export function AgentRelay() {
           />
         </circle>
       </svg>
-      <div className="mt-1.5 flex justify-between font-display text-[1.1rem] italic text-ink-3">
+      <div className="mt-1.5 flex justify-between font-display text-[1.1rem]  text-ink-3">
         <span>your Myte</span>
         <span>Sarah&apos;s Myte</span>
       </div>

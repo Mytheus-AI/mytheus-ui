@@ -75,7 +75,7 @@ export function RippleStack({
                       >
                         <EffectDot effect={item.effect} />
                         <span className="min-w-0 flex-1">
-                          <span className={`block text-[14.5px] leading-snug ${item.redacted ? "italic text-ink-3" : "font-medium text-ink"}`}>
+                          <span className={`block text-[14.5px] leading-snug ${item.redacted ? " text-ink-3" : "font-medium text-ink"}`}>
                             {itemLabel(item)}
                           </span>
                           <span className="block text-[12.5px] text-ink-3">{EFFECT[item.effect].label}</span>

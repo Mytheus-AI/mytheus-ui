@@ -90,7 +90,7 @@ export function CloseCTA({
               {BEADS.map((b, i) => (
                 <g key={b.label} className="cta-bead" style={{ ["--dl" as string]: `${0.6 + i * 0.35}s` }}>
                   <circle cx={b.x} cy={b.y} r={6.5} fill="var(--surface-2)" stroke="var(--signal-line)" strokeWidth={2.2} />
-                  <text x={b.x} y={b.ly} textAnchor="middle" className="fill-ink-3 font-display text-[19px] italic">
+                  <text x={b.x} y={b.ly} textAnchor="middle" className="fill-ink-3 font-display text-[19px] ">
                     {b.label}
                   </text>
                 </g>
