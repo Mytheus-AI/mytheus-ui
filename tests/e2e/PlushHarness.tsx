@@ -1,7 +1,6 @@
 import { useRef, useState, type CSSProperties } from "react";
 import { Plush } from "../../src/components/plush/Plush";
 import { PlushLive, type PlushState } from "../../src/components/plush/PlushLive";
-import { Doodle } from "../../src/components/ui/Doodle";
 import { PLUSH_ACCESSORIES, PLUSH_SHAPES } from "../../src/lib/plush";
 import { comboSeed, PLUSH_SEEDS } from "./plush-fixture";
 
@@ -63,14 +62,14 @@ export function PlushHarness({
             <section aria-label="Still" style={row}>
               {PLUSH_SEEDS.slice(0, 4).map((s, i) => (
                 <span key={s} data-testid={`still-${i}`} className="bg-surface ring-2 ring-surface" style={frame(44)}>
-                  <Doodle seed={s} title={`Person ${i + 1}`} className="block h-full w-full" />
+                  <Plush seed={s} size={44} title={`Person ${i + 1}`} className="block h-full w-full" />
                 </span>
               ))}
               <span data-testid="still-small" className="bg-bg-2" style={frame(24)}>
-                <Doodle seed={PLUSH_SEEDS[1]} title="Small face" className="block h-full w-full" />
+                <Plush seed={PLUSH_SEEDS[1]} size={24} title="Small face" className="block h-full w-full" />
               </span>
               <span data-testid="still-plain" style={frame(44)}>
-                <Doodle seed={PLUSH_SEEDS[5]} className="block h-full w-full" />
+                <Plush seed={PLUSH_SEEDS[5]} size={44} className="block h-full w-full" />
               </span>
             </section>
           </>

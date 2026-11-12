@@ -16,7 +16,7 @@ function deal(count: number, keep?: string): string[] {
 export function DoodlePicker({
   value,
   onChange,
-  label = "Choose your face",
+  label = "Choose your doodle",
   size = "md",
 }: {
   value: string;
@@ -67,13 +67,13 @@ export function DoodlePicker({
           key={value}
           className={`doodle-pop block overflow-hidden rounded-full shadow-[0_14px_30px_-18px_rgba(40,30,20,0.55)] ring-[3px] ring-surface ${big}`}
         >
-          <Doodle seed={value} className="block h-full w-full" title="Your face" />
+          <Doodle seed={value} className="block h-full w-full" title="Your doodle" />
         </span>
         <button
           type="button"
           onClick={shuffle}
-          aria-label="Deal new faces"
-          title="Deal new faces"
+          aria-label="Deal new doodles"
+          title="Deal new doodles"
           className="absolute -bottom-1 -right-1 grid h-9 w-9 place-items-center rounded-full border border-line bg-surface text-ink-2 shadow-sm transition-[color,transform,border-color] duration-200 hover:border-line-2 hover:text-ink active:scale-90"
         >
           <svg
@@ -117,7 +117,7 @@ export function DoodlePicker({
                     type="button"
                     role="radio"
                     aria-checked={on}
-                    aria-label={`Face ${i + 1}`}
+                    aria-label={`Doodle ${i + 1}`}
                     tabIndex={on || (!options.includes(value) && i === 0) ? 0 : -1}
                     onClick={() => onChange(seed)}
                     style={{ animationDelay: `${i * 35}ms` }}

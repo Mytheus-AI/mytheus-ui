@@ -301,11 +301,10 @@ body {
   }
 }
 
-/* ---------------- plush faces ----------------
-   The box a plush fills (components/plush): the picture, the live canvas, the soft circle that
-   holds the place until either is ready, and the SVG fallback all sit in the same square, so
-   nothing shifts when one replaces another. Then the picker's motion: a pop when a new face is
-   chosen, a quick deal when the strip reshuffles, and a dice tumble on the shuffle button. */
+/* ---------------- plush faces (agents) ----------------
+   The box an agent's plush fills (components/plush): the picture, the live canvas, the soft
+   circle that holds the place until either is ready, and the SVG fallback all sit in the same
+   square, so nothing shifts when one replaces another. */
 @layer components {
   .plush {
     position: relative;
@@ -332,6 +331,21 @@ body {
 }
 .plush > .plush-soft[data-hidden] {
   opacity: 0;
+}
+
+/* ---------------- doodles (people) ----------------
+   Ink strokes drawing themselves in (pathLength=1 on each stroke), a pop when a new face is
+   chosen, a quick deal when the strip reshuffles, and a dice tumble on the shuffle button. The
+   pop, deal and dice also animate the agent picker. */
+.doodle-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: doodleDraw 0.9s var(--ease-soft) forwards;
+}
+@keyframes doodleDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 .doodle-pop {
   animation: doodlePop 0.42s var(--ease-soft) both;
@@ -373,6 +387,11 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .plush > .plush-soft {
     transition: none;
+  }
+  .doodle-draw {
+    animation: none;
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
   }
   .doodle-pop,
   .doodle-deal,

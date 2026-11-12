@@ -135,10 +135,10 @@ function DoodleCard() {
       await refreshMyProfile();
       router.refresh();
       setSeed(next);
-      if (isUndo) notifySuccess("Face restored");
-      else notifySuccess("Face saved", { description: "Your teammates see it too.", undo: () => void save(before, true) });
+      if (isUndo) notifySuccess("Doodle restored");
+      else notifySuccess("Doodle saved", { description: "Your teammates see it too.", undo: () => void save(before, true) });
     } catch {
-      notifyError("Face not saved. Try again.");
+      notifyError("Doodle not saved. Try again.");
     } finally {
       setSaving(false);
     }
@@ -146,7 +146,7 @@ function DoodleCard() {
 
   return (
     <SectionCard
-      title="Your face"
+      title="Your doodle"
       description="How you appear next to your name in meetings, tasks and decisions. Deal a few until one feels like you."
     >
       <div className="px-4 py-5 sm:px-[22px]">
@@ -157,7 +157,7 @@ function DoodleCard() {
       </div>
       <FormFooter>
         <Button disabled={seed === current || saving || !isDoodleSeed(seed)} onClick={() => void save(seed)}>
-          {saving ? "Saving face" : "Save face"}
+          {saving ? "Saving doodle" : "Save doodle"}
         </Button>
       </FormFooter>
     </SectionCard>

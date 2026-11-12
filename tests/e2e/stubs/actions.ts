@@ -741,3 +741,11 @@ export * from "./actions-skel-home";
 export * from "./actions-skel-meet";
 export * from "./actions-skel-people";
 export * from "./actions-skel-work";
+// Settings > Profile (faces screenshots): saves succeed without a backend.
+export async function refreshMyProfile(): Promise<void> {}
+export async function saveDisplayName(): Promise<boolean> {
+  return true;
+}
+export async function saveWorkingProfile() {
+  return { ok: true as const };
+}
