@@ -7,8 +7,8 @@ import { fetchDelegatedAnswerLog } from "@/lib/api/delegated-answers";
 import type { DelegatedAnswerEntry } from "@/lib/api/only-mytheus-types";
 import { logSummary } from "@/lib/delegated-answers";
 
-/* "What my agent said" on a meeting's page after it ended (only-Mytheus wave, contract section 2),
-   for the person who sent their agent: every question it was asked, who asked, the statement it
+/* "What my Myte said" on a meeting's page after it ended (only-Mytheus wave, contract section 2),
+   for the person who sent their Myte: every question it was asked, who asked, the statement it
    answered from (or that it had none), and what it said. The log holds only your own agent's
    answers, so nobody else ever sees this. Server component. */
 
@@ -20,8 +20,8 @@ export async function WhatMyAgentSaid({ meetingId }: { meetingId: string }) {
   } catch {
     return (
       <Card flush as="section" aria-labelledby="agent-said-h">
-        <CardHead id="agent-said-h" title="What your agent said" />
-        <ErrorState variant="inline" title="This did not load" text="What your agent answered is kept. Try again in a moment." />
+        <CardHead id="agent-said-h" title="What your Myte said" />
+        <ErrorState variant="inline" title="This did not load" text="What your Myte answered is kept. Try again in a moment." />
       </Card>
     );
   }
@@ -31,16 +31,16 @@ export async function WhatMyAgentSaid({ meetingId }: { meetingId: string }) {
       <Card as="section" tone="well" aria-labelledby="agent-said-h" className="!py-4">
         <h2 id="agent-said-h" className="flex items-center gap-2 text-[15px] font-semibold text-ink">
           <ChatCircleText size={17} aria-hidden className="text-ink-3" />
-          What your agent said
+          What your Myte said
         </h2>
-        <p className="mt-1 text-[14px] leading-relaxed text-ink-3">Nobody asked your agent anything in this meeting.</p>
+        <p className="mt-1 text-[14px] leading-relaxed text-ink-3">Nobody asked your Myte anything in this meeting.</p>
       </Card>
     );
   }
 
   return (
     <Card flush as="section" aria-labelledby="agent-said-h">
-      <CardHead id="agent-said-h" title="What your agent said" caption={logSummary(items)} divided />
+      <CardHead id="agent-said-h" title="What your Myte said" caption={logSummary(items)} divided />
       <ol className="divide-y divide-line">
         {items.map((e) => (
           <li key={e.id} className="px-4 py-4 sm:px-[22px]">

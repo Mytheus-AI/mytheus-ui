@@ -5,7 +5,7 @@ import { Shuffle } from "@phosphor-icons/react";
 import { randomDoodleSeed } from "@/lib/doodle";
 import { AgentOrb } from "./AgentOrb";
 
-/* Choose your agent's face: a large live preview of the selected character, a strip of plush
+/* Choose your Myte's face: a large live preview of the selected character, a strip of plush
    candidates, and Shuffle, which deals a fresh strip and picks its first. Every option is just a
    seed (`agent_avatar_seed`), so saving goes through the existing action unchanged. The strip is
    a radio group (arrow keys move and select, one tab stop) and the preview is the selected
@@ -77,7 +77,7 @@ export function OrbPicker({
         className="block shrink-0 overflow-hidden rounded-full bg-surface shadow-[0_14px_30px_-18px_rgba(40,30,20,0.55)] ring-[3px] ring-surface"
         style={{ width: bigPx, height: bigPx }}
       >
-        <AgentOrb seed={value} mode="live" size={bigPx} label="Your agent's face" followInput={followInput} />
+        <AgentOrb seed={value} mode="live" size={bigPx} label="Your Myte's face" followInput={followInput} />
       </span>
 
       <div className="min-w-0 flex-1">

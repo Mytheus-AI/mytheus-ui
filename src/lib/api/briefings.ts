@@ -1,5 +1,5 @@
 /**
- * A briefing from your agent, core-api (the caller's own briefings only):
+ * A briefing from your Myte, core-api (the caller's own briefings only):
  *
  *   GET  /api/v1/briefings/latest            {briefing | null, enabled, auto_play}
  *   GET  /api/v1/briefings?limit=            {items}

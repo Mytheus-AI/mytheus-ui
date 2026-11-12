@@ -11,10 +11,10 @@ import { ApiError } from "@/lib/api/client";
 import { listAgentAuthzScopes, type AgentAuthzScope } from "@/lib/api/agent-authz";
 import { currentLevel } from "@/lib/agent-collaboration";
 
-export const metadata: Metadata = { title: "Agent collaboration | Mytheus" };
+export const metadata: Metadata = { title: "Myte collaboration | Mytheus" };
 
 /* Agent collaboration (Phase P10, plan 3.5, mytheus-docs ADR-0013): whether, and how far, one
-   person's agent may ask another person's agent for context during a meeting. Owners and admins
+   person's Myte may ask another person's Myte for context during a meeting. Owners and admins
    only: the tenant layout hides the console from everyone else, and identity-tenant-service's
    `/api/v1/agent-authz-scopes` enforces the tier on every read and write. A fresh workspace has
    no grants, so collaboration starts Off. Shows the level and the grants behind it. */
@@ -41,9 +41,9 @@ async function load(): Promise<Load> {
     return { ok: true, items: Array.isArray(items) ? items : [] };
   } catch (error) {
     if (error instanceof ApiError && error.status === 403) {
-      return { ok: false, forbidden: true, message: "Only workspace owners and admins can see and change agent collaboration." };
+      return { ok: false, forbidden: true, message: "Only workspace owners and admins can see and change Myte collaboration." };
     }
-    return { ok: false, forbidden: false, message: "Agent collaboration settings could not be loaded" };
+    return { ok: false, forbidden: false, message: "Myte collaboration settings could not be loaded" };
   }
 }
 
@@ -61,14 +61,14 @@ export default async function AgentCollaborationPage() {
   return (
     <div className="flex flex-col gap-5">
       <SectionBar
-        title="Agent collaboration"
-        context="During a meeting, an agent can ask a teammate's agent for context its person is missing. Choose how far that reaches. Every request, allowed or refused, shows in the meeting's collaboration log."
+        title="Myte collaboration"
+        context="During a meeting, a Myte can ask a teammate's Myte for context its person is missing. Choose how far that reaches. Every request, allowed or refused, shows in the meeting's collaboration log."
       />
 
       {res.ok ? (
         <>
           <SectionCard
-            title="Who agents may ask"
+            title="Who Mytes may ask"
             headingLevel={2}
             headingId="level-heading"
             description="Applies to everyone in the workspace, whatever their role."
@@ -87,12 +87,12 @@ export default async function AgentCollaborationPage() {
                 inCard
                 art="agent"
                 title="No grants"
-                description="Agents do not ask each other in this workspace. Pick a level above to let them."
+                description="Mytes do not ask each other in this workspace. Pick a level above to let them."
               />
             ) : (
               <div>
                 <table className="mx-table w-full border-collapse text-left text-[14px]">
-                  <caption className="sr-only">Agent collaboration grants</caption>
+                  <caption className="sr-only">Myte collaboration grants</caption>
                   <thead>
                     <tr className={theadRowClass}>
                       <th scope="col" className={`${thClass} !pl-[22px]`}>Who asks</th>

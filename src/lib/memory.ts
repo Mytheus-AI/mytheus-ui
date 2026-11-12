@@ -1,9 +1,9 @@
 /**
- * "What your agent remembers" (Settings > Agent memory), as pure functions.
+ * "What your Myte remembers" (Settings > Agent memory), as pure functions.
  *
  * The server is core-api `GET/PATCH/DELETE /api/v1/me/memory`: the topics the agents learned
  * (with a decayed weight), the questions the person keeps asking, the topics they muted, what
- * they have open, and how sure each personal agent must be before it shows them something
+ * they have open, and how sure each Myte must be before it shows them something
  * (`calibration`). These helpers turn that into plain sentences and stable orderings, so the
  * copy is testable without a server. No imports beyond types: `tests/memory.test.ts` loads this
  * file directly.
@@ -42,10 +42,10 @@ export function thresholdLabel(surface: number): string {
   return clamped.toFixed(2);
 }
 
-/** "Your agent shows notes above 0.75 because you dismissed 4 of the last 10." */
+/** "Your Myte shows notes above 0.75 because you dismissed 4 of the last 10." */
 export function calibrationSentence(c: Pick<MemoryCalibration, "agent" | "surface" | "personal" | "samples"> & { dismissed?: number }): string {
   const a = AGENTS[c.agent] ?? { noun: "items", one: "item" };
-  const lead = `Your agent shows ${a.noun} above ${thresholdLabel(c.surface)}`;
+  const lead = `Your Myte shows ${a.noun} above ${thresholdLabel(c.surface)}`;
   if (c.personal) {
     const dismissed = Math.max(0, Math.min(c.samples, Math.round(c.dismissed ?? 0)));
     if (dismissed === 0) return `${lead} because you kept all of the last ${c.samples}.`;

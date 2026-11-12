@@ -15,9 +15,9 @@ import type { AttendanceChoice, AttendanceRule } from "@/lib/api/listening-types
 import { ruleSummary } from "@/lib/listening";
 import { ChoiceControl } from "./ChoiceControl";
 
-/* Standing rules: "let my agent listen to every recurring status meeting". The first rule that
+/* Standing rules: "let my Myte listen to every recurring status meeting". The first rule that
    matches a meeting decides it; a choice you make by hand on one meeting always wins over a rule.
-   A rule never sends your agent into a confidential meeting, and leaves meetings you host alone
+   A rule never sends your Myte into a confidential meeting, and leaves meetings you host alone
    unless you say so. Saving applies it to the next three weeks at once and says how many
    meetings now follow it. */
 
@@ -72,7 +72,7 @@ export function RulesPanel({ rules, templates }: { rules: AttendanceRule[]; temp
             No rules yet
           </p>
           <p className="mt-1 text-[14px] leading-relaxed text-ink-3">
-            Try &ldquo;Let my agent listen to every recurring status meeting&rdquo;. It covers new invitations as they arrive.
+            Try &ldquo;Let my Myte listen to every recurring status meeting&rdquo;. It covers new invitations as they arrive.
           </p>
           <Button
             size="sm"

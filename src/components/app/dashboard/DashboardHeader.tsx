@@ -59,10 +59,10 @@ export function DashboardHeader({
       <>.</>
     ) : needsYou > 0 ? (
       <>
-        , and your agent is waiting on <b className="font-semibold text-ink">{plural(needsYou, "item", "items")}</b> from you.
+        , and your Myte is waiting on <b className="font-semibold text-ink">{plural(needsYou, "item", "items")}</b> from you.
       </>
     ) : (
-      <>, and your agent has nothing waiting on you.</>
+      <>, and your Myte has nothing waiting on you.</>
     );
 
   let lede: ReactNode;

@@ -73,7 +73,7 @@ function DepartmentSection({
             <DescriptionText text={dep.description} label={dep.name} className="mt-1.5 max-w-[75ch] text-[15px] leading-relaxed text-ink-2" />
           ) : (
             <p className="mt-1.5 max-w-[75ch] text-[15px] leading-relaxed text-ink-3">
-              {canEdit ? "No description yet. Add one from the menu so agents know what this department owns." : "No description yet."}
+              {canEdit ? "No description yet. Add one from the menu so Mytes know what this department owns." : "No description yet."}
             </p>
           )}
         </div>
@@ -116,7 +116,7 @@ function Unassigned({ people, canEdit }: { people: ChartPerson[]; canEdit: boole
         </div>
         <p className="mt-1.5 max-w-[75ch] text-[15px] leading-relaxed text-ink-3">
           {canEdit
-            ? "Their agents know less about their role. Add them to a team with Add a person on its card."
+            ? "Their Mytes know less about their role. Add them to a team with Add a person on its card."
             : "People in the workspace who are on no team yet."}
         </p>
       </div>

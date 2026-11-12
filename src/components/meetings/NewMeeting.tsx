@@ -354,7 +354,7 @@ export function NewMeeting({
               <header className="nm-head">
                 <div className="nm-head-text">
                   <h2 id={`${ids}-h`}>New meeting</h2>
-                  <p id={`${ids}-lead`}>Set it up once. Your agent takes notes, tracks the agenda and follows up.</p>
+                  <p id={`${ids}-lead`}>Set it up once. Your Myte takes notes, tracks the agenda and follows up.</p>
                 </div>
                 <button type="button" className="cx-icon-btn sm tap" aria-label="Close" onClick={close} disabled={busy}>
                   <X size={18} weight="bold" aria-hidden="true" />
@@ -606,7 +606,7 @@ export function NewMeeting({
                         ? `From ${[template ? "the meeting type" : null, previousId ? "what the earlier meeting left open" : null]
                             .filter(Boolean)
                             .join(" and ")}. Nothing is saved until you create the meeting.`
-                        : "Pick a meeting type or a meeting this follows up, and your agent drafts it."}
+                        : "Pick a meeting type or a meeting this follows up, and your Myte drafts it."}
                     </small>
                     {notice ? (
                       <p className={`nm-notice${notice.tone === "error" ? " is-error" : ""}`} role={notice.tone === "error" ? "alert" : "status"}>

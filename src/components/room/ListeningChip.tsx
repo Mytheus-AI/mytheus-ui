@@ -5,7 +5,7 @@ import { Headphones } from "@phosphor-icons/react";
 import { listeningLabel } from "@/lib/listening";
 
 /* "3 agents listening" in the room's top bar (In every meeting at once). Everyone in the room
-   sees how many people's agents are listening for them, so nobody is listened to without knowing;
+   sees how many people's Mytes are listening for them, so nobody is listened to without knowing;
    the button opens whose. A change is announced politely to screen readers. Nothing shows when no
    agent listens. */
 
@@ -21,7 +21,7 @@ export function ListeningChip({ count, names }: { count: number; names: string[]
       first.current = false;
       return;
     }
-    setSaid(count > 0 ? `${listeningLabel(count)} in this meeting` : "No agents are listening now");
+    setSaid(count > 0 ? `${listeningLabel(count)} in this meeting` : "No Mytes are listening now");
   }, [count]);
 
   useEffect(() => {
@@ -57,7 +57,7 @@ export function ListeningChip({ count, names }: { count: number; names: string[]
           >
             <Headphones size={14} weight="bold" aria-hidden />
             <span className="cx-incall-n">{count}</span>
-            <span className="cx-incall-label">{count === 1 ? "agent listening" : "agents listening"}</span>
+            <span className="cx-incall-label">{count === 1 ? "Myte listening" : "Mytes listening"}</span>
             <span className="sr-only">, show whose</span>
           </button>
           {open ? (
@@ -67,10 +67,10 @@ export function ListeningChip({ count, names }: { count: number; names: string[]
             >
               <p className="text-[13px] font-semibold text-ink">Listening for someone who is not here</p>
               <ul className="mt-2 space-y-1 text-[14px] text-ink-2">
-                {names.length ? names.map((n, i) => <li key={`${n}-${i}`}>{n}&rsquo;s agent</li>) : <li>{listeningLabel(count)}</li>}
+                {names.length ? names.map((n, i) => <li key={`${n}-${i}`}>{n}&rsquo;s Myte</li>) : <li>{listeningLabel(count)}</li>}
               </ul>
               <p className="mt-2.5 text-[12.5px] leading-snug text-ink-3">
-                Each agent only takes notes for its person and pulls them in when something needs them. It never listens off the record.
+                Each Myte only takes notes for its person and pulls them in when something needs them. It never listens off the record.
               </p>
             </div>
           ) : null}

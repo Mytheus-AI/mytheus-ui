@@ -170,11 +170,11 @@ export async function askStandIn(meetingId: string, userId: string, question: st
     return { ok: true, answer };
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) {
-      return { ok: false, message: "Their agent is no longer standing in for them here.", status: 404 };
+      return { ok: false, message: "Their Myte is no longer standing in for them here.", status: 404 };
     }
     if (err instanceof ApiError && err.status === 403) {
-      return { ok: false, message: "Only people in this meeting can ask its agents.", status: 403 };
+      return { ok: false, message: "Only people in this meeting can ask its Mytes.", status: 403 };
     }
-    return fail(err, "agent", "ask their agent");
+    return fail(err, "Myte", "ask their Myte");
   }
 }

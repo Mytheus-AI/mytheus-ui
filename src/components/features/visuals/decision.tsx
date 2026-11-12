@@ -2,7 +2,7 @@ import { CheckCircle } from "@phosphor-icons/react/dist/ssr";
 import { Chip, Live, Win, WinBar } from "@/components/site/Section";
 import { Av, Ctl, Demo, PanelLabel, SWAP_IN, SWAP_OUT, Swap, dl } from "@/components/features/atoms";
 
-/* Decision tracking: what Maya said, the decision your agent caught from it with Confirm, Edit and
+/* Decision tracking: what Maya said, the decision your Myte caught from it with Confirm, Edit and
    Dismiss, and the lineage it joins (one straight thread, a bead per decision). When it scrolls
    in, the confirm is taken: the controls give way to a "Confirmed by you" chip. */
 
@@ -16,7 +16,7 @@ export function DecisionVisual() {
   return (
     <Win
       className="mx-auto max-w-[960px]"
-      label="Q3 planning, live. Maya says let's lock pricing at $49 for Q3. Your agent labels it as a decision with Confirm, Edit and Dismiss, and you confirm it. It joins a lineage: held at $39 in Q2 planning on April 3, research supporting $49 on May 20, locked at $49 today."
+      label="Q3 planning, live. Maya says let's lock pricing at $49 for Q3. Your Myte labels it as a decision with Confirm, Edit and Dismiss, and you confirm it. It joins a lineage: held at $39 in Q2 planning on April 3, research supporting $49 on May 20, locked at $49 today."
     >
       <WinBar title="Q3 planning" meta={<Live>Live, 11:02</Live>} right={<Chip>1 decision caught</Chip>} />
       <div className="grid md:grid-cols-[minmax(0,1.1fr)_minmax(0,.9fr)]">

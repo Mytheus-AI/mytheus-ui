@@ -71,7 +71,7 @@ export const metadata: Metadata = { title: "Meeting | Mytheus" };
 /* A meeting's page, read from core-api. A title row (status, the serif title, when and who, the
    one primary action), then two columns laid out for what you need at that moment:
 
-   - Before or during the call: when it is, what your agent will do, and who is invited (by name).
+   - Before or during the call: when it is, what your Myte will do, and who is invited (by name).
    - After it: the recap with talk time, and "From this meeting": what was said (the transcript)
      joined by the coral line to what was kept (decisions, tasks, agent collaboration). No Join: a
      call that has ended stays ended (meeting-service closes an empty room after five minutes and
@@ -131,16 +131,16 @@ type Plan = {
   agenda: AgendaItemsProps;
   carry: { previous: { id: string; title: string }; data: CarryForward | null } | null;
   nameOf: (id: string) => string;
-  /** Send my agent instead, for a participant (null otherwise). */
+  /** Send my Myte instead, for a participant (null otherwise). */
   attendance: ComponentProps<typeof AttendanceCard> | null;
   /** Your brief, before it ends and when you are in it. */
   brief: BrainRead<MeetingBrief> | null;
   /** The health card, after it ended. */
   health: BrainRead<MeetingHealth> | null;
   goals: OrgGoal[];
-  /** You sent your agent: the catch-up is yours. */
+  /** You sent your Myte: the catch-up is yours. */
   sentAgent: boolean;
-  /** In every meeting at once: attend, my agent listens or skip, for a participant. */
+  /** In every meeting at once: attend, my Myte listens or skip, for a participant. */
   choice: ComponentProps<typeof MeetingChoiceCard> | null;
 };
 type AgendaItemsProps = {
@@ -165,7 +165,7 @@ function CatchUpLink({ meetingId, sentAgent }: { meetingId: string; sentAgent: b
         <Sparkle size={18} />
       </span>
       <span className="md-linkcard-text">
-        <strong>{sentAgent ? "Your agent's catch-up" : "Catch up in a minute"}</strong>
+        <strong>{sentAgent ? "Your Myte's catch-up" : "Catch up in a minute"}</strong>
         <span>What you now own, what was decided, and how far the agenda got</span>
       </span>
       <ArrowRight size={16} weight="bold" aria-hidden="true" />
@@ -229,9 +229,9 @@ function PeopleCard({ list, title }: { list: Person[]; title: string }) {
                 {p.email && <span>{p.email}</span>}
               </span>
               {p.proxy ? (
-                <Chip tone="low" title={`${p.isYou ? "You are" : `${p.name} is`} sending an agent instead`}>
+                <Chip tone="low" title={`${p.isYou ? "You are" : `${p.name} is`} sending their Myte instead`}>
                   <Robot size={14} aria-hidden="true" />
-                  Sending agent
+                  Sending Myte
                 </Chip>
               ) : null}
               {p.host && <Chip>Host</Chip>}
@@ -287,7 +287,7 @@ function AgentCard() {
     <section className="mx-card mx-card-pad" aria-labelledby="md-agent-h">
       <div className="mx-card-head">
         <h2 className="mx-card-title" id="md-agent-h">
-          What your agent will do
+          What your Myte will do
         </h2>
       </div>
       <p className="mx-help">
@@ -450,8 +450,8 @@ function EndedDetail({
     },
     {
       icon: Robot,
-      title: "Agent collaboration",
-      desc: "When agents asked each other for context, and what policy allowed",
+      title: "Myte collaboration",
+      desc: "When Mytes asked each other for context, and what policy allowed",
       href: `/meetings/${meeting.id}/collaborations`,
     },
   ];
@@ -706,7 +706,7 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
             {plan.sentAgent && !ended ? (
               <Chip tone="low">
                 <Robot size={14} aria-hidden="true" />
-                Your agent attends for you
+                Your Myte attends for you
               </Chip>
             ) : null}
           </div>
@@ -765,7 +765,7 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
         </div>
       </header>
 
-      {/* Beyond the meeting: your agent's briefing about it, once it has ended. */}
+      {/* Beyond the meeting: your Myte's briefing about it, once it has ended. */}
       {ended && mine ? (
         <Suspense fallback={<CardSkeleton rows={2} />}>
           <MeetingBriefingSection meetingId={meeting.id} />

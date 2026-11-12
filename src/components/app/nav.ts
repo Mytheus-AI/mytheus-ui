@@ -40,7 +40,7 @@ import {
 /* The app's information architecture, in one place. One list feeds the sidebar, the topbar
    breadcrumb, the section tabs and the command palette, so a screen is added in exactly one place.
 
-   Sidebar, top to bottom: your agent, then Home, Inbox (with its count), Meetings, Capture a call
+   Sidebar, top to bottom: your Myte, then Home, Inbox (with its count), Meetings, Capture a call
    (the companion for Zoom, Meet and Teams calls, /capture, built on its own branch), My work,
    Decisions and People; then Admin (Workspace, admins only); then Settings (personal only). */
 
@@ -55,8 +55,8 @@ export type NavItem = {
 };
 export type NavSection = { label: string | null; items: NavItem[] };
 
-/** Your agent has its own row at the top of the sidebar, drawn with its face. */
-export const AGENT_ITEM: NavItem = { href: "/agent", label: "Your agent", icon: Smiley, keywords: "agent profile persona listen" };
+/** Your Myte has its own row at the top of the sidebar, drawn with its face. */
+export const AGENT_ITEM: NavItem = { href: "/agent", label: "Your Myte", icon: Smiley, keywords: "myte agent profile persona listen" };
 
 export const MAIN_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Home", icon: House, keywords: "dashboard today" },
@@ -86,10 +86,10 @@ export const WORK_TABS: NavItem[] = [
   { href: "/work/settle", label: "To settle", icon: Lightning, keywords: "clash conflict decisions other team settle" },
 ];
 
-/** Meetings: the hub, and what your agent listens to for you (In every meeting at once). */
+/** Meetings: the hub, and what your Myte listens to for you (In every meeting at once). */
 export const MEETINGS_TABS: NavItem[] = [
   { href: "/meetings", label: "All meetings", icon: VideoCamera, keywords: "calendar calls" },
-  { href: "/meetings/listening", label: "Listening", icon: Headphones, keywords: "agent listens attend skip week rules evening digest interruptions" },
+  { href: "/meetings/listening", label: "Listening", icon: Headphones, keywords: "myte agent listens attend skip week rules evening digest interruptions" },
 ];
 
 /** The Workspace console's tabs (admins). The company brain keeps its sections as a secondary nav
@@ -99,7 +99,7 @@ export const WORKSPACE_TABS: NavItem[] = [
   { href: "/workspace/members", label: "Members", icon: UsersThree, keywords: "invite people" },
   { href: "/workspace/brain", label: "Company brain", icon: Brain, keywords: "vocabulary goals owners ground rules" },
   { href: "/workspace/billing", label: "Usage and billing", icon: ChartBar, keywords: "plan budget invoices" },
-  { href: "/workspace/agents", label: "Agent collaboration", icon: Handshake, keywords: "agents permissions" },
+  { href: "/workspace/agents", label: "Myte collaboration", icon: Handshake, keywords: "agents mytes permissions" },
   { href: "/workspace/data", label: "Data and privacy", icon: Lock, keywords: "retention export erasure redaction" },
   { href: "/workspace/support", label: "Support access", icon: Lifebuoy, keywords: "support" },
 ];
@@ -109,7 +109,7 @@ export const SETTINGS_TABS: NavItem[] = [
   { href: "/settings/profile", label: "Profile", icon: UserCircle, keywords: "name role" },
   { href: "/settings/notifications", label: "Notifications", icon: Bell, keywords: "email alerts" },
   { href: "/settings/listening", label: "Listening", icon: BellSimpleZ, keywords: "interruptions quiet hours focus blocks evening digest lines positions hold the line" },
-  { href: "/settings/memory", label: "Agent memory", icon: Notebook, keywords: "what your agent remembers topics questions forget learning calibration" },
+  { href: "/settings/memory", label: "Myte memory", icon: Notebook, keywords: "agent what your Myte remembers topics questions forget learning calibration" },
   { href: "/settings/briefings", label: "Briefings", icon: SpeakerHigh, keywords: "briefing voice speak listen auto-play length language" },
   { href: "/settings/integrations", label: "Integrations", icon: PlugsConnected, keywords: "calendar slack jira hubspot notion confluence" },
   { href: "/settings/api", label: "API access", icon: Key, keywords: "personal access token mcp claude api curl" },
@@ -121,7 +121,7 @@ export const LINKED_ITEMS: NavItem[] = [
   { href: "/search", label: "Ask Mytheus", icon: Sparkle, keywords: "search question" },
   { href: "/welcome", label: "Welcome brief", icon: Compass, keywords: "new joiner" },
   { href: "/digest", label: "Weekly digest", icon: Newspaper, keywords: "what changed this week summary" },
-  { href: "/briefings", label: "Your briefings", icon: SpeakerHigh, keywords: "brief me briefing listen agent voice" },
+  { href: "/briefings", label: "Your briefings", icon: SpeakerHigh, keywords: "brief me briefing listen myte agent voice" },
   // Beyond the meeting, Layer 3: under Decisions (the Decisions row stays active on them).
   { href: "/decisions/time-machine", label: "Time machine", icon: ClockCounterClockwise, keywords: "history as of date compare what changed topic timeline rewind" },
   { href: "/decisions/calls", label: "How good are our calls", icon: Target, keywords: "bets expected outcome calibration track record lessons hit rate" },

@@ -9,7 +9,7 @@ import { UpdatedMark } from "@/components/sidebar/CandidateCard";
 import { MomentLine, WhyLine, type MomentTarget } from "@/components/sidebar/MomentLine";
 
 /* One card per moment (polish program, Phase 1). One sentence used to produce a note, a promise,
-   a decision card and an action card; now everything your agents took from one moment is ONE
+   a decision card and an action card; now everything your Mytes took from one moment is ONE
    card: the quote, who said it and when (open it in the transcript), why you are seeing it, and
    its parts as linked rows on one straight thread. Each decision and task keeps its own Confirm,
    Edit and Hide (shared with the room, exactly as a stand-alone card); your promise has Keep,
@@ -41,7 +41,7 @@ export function usePromises(meetingId: string, onNotice: (message: string, tone:
         setBusy((b) => ({ ...b, [p.key]: false }));
         return ok;
       };
-      // "Keep" changes nothing on the server: a promise your agent heard is already kept.
+      // "Keep" changes nothing on the server: a promise your Myte heard is already kept.
       if (status === "kept") {
         setState((s) => ({ ...s, [p.key]: "kept" }));
         return done(true);

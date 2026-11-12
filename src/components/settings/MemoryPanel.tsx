@@ -29,11 +29,11 @@ import {
   type PersonMemory,
 } from "@/lib/memory";
 
-/* "What your agent remembers": the person's own memory across meetings, and the controls over it.
+/* "What your Myte remembers": the person's own memory across meetings, and the controls over it.
 
    Cards, top to bottom: the learning switch; topics it follows (strength bar, pin, forget, and a
    field to pin a topic of your own); questions you keep asking (forget); muted topics (unmute);
-   how sure each personal agent must be, in plain words; what you have open (read-only links into
+   how sure each Myte must be, in plain words; what you have open (read-only links into
    My work and the meetings); and Forget everything, behind a confirm dialog.
 
    Every change answers at once and reconciles with the server's reply; a refused change rolls
@@ -100,7 +100,7 @@ export function MemoryPanel({ initial }: { initial: PersonMemory }) {
               Learn from what I keep and dismiss
             </p>
             <p id={`${learningId}-help`} className="mt-0.5 text-[14px] text-ink-3">
-              Your agents notice the topics you care about and the questions you ask, and get pickier or more generous with what they show you.
+              Your Myte notices the topics you care about and the questions you ask, and gets pickier or more generous with what it shows you.
             </p>
           </div>
           <Toggle
@@ -116,7 +116,7 @@ export function MemoryPanel({ initial }: { initial: PersonMemory }) {
         {!memory.learning_enabled ? (
           <div className={`pb-4 ${cardPadX}`}>
             <Note tone="warning">
-              Learning is off. Your agents learn nothing new and do not use what is listed below. Turn it back on to use it again; nothing here is lost.
+              Learning is off. Your Myte learns nothing new and does not use what is listed below. Turn it back on to use it again; nothing here is lost.
             </Note>
           </div>
         ) : null}
@@ -127,7 +127,7 @@ export function MemoryPanel({ initial }: { initial: PersonMemory }) {
           <EmptyState
             inCard
             art="brain"
-            title="Your agent has not learned anything yet"
+            title="Your Myte has not learned anything yet"
             description="As you keep or dismiss notes and suggestions, and ask questions in meetings, what it learns about you shows up here. You can also pin a topic below."
           />
         </div>
@@ -139,14 +139,14 @@ export function MemoryPanel({ initial }: { initial: PersonMemory }) {
           id="memory-topics-heading"
           as="h3"
           title="Topics it follows"
-          description="What your agent listens for on your behalf. Pinned topics never fade; forgotten ones are muted so they are not learned again."
+          description="What your Myte listens for on your behalf. Pinned topics never fade; forgotten ones are muted so they are not learned again."
           right={topics.length ? <Chip tone="outline">{topics.length}</Chip> : null}
           divided
         />
         {topics.length === 0 ? (
-          <p className={`py-4 text-[14px] text-ink-3 ${cardPadX}`}>No topics yet. Pin one below to have your agent follow it from your next meeting.</p>
+          <p className={`py-4 text-[14px] text-ink-3 ${cardPadX}`}>No topics yet. Pin one below to have your Myte follow it from your next meeting.</p>
         ) : (
-          <ul ref={topicsList} tabIndex={-1} aria-label="Topics your agent follows" className="divide-y divide-line focus:outline-none">
+          <ul ref={topicsList} tabIndex={-1} aria-label="Topics your Myte follows" className="divide-y divide-line focus:outline-none">
             {topics.map((t) => {
               const s = topicStrength(t, strongest);
               const key = `topic:${t.label}`;
@@ -220,7 +220,7 @@ export function MemoryPanel({ initial }: { initial: PersonMemory }) {
           id="memory-questions-heading"
           as="h3"
           title="Questions you keep asking"
-          description="Your agent watches for answers to these in later meetings."
+          description="Your Myte watches for answers to these in later meetings."
           divided
         />
         {memory.recurring_questions.length === 0 ? (
@@ -256,7 +256,7 @@ export function MemoryPanel({ initial }: { initial: PersonMemory }) {
 
       {/* Muted */}
       <section aria-labelledby="memory-muted-heading" className={cardClass({ flush: true })}>
-        <CardHead id="memory-muted-heading" as="h3" title="Muted topics" description="Topics you told your agent to forget. They are not learned again until you unmute them." divided />
+        <CardHead id="memory-muted-heading" as="h3" title="Muted topics" description="Topics you told your Myte to forget. They are not learned again until you unmute them." divided />
         {memory.muted_topics.length === 0 ? (
           <p className={`py-4 text-[14px] text-ink-3 ${cardPadX}`}>Nothing muted.</p>
         ) : (
@@ -272,7 +272,7 @@ export function MemoryPanel({ initial }: { initial: PersonMemory }) {
                     className="!h-8 !px-2.5"
                     disabled={busy.has(key)}
                     aria-label={`Unmute ${label}`}
-                    onClick={() => change(key, { unmute_topics: [label] }, "Topic unmuted", mutedList.current, `Your agent may learn ${label} again.`)}
+                    onClick={() => change(key, { unmute_topics: [label] }, "Topic unmuted", mutedList.current, `Your Myte may learn ${label} again.`)}
                   >
                     <SpeakerHigh size={15} aria-hidden />
                     Unmute
@@ -290,13 +290,13 @@ export function MemoryPanel({ initial }: { initial: PersonMemory }) {
           id="memory-calibration-heading"
           as="h3"
           title="How sure it needs to be"
-          description="Each personal agent shows you something only when it is at least this confident. Keeping and dismissing what it shows moves the bar."
+          description="Your Myte shows you each kind of thing only when it is at least this confident. Keeping and dismissing what it shows moves the bar."
           divided
         />
         {memory.calibration.length === 0 ? (
-          <p className={`py-4 text-[14px] text-ink-3 ${cardPadX}`}>Your agents use the workspace setting.</p>
+          <p className={`py-4 text-[14px] text-ink-3 ${cardPadX}`}>Your Myte uses the workspace setting.</p>
         ) : (
-          <ul aria-label="How sure each agent needs to be" className="divide-y divide-line">
+          <ul aria-label="How sure your Myte needs to be" className="divide-y divide-line">
             {memory.calibration.map((c) => (
               <li key={c.agent} className={`flex flex-wrap items-start justify-between gap-x-4 gap-y-1.5 py-3 ${cardPadX}`}>
                 <div className="min-w-0 flex-1 basis-[260px]">
@@ -316,7 +316,7 @@ export function MemoryPanel({ initial }: { initial: PersonMemory }) {
           id="memory-open-heading"
           as="h3"
           title="What you have open"
-          description="Your agent keeps these in mind in every meeting. Change them in My work."
+          description="Your Myte keeps these in mind in every meeting. Change them in My work."
           divided
         />
         <div className="grid md:grid-cols-2 md:divide-x md:divide-line max-md:divide-y max-md:divide-line">
@@ -351,7 +351,7 @@ export function MemoryPanel({ initial }: { initial: PersonMemory }) {
           as="h3"
           tone="danger"
           title="Forget everything"
-          description="Clears the topics, questions and muted topics above, and the wording of the feedback your agents learned from. Your tasks, promises and meetings are not touched."
+          description="Clears the topics, questions and muted topics above, and the wording of the feedback your Myte learned from. Your tasks, promises and meetings are not touched."
           right={
             <Button variant="danger-outline" size="sm" onClick={() => setConfirming(true)}>
               <Trash size={16} aria-hidden />
@@ -367,7 +367,7 @@ export function MemoryPanel({ initial }: { initial: PersonMemory }) {
         onForgotten={() => {
           setMemory(forgotten(memory));
           setConfirming(false);
-          notifySuccess("Memory cleared", { description: "Your agent starts learning from scratch." });
+          notifySuccess("Memory cleared", { description: "Your Myte starts learning from scratch." });
           router.refresh();
         }}
       />
@@ -413,7 +413,7 @@ function PinTopic({ onPin, disabled }: { onPin: (label: string) => string | null
           Pin topic
         </Button>
       </div>
-      <FieldMsg id={`${id}-msg`} error={error} hint="Your agent follows it in every meeting, and it never fades." />
+      <FieldMsg id={`${id}-msg`} error={error} hint="Your Myte follows it in every meeting, and it never fades." />
     </form>
   );
 }
@@ -486,7 +486,7 @@ function ForgetDialog({ open, onClose, onForgotten }: { open: boolean; onClose: 
       busy={busy}
       tone="danger"
       title="Forget everything?"
-      description="Your agent forgets every topic, question and muted topic, and the wording of the feedback it learned from. This cannot be undone."
+      description="Your Myte forgets every topic, question and muted topic, and the wording of the feedback it learned from. This cannot be undone."
       initialFocus={cancel}
     >
       <div className="flex flex-col gap-4">

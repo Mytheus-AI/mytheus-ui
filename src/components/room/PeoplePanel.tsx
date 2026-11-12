@@ -126,7 +126,7 @@ export function PeoplePanel({
       {groups.agents.length > 0 ? (
         <>
           <div className="side-sec">
-            <h3 id="ppl-ag-h">Agents attending</h3>
+            <h3 id="ppl-ag-h">Mytes attending</h3>
             <span className="mx-count">{groups.agents.length}</span>
           </div>
           <ul className="ppl-list" aria-labelledby="ppl-ag-h">
@@ -139,7 +139,7 @@ export function PeoplePanel({
                   <strong>{a.agentName}</strong>
                   <small>Attending for {a.name}</small>
                 </span>
-                <span className="ppl-state" role="img" aria-label="Agent">
+                <span className="ppl-state" role="img" aria-label="Myte">
                   <Robot size={18} aria-hidden />
                 </span>
               </li>

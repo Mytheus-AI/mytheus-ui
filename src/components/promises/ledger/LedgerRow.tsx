@@ -99,7 +99,7 @@ export function LedgerRow({
   );
 }
 
-/** A promise your agent found (or a colleague handed you): the words it heard, and your yes or no. */
+/** A promise your Myte found (or a colleague handed you): the words it heard, and your yes or no. */
 export function ReviewRow({
   p,
   today,

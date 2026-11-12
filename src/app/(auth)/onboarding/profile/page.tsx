@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "About you | Mytheus" };
  * Onboarding step 1 of 2 (ADR-0038 D11), after the workspace is chosen. `/onboarding(.*)` is
  * public in the middleware (the workspace step must be reachable while a session is pending), so
  * this page checks the session itself. `?from=workspace` is set by the workspace step: someone
- * who already told their agent their role (a returning member picking a workspace again) goes
+ * who already told their Myte their role (a returning member picking a workspace again) goes
  * straight on to the app instead of being asked twice. The dashboard prompt links here without
  * it, so the form always opens from there.
  */

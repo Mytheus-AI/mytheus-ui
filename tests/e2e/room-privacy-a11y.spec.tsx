@@ -61,7 +61,7 @@ for (const theme of ["light", "dark"] as const) {
 
     const banner = page.getByRole("status").filter({ hasText: /Off the record since/ });
     await expect(banner).toBeVisible();
-    await expect(banner).toContainText("Agents are paused and nothing is transcribed or kept.");
+    await expect(banner).toContainText("Mytes are paused and nothing is transcribed or kept.");
     await expect(control).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByText("Captions are paused. The meeting is off the record")).toBeVisible();
     await expect(page.getByText("Paused, off the record").first()).toBeVisible();

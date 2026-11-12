@@ -56,19 +56,19 @@ test("the People panel lists the call, agents sent instead, and invited people n
     meId: "me",
     hands: applyHand(emptyHandsState, { userId: "raj", raised: true, at: "2026-11-11T10:00:00Z" }),
     nameOf: (id) => ({ sarah: "Sarah", priya: "Priya" })[id] ?? id,
-    agentNameOf: (id) => `${id}'s agent`,
+    agentNameOf: (id) => `${id}'s Myte`,
   });
   assert.deepEqual(g.inCall.map((p) => p.id), ["raj", "me", "ann"], "hands first, then you");
   assert.equal(g.inCall[1].host, true);
-  assert.deepEqual(g.agents.map((a) => a.name), ["Sarah"], "Ann sent her agent but came after all");
+  assert.deepEqual(g.agents.map((a) => a.name), ["Sarah"], "Ann sent her Myte but came after all");
   assert.deepEqual(g.absent.map((a) => a.name), ["Priya"]);
 });
 
 test("one honest connection line that clears itself", () => {
   assert.equal(roomConnection("connected", "joined", true), null);
   assert.equal(roomConnection("unconfigured", "disabled", false), null);
-  assert.match(roomConnection("connected", "reconnecting", true)!.text, /Agent paused/);
-  assert.match(roomConnection("connected", "connecting", true)!.text, /Agent paused/);
+  assert.match(roomConnection("connected", "reconnecting", true)!.text, /Myte paused/);
+  assert.match(roomConnection("connected", "connecting", true)!.text, /Myte paused/);
   assert.equal(roomConnection("connected", "connecting", false), null, "a first connect is not a drop");
   assert.match(roomConnection("reconnecting", "joined", true)!.text, /Call reconnecting/);
   assert.match(roomConnection("reconnecting", "reconnecting", true)!.text, /^Reconnecting/);

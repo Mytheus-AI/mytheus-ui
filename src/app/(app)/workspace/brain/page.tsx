@@ -76,7 +76,7 @@ export default async function BrainOverviewPage() {
           <div className="grid items-center gap-5 md:grid-cols-[minmax(0,1fr)_auto]">
             <div>
               <h3 id="setup-h" className="display text-[22px] text-ink">
-                Teach the agents your company in five minutes
+                Teach the Mytes your company in five minutes
               </h3>
               <p className="mt-2 max-w-[60ch] text-[15px] leading-relaxed text-ink-2">
                 A guided pass through the basics: what you do, a few words, who owns what and one goal. You can skip any step.

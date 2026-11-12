@@ -212,8 +212,8 @@ export default async function PersonPage({ params }: { params: { personId: strin
 
           <Panel
             id="person-topics"
-            title="What their agent listens for"
-            caption="Topics from the role taxonomy. Their agent surfaces notes on these first."
+            title="What their Myte listens for"
+            caption="Topics from the role taxonomy. Their Myte surfaces notes on these first."
           >
             {person.topics.length ? (
               <div className="flex flex-wrap gap-2 px-4 pb-[18px] sm:px-[22px]">

@@ -50,7 +50,7 @@ import "./sidebar-calm.css";
      decision, task, promise and note from one sentence are one card, tied to the words that were
      said (open them in the live transcript). Suggested questions that arrive while you are
      speaking wait until you pause;
-   - Ask your agent: a private question, answered with sources;
+   - Ask your Myte: a private question, answered with sources;
    - the shared agenda, then your notes folded under the agenda item they were said in;
    - saved questions as a count that opens the list, and the Activity of the meeting, folded.
 
@@ -156,7 +156,7 @@ export function AgentSidebar({
   /** "rail": Notes mode's compact column, only pinned alerts, Needs you and the agenda. */
   variant?: "full" | "rail";
   onAttentionChange?: (attention: AgentAttention) => void;
-  /** Anchor id for the "My agent" section, so the collapsed rail can open the panel at it. */
+  /** Anchor id for the "My Myte" section, so the collapsed rail can open the panel at it. */
   id?: string;
   /** The meeting link is joined (captions and the agent are flowing). */
   /** `off_record`: the meeting is off the record, so every agent is paused on purpose (wave 3). */
@@ -380,8 +380,8 @@ export function AgentSidebar({
       target="_blank"
       rel="noopener"
       className="cx-icon-btn sm tap tip-below tip-end"
-      data-tip="Agent settings"
-      aria-label="Agent settings (opens in a new tab)"
+      data-tip="Myte settings"
+      aria-label="Myte settings (opens in a new tab)"
     >
       <GearSix size={18} aria-hidden />
     </Link>
@@ -551,20 +551,20 @@ export function AgentSidebar({
           <svg viewBox="0 0 120 36" aria-hidden="true">
             <path className="mx-line" d="M4 26 C24 26 30 26 44 26 C62 26 72 4 60 4 C48 4 50 26 70 26 C86 26 96 26 116 26" />
           </svg>
-          <h4>{live === "off" ? "Your agent is not connected" : "Nothing captured yet"}</h4>
+          <h4>{live === "off" ? "Your Myte is not connected" : "Nothing captured yet"}</h4>
           <p>
             {live === "listening"
-              ? "Your agent is listening. Decisions, tasks and questions land here, one card per moment, as the meeting goes."
+              ? "Your Myte is listening. Decisions, tasks and questions land here, one card per moment, as the meeting goes."
               : live === "off_record"
-                ? "The meeting is off the record, so your agent is paused and nothing said now is kept. It picks up again when the host goes back on the record."
+                ? "The meeting is off the record, so your Myte is paused and nothing said now is kept. It picks up again when the host goes back on the record."
                 : live === "paused"
-                ? "Your agent is paused while the meeting link reconnects. Nothing said meanwhile is lost: the transcript is kept, and notes catch up."
-                : "Live transcription is not running for this meeting, so your agent has nothing to work from yet."}
+                ? "Your Myte is paused while the meeting link reconnects. Nothing said meanwhile is lost: the transcript is kept, and notes catch up."
+                : "Live transcription is not running for this meeting, so your Myte has nothing to work from yet."}
           </p>
         </div>
       ) : (
         <p className="agent-quiet">
-          {variant === "full" ? "Nothing needs you right now. Cards land here when your agent wants a decision from you." : "Nothing needs you right now."}
+          {variant === "full" ? "Nothing needs you right now. Cards land here when your Myte wants a decision from you." : "Nothing needs you right now."}
         </p>
       )}
 
@@ -671,7 +671,7 @@ export function AgentSidebar({
             {log.length === 0 ? (
               <p className="saved-empty">What you and others settle in this meeting is listed here.</p>
             ) : (
-              <ol className="afeed-list" aria-label="Agent activity">
+              <ol className="afeed-list" aria-label="Myte activity">
                 {log.map((e) => {
                   const KindIcon = KIND_ICON[e.kind];
                   const carried = e.resolved === "confirmed";

@@ -75,7 +75,7 @@ export async function readSettleSlot(id: string): Promise<Act<SlotProposal>> {
     return { ok: true, data: await fetchSettleSlot(id) };
   } catch (err) {
     const f = failure(err, "This thread");
-    return f.code === "error" ? { ...f, message: "Your agent couldn't find a time just now. Try again in a moment." } : f;
+    return f.code === "error" ? { ...f, message: "Your Myte couldn't find a time just now. Try again in a moment." } : f;
   }
 }
 

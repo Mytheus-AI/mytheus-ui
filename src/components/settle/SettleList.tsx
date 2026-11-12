@@ -55,7 +55,7 @@ export function SettleList({ items }: { items: Settlement[] }) {
       <EmptyState
         art="decisions"
         title="Nothing to settle"
-        description="When your agent sees that one of your decisions may clash with another team's, it opens a thread here for you and that decision's owner."
+        description="When your Myte sees that one of your decisions may clash with another team's, it opens a thread here for you and that decision's owner."
       />
     );
   }

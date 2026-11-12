@@ -139,7 +139,7 @@ test("book a revisit: the proposed time and people, then a toast with the meetin
   await mount(<WhyBlastHarness view="why" />);
   await page.getByRole("button", { name: "Book a 15-minute revisit" }).click();
   const dialog = page.getByRole("dialog", { name: "Book a 15-minute revisit" });
-  await expect(dialog.getByText("Your agent proposes")).toBeVisible();
+  await expect(dialog.getByText("Your Myte proposes")).toBeVisible();
   await expect(dialog.getByText("Maya Chen")).toBeVisible();
   await expect(dialog.getByLabel("Change the time")).not.toHaveValue("");
   await dialog.getByRole("button", { name: "Book revisit" }).click();

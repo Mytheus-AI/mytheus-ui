@@ -15,9 +15,9 @@ export const metadata: Metadata = {
 
 const featured = {
   category: "Product",
-  title: "Why your agent confirms before it writes",
+  title: "Why your Myte confirms before it writes",
   excerpt:
-    "A personal agent that records decisions silently is a liability. We designed Mytheus so nothing becomes memory until you say so. Here is the thinking behind the confirm step, and why it makes the notes more trustworthy, not slower.",
+    "A Myte that records decisions silently is a liability. We designed Mytheus so nothing becomes memory until you say so. Here is the thinking behind the confirm step, and why it makes the notes more trustworthy, not slower.",
   author: "The Mytheus team",
   date: "Jun 2026",
   readTime: "6 min read",
@@ -36,7 +36,7 @@ const posts = [
     category: "Craft",
     title: "Designing memory that survives the meeting",
     excerpt:
-      "Most notes die in a doc nobody reopens. We treat every meeting as something your agents carry forward, and that changes how you capture it.",
+      "Most notes die in a doc nobody reopens. We treat every meeting as something your Mytes carry forward, and that changes how you capture it.",
     date: "Jun 2026",
     readTime: "7 min read",
   },
@@ -44,15 +44,15 @@ const posts = [
     category: "Product",
     title: "Shorthand in, minutes out",
     excerpt:
-      "You scribble three words; your agent turns them into a clean, attributed line. Here's how we keep the polish without inventing what you didn't say.",
+      "You scribble three words; your Myte turns them into a clean, attributed line. Here's how we keep the polish without inventing what you didn't say.",
     date: "May 2026",
     readTime: "4 min read",
   },
   {
     category: "Philosophy",
-    title: "What we mean by a personal agent for everyone",
+    title: "What we mean by a Myte for everyone",
     excerpt:
-      "Not one bot for the room: one agent per participant, working for you, and quietly comparing notes with the others when it helps.",
+      "Not one bot for the room: one Myte per participant, working for you, and quietly comparing notes with the others when it helps.",
     date: "May 2026",
     readTime: "6 min read",
   },
@@ -60,15 +60,15 @@ const posts = [
     category: "Engineering",
     title: "Building a meeting platform, not a bot",
     excerpt:
-      "Bolting AI onto someone else's call has a ceiling. Owning the meeting end to end is what lets agents collaborate across conversations.",
+      "Bolting AI onto someone else's call has a ceiling. Owning the meeting end to end is what lets Mytes collaborate across conversations.",
     date: "May 2026",
     readTime: "8 min read",
   },
   {
     category: "Teams",
-    title: "When agents compare notes across meetings",
+    title: "When Mytes compare notes across meetings",
     excerpt:
-      "An action from standup, a decision from the review, a question left open last sprint: your agents reconcile them so you don't have to.",
+      "An action from standup, a decision from the review, a question left open last sprint: your Mytes reconcile them so you don't have to.",
     date: "Apr 2026",
     readTime: "5 min read",
   },
@@ -142,7 +142,7 @@ export default function Page() {
 
       <CloseCTA
         title="Every meeting, on repeat."
-        lead="New writing lands here as the product grows. Start using Mytheus and see what your agents remember."
+        lead="New writing lands here as the product grows. Start using Mytheus and see what your Mytes remember."
       />
     </>
   );

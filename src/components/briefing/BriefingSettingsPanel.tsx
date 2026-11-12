@@ -22,11 +22,11 @@ import {
   type BriefingSettings,
 } from "@/lib/briefing";
 
-/* Settings > Briefings: whether your agent briefs you after every meeting, auto-play, length,
+/* Settings > Briefings: whether your Myte briefs you after every meeting, auto-play, length,
    language (the live-caption languages), the voice it speaks in and how fast. Every change saves
    at once and says so; a refused change rolls back. The voice section shows the server voices
    when this workspace renders audio (TTS connected), and otherwise the voices this device has,
-   with "Matched to your agent" as the default and a Preview that speaks a line in that voice. */
+   with "Matched to your Myte" as the default and a Preview that speaks a line in that voice. */
 
 const AUTO = "__auto__";
 
@@ -112,14 +112,14 @@ export function BriefingSettingsPanel({
   return (
     <div className="flex flex-col gap-5">
       <section aria-labelledby={`${ids}-h1`} className={cardClass({ flush: true })}>
-        <CardHead id={`${ids}-h1`} as="h3" title="Briefings from your agent" description="About 90 seconds after each meeting: what changed for you, who is waiting on you, your promises and the questions still open. Only you hear it." divided />
+        <CardHead id={`${ids}-h1`} as="h3" title="Briefings from your Myte" description="About 90 seconds after each meeting: what changed for you, who is waiting on you, your promises and the questions still open. Only you hear it." divided />
         <div className="divide-y divide-line">
           <div className={`flex items-start justify-between gap-4 py-4 ${cardPadX}`}>
             <div className="min-w-0">
               <p id={enabledId} className="text-[15px] font-semibold text-ink">
                 A briefing after every meeting
               </p>
-              <p className="mt-0.5 text-[14px] text-ink-3">Off: your agent only briefs you when you ask, with Brief me.</p>
+              <p className="mt-0.5 text-[14px] text-ink-3">Off: your Myte only briefs you when you ask, with Brief me.</p>
             </div>
             <Toggle checked={prefs.enabled ?? true} labelledBy={enabledId} disabled={saving === "enabled"} onChange={(v) => void save({ enabled: v }, "enabled", v ? "Briefings turned on" : "Briefings turned off")} />
           </div>
@@ -173,7 +173,7 @@ export function BriefingSettingsPanel({
               onChange={(v) => void save({ language: v }, "language", "Language saved")}
               options={(initial.languages ?? []).map((l) => ({ value: l.code, label: l.name }))}
             />
-            <p className="text-[14px] text-ink-3">Your agent writes it in English and translates it with the same translator the live captions use.</p>
+            <p className="text-[14px] text-ink-3">Your Myte writes it in English and translates it with the same translator the live captions use.</p>
           </div>
         </div>
       </section>
@@ -186,7 +186,7 @@ export function BriefingSettingsPanel({
           description={
             initial.server_voice_connected
               ? "Your briefings are recorded on the server, so they sound the same on every device and play from the lock screen."
-              : "Your device speaks your briefings. Pick a voice it has, or let Mytheus match one to your agent."
+              : "Your device speaks your briefings. Pick a voice it has, or let Mytheus match one to your Myte."
           }
           divided
         />
@@ -207,7 +207,7 @@ export function BriefingSettingsPanel({
                   value={prefs.server_voice ?? AUTO}
                   onChange={(v) => void save({ server_voice: v === AUTO ? null : v }, "server_voice", "Voice saved")}
                   options={[
-                    { value: AUTO, label: "Matched to your agent", description: "Chosen from its personality" },
+                    { value: AUTO, label: "Matched to your Myte", description: "Chosen from its personality" },
                     ...(initial.server_voices ?? []).map((v) => ({ value: v.id, label: v.name, description: v.description })),
                   ]}
                 />
@@ -226,7 +226,7 @@ export function BriefingSettingsPanel({
                   placeholder={canSpeak ? "No voices for this language" : "This browser cannot speak"}
                   onChange={(v) => void save({ voice: v === AUTO ? null : v }, "voice", "Voice remembered")}
                   options={[
-                    { value: AUTO, label: "Matched to your agent", description: matched ? matched.name : "The device default" },
+                    { value: AUTO, label: "Matched to your Myte", description: matched ? matched.name : "The device default" },
                     ...usable.map((v) => ({ value: v.name, label: v.name.replace(/\s*\(.*\)$/, ""), description: v.lang })),
                   ]}
                   panelMinWidth={260}

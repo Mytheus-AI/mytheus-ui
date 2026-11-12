@@ -74,7 +74,7 @@ export function ProfilePanel({ profile }: { profile: UserProfile | null }) {
           </div>
           <Chip className="shrink-0 capitalize">{user.role}</Chip>
         </div>
-        <SettingsRow label="Full name" htmlFor="name" help="Used in transcripts and when your agent speaks for you.">
+        <SettingsRow label="Full name" htmlFor="name" help="Used in transcripts and when your Myte speaks for you.">
           <Input
             id="name"
             name="name"
@@ -176,7 +176,7 @@ const fromProfile = (p: UserProfile): Working => ({
 
 const sameList = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
 
-/* What your agent knows about you: the five working-profile fields, saved together. Settings
+/* What your Myte knows about you: the five working-profile fields, saved together. Settings
    does not require a role or a minimum about the work (the API does not either); onboarding does. */
 function WorkingProfileCard({ profile }: { profile: UserProfile | null }) {
   const [saved, setSaved] = useState<Working | null>(profile ? fromProfile(profile) : null);
@@ -185,15 +185,15 @@ function WorkingProfileCard({ profile }: { profile: UserProfile | null }) {
   const [errors, setErrors] = useState<FieldErrors<ProfileField>>({});
 
   const card = {
-    title: "What your agent knows about you",
+    title: "What your Myte knows about you",
     description:
-      "Your role and your work tune what your agent captures. An engineer and a PM leave the same meeting with different notes.",
+      "Your role and your work tune what your Myte captures. An engineer and a PM leave the same meeting with different notes.",
   };
 
   if (!saved || !form) {
     return (
       <SectionCard {...card}>
-        <ErrorState variant="inline" className="pt-4" title="What your agent knows about you could not be loaded" text="Nothing was lost. Try again in a moment." />
+        <ErrorState variant="inline" className="pt-4" title="What your Myte knows about you could not be loaded" text="Nothing was lost. Try again in a moment." />
       </SectionCard>
     );
   }
@@ -224,7 +224,7 @@ function WorkingProfileCard({ profile }: { profile: UserProfile | null }) {
       if (isUndo) notifySuccess("Changes undone");
       else
         notifySuccess("Changes saved", {
-          description: "Your agent uses them from its next meeting.",
+          description: "Your Myte uses them from its next meeting.",
           undo: () => void save(before, true),
         });
       return;
@@ -258,7 +258,7 @@ function WorkingProfileCard({ profile }: { profile: UserProfile | null }) {
       <SettingsRow
         label="What you work on"
         htmlFor="pf-bio"
-        help="A sentence or two about your work right now. Your agent reads it before every meeting."
+        help="A sentence or two about your work right now. Your Myte reads it before every meeting."
       >
         <textarea
           id="pf-bio"
@@ -292,7 +292,7 @@ function WorkingProfileCard({ profile }: { profile: UserProfile | null }) {
         />
         {err("skills")}
       </SettingsRow>
-      <SettingsRow label="Listen for" htmlFor="pf-listen_for" help="Topics your agent should always note for you.">
+      <SettingsRow label="Listen for" htmlFor="pf-listen_for" help="Topics your Myte should always note for you.">
         <ChipInput
           id="pf-listen_for"
           value={form.listen_for}
@@ -304,7 +304,7 @@ function WorkingProfileCard({ profile }: { profile: UserProfile | null }) {
         />
         {err("listen_for")}
       </SettingsRow>
-      <SettingsRow label="Ignore" htmlFor="pf-ignore_topics" help="Topics your agent can let pass.">
+      <SettingsRow label="Ignore" htmlFor="pf-ignore_topics" help="Topics your Myte can let pass.">
         <ChipInput
           id="pf-ignore_topics"
           value={form.ignore_topics}

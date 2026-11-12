@@ -2,7 +2,7 @@
  * The caller's own agent memory, core-api (polish program wave 2, the page is wave 3):
  *
  *   GET    /api/v1/me/memory     what the agents learned, what you changed, what you have open,
- *                                and how sure each personal agent must be (`PersonMemory`)
+ *                                and how sure each Myte must be (`PersonMemory`)
  *   PATCH  /api/v1/me/memory     {learning_enabled?, pin_topics?, forget_topics?, unmute_topics?,
  *                                forget_questions?} -> PersonMemory
  *   DELETE /api/v1/me/memory     forget everything -> 204

@@ -164,7 +164,7 @@ export function AfterSignalsSection({
         </div>
         {waiting ? (
           <p className="max-w-[40ch] font-display text-[15px] italic leading-snug text-ink-3" role="status">
-            Your agent is still reading the meeting. This updates by itself.
+            Your Myte is still reading the meeting. This updates by itself.
           </p>
         ) : null}
       </div>

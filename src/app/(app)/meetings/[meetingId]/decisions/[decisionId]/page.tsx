@@ -194,7 +194,7 @@ export default async function DecisionLineagePage({
                 isAdmin={org?.user.role === "admin"}
               />
             ) : null}
-            <Note>Only confirmed decisions appear in a lineage. Nothing your agent proposed is saved until someone confirms it.</Note>
+            <Note>Only confirmed decisions appear in a lineage. Nothing your Myte proposed is saved until someone confirms it.</Note>
           </div>
         }
       >

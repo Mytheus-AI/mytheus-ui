@@ -37,7 +37,7 @@ const shots: Shot[] = [
     themes: ["light"],
     before: async (page) => {
       await page.getByRole("button", { name: "Book a 15-minute revisit" }).click();
-      await page.getByText("Your agent proposes").waitFor();
+      await page.getByText("Your Myte proposes").waitFor();
     },
   },
   {

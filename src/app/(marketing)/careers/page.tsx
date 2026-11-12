@@ -22,7 +22,7 @@ const VALUES = [
   {
     icon: <CheckSquareOffset />,
     title: "Memory you can trust",
-    body: "The agent never writes silently. Every decision and action waits for a person to confirm, because memory only matters if you can trust it.",
+    body: "A Myte never writes silently. Every decision and action waits for a person to confirm, because memory only matters if you can trust it.",
   },
 ];
 
@@ -92,7 +92,7 @@ export default function Page() {
             lead="Mytheus is its own meeting platform where every participant gets a personal AI agent: one that captures notes, decisions, and actions live, then turns shorthand into clean minutes."
           />
           <p className="mb-[clamp(40px,5vw,64px)] max-w-[40ch] font-display text-[clamp(1.4rem,2.6vw,1.9rem)] leading-[1.3] tracking-[-0.012em] text-ink">
-            What makes it different is memory: agents collaborate across meetings, so a decision on Monday becomes
+            What makes it different is memory: Mytes collaborate across meetings, so a decision on Monday becomes
             context on Friday. We&rsquo;re early, deliberate, and obsessed with getting the details right.
           </p>
           <IconFacts items={VALUES} cols={3} />

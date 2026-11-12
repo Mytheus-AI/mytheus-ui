@@ -7,7 +7,7 @@ import { askAgent } from "@/app/actions/ask";
 import { segmentAnswer } from "@/lib/rag/answer";
 import { askCitationHref, askCitationInline, askCitationLabel, askCitationMeta, excerpt, type AskAnswer } from "@/lib/rag/ask-live";
 
-/* Ask your agent, live (polish program, Phase 1). Every rival lets you ask during the call; this is
+/* Ask your Myte, live (polish program, Phase 1). Every rival lets you ask during the call; this is
    Mytheus's: a private box in the Agent tab over the existing ask path (bff `POST /api/v1/ask`
    through the gateway, the same retrieval as the Ask page), answering from your past meetings,
    confirmed decisions and tasks and the company brain, with every source listed under the answer
@@ -50,7 +50,7 @@ function Answer({ ex, meetingId }: { ex: Exchange; meetingId: string }) {
     <>
       {data.abstained || !data.answer ? (
         <p className="ask-none">
-          Your agent found nothing in your meetings or the company brain that answers this. Try other words, or ask the room.
+          Your Myte found nothing in your meetings or the company brain that answers this. Try other words, or ask the room.
         </p>
       ) : (
         <p className="ask-text">{body}</p>
@@ -131,7 +131,7 @@ export function AskAgent({ meetingId }: { meetingId: string }) {
     const id = reuseId ?? ++seq.current;
     const pending: Exchange = { id, question: q, thisMeeting: scoped, status: "loading" };
     setHistory((h) => (reuseId ? h.map((x) => (x.id === id ? pending : x)) : [pending, ...h].slice(0, KEEP)));
-    setAnnounce("Your agent is looking.");
+    setAnnounce("Your Myte is looking.");
     const res = await askAgent(q, scoped ? meetingId : null);
     setHistory((h) =>
       h.map((x) =>
@@ -145,8 +145,8 @@ export function AskAgent({ meetingId }: { meetingId: string }) {
     setAnnounce(
       res.ok
         ? res.data.abstained || !res.data.answer
-          ? "Your agent found nothing that answers this."
-          : `Your agent answered, with ${res.data.citations.length} source${res.data.citations.length === 1 ? "" : "s"}.`
+          ? "Your Myte found nothing that answers this."
+          : `Your Myte answered, with ${res.data.citations.length} source${res.data.citations.length === 1 ? "" : "s"}.`
         : res.message,
     );
   };
@@ -161,7 +161,7 @@ export function AskAgent({ meetingId }: { meetingId: string }) {
   return (
     <section className="ask" aria-labelledby={`${fieldId}-h`}>
       <div className="side-sec">
-        <h3 id={`${fieldId}-h`}>Ask your agent</h3>
+        <h3 id={`${fieldId}-h`}>Ask your Myte</h3>
         <span className="side-sec-end">
           <span className="mx-chip">
             <Lock size={13} weight="fill" aria-hidden />
@@ -177,7 +177,7 @@ export function AskAgent({ meetingId }: { meetingId: string }) {
         }}
       >
         <label htmlFor={fieldId} className="sr-only">
-          Ask your agent privately
+          Ask your Myte privately
         </label>
         <textarea
           id={fieldId}
@@ -195,7 +195,7 @@ export function AskAgent({ meetingId }: { meetingId: string }) {
             }
           }}
         />
-        <button type="submit" className="ask-send tap" disabled={!question.trim() || loading} aria-label="Ask your agent">
+        <button type="submit" className="ask-send tap" disabled={!question.trim() || loading} aria-label="Ask your Myte">
           <PaperPlaneRight size={16} weight="fill" aria-hidden />
         </button>
       </form>

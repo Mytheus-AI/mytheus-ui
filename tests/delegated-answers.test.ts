@@ -50,7 +50,7 @@ test("the uncovered answer uses the first name, exactly", () => {
 
 test("the log summary counts what the statements covered", () => {
   const e = (covered: boolean) => ({ covered }) as DelegatedAnswerEntry;
-  assert.equal(logSummary([]), "Nobody asked your agent anything.");
+  assert.equal(logSummary([]), "Nobody asked your Myte anything.");
   assert.equal(logSummary([e(true)]), "1 question, all answered from your statements.");
   assert.equal(logSummary([e(false), e(false)]), "2 questions, none covered by your statements.");
   assert.equal(logSummary([e(true), e(false), e(true)]), "3 questions, 2 answered from your statements.");

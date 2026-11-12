@@ -15,7 +15,7 @@ export function ShellHarness({ theme = "light" }: { theme?: "light" | "dark" }) 
     >
       <div className="mx-app bg-bg text-ink" data-theme={theme} style={{ display: "grid", gridTemplateColumns: "280px minmax(0,1fr)", minHeight: "100dvh" }}>
         <div style={{ position: "relative", height: "100dvh" }}>
-          <Sidebar rail={false} inboxCount={3} agent={{ name: "Samar's agent", seed: "agent:u-samar" }} onToggleRail={() => {}} />
+          <Sidebar rail={false} inboxCount={3} agent={{ name: "Samar's Myte", seed: "agent:u-samar" }} onToggleRail={() => {}} />
         </div>
         <div style={{ minWidth: 0 }}>
           <Topbar onSearchClick={() => {}} />

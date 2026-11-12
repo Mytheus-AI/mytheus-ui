@@ -12,12 +12,12 @@ const PERKS = [
   {
     icon: <InfinityIcon />,
     title: "Unlimited meeting memory",
-    body: "Every lecture, study group, and standup stays searchable. Your agent carries context from one session into the next, all term long.",
+    body: "Every lecture, study group, and standup stays searchable. Your Myte carries context from one session into the next, all term long.",
   },
   {
     icon: <Robot />,
-    title: "Your personal agent everywhere",
-    body: "A dedicated agent in every class and project standup, capturing decisions and action items live, and never writing anything without your confirmation.",
+    title: "Your Myte everywhere",
+    body: "A dedicated Myte in every class and project standup, capturing decisions and action items live, and never writing anything without your confirmation.",
   },
   {
     icon: <NotePencil />,
@@ -49,7 +49,7 @@ export default function Page() {
             Mytheus is free <Loop>for students.</Loop>
           </>
         }
-        blurb="Verified students get Mytheus Pro at no cost: your personal meeting agent for lectures, study groups, and project standups."
+        blurb="Verified students get Mytheus Pro at no cost: your own Myte for lectures, study groups, and project standups."
         ctaHref="/students/verify"
         ctaLabel="Verify your status"
         secondaryHref="#eligibility"
@@ -60,7 +60,7 @@ export default function Page() {
         <Wrap>
           <SectionHead
             title="Mytheus Pro, on the house."
-            lead="The full meeting agent, with no trial clock and no feature gates. Everything you need to stay on top of every class and project."
+            lead="Your full Myte, with no trial clock and no feature gates. Everything you need to stay on top of every class and project."
           />
           <IconFacts items={PERKS} cols={3} />
         </Wrap>

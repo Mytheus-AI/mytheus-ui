@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { ApiError, api } from "@/lib/api/client";
 import type { Briefing, BriefingPreferences, BriefingSettings } from "@/lib/briefing";
 
-/* A briefing from your agent: "Brief me", polling while the agent writes, marking it heard, the
+/* A briefing from your Myte: "Brief me", polling while the agent writes, marking it heard, the
    server voice's short-lived URL, and the person's briefing preferences (including the voice the
    player remembers for them). Every call is the caller's own: core-api keys it on the verified
    user, so nothing here names a person. */
@@ -17,7 +17,7 @@ function failure(err: unknown, fallback: string): { ok: false; message: string; 
   if (err instanceof ApiError) {
     if (err.isAuthFailure) return { ok: false, message: "Your session expired. Sign in again.", status: err.status };
     if (err.status === 429) return { ok: false, message: "That is a lot of briefings for one hour. Try again a little later.", status: 429 };
-    if (err.status === 409) return { ok: false, message: "Your agent can brief you once the meeting has ended.", status: 409 };
+    if (err.status === 409) return { ok: false, message: "Your Myte can brief you once the meeting has ended.", status: 409 };
     if (err.status === 403) return { ok: false, message: "Only people who were in this meeting get a briefing about it.", status: 403 };
     if (err.status === 404) return { ok: false, message: "That briefing is no longer available.", status: 404 };
     if (err.status === 422) return { ok: false, message: "That setting could not be saved as chosen.", status: 422 };
@@ -36,7 +36,7 @@ export async function briefMe(meetingId?: string | null): Promise<BriefingResult
     });
     return { ok: true, briefing };
   } catch (err) {
-    return failure(err, "Your agent could not be asked just now. Try again in a moment.");
+    return failure(err, "Your Myte could not be asked just now. Try again in a moment.");
   }
 }
 

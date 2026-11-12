@@ -50,7 +50,7 @@ export async function setAttendanceChoice(meetingId: string, choice: AttendanceC
   } catch (err) {
     return fail(err, "Couldn't save your choice just now. Try again in a moment.", {
       409: "This meeting is over, so who attends can no longer change.",
-      422: "This meeting is confidential, so no agent listens to it. Attend or skip.",
+      422: "This meeting is confidential, so no Myte listens to it. Attend or skip.",
     });
   }
 }
@@ -151,7 +151,7 @@ export async function saveListeningPreferences(input: ListeningPreferences): Pro
   }
 }
 
-/* ---------------- positions (the line you gave your agent) ---------------- */
+/* ---------------- positions (the line you gave your Myte) ---------------- */
 
 export async function listPositions(): Promise<Result<StandingPosition[]>> {
   try {
@@ -165,7 +165,7 @@ export async function listPositions(): Promise<Result<StandingPosition[]>> {
 export async function savePosition(positionId: string | null, input: { topic: string | null; text: string }): Promise<Result<StandingPosition>> {
   const text = (input?.text ?? "").replace(/\s+/g, " ").trim();
   const topic = (input?.topic ?? "").replace(/\s+/g, " ").trim() || null;
-  if (!text) return { ok: false, message: "Write the line your agent may hold." };
+  if (!text) return { ok: false, message: "Write the line your Myte may hold." };
   if (text.length > MAX_POSITION) return { ok: false, message: `Keep a line under ${MAX_POSITION} characters.` };
   if (topic && topic.length > 80) return { ok: false, message: "Keep the topic under 80 characters." };
   if (positionId !== null && !isUuid(positionId)) return { ok: false, message: "That line no longer exists." };
@@ -244,7 +244,7 @@ export async function holdTheLine(interruptionId: string, positionIds: string[])
     refreshListening();
     return { ok: true, data };
   } catch (err) {
-    return fail(err, "Couldn't hand your line to your agent just now. Try again in a moment.", {
+    return fail(err, "Couldn't hand your line to your Myte just now. Try again in a moment.", {
       ...NOT_LIVE,
       422: "Only your own saved lines can be held. Refresh and pick again.",
     });

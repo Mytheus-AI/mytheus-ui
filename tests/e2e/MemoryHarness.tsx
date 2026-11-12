@@ -15,7 +15,7 @@ export function MemoryHarness({ theme = "light", empty = false }: { theme?: "lig
         <main className="mx-auto grid max-w-[1200px] gap-6 lg:grid-cols-[minmax(0,880px)_minmax(0,1fr)]">
           <div className="flex min-w-0 flex-col gap-5">
             <h1 className="display text-[30px] text-ink-display">Settings</h1>
-            <h2 className="display text-[24px] text-ink-display">What your agent remembers</h2>
+            <h2 className="display text-[24px] text-ink-display">What your Myte remembers</h2>
             <MemoryPanel initial={empty ? EMPTY_MEMORY : MEMORY_FIXTURE} />
           </div>
           <aside className="min-w-0 rounded-card border border-line bg-surface p-5">

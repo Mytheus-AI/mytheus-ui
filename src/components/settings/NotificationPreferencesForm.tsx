@@ -20,7 +20,7 @@ import {
 } from "@/lib/notification-preferences";
 import { Toggle } from "./Toggle";
 
-/* How alerts from your agent reach you: in the meeting (always), by email (on or off, urgent
+/* How alerts from your Myte reach you: in the meeting (always), by email (on or off, urgent
    only or everything), and Slack (after it is connected in integrations, from P12). Saves through
    a server action to notification-service; nothing about the user or the tenant is sent. */
 
@@ -64,7 +64,7 @@ export function NotificationPreferencesForm({
   };
 
   return (
-    <SectionCard title="Alerts from your agent" headingLevel={3} description="How alerts from your agent reach you.">
+    <SectionCard title="Alerts from your Myte" headingLevel={3} description="How alerts from your Myte reach you.">
       {loaded ? null : (
         <div className="px-4 py-4 sm:px-[22px]">
           <Note tone="warning">We could not load your saved preferences, so the defaults are shown.</Note>
@@ -73,7 +73,7 @@ export function NotificationPreferencesForm({
       <InlineRow
         label="In the meeting"
         labelId={ids.inApp}
-        help="Conflicts, workload, blocked work and missing people appear in your agent sidebar."
+        help="Conflicts, workload, blocked work and missing people appear in your Myte&rsquo;s sidebar in meetings."
       >
         <Chip tone="ok">Always on</Chip>
       </InlineRow>

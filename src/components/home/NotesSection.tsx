@@ -7,7 +7,7 @@ export function NotesSection() {
       <Wrap>
         <SectionHead
           title="Your shorthand, returned as minutes."
-          lead="Jot whatever you catch on the call. Your agent turns the mess into clean notes you can share, with headings, owners and next steps."
+          lead="Jot whatever you catch on the call. Your Myte turns the mess into clean notes you can share, with headings, owners and next steps."
         />
         <Stage>
           <NotesWindow />

@@ -136,12 +136,12 @@ export function BriefingPlayer({
             <p className="text-[13px] font-semibold text-ink-3">Your briefing</p>
             <H id={headingId} className="display text-[22px] leading-tight text-ink">
               {writing
-                ? `${agent?.name ?? "Your agent"} is writing your briefing`
+                ? `${agent?.name ?? "Your Myte"} is writing your briefing`
                 : briefing?.status === "empty"
                   ? "Nothing needs you right now"
                   : briefing?.status === "unavailable"
                     ? "Your briefing could not be written"
-                    : "A briefing from your agent"}
+                    : "A briefing from your Myte"}
             </H>
             <p className="mt-1 max-w-[62ch] text-[15px] leading-relaxed text-ink-3" aria-live="polite">
               {writing
@@ -149,14 +149,14 @@ export function BriefingPlayer({
                   ? "This is taking longer than usual. You can keep waiting or ask again."
                   : "About 90 seconds of what changed for you, who is waiting on you, your promises and what is still open. It takes a few seconds."
                 : briefing?.status === "empty"
-                  ? "Nothing changed for you, nobody is waiting on you and nothing is open. Your agent will brief you when something comes up."
+                  ? "Nothing changed for you, nobody is waiting on you and nothing is open. Your Myte will brief you when something comes up."
                   : briefing?.status === "unavailable"
                     ? unavailableCopy(briefing.reason)
                     : canRequest
                       ? enabled
-                        ? "What changed for you, who is waiting on you, your promises and the questions still open, in your agent's voice."
+                        ? "What changed for you, who is waiting on you, your promises and the questions still open, in your Myte's voice."
                         : "Briefings after meetings are off. You can still ask for one whenever you like."
-                      : "Your agent can brief you on this meeting once it has ended."}
+                      : "Your Myte can brief you on this meeting once it has ended."}
             </p>
             {askError ? (
               <p role="alert" className="mt-2 text-[14px] font-semibold text-priority-high">
@@ -170,7 +170,7 @@ export function BriefingPlayer({
             ) : canRequest ? (
               <Button type="button" variant={briefing ? "outline" : "primary"} size="sm" onClick={() => void ask()} disabled={asking} aria-busy={asking}>
                 <Sparkle size={16} aria-hidden />
-                {asking ? "Asking your agent" : briefing ? "Ask again" : "Brief me"}
+                {asking ? "Asking your Myte" : briefing ? "Ask again" : "Brief me"}
               </Button>
             ) : null}
             {!enabled && !briefing ? (
@@ -561,7 +561,7 @@ export function BriefingUnavailable({ headingLevel = 2 }: { headingLevel?: 2 | 3
       <H id={id} className={`${cardPadX} pt-[18px] text-[17px] font-semibold text-ink`}>
         Your briefing
       </H>
-      <ErrorState variant="inline" title="Your briefing could not be loaded" text="Nothing was lost. Your agent keeps it; this returns when it can be read." />
+      <ErrorState variant="inline" title="Your briefing could not be loaded" text="Nothing was lost. Your Myte keeps it; this returns when it can be read." />
     </section>
   );
 }

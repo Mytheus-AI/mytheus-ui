@@ -34,7 +34,7 @@ export function CapacityVisual() {
   return (
     <Win
       className="mx-auto max-w-[960px]"
-      label="Sprint 14 planning. Maya proposes giving Sarah the onboarding flow. Sarah's load would rise from 84 to 96 percent, past the 95 percent line, and your agent raises an act-now warning. Priya is at 88 percent, Raj 74, Diego 45. A second note says Aiko owns onboarding and is not in this meeting."
+      label="Sprint 14 planning. Maya proposes giving Sarah the onboarding flow. Sarah's load would rise from 84 to 96 percent, past the 95 percent line, and your Myte raises an act-now warning. Priya is at 88 percent, Raj 74, Diego 45. A second note says Aiko owns onboarding and is not in this meeting."
     >
       <WinBar title="Sprint 14 planning" meta={<Live>Live, 10:40</Live>} />
       <div className="border-b border-line px-[22px] py-5">
@@ -84,7 +84,7 @@ export function CapacityVisual() {
           ))}
         </div>
         <div className="grid content-start gap-2.5 border-t border-line bg-surface-2 px-[18px] py-5 md:border-l md:border-t-0">
-          <PanelLabel className="!mb-1">Your agent flags</PanelLabel>
+          <PanelLabel className="!mb-1">Your Myte flags</PanelLabel>
           <div style={dl(1.1)} className={`rounded-[14px] border border-line bg-surface px-4 py-3.5 ${APPEAR}`}>
             <Chip tone="high">Act now</Chip>
             <p className="mt-2 font-semibold leading-[1.35] text-ink">Sarah would be at 96% with the onboarding flow.</p>

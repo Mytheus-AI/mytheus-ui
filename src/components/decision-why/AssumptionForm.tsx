@@ -198,7 +198,7 @@ export function AssumptionForm({
       <fieldset className="rounded-card border border-line px-4 pb-4 pt-3 sm:px-5">
         <legend className="px-1 text-[14px] font-semibold text-ink">Watch it against</legend>
         <p className="text-[14px] leading-relaxed text-ink-3">
-          Your agent reads every later meeting for anything that contradicts this. Add a date, a number, a Jira ticket or a
+          Your Myte reads every later meeting for anything that contradicts this. Add a date, a number, a Jira ticket or a
           HubSpot deal and it checks those too, every 6 hours.
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

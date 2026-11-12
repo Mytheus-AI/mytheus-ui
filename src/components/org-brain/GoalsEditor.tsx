@@ -378,7 +378,7 @@ export function GoalsEditor({
             title="No active goals"
             description={
               canEdit
-                ? "One goal is enough to start. Agents tie agenda items to it and keep what moves it forward."
+                ? "One goal is enough to start. Mytes tie agenda items to it and keep what moves it forward."
                 : "When an admin sets the company's goals, they appear here."
             }
           />
@@ -507,7 +507,7 @@ export function GoalsEditor({
           Achieved and dropped
         </h3>
         {rest.length === 0 ? (
-          <p className="mt-2 text-[14px] leading-relaxed text-ink-3">Goals you mark achieved or drop move here. Agents stop weighing them.</p>
+          <p className="mt-2 text-[14px] leading-relaxed text-ink-3">Goals you mark achieved or drop move here. Mytes stop weighing them.</p>
         ) : (
           <ul className="mt-3 space-y-3">
             {rest.map((g) => {

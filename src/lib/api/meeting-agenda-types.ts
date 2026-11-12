@@ -103,7 +103,7 @@ export type NudgeType = "off_agenda" | "over_time" | "unaddressed" | "proxy_upda
 
 /** `"agent-nudge"` socket payload (D9), only to the host's sockets. A `proxy_update` nudge
  *  (ADR-0039 C5) carries the person's whole update (up to 2000 chars) and, optionally, `userId`,
- *  the participant who sent their agent. */
+ *  the participant who sent their Myte. */
 export interface AgentNudgePayload {
   id: string;
   type: NudgeType;

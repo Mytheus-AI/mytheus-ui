@@ -6,7 +6,7 @@ import type { DelegatedAnswers } from "@/lib/api/only-mytheus-types";
 import { checkStatements } from "@/lib/delegated-answers";
 import { isUuid } from "@/lib/reversals";
 
-/* Save the statements your agent may answer from when it attends for you (only-Mytheus wave,
+/* Save the statements your Myte may answer from when it attends for you (only-Mytheus wave,
    contract section 2). Self only: the server takes the person from the session. The same limits
    as the editor run here, so a hand-made call cannot send past them. */
 

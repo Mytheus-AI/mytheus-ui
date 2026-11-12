@@ -7,10 +7,10 @@ import { uncoveredAnswer } from "@/lib/delegated-answers";
 import { PreApprovedAnswersEditor } from "./PreApprovedAnswersEditor";
 
 /* "Pre-approved answers" on a meeting's page, under "Can't make it?" (only-Mytheus wave, contract
-   section 2). When you send your agent, it answers questions in the room only from statements you
+   section 2). When you send your Myte, it answers questions in the room only from statements you
    approved here; anything else gets "{First name} didn't pre-approve an answer to that." Before
    you decide, a short line says this exists. Server component: reads your statements and your
-   name, then hands plain data to the editor. The page refreshes after "Send my agent", so this
+   name, then hands plain data to the editor. The page refreshes after "Send my Myte", so this
    follows the choice without a reload. */
 
 export async function PreApprovedAnswers({ meetingId }: { meetingId: string }) {
@@ -30,7 +30,7 @@ export async function PreApprovedAnswers({ meetingId }: { meetingId: string }) {
         <ErrorState
           variant="inline"
           title="Your pre-approved answers did not load"
-          text="Nothing was lost. Your agent still attends; it answers only from statements you saved."
+          text="Nothing was lost. Your Myte still attends; it answers only from statements you saved."
         />
       </Card>
     );
@@ -48,7 +48,7 @@ export async function PreApprovedAnswers({ meetingId }: { meetingId: string }) {
               Pre-approved answers
             </h2>
             <p className="mt-0.5 max-w-[60ch] text-[14px] leading-relaxed text-ink-3">
-              If you send your agent, you can give it up to {read.data.max_statements} statements it may answer from. Anything
+              If you send your Myte, you can give it up to {read.data.max_statements} statements it may answer from. Anything
               else gets: &ldquo;{uncoveredAnswer(name)}&rdquo;
             </p>
           </div>
@@ -62,7 +62,7 @@ export async function PreApprovedAnswers({ meetingId }: { meetingId: string }) {
       <CardHead
         id="pre-approved-h"
         title="Pre-approved answers"
-        caption="What your agent may say for you"
+        caption="What your Myte may say for you"
       />
       <CardBody>
         <PreApprovedAnswersEditor

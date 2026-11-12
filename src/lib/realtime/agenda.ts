@@ -213,7 +213,7 @@ export interface Nudge {
   type: NudgeType;
   itemId: string | null;
   content: string;
-  /** `proxy_update` only: the participant who sent their agent, when the gateway says. */
+  /** `proxy_update` only: the participant who sent their Myte, when the gateway says. */
   userId: string | null;
 }
 
@@ -268,11 +268,11 @@ export const NUDGE_LABEL: Record<NudgeType, string> = {
   over_time: "Running over",
   off_agenda: "Off the agenda",
   unaddressed: "Still open from last time",
-  proxy_update: "Update from an agent",
+  proxy_update: "Update from a Myte",
 };
 
 /**
- * Who sent their agent and what they asked it to say, for the host's `proxy_update` nudge and
+ * Who sent their Myte and what they asked it to say, for the host's `proxy_update` nudge and
  * the agent tiles. Built from the meeting's participants (ADR-0039 B5: `attendance` and
  * `proxy_update` are visible to everyone in the meeting).
  */

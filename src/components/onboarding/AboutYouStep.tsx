@@ -16,7 +16,7 @@ import { AreaField, ChipField, OnboardingAside } from "./fields";
 
 /* Onboarding step 1 of 2, "About you" (ADR-0038 D1, D11). The role and a few lines about the
    work are required here (the API itself does not require them); focus areas, listen for and
-   ignore are optional chips. Saving goes on to "Meet your agent". If the save cannot reach the
+   ignore are optional chips. Saving goes on to "Meet your Myte". If the save cannot reach the
    server, the person is never stuck: the error offers the dashboard, where a quiet prompt brings
    them back later. */
 
@@ -89,8 +89,8 @@ export function AboutYouStep({
   return (
     <AuthShell
       stage={{
-        title: "Your agent listens for your work.",
-        lead: "An engineer and a PM leave the same meeting with different notes. Tell your agent what you do, and it keeps what matters to you.",
+        title: "Your Myte listens for your work.",
+        lead: "An engineer and a PM leave the same meeting with different notes. Tell your Myte what you do, and it keeps what matters to you.",
       }}
       scene={{
         you: youSeed,
@@ -104,7 +104,7 @@ export function AboutYouStep({
       aside={<OnboardingAside email={email} />}
     >
       <StepHeader kicker="Step 1 of 2" title="About you">
-        Your agent takes notes for you in every meeting. A few lines here tell it what to listen for.
+        Your Myte takes notes for you in every meeting. A few lines here tell it what to listen for.
       </StepHeader>
 
       {initial === null ? (
@@ -189,7 +189,7 @@ export function AboutYouStep({
           max={LIMITS.listenFor.max}
           placeholder="Deadlines, pricing, anything about Q3"
           error={errors.listen_for}
-          hint="Topics your agent should always note for you."
+          hint="Topics your Myte should always note for you."
         />
         <ChipField
           id={IDS.ignore_topics}
@@ -203,7 +203,7 @@ export function AboutYouStep({
           max={LIMITS.ignoreTopics.max}
           placeholder="Office logistics, lunch orders"
           error={errors.ignore_topics}
-          hint="Topics your agent can let pass."
+          hint="Topics your Myte can let pass."
         />
         <PrimaryButton loading={saving || leaving}>{saving ? "Saving" : "Save and continue"}</PrimaryButton>
       </form>

@@ -52,7 +52,7 @@ export function PlushHarness({
           <>
             <section aria-label="Live" style={row}>
               <span data-testid="live-frame" className="bg-surface shadow-warm-2 ring-4 ring-surface" style={frame(110)}>
-                <PlushLive allowSoftware seed={PLUSH_SEEDS[0]} state={state} size={110} label="Samar's agent" className="block h-full w-full" />
+                <PlushLive allowSoftware seed={PLUSH_SEEDS[0]} state={state} size={110} label="Samar's Myte" className="block h-full w-full" />
               </span>
               <span style={frame(160)}>
                 <PlushLive allowSoftware seed={PLUSH_SEEDS[2]} state={state} size={160} className="block h-full w-full" />
@@ -107,7 +107,7 @@ export function PlushHarness({
           <section aria-label="Stage" style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start" }}>
             <span data-testid="stage" className="rounded-hero bg-surface" style={{ display: "block", width: box, height: box, overflow: "hidden" }}>
               <span style={fill}>
-                <PlushLive allowSoftware seed={seed} state={state} size={box} level={level} celebrate={party} followInput={field} drowsyAfter={drowsyAfter} asleepAfter={asleepAfter} label="Your agent" className="block h-full w-full" />
+                <PlushLive allowSoftware seed={seed} state={state} size={box} level={level} celebrate={party} followInput={field} drowsyAfter={drowsyAfter} asleepAfter={asleepAfter} label="Your Myte" className="block h-full w-full" />
               </span>
             </span>
             <label className="text-ink-2" style={{ display: "flex", gap: 8, alignItems: "center", marginLeft: box + 40, marginTop: 24 }}>

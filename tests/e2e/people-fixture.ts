@@ -74,4 +74,4 @@ export const CHART = buildOrgChart(DEPARTMENTS, TEAMS, ROSTERS, PEOPLE);
 export const PICK_DEPARTMENTS = DEPARTMENTS.map((d) => ({ id: d.id, name: d.name, parentId: d.parent_id })).sort((a, b) => a.name.localeCompare(b.name));
 export const MEMBER_OPTIONS = PEOPLE.map((p) => ({ id: p.id, name: p.name, email: p.email, imageUrl: null, isYou: p.isYou }));
 export const CONTEXT =
-  "3 departments, 6 teams, 9 people on a team. Your agents read this structure, and what each part does, to tune notes to each role and to suggest missing stakeholders.";
+  "3 departments, 6 teams, 9 people on a team. Your Mytes read this structure, and what each part does, to tune notes to each role and to suggest missing stakeholders.";

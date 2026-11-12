@@ -154,7 +154,7 @@ export function BlastRadiusSection({ decisionId, initial }: { decisionId: string
           </div>
         </div>
         <p className="mt-4 font-display text-[16px] italic text-ink-3">
-          {slow ? "This is taking longer than usual. Your agent is still working it out." : "Working out what this decision touches"}
+          {slow ? "This is taking longer than usual. Your Myte is still working it out." : "Working out what this decision touches"}
         </p>
         {slow ? (
           <Button type="button" size="sm" variant="outline" className="mt-3" onClick={() => void retry()} disabled={retrying}>

@@ -73,7 +73,7 @@ export function CapacityNote({
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-ctl bg-priority-medium-soft px-3.5 py-3 text-[14px] leading-relaxed text-ink-2">
             <Sparkle size={16} weight="fill" aria-hidden className="shrink-0 text-priority-medium" />
             <p className="min-w-0 flex-[1_1_220px]">
-              <span className="font-semibold text-ink">Your agent: </span>
+              <span className="font-semibold text-ink">Your Myte: </span>
               {check.message}
             </p>
             {check.suggested_date && onUseSuggested ? (

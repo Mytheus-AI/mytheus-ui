@@ -58,11 +58,11 @@ const meeting = (over: Partial<WeekMeeting>): WeekMeeting => ({
 test("the week's headline reads like the owner's sentence", () => {
   assert.equal(
     summaryLine({ invited: 40, attend: 12, agent_listens: 28, skip: 0, minutes_saved: 19 * 60, hours_saved: 19 }),
-    "This week: attend 12, agent listens to 28, saved 19 hours",
+    "This week: attend 12, your Myte listens to 28, saved 19 hours",
   );
   assert.equal(
     summaryLine({ invited: 5, attend: 2, agent_listens: 2, skip: 1, minutes_saved: 75, hours_saved: 1.3 }, "That week"),
-    "That week: attend 2, agent listens to 2, skip 1, saved 1.5 hours",
+    "That week: attend 2, your Myte listens to 2, skip 1, saved 1.5 hours",
   );
   assert.equal(summaryLine({ invited: 0, attend: 0, agent_listens: 0, skip: 0, minutes_saved: 0, hours_saved: 0 }), "This week: no meetings you are invited to.");
   assert.equal(savedLabel(45), "45 minutes");
@@ -110,7 +110,7 @@ test("interruption ids, held reasons and answers in plain words", () => {
   assert.equal(heldReasonText("focus_block"), "During a focus block");
   assert.equal(heldReasonText("throttled"), "You had enough interruptions for now");
   assert.equal(heldReasonText("weird"), "Held for later");
-  assert.equal(responseText("holding_line"), "Your agent held the line");
+  assert.equal(responseText("holding_line"), "Your Myte held the line");
   assert.equal(responseText(null), null);
 });
 
@@ -174,7 +174,7 @@ test("the right-now line says who can reach you", () => {
 
 test("the evening digest keeps only on-site links and joins plain text", () => {
   const segs = digestSegments([
-    { text: "Your agent sat in on 1 meeting. " },
+    { text: "Your Myte sat in on 1 meeting. " },
     { text: "In " },
     { text: "Pricing review (3pm)", href: `/meetings/${M}` },
     { text: ", decided: " },
@@ -182,7 +182,7 @@ test("the evening digest keeps only on-site links and joins plain text", () => {
     { text: "." },
   ]);
   assert.deepEqual(segs, [
-    { text: "Your agent sat in on 1 meeting. In ", href: null },
+    { text: "Your Myte sat in on 1 meeting. In ", href: null },
     { text: "Pricing review (3pm)", href: `/meetings/${M}` },
     { text: ", decided: SMB floor at 15%.", href: null },
   ]);
@@ -193,7 +193,7 @@ test("the evening digest keeps only on-site links and joins plain text", () => {
 test("rules read as a sentence", () => {
   assert.equal(
     ruleSummary({ choice: "agent_listens", title_contains: "status", recurring_only: true }),
-    "Your agent listens to every recurring meeting with “status” in the title, except ones you host.",
+    "Your Myte listens to every recurring meeting with “status” in the title, except ones you host.",
   );
   assert.equal(
     ruleSummary({ choice: "skip", template_id: "t", template_name: "All hands", include_hosted: true }),
@@ -213,8 +213,8 @@ test("room: views upsert by id and a decision is never undone by a replay; the l
   );
   assert.deepEqual(parseListeners({ count: 3, userIds: ["u1", 4, "u2"] }), { count: 3, userIds: ["u1", "u2"] });
   assert.equal(parseListeners({ count: -1 }), null);
-  assert.equal(listeningLabel(1), "1 agent listening");
-  assert.equal(listeningLabel(3), "3 agents listening");
+  assert.equal(listeningLabel(1), "1 Myte listening");
+  assert.equal(listeningLabel(3), "3 Mytes listening");
 });
 
 test("the Inbox: an interruption acts now, the evening digest informs", () => {
@@ -232,7 +232,7 @@ test("the Inbox: an interruption acts now, the evening digest informs", () => {
   const digest = describeNotification({
     ...base,
     priority: 3,
-    title: "What your agent heard today",
+    title: "What your Myte heard today",
     link: "/meetings/listening?day=2026-11-11",
     payload: { source_event_id: `evening-digest:${I}` },
   });

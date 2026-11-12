@@ -11,14 +11,14 @@ import { agentSeed } from "@/lib/briefing";
 export const metadata: Metadata = { title: "Briefings | Mytheus" };
 export const dynamic = "force-dynamic";
 
-/* Settings > Briefings: how your agent briefs you (core-api `/api/v1/briefings/preferences`, the
+/* Settings > Briefings: how your Myte briefs you (core-api `/api/v1/briefings/preferences`, the
    caller's own). */
 export default async function BriefingSettingsPage() {
   const [settings, profile, org] = await Promise.all([fetchBriefingSettings(), fetchMyProfile(), resolveOrgContext()]);
   const name = agentDisplayName(profile?.agent_name, org?.user.name);
   return (
     <>
-      <SectionBar title="Briefings" context="When your agent briefs you, how long, in which language and in what voice. Only you hear your briefings." />
+      <SectionBar title="Briefings" context="When your Myte briefs you, how long, in which language and in what voice. Only you hear your briefings." />
       {settings.kind === "live" ? (
         <BriefingSettingsPanel
           initial={settings.data}
@@ -27,7 +27,7 @@ export default async function BriefingSettingsPage() {
           personality={profile?.agent_personality ?? "balanced"}
         />
       ) : (
-        <ErrorState title="Your briefing settings could not be loaded" text="Nothing was lost. Your agent keeps your settings; this page returns when it can be read." />
+        <ErrorState title="Your briefing settings could not be loaded" text="Nothing was lost. Your Myte keeps your settings; this page returns when it can be read." />
       )}
     </>
   );

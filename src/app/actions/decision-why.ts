@@ -89,7 +89,7 @@ export async function readRevisitSlot(id: string): Promise<Act<SlotProposal>> {
     return { ok: true, data: await fetchRevisitSlot(id) };
   } catch (err) {
     const f = failure(err, "That reason");
-    return f.code === "error" ? { ...f, message: "Your agent couldn't find a time just now. Try again in a moment." } : f;
+    return f.code === "error" ? { ...f, message: "Your Myte couldn't find a time just now. Try again in a moment." } : f;
   }
 }
 

@@ -11,7 +11,7 @@
  *   POST   /api/v1/promises/date-proposals                 renegotiate a date (promise or action)
  *   GET    /api/v1/promises/date-proposals?role=           asked of you / asked by you
  *   POST   /api/v1/promises/date-proposals/{id}/accept|decline|withdraw
- *   GET|PUT /api/v1/promises/capture-preferences           may your agent read your Slack, email
+ *   GET|PUT /api/v1/promises/capture-preferences           may your Myte read your Slack, email
  *
  * Private to the caller: anyone else's promise is a 404. SERVER-ONLY, inherited from
  * `lib/api/client.ts`.

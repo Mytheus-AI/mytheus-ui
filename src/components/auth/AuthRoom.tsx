@@ -228,7 +228,7 @@ function KeptStrip({ keeps, shown }: { keeps: Keep[]; shown: number }) {
       <div className="flex items-center justify-between gap-3">
         <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-ink-2">
           <LogoMark size={16} />
-          Your agent kept
+          Your Myte kept
         </span>
       </div>
       <div className="relative mt-3 grid gap-3" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>

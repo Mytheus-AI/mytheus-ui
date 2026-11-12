@@ -7,7 +7,7 @@ import { Chip, Win, WinBar } from "@/components/site/Section";
 import { AvStack } from "@/components/home/Tangle";
 import s from "@/components/home/home.module.css";
 
-/* The notes window: what you typed on the left, what your agent wrote on the right, aligned row
+/* The notes window: what you typed on the left, what your Myte wrote on the right, aligned row
    by row and joined by one vertical thread. Generating runs the thread down and fills each bead
    as its note appears. It runs once by itself when the window scrolls in; the button runs it
    again. Before hydration (and without JS) the finished notes are shown. */
@@ -106,7 +106,7 @@ export function NotesWindow() {
       >
         <div className={`${s.npHead} pb-1 pt-[18px] text-[14px] font-semibold text-ink-3`}>
           <span>What you typed</span>
-          <span>What your agent wrote</span>
+          <span>What your Myte wrote</span>
         </div>
         <div className={s.npRows}>
           {ROWS.map((r, i) => (

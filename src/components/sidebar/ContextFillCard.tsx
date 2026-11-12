@@ -9,7 +9,7 @@ import { citationLink } from "@/lib/realtime/suggestions";
 import { useRoomNames } from "@/lib/realtime/room-names";
 
 /* Context the agent found for THIS participant when the conversation referred to something they
-   were missing (Phase P10, plan 3.5). From a teammate's agent or from their own knowledge base,
+   were missing (Phase P10, plan 3.5). From a teammate's Myte or from their own knowledge base,
    always with its sources, joined to them by the coral line. Private: nobody else in the meeting sees it. Dismiss only hides it;
    nothing is committed or told to anyone. The card reserves its height so the panel does not
    jump when it lands. */

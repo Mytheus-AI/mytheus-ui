@@ -27,7 +27,7 @@ export function AgentPreviewCard({
   const extra = instructions.trim();
   return (
     <section
-      aria-label="Preview of your agent"
+      aria-label="Preview of your Myte"
       className={cardClass({ flush: true, className })}
     >
       <div className="flex items-center gap-4 px-4 py-[18px] sm:px-[22px]">

@@ -1,5 +1,5 @@
 /* The meeting side of the company brain (mytheus-docs ADR-0039 Part E): the New meeting dialog's
-   type, Confidential and drafted agenda; the meeting page's wide layout, Send my agent instead,
+   type, Confidential and drafted agenda; the meeting page's wide layout, Send my Myte instead,
    your brief, latest statuses and the health card; the catch-up page; and in the room, agent
    tiles, the proxy update nudge and the "already decided" quote.
 
@@ -267,7 +267,7 @@
 .mx-meet .br-none { color: var(--ink-3); font-size: 12.5px; font-style: italic; }
 .mx-meet .br-more { display: inline-flex; align-items: center; min-height: 36px; margin-top: 4px; color: var(--signal-ink); font-size: 14px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 
-/* ================================================================ send my agent instead */
+/* ================================================================ send my Myte instead */
 
 .mx-meet .at-who { display: flex; align-items: flex-start; gap: 14px; }
 .mx-meet .at-face { width: 48px; height: 48px; flex-shrink: 0; overflow: hidden; border-radius: 999px; background: var(--bg-2); }

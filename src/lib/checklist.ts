@@ -13,9 +13,9 @@ export type StepKey = "role" | "agent" | "calendar" | "meeting" | "brain";
 export type StepState = "done" | "todo" | "unknown";
 
 export type ChecklistSignals = {
-  /** the person told their agent their role (null: the profile could not be read) */
+  /** the person told their Myte their role (null: the profile could not be read) */
   role: boolean | null;
-  /** they named or drew their agent */
+  /** they named or drew their Myte */
   agent: boolean | null;
   calendar: boolean | null;
   /** they have held at least one meeting */
@@ -37,17 +37,17 @@ export type ChecklistStep = {
 const STEPS: Omit<ChecklistStep, "state">[] = [
   {
     key: "role",
-    title: "Tell your agent what you do",
-    text: "Your agent takes no notes for you until it knows your role. About a minute.",
+    title: "Tell your Myte what you do",
+    text: "Your Myte takes no notes for you until it knows your role. About a minute.",
     href: "/onboarding/profile",
     action: "Add your role",
   },
   {
     key: "agent",
-    title: "Meet your agent",
+    title: "Meet your Myte",
     text: "Give it a name and a face, and choose how much it speaks up.",
     href: "/agent",
-    action: "Meet your agent",
+    action: "Meet your Myte",
   },
   {
     key: "calendar",
@@ -59,14 +59,14 @@ const STEPS: Omit<ChecklistStep, "state">[] = [
   {
     key: "meeting",
     title: "Hold your first meeting",
-    text: "Your agent listens, keeps notes and proposes decisions for you to confirm.",
+    text: "Your Myte listens, keeps notes and proposes decisions for you to confirm.",
     href: "/meetings?new=1",
     action: "Start a meeting",
   },
   {
     key: "brain",
     title: "Set up the company brain",
-    text: "What the company does, its words and its goals, so every agent listens better.",
+    text: "What the company does, its words and its goals, so every Myte listens better.",
     href: "/workspace/brain",
     action: "Open the company brain",
   },

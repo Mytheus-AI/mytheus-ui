@@ -14,9 +14,9 @@ import { PromiseCheck } from "./PromiseCheck";
 import { usePromises } from "./usePromises";
 
 /* My work, Promises tab (ADR-0039 B6, Part E): everything you said you would do in a meeting, written down by
-   your agent and seen by nobody else. Open promises are grouped by the meeting they were said in,
+   your Myte and seen by nobody else. Open promises are grouped by the meeting they were said in,
    newest meeting first; done ones sit in the side column. Mark done, move back, or dismiss one
-   your agent got wrong, each answered by a toast with Undo. All changes are optimistic with rollback. */
+   your Myte got wrong, each answered by a toast with Undo. All changes are optimistic with rollback. */
 
 const DONE_SHOWN = 8;
 const WEEK_MS = 7 * 86_400_000;
@@ -92,7 +92,7 @@ export function PromisesView({ initial, nowIso }: { initial: PromiseView[]; nowI
       </Card>
 
       <Explainer id="where-h" title="Where these come from">
-        <p>When you say you will do something in a meeting, your agent writes it down here, privately.</p>
+        <p>When you say you will do something in a meeting, your Myte writes it down here, privately.</p>
         <p className="flex gap-2">
           <LockSimple size={16} aria-hidden className="mt-1 shrink-0 text-ink-3" />
           <span>
@@ -103,7 +103,7 @@ export function PromisesView({ initial, nowIso }: { initial: PromiseView[]; nowI
             .
           </span>
         </p>
-        <p>Dismiss one your agent got wrong and it leaves the list.</p>
+        <p>Dismiss one your Myte got wrong and it leaves the list.</p>
       </Explainer>
     </>
   );
@@ -114,7 +114,7 @@ export function PromisesView({ initial, nowIso }: { initial: PromiseView[]; nowI
         liveContext
         context={
           nothingAtAll
-            ? "What you said you would do in meetings, kept by your agent. Only you can see this list."
+            ? "What you said you would do in meetings, kept by your Myte. Only you can see this list."
             : `${openCount === 0 ? "Nothing open" : `${openCount} open`}, ${done.length} done. Only you can see this list.`
         }
       />
@@ -123,7 +123,7 @@ export function PromisesView({ initial, nowIso }: { initial: PromiseView[]; nowI
         <EmptyState
           art="promises"
           title="No promises yet"
-          description="When you say you will do something in a meeting, your agent writes it down here, privately."
+          description="When you say you will do something in a meeting, your Myte writes it down here, privately."
           className="py-20"
         />
       ) : (

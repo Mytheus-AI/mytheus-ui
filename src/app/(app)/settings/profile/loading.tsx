@@ -1,7 +1,7 @@
 import { SettingsPanelSkeleton } from "@/components/settings/SettingsSkeleton";
 
 /* The Profile panel while it loads, in ProfilePanel's shape: your account, your doodle, and what
-   your agent knows about you (its fields and Save). */
+   your Myte knows about you (its fields and Save). */
 export default function Loading() {
   return (
     <SettingsPanelSkeleton

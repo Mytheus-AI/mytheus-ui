@@ -41,15 +41,15 @@ type Step = "start" | "verify" | "continue" | "sso-callback";
 const STAGE: Record<Exclude<Step, "sso-callback">, StageCopy> = {
   start: {
     title: "Your first meeting starts the line.",
-    lead: "A personal agent for every person in the room. It listens, proposes, and remembers across meetings.",
+    lead: "Your Myte is your personal AI agent: it listens, takes notes only you see, and remembers across meetings.",
   },
   verify: {
     title: "Confirm your email, then you’re in.",
-    lead: "Confirming your email keeps your meetings, and everything your agent remembers, tied to you.",
+    lead: "Confirming your email keeps your meetings, and everything your Myte remembers, tied to you.",
   },
   continue: {
     title: "A few details and you’re in.",
-    lead: "Your agent works better when it knows who it's working for.",
+    lead: "Your Myte works better when it knows who it's working for.",
   },
 };
 
@@ -61,7 +61,7 @@ const SCENE: Record<Exclude<Step, "sso-callback">, Pick<SceneProps, "lines">> = 
       { who: 0, text: "Who's joining us today?" },
       { who: 1, text: "Saved them a seat.", keep: { tag: "Action", text: "Seat saved for you" } },
       { who: 4, text: "Let's welcome the new teammate.", keep: { tag: "Decision", text: "New teammate welcomed" } },
-      { who: 2, text: "Their agent's already listening.", keep: { tag: "Done", text: "Your agent is ready" } },
+      { who: 2, text: "Their Myte's already listening.", keep: { tag: "Done", text: "Your Myte is ready" } },
     ],
   },
   verify: {
@@ -213,7 +213,7 @@ function StartStep({ go, doodle, onDoodle }: { go: (p: string) => void; doodle: 
   return (
     <>
       <StepHeader title="Create your account">
-        Free to start. Your agent proposes; nothing is saved until you confirm it.
+        Free to start. Your Myte proposes; nothing is saved until you confirm it.
       </StepHeader>
 
       {errors.form ? <FormAlert>{errors.form}</FormAlert> : null}
@@ -417,7 +417,7 @@ function ContinueStep({ go }: { go: (p: string) => void }) {
             You&rsquo;re signing up as <span className="font-medium text-ink">{signUp.emailAddress}</span>.
           </>
         ) : (
-          "We need a little more before your agent can start."
+          "We need a little more before your Myte can start."
         )}
       </StepHeader>
       {errors.form ? <FormAlert>{errors.form}</FormAlert> : null}

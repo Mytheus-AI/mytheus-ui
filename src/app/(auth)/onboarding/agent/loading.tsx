@@ -1,17 +1,17 @@
 import { Bone, TextBone } from "@/components/ui/Page";
 import { FieldSkeleton, OnboardingLoading, StepHeaderSkeleton } from "@/components/onboarding/OnboardingLoading";
 
-/* Meet your agent while the profile loads: the step's frame and copy, the back link, the step
+/* Meet your Myte while the profile loads: the step's frame and copy, the back link, the step
    header, the agent's preview card, then the name, its face, the five ways of writing, the
    instructions, the button and the skip line, at their real heights. */
 export default function Loading() {
   return (
     <OnboardingLoading
-      label="Loading your agent"
+      label="Loading your Myte"
       back
       stage={{
         title: "A face and a voice of its own.",
-        lead: "Your agent sits beside you in every meeting and writes your notes the way you like to read them.",
+        lead: "Your Myte sits beside you in every meeting and writes your notes the way you like to read them.",
       }}
     >
       <StepHeaderSkeleton title="w-64" />

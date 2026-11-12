@@ -74,7 +74,7 @@ const shots: Shot[] = [
       await mount(<RoomHarness theme={theme} passiveListener />);
       await page.waitForFunction(() => Boolean(window.__gateway?.meetingId));
       await page.waitForTimeout(200);
-      await page.getByRole("button", { name: /agents listening/ }).click();
+      await page.getByRole("button", { name: /Mytes listening/ }).click();
     },
   },
 ];

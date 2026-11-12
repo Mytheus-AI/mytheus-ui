@@ -2,7 +2,7 @@
 
 import { createContext, useContext, type ReactNode } from "react";
 
-/** The signed-in person's agent as it is now (name and face seed), resolved once in the (app)
+/** The signed-in person's Myte as it is now (name and face seed), resolved once in the (app)
     layout. Surfaces that show a stored snapshot of the agent, such as a briefing written last
     week, read this so a renamed or re-faced agent shows its current self everywhere. */
 export type MyAgent = { name: string; seed: string };

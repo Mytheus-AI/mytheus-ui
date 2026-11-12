@@ -27,7 +27,7 @@ export function LoadFailed({ what }: { what: string }) {
 
 /** Shown to members, who can read the brain but not change it. */
 export function ReadOnlyNote() {
-  return <Note>Only workspace owners and admins can change this. You are seeing what every agent reads.</Note>;
+  return <Note>Only workspace owners and admins can change this. You are seeing what every Myte reads.</Note>;
 }
 
 /** A person's face and name in a list, or a quiet line when they are not in the member list. */

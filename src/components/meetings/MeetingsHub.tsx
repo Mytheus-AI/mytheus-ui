@@ -234,7 +234,7 @@ export function MeetingsHub({
     body = (
       <EmptyState
         title="No meetings yet"
-        description="Start or schedule a meeting. Your agent joins it with you, takes notes and holds decisions for you to confirm."
+        description="Start or schedule a meeting. Your Myte joins it with you, takes notes and holds decisions for you to confirm."
         action={<NewMeeting members={invitable} me={me} templates={templates} goals={goals} />}
       />
     );

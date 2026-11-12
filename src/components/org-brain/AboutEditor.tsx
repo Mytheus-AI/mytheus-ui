@@ -32,10 +32,10 @@ export function AgentReads({ profile }: { profile: Pick<OrgProfile, "description
   const empty = !profile.description.trim() && !profile.industry.trim() && !profile.products.length && !profile.customers.length;
   return (
     <figure className={cardClass({ tone: "well" })}>
-      <figcaption className="text-[12.5px] font-semibold text-ink-3">What every agent reads</figcaption>
+      <figcaption className="text-[12.5px] font-semibold text-ink-3">What every Myte reads</figcaption>
       {empty ? (
         <p className="mt-3 font-display text-[17px] italic leading-snug text-ink-3">
-          Nothing yet. Until this is filled in, agents know your people and your meetings, but not your company.
+          Nothing yet. Until this is filled in, Mytes know your people and your meetings, but not your company.
         </p>
       ) : (
         <div className="mt-3 space-y-3 text-[14px] leading-relaxed text-ink-2">
@@ -111,7 +111,7 @@ export function AboutEditor({ initial, canEdit }: { initial: OrgProfile; canEdit
     setIndustry(next.industry);
     setProducts(next.products);
     setCustomers(next.customers);
-    notifySuccess("Company profile saved", { description: "Agents use it from the next meeting." });
+    notifySuccess("Company profile saved", { description: "Mytes use it from the next meeting." });
   };
 
   return (
@@ -144,7 +144,7 @@ export function AboutEditor({ initial, canEdit }: { initial: OrgProfile; canEdit
               hint={
                 descLen < L.descriptionReady
                   ? `Plain words, as you would tell a new hire. ${L.descriptionReady - descLen} more characters and this counts toward readiness.`
-                  : "Plain words, as you would tell a new hire. Agents read it before every meeting."
+                  : "Plain words, as you would tell a new hire. Mytes read it before every meeting."
               }
             />
           </div>

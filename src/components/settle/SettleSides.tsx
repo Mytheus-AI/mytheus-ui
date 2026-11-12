@@ -17,9 +17,9 @@ import { notifyError, notifySuccess } from "@/lib/toast";
    wording when the other owner may not have been in my meeting. */
 
 function sure(confidence: number): string {
-  if (confidence >= 0.85) return "Your agent is fairly sure";
-  if (confidence >= 0.7) return "Your agent thinks so, but is not certain";
-  return "Your agent is unsure";
+  if (confidence >= 0.85) return "Your Myte is fairly sure";
+  if (confidence >= 0.7) return "Your Myte thinks so, but is not certain";
+  return "Your Myte is unsure";
 }
 
 function Side({ side, label, settlement, onChange }: { side: SettleSide; label: string; settlement: Settlement; onChange: (s: Settlement) => void }) {

@@ -44,7 +44,7 @@ export const metadata: Metadata = {
  * Catch up (recent meetings) carries the memory line, the view's one drawn moment; nothing
  * else animates in.
  *
- * The first-run checklist (tell your agent what you do, meet your agent, connect your calendar,
+ * The first-run checklist (tell your Myte what you do, meet your Myte, connect your calendar,
  * hold your first meeting, and for admins set up the company brain) replaces the three stacked
  * onboarding banners. Its signals are read here, in parallel with the dashboard, so it is in the
  * first paint rather than popping in. "What do I owe" lives in the Inbox and My work; Home keeps
@@ -135,12 +135,12 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 items-start gap-6 min-[1101px]:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]">
         <div className="flex min-w-0 flex-col gap-7">
           <HeroUpNext next={next} after={after} calendarFailed={calendarFailed} nowMs={nowMs} />
-          {/* Beyond the meeting: the newest briefing from your agent, streamed in on its own. */}
+          {/* Beyond the meeting: the newest briefing from your Myte, streamed in on its own. */}
           <Suspense fallback={<CardSkeleton rows={2} />}>
             <HomeBriefing />
           </Suspense>
           <NeedsYou items={review.items} failed={review.failed} />
-          {/* In every meeting at once: what your agent heard for you, streamed on its own. */}
+          {/* In every meeting at once: what your Myte heard for you, streamed on its own. */}
           <Suspense fallback={null}>
             <HomeDigestCard />
           </Suspense>

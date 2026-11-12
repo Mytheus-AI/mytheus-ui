@@ -8,19 +8,19 @@ import s from "@/components/home/home.module.css";
 const QA = [
   {
     q: "Is there a bot that joins my call?",
-    a: "No. Mytheus is its own meeting platform. The call happens in Mytheus, so there is no recording link to paste and no third-party notetaker in the participant list. Each person's agent listens from the inside.",
+    a: "No. Mytheus is its own meeting platform. The call happens in Mytheus, so there is no recording link to paste and no third-party notetaker in the participant list. Each person's Myte listens from the inside.",
   },
   {
     q: "Does it integrate with Zoom, Meet or Teams?",
-    a: "Not today. Meetings run inside Mytheus, which is how every participant gets an agent without a bot joining. You invite people with a link, like any other call.",
+    a: "Not today. Meetings run inside Mytheus, which is how every participant gets a Myte without a bot joining. You invite people with a link, like any other call.",
   },
   {
-    q: "Will the agent commit decisions without me?",
-    a: "No. Your agent proposes and you confirm. Nothing is saved, assigned or shared until you tap Confirm, and you can edit or dismiss anything first.",
+    q: "Will my Myte commit decisions without me?",
+    a: "No. Your Myte proposes and you confirm. Nothing is saved, assigned or shared until you tap Confirm, and you can edit or dismiss anything first.",
   },
   {
-    q: "How do agents collaborate across meetings?",
-    a: "When your agent needs context, it asks another participant's agent. The answer comes back with its source, the exact meeting it came from, so you can check it yourself.",
+    q: "How do Mytes collaborate across meetings?",
+    a: "When your Myte needs context, it asks another participant's Myte. The answer comes back with its source, the exact meeting it came from, so you can check it yourself.",
   },
   {
     q: "Who can see my notes and the shared memory?",

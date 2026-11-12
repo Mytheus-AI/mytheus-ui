@@ -16,7 +16,7 @@ const VALUES = [
   {
     icon: <Graph />,
     title: "Shared memory across teams",
-    body: "Agents carry context between meetings and between teams. A decision on Monday becomes context on Friday, org-wide, not siloed per person.",
+    body: "Mytes carry context between meetings and between teams. A decision on Monday becomes context on Friday, org-wide, not siloed per person.",
   },
   {
     icon: <SlidersHorizontal />,
@@ -46,7 +46,7 @@ const TRUST = [
   },
   {
     term: "Confirm before write",
-    detail: "Agents draft; people decide. Nothing becomes a durable decision or action until a participant confirms it.",
+    detail: "Mytes draft; people decide. Nothing becomes a durable decision or action until a participant confirms it.",
   },
   {
     term: "Compliance in progress",
@@ -64,7 +64,7 @@ export default function Page() {
             Mytheus for your whole <Loop>organization.</Loop>
           </>
         }
-        blurb="Give every team a personal meeting agent, with the security, control, and shared memory a large organization needs."
+        blurb="Give every person on every team their own Myte, with the security, control, and shared memory a large organization needs."
         ctaHref={CONTACT}
         ctaLabel="Talk to the team"
         secondaryHref="/security"
@@ -86,7 +86,7 @@ export default function Page() {
         <Wrap>
           <SectionHead
             title="Your meetings stay yours."
-            lead="Mytheus is its own meeting platform, so there are no third-party meeting tools in the loop and the data never leaves your tenant for someone else's. And the agent never writes silently."
+            lead="Mytheus is its own meeting platform, so there are no third-party meeting tools in the loop and the data never leaves your tenant for someone else's. And a Myte never writes silently."
           />
           <Stage tone="ochre">
             <Win>
@@ -96,7 +96,7 @@ export default function Page() {
                   steps={[
                     {
                       tag: <Chip tone="accent">Decision</Chip>,
-                      title: "Your agent drafts",
+                      title: "Your Myte drafts",
                       body: "It files a decision or action the moment it is said in the meeting.",
                     },
                     {
@@ -147,7 +147,7 @@ export default function Page() {
               },
               {
                 title: "Scale shared memory",
-                body: "As more teams adopt Mytheus, their agents build on each other's context, turning every meeting into compounding organizational memory.",
+                body: "As more teams adopt Mytheus, their Mytes build on each other's context, turning every meeting into compounding organizational memory.",
               },
             ]}
           />

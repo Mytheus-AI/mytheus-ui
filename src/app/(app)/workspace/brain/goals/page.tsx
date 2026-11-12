@@ -15,7 +15,7 @@ export default async function GoalsPage() {
     <section aria-label="Goals">
       <BrainSectionHead
         title="Goals"
-        lead="What matters now, most important first. Hosts tie agenda items to a goal, and agents weigh what they keep against these."
+        lead="What matters now, most important first. Hosts tie agenda items to a goal, and Mytes weigh what they keep against these."
       />
       {!canEdit ? (
         <div className="mb-4">

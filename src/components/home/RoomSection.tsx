@@ -3,14 +3,14 @@ import { Av, type Tone } from "@/components/home/Tangle";
 import { ConfirmDecision } from "@/components/home/ConfirmDecision";
 
 /* In the room: the live transcript on the left, what the agent captured from it on the right.
-   Raj is out, so his agent speaks for him (drawn with the tangle, not a face). */
+   Raj is out, so his Myte speaks for him (drawn with the tangle, not a face). */
 
 const TALK: { tone: Tone; initial?: string; agent?: boolean; name: string; note?: string; line: string }[] = [
   { tone: "peach", initial: "M", name: "Maya", line: "Let's lock the Q3 launch. I'm proposing August 12." },
   {
     tone: "accent",
     agent: true,
-    name: "Raj's agent",
+    name: "Raj's Myte",
     note: "(Raj is out today)",
     line: "QA needs two extra days after code freeze.",
   },
@@ -23,7 +23,7 @@ export function RoomSection() {
       <Wrap>
         <SectionHead
           title="Decisions get caught as they're said."
-          lead="While people talk, your agent files each moment as a decision, a piece of context or a conflict. Nothing is saved until you confirm it."
+          lead="While people talk, your Myte files each moment as a decision, a piece of context or a conflict. Nothing is saved until you confirm it."
         />
         <Stage tone="ochre">
           <Win>
@@ -53,7 +53,7 @@ export function RoomSection() {
                   <li className="rounded-ctl border border-line bg-surface px-4 py-3.5">
                     <Chip tone="low">Context</Chip>
                     <p className="mt-1.5 font-medium leading-[1.35] text-ink">
-                      From Raj&apos;s agent: QA needs 2 more days after the freeze.
+                      From Raj&apos;s Myte: QA needs 2 more days after the freeze.
                     </p>
                   </li>
                   <li className="rounded-ctl border border-line bg-surface px-4 py-3.5">

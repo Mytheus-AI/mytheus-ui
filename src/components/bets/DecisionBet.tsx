@@ -221,7 +221,7 @@ export function DecisionBet({
             <p className="max-w-[56ch] text-[15px] leading-relaxed text-ink-3">
               {view.can_edit
                 ? "Say what this decision should achieve and when to check. On that date the evidence is gathered and you score it, so the workspace learns which calls it gets right."
-                : "Its owner, the meeting's host or whoever confirmed it can say what it should achieve. When the meeting says so out loud, your agent suggests it too."}
+                : "Its owner, the meeting's host or whoever confirmed it can say what it should achieve. When the meeting says so out loud, your Myte suggests it too."}
             </p>
             {view.can_edit ? (
               <Button onClick={() => setMode("edit")} className="mt-1">
@@ -274,7 +274,7 @@ export function DecisionBet({
               <Sparkle size={18} weight="fill" />
             </span>
             <div className="min-w-0">
-              <p className="text-[13.5px] text-ink-3">Your agent heard an expected outcome in the meeting</p>
+              <p className="text-[13.5px] text-ink-3">Your Myte heard an expected outcome in the meeting</p>
               <p className="display mt-1 text-[20px] leading-snug text-ink-display">{bet.statement}</p>
             </div>
           </div>

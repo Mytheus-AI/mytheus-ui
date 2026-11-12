@@ -29,10 +29,10 @@ export default function Page() {
         eyebrow="Features"
         title={
           <>
-            One agent per person, not one bot per <Loop>meeting.</Loop>
+            One Myte per person, not one bot per <Loop>meeting.</Loop>
           </>
         }
-        blurb="Meeting bots write one summary for the whole room. Mytheus gives every participant their own agent, tuned to their role and private by default, and lets those agents share context across meetings with a source for every answer."
+        blurb="Meeting bots write one summary for the whole room. Mytheus gives every participant their own Myte, a personal AI agent tuned to their role and private by default, and lets those Mytes share context across meetings with a source for every answer."
         ctaHref="/sign-up"
         ctaLabel="Get started free"
         secondaryHref="/pricing"
@@ -42,7 +42,7 @@ export default function Page() {
       <Section cross id="your-agent">
         <Wrap>
           <SectionHead
-            title="What your agent does in the room."
+            title="What your Myte does in the room."
             lead="Six jobs it does quietly in every meeting you join. What it captures stays yours until you choose to share it."
           />
           <InView as="ul" threshold={0.15} className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3" aria-label={agent.title}>
@@ -68,7 +68,7 @@ export default function Page() {
         <Wrap>
           <SectionHead
             title="The platform it stands on."
-            lead="Captions, search, memory and the tools your follow-up lands in, shared by every agent in your workspace."
+            lead="Captions, search, memory and the tools your follow-up lands in, shared by every Myte in your workspace."
           />
           <InView as="ul" threshold={0.15} className="border-t border-line-2" aria-label={platform.title}>
             {platform.features.map((f, i) => (

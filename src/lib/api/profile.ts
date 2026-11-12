@@ -1,7 +1,7 @@
 /**
  * The caller's own profile on `identity-tenant-service` (ADR-0038 D3): their working profile
  * (`role`, `skills` shown as focus areas, `bio` shown as "what you work on", `listen_for`,
- * `ignore_topics`) and their agent's persona (`agent_name`, `agent_avatar_seed`,
+ * `ignore_topics`) and their Myte's persona (`agent_name`, `agent_avatar_seed`,
  * `agent_personality`, `agent_instructions`). Read with `GET /users/me`, written with
  * `PATCH /users/{user_id}` by the server actions in `app/actions/profile.ts`.
  *
@@ -34,7 +34,7 @@ export async function myUserId(): Promise<string | null> {
  * The caller's full profile, or null when it cannot be loaded (gateway down, or the user row not
  * created yet right after sign-up).
  */
-/** Once per request: the app layout (the sidebar's agent tab) and a page can both ask. */
+/** Once per request: the app layout (the sidebar's Myte tab) and a page can both ask. */
 export const fetchMyProfile = cache(async function fetchMyProfile(): Promise<UserProfile | null> {
   const me = await apiSafe<Partial<UserProfile> & { id: string }>("/users/me");
   if (me.ok) return normalizeProfile(me.data);

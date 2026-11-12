@@ -64,7 +64,7 @@ export function clip(text: string, max: number): string {
 
 /* ------------------------------------------------------------------ the last word */
 
-/** Why your agent noticed, in the person's own terms (shown as the row's kicker). */
+/** Why your Myte noticed, in the person's own terms (shown as the row's kicker). */
 export const SIGNAL_LABEL: Record<SignalKind, string> = {
   cut_off: "You were cut off",
   spoken_over: "You were talked over",

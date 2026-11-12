@@ -21,7 +21,7 @@ export default async function BrainLayout({ children }: { children: React.ReactN
   return (
     <div>
       <SectionBar
-        context={`What every agent in ${orgName} knows about the company: what it does, its words, who owns what, what matters now and what is off limits.`}
+        context={`What every Myte in ${orgName} knows about the company: what it does, its words, who owns what, what matters now and what is off limits.`}
         action={
           readiness?.ok ? (
             <LinkButton href="/workspace/brain" variant="outline" size="sm" aria-label={`Readiness ${readiness.data.score} of 100`}>

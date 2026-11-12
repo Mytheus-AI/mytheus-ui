@@ -40,15 +40,15 @@ export function BeadLine({ done, total, className = "" }: { done: number; total:
 
 function summary(r: Readiness): string {
   const done = r.checks.filter((c) => c.done).length;
-  if (r.checks.length && done === r.checks.length) return "Every check is done. Agents bring all of this into every meeting.";
-  if (done === 0) return "Nothing yet. Agents start using each piece from the next meeting on.";
-  return `${done} of ${r.checks.length} checks done. Agents already use what is here.`;
+  if (r.checks.length && done === r.checks.length) return "Every check is done. Mytes bring all of this into every meeting.";
+  if (done === 0) return "Nothing yet. Mytes start using each piece from the next meeting on.";
+  return `${done} of ${r.checks.length} checks done. Mytes already use what is here.`;
 }
 
 export function ReadinessMeter({
   readiness,
   headingLevel = 2,
-  title = "How ready your agents are",
+  title = "How ready your Mytes are",
   id = "readiness",
   linkFixes = true,
 }: {

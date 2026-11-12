@@ -43,7 +43,7 @@ const CARDS: CardMeta[] = [
   {
     key: "google_calendar",
     name: "Google Calendar",
-    description: "Meetings on the installer's primary calendar sync in, with attendees matched to people in this workspace, so agents can prepare before you join.",
+    description: "Meetings on the installer's primary calendar sync in, with attendees matched to people in this workspace, so Mytes can prepare before you join.",
     icon: CalendarDots,
   },
   {

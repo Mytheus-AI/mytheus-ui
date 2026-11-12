@@ -29,7 +29,7 @@ export function roomConnection(call: CallLink, live: LiveLink, liveWasJoined: bo
   if (live === "forbidden") {
     return {
       tone: "error",
-      text: "You are not on this meeting's participant list, so captions and your agent are off. Ask the host to add you.",
+      text: "You are not on this meeting's participant list, so captions and your Myte are off. Ask the host to add you.",
       retry: null,
     };
   }
@@ -39,14 +39,14 @@ export function roomConnection(call: CallLink, live: LiveLink, liveWasJoined: bo
     return {
       tone: "error",
       text: callDown
-        ? "The call and the meeting link both dropped. Captions and your agent are paused."
-        : "Captions and your agent are paused: the meeting link could not reconnect.",
+        ? "The call and the meeting link both dropped. Captions and your Myte are paused."
+        : "Captions and your Myte are paused: the meeting link could not reconnect.",
       retry: "live",
     };
   }
-  if (callDown && liveDown) return { tone: "waiting", text: "Reconnecting. Audio, captions and your agent are paused", retry: null };
+  if (callDown && liveDown) return { tone: "waiting", text: "Reconnecting. Audio, captions and your Myte are paused", retry: null };
   if (callDown) return { tone: "waiting", text: "Call reconnecting. Your audio and video are paused", retry: null };
-  if (liveDown) return { tone: "waiting", text: "Agent paused, captions reconnecting", retry: null };
+  if (liveDown) return { tone: "waiting", text: "Myte paused, captions reconnecting", retry: null };
   return null;
 }
 

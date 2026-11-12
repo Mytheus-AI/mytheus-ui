@@ -72,8 +72,8 @@ export function HeroUpNext({
   if (!next) {
     const steps = [
       ["Start a meeting now, or schedule one for later", "1 min"],
-      ["Invite a teammate so their agent joins too", "1 min"],
-      ["Confirm what your agent heard, right on this page", "After the call"],
+      ["Invite a teammate so their Myte joins too", "1 min"],
+      ["Confirm what your Myte heard, right on this page", "After the call"],
     ];
     return (
       <section aria-labelledby="hero-title" className={`${shell} ${pad}`}>
@@ -85,7 +85,7 @@ export function HeroUpNext({
           Nothing scheduled yet. Start with one meeting.
         </h2>
         <p className="max-w-[54ch] text-[15px] text-ink-2">
-          Each person who joins brings a personal agent. It listens for decisions, action items and
+          Each person who joins brings their own Myte. It listens for decisions, action items and
           conflicts, then asks you to confirm them here.
         </p>
         <ol className="mt-5">

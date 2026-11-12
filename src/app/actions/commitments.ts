@@ -36,7 +36,7 @@ export async function setCommitmentStatus(id: string, status: CommitmentStatus):
 
 export type FindPromiseResult = { ok: true; id: string; status: CommitmentStatus } | { ok: false; message: string; pending?: boolean };
 
-/* The room shows a promise the moment your agent hears it, from the live note; core-api writes the
+/* The room shows a promise the moment your Myte hears it, from the live note; core-api writes the
    row a moment later from the same record. To act on it the room finds that row: yours, in this
    meeting, from that agent window, with that text. Not there yet means core-api is still writing
    it (`pending`), never that it is gone. */

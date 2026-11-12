@@ -19,7 +19,7 @@ for (const theme of ["light", "dark"] as const) {
     await expect(people.locator("[data-plush]")).toHaveCount(0);
     const agents = page.getByRole("region", { name: "Agents" });
     await expect(agents.locator("[data-plush]")).toHaveCount(1);
-    await expect(agents.getByRole("img", { name: "Maya's agent" })).toBeVisible();
+    await expect(agents.getByRole("img", { name: "Maya's Myte" })).toBeVisible();
     // the person's face picker deals doodles
     const picker = page.getByRole("region", { name: "Picker" });
     await expect(picker.getByRole("radio")).not.toHaveCount(0);

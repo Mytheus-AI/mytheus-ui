@@ -21,7 +21,7 @@ import { AreaField, OnboardingAside } from "./fields";
 /* Onboarding step 2 of 2, "Meet your agent" (ADR-0038 D2, D11): a name, a doodle face, one of
    five personalities and optional instructions, with the agent drawn live above the form and
    seated at the brand panel's table. Everything has a default, so "Skip for now" saves nothing
-   and the agent works as "{first name}'s agent", balanced, with its derived face. A face left at
+   and the agent works as "{first name}'s Myte", balanced, with its derived face. A face left at
    its default is saved as NULL, so every surface keeps deriving the same one. */
 
 const IDS: Record<PersonaField, string> = {
@@ -100,7 +100,7 @@ export function MeetAgentStep({
     <AuthShell
       stage={{
         title: "A face and a voice of its own.",
-        lead: "Your agent sits beside you in every meeting and writes your notes the way you like to read them.",
+        lead: "Your Myte sits beside you in every meeting and writes your notes the way you like to read them.",
       }}
       scene={{
         you: seed,
@@ -114,8 +114,8 @@ export function MeetAgentStep({
       aside={<OnboardingAside email={email} />}
     >
       <BackLink href="/onboarding/profile">Back to about you</BackLink>
-      <StepHeader kicker="Step 2 of 2" title="Meet your agent">
-        Give it a name, a face and a way of writing. You can change any of it later in Settings.
+      <StepHeader kicker="Step 2 of 2" title="Meet your Myte">
+        Your Myte is your personal AI agent: it listens, takes notes only you see, and remembers across meetings. Give it a name, a face and a way of writing. You can change any of it later in Settings.
       </StepHeader>
 
       {formError ? (

@@ -11,8 +11,8 @@ import { deletePosition, savePosition } from "@/app/actions/listening";
 import type { StandingPosition } from "@/lib/api/listening-types";
 import { MAX_POSITION, MAX_POSITIONS } from "@/lib/listening";
 
-/* Your lines: positions you are happy for your agent to state for you when you ask it to hold the
-   line in a live meeting ("No discount above 10% for SMB without finance"). Your agent never says
+/* Your lines: positions you are happy for your Myte to state for you when you ask it to hold the
+   line in a live meeting ("No discount above 10% for SMB without finance"). Your Myte never says
    anything that is not here. A topic helps it pick the right lines for an interruption. Removing
    a line offers Undo (it is saved again). */
 
@@ -28,7 +28,7 @@ export function PositionsEditor({ initial, loaded }: { initial: StandingPosition
   const submit = async () => {
     if (!edit) return;
     const text = edit.text.trim();
-    if (!text) return setError("Write the line your agent may hold.");
+    if (!text) return setError("Write the line your Myte may hold.");
     if (text.length > MAX_POSITION) return setError(`Keep a line under ${MAX_POSITION} characters.`);
     setBusy(true);
     const res = await savePosition(edit.id, { topic: edit.topic, text });
@@ -63,7 +63,7 @@ export function PositionsEditor({ initial, loaded }: { initial: StandingPosition
       title="Your lines"
       headingId="lines"
       headingLevel={3}
-      description="Positions your agent may state for you when you let it hold the line in a meeting. It says nothing that is not here."
+      description="Positions your Myte may state for you when you let it hold the line in a meeting. It says nothing that is not here."
       aside={
         <Button
           size="sm"
@@ -190,7 +190,7 @@ function LineForm({
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) onSubmit();
           }}
         />
-        <FieldMsg id={`${uid}-msg`} error={error} hint="Write it the way you would say it. Your agent states it as yours." />
+        <FieldMsg id={`${uid}-msg`} error={error} hint="Write it the way you would say it. Your Myte states it as yours." />
       </div>
       <div className="flex justify-end gap-2">
         <Button type="button" variant="ghost" size="sm" onClick={() => setEdit(null)} disabled={busy}>

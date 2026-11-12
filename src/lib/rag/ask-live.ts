@@ -1,4 +1,4 @@
-/* "Ask your agent, live" (polish program, Phase 1): the `POST /api/v1/ask` contract (bff, over
+/* "Ask your Myte, live" (polish program, Phase 1): the `POST /api/v1/ask` contract (bff, over
    rag-service) and the pure helpers the room's private ask box renders it with. The answer is a
    few sentences with `[n]` markers; each marker has a citation from a past meeting (what was
    said), a confirmed decision or task, or a company brain document. Nothing here is posted to the

@@ -107,7 +107,7 @@ export function DescriptionField({
       <FieldMsg
         id={hint}
         error={over ? `Keep it under ${DESCRIPTION_MAX} characters.` : null}
-        hint={`Its purpose and what it is responsible for. Agents read this to tune notes to each person's role and to suggest stakeholders who are missing from a meeting.`}
+        hint={`Its purpose and what it is responsible for. Mytes read this to tune notes to each person's role and to suggest stakeholders who are missing from a meeting.`}
       />
     </div>
   );
@@ -538,7 +538,7 @@ export function DepartmentMenu({
         }
       >
         <div className="flex flex-col gap-4">
-          <p className="text-[14px] leading-relaxed text-ink-3">Departments inside it move up one level. Agents stop seeing its description.</p>
+          <p className="text-[14px] leading-relaxed text-ink-3">Departments inside it move up one level. Mytes stop seeing its description.</p>
           <ErrorLine message={error} />
           <Actions>
             <Button ref={keep} variant="outline" type="button" onClick={close} disabled={busy}>
@@ -705,7 +705,7 @@ export function useTeamEditor(team: TeamRef, departments: PickDepartment[]) {
         }
       >
         <div className="flex flex-col gap-4">
-          <p className="text-[14px] leading-relaxed text-ink-3">Agents stop seeing this team and what it does. This can&apos;t be undone.</p>
+          <p className="text-[14px] leading-relaxed text-ink-3">Mytes stop seeing this team and what it does. This can&apos;t be undone.</p>
           <ErrorLine message={error} />
           <Actions>
             <Button ref={keep} variant="outline" type="button" onClick={close} disabled={busy}>

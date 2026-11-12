@@ -8,7 +8,7 @@ import { LatestStatus } from "./LatestStatus";
 /* Your brief for a meeting (mytheus-docs ADR-0039 B8), on the meeting page at #brief: the link the
    ten-minute reminder opens. What is yours to bring: the agenda items you own, your open actions
    from the meeting this follows (with the latest status you or others gave), your saved
-   questions, and who is sending their agent instead, with what they asked it to say. Only you
+   questions, and who is sending their Myte instead, with what they asked it to say. Only you
    see it. A server component; the groups sit side by side when the card is wide. */
 
 const dueFormatter = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
@@ -224,7 +224,7 @@ function BriefBody({ b, nameOf, goals }: { b: MeetingBrief; nameOf: (id: string)
             <div className="br-group">
               <h3 className="cf-sub">
                 <Robot size={15} aria-hidden="true" />
-                Sending their agent
+                Sending their Myte
               </h3>
               <ul className="cf-list">
                 {b.proxies.map((p) => (

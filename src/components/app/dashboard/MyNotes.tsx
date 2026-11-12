@@ -13,7 +13,7 @@ export type DashboardNote = {
   created_at: string;
 };
 
-/** Your agent's most recent notes across meetings (PersonalListenerAgent, surfaced only).
+/** Your Myte's most recent notes across meetings (PersonalListenerAgent, surfaced only).
  *  Real data: `bff` reads them from `worklogs` for the signed-in user alone. */
 export function MyNotes({
   notes,
@@ -27,7 +27,7 @@ export function MyNotes({
   const recent = notes.slice(0, 4);
   return (
     <section aria-labelledby="notes-title" className={cardClass({ flush: true, className })}>
-      <CardHead id="notes-title" title="Your notes" caption="What your agent kept for you" />
+      <CardHead id="notes-title" title="Your notes" caption="What your Myte kept for you" />
       {recent.length > 0 ? (
         <ul className="divide-y divide-line border-t border-line pb-1">
           {recent.map((n) => (
@@ -47,7 +47,7 @@ export function MyNotes({
       ) : failed ? (
         <ErrorState variant="inline" title="Notes are unavailable" text="They could not be loaded right now. They are still saved." />
       ) : (
-        <EmptyState inCard art="notes" title="No notes yet" description="During a call, your agent writes notes that matter to you. They collect here." />
+        <EmptyState inCard art="notes" title="No notes yet" description="During a call, your Myte writes notes that matter to you. They collect here." />
       )}
     </section>
   );

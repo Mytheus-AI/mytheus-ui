@@ -7,7 +7,7 @@ import { AGENT_SLUGS, FEATURES, getFeature, type FeatureDef } from "@/lib/market
 export { AGENT_SLUGS };
 
 export const GROUPS: { title: string; features: FeatureDef[] }[] = [
-  { title: "Your agent", features: FEATURES.filter((f) => AGENT_SLUGS.includes(f.slug)) },
+  { title: "Your Myte", features: FEATURES.filter((f) => AGENT_SLUGS.includes(f.slug)) },
   { title: "Platform", features: FEATURES.filter((f) => !AGENT_SLUGS.includes(f.slug)) },
 ];
 

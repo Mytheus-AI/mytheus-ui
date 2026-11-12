@@ -16,12 +16,12 @@ import { Bone, LoadingLabel } from "@/components/ui/Page";
 /* The three answers to an interruption, in one place, so the live toast, the Inbox row and the
    Listening page behave alike:
 
-   - Join now: the choice for that meeting becomes Attend (your agent stops listening there) and
+   - Join now: the choice for that meeting becomes Attend (your Myte stops listening there) and
      the room opens. Consent is asked when the call token is minted, as for any join.
    - Send a view: a short text, posted into the meeting as "Sushan's view". The host sees it
      first and shares it with the room.
-   - Let my agent hold the line: only lines you saved beforehand. They go to the host as the line
-     your agent holds, and your agent answers questions in that meeting with them.
+   - Let my Myte hold the line: only lines you saved beforehand. They go to the host as the line
+     your Myte holds, and your Myte answers questions in that meeting with them.
 
    The dialogs live with the caller, never inside a toast (a toast is a transformed box, which
    would trap a fixed dialog inside it). `onAnswered` reports the updated state so a row can show
@@ -109,7 +109,7 @@ export function AnswerButtons({
       </Button>
       <Button size={size} variant="outline" onClick={onHold}>
         <Robot size={15} aria-hidden />
-        Let my agent hold the line
+        Let my Myte hold the line
       </Button>
     </div>
   );
@@ -231,8 +231,8 @@ function HoldLineDialog({ interruption, onClose, onHeld }: { interruption: Inter
     const res = await holdTheLine(interruption.id, picked);
     setBusy(false);
     if (!res.ok) return setError(res.message);
-    notifySuccess("Your agent is holding the line", {
-      description: "The host sees your lines first. Your agent answers questions there with them, and nothing else.",
+    notifySuccess("Your Myte is holding the line", {
+      description: "The host sees your lines first. Your Myte answers questions there with them, and nothing else.",
     });
     onHeld(interruption.id);
   };
@@ -243,10 +243,10 @@ function HoldLineDialog({ interruption, onClose, onHeld }: { interruption: Inter
       onClose={onClose}
       busy={busy}
       size="lg"
-      title="Let your agent hold the line"
+      title="Let your Myte hold the line"
       description={
         <>
-          Your agent puts forward only lines you saved beforehand, in <strong className="font-semibold text-ink-2">{interruption.meeting_title}</strong>.
+          Your Myte puts forward only lines you saved beforehand, in <strong className="font-semibold text-ink-2">{interruption.meeting_title}</strong>.
           It says nothing you did not approve.
         </>
       }
@@ -269,7 +269,7 @@ function HoldLineDialog({ interruption, onClose, onHeld }: { interruption: Inter
         <div className="rounded-ctl bg-bg-2 px-4 py-5">
           <p className="text-[15px] font-semibold text-ink">You have not saved any lines yet</p>
           <p className="mt-1 text-[14px] leading-relaxed text-ink-3">
-            A line is a position you are happy for your agent to state for you, like &ldquo;No discount above 10% for SMB without finance&rdquo;.
+            A line is a position you are happy for your Myte to state for you, like &ldquo;No discount above 10% for SMB without finance&rdquo;.
           </p>
           <Link href="/settings/listening#lines" className="mt-3 inline-flex text-[14px] font-semibold text-signal-ink underline-offset-4 hover:underline" onClick={onClose}>
             Add your lines in Settings

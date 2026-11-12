@@ -323,7 +323,7 @@
 .mx-meet .cx-call .pj-head h1 { color: var(--ink-display); font-family: var(--font-display); font-size: clamp(28px, 3vw, 34px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.08; }
 .mx-meet .cx-call .pj-head p { margin-top: 8px; max-width: 62ch; color: var(--ink-3); font-size: 15px; }
 /* Two columns of equal height, then the consent across both. Left: your preview and devices.
-   Right: the meeting and what your agent will do. The last card of each column stretches so both
+   Right: the meeting and what your Myte will do. The last card of each column stretches so both
    end on one line, and the notice, the agree box and Join sit straight under the preview. On a
    phone everything is one column in source order: preview, devices, consent and Join, then the
    meeting and the agent. */
@@ -441,7 +441,7 @@
 .mx-meet .cx-call .pj-list svg { flex-shrink: 0; color: var(--ink-3); }
 .mx-meet .cx-call .pj-in { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 14px; }
 
-/* What your agent will do. */
+/* What your Myte will do. */
 .mx-meet .cx-call .pj-agent { display: flex; flex-direction: column; }
 .mx-meet .cx-call .pj-agent .pj-foot { margin-top: auto; }
 .mx-meet .cx-call .pj-agent-list { margin-bottom: 12px; }

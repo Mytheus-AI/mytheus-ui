@@ -11,13 +11,13 @@ import type { DueQuestions } from "@/lib/realtime/stage";
 
 /* Agents that stand in properly (polish program, Phase 1; ADR-0039 B5 send-your-agent).
 
-   - `StandInQuestions`: when an item owned by someone who sent their agent starts, the questions
+   - `StandInQuestions`: when an item owned by someone who sent their Myte starts, the questions
      they left it come up under the agenda bar, for the host (ADR-0039 B5: the questions are the
      person's and the host's to see). The host raises each one to the room with one click: it goes
      into the meeting chat, so everyone sees it and it is kept with the meeting.
-   - `StandInDialog`: the stand-in's whole update, and "Ask Sarah's agent". The question goes
+   - `StandInDialog`: the stand-in's whole update, and "Ask Sarah's Myte". The question goes
      through core-api's permission-gated A2A path (deny by default, the same grants the agents use
-     between themselves); the answer cites Sarah's own records and is also kept in your Agent tab
+     between themselves); the answer cites Sarah's own records and is also kept in your Myte tab
      as a context card. A denial says plainly which permission is missing. */
 
 const CLASS_PHRASE: Record<string, string> = {
@@ -54,11 +54,11 @@ export function StandInQuestions({
         const name = nameOf(d.userId);
         const item = d.itemId ? itemTitleOf(d.itemId) : null;
         return (
-          <section key={d.key} className="sb-standin" aria-label={`Questions from ${name}'s agent`}>
+          <section key={d.key} className="sb-standin" aria-label={`Questions from ${name}'s Myte`}>
             <div className="sb-standin-head">
               <SealQuestion size={16} weight="fill" aria-hidden />
               <p>
-                <strong>{name}&rsquo;s agent has {d.questions.length === 1 ? "a question" : `${d.questions.length} questions`}</strong>
+                <strong>{name}&rsquo;s Myte has {d.questions.length === 1 ? "a question" : `${d.questions.length} questions`}</strong>
                 {item ? <span> for {item}</span> : null}
               </p>
               <span className="sb-standin-who">Only you see these until you raise them</span>
@@ -83,7 +83,7 @@ export function StandInQuestions({
                         className="sb-btn tap"
                         aria-label={`Raise in chat: ${q}`}
                         onClick={() => {
-                          onRaise(`Question from ${name}'s agent: ${q}`);
+                          onRaise(`Question from ${name}'s Myte: ${q}`);
                           setRaised((r) => ({ ...r, [k]: true }));
                         }}
                       >
@@ -152,7 +152,7 @@ export function StandInDialog({
     setState(res.ok ? { kind: "answer", answer: res.answer } : { kind: "error", message: res.message });
   };
 
-  const agentName = face?.name ?? `${name}'s agent`;
+  const agentName = face?.name ?? `${name}'s Myte`;
 
   return (
     <RoomDialog open={open} onClose={onClose} title={`${agentName}, standing in for ${name}`}>
@@ -161,7 +161,7 @@ export function StandInDialog({
           <span className="cx-agent-badge si-face" aria-hidden="true">
             {face ? <AgentOrb seed={face.seed} size={40} /> : <Robot size={18} />}
           </span>
-          <p className="si-sub">{name} sent their agent instead of joining. It listens and takes notes for them.</p>
+          <p className="si-sub">{name} sent their Myte instead of joining. It listens and takes notes for them.</p>
         </div>
 
         <h3 className="si-h">{name}&rsquo;s update</h3>
@@ -186,10 +186,10 @@ export function StandInDialog({
           }}
         >
           <label htmlFor={`${uid}-q`} className="si-h">
-            Ask {name}&rsquo;s agent
+            Ask {name}&rsquo;s Myte
           </label>
           <p id={`${uid}-hint`} className="si-hint">
-            It answers from {name}&rsquo;s own decisions, tasks and update, if your workspace&rsquo;s agent permissions allow it.
+            It answers from {name}&rsquo;s own decisions, tasks and update, if your workspace allows it.
           </p>
           <div className="si-ask-row">
             <input
@@ -235,8 +235,8 @@ function Answer({ answer, name }: { answer: StandInAnswerWire; name: string }) {
           Not shared
         </p>
         <p>
-          Your workspace doesn&rsquo;t let agents share {CLASS_PHRASE[answer.query_class] ?? "this"} with{" "}
-          {SCOPE_PHRASE[answer.target_scope] ?? "you"}. An admin can allow it under Workspace, Agent permissions.
+          Your workspace doesn&rsquo;t let Mytes share {CLASS_PHRASE[answer.query_class] ?? "this"} with{" "}
+          {SCOPE_PHRASE[answer.target_scope] ?? "you"}. An admin can allow it under Workspace, Myte collaboration.
         </p>
       </div>
     );
@@ -246,7 +246,7 @@ function Answer({ answer, name }: { answer: StandInAnswerWire; name: string }) {
       <div className="si-answer">
         <p className="si-answer-h">Nothing on that</p>
         <p>
-          {name}&rsquo;s agent has no {CLASS_PHRASE[answer.query_class] ?? "records"} that match. Try other words, or ask{" "}
+          {name}&rsquo;s Myte has no {CLASS_PHRASE[answer.query_class] ?? "records"} that match. Try other words, or ask{" "}
           {name} after the meeting.
         </p>
       </div>
@@ -270,7 +270,7 @@ function Answer({ answer, name }: { answer: StandInAnswerWire; name: string }) {
           </li>
         ))}
       </ul>
-      <p className="si-kept">Also kept in your Agent tab.</p>
+      <p className="si-kept">Also kept in your Myte tab.</p>
     </div>
   );
 }

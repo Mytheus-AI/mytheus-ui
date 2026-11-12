@@ -7,7 +7,7 @@ import { fetchMyProfile } from "@/lib/api/profile";
 import { agentSeed } from "@/lib/api/profile-types";
 import { orgProfileNeedsSetup } from "@/lib/api/org-brain";
 
-export const metadata: Metadata = { title: "Meet your agent | Mytheus" };
+export const metadata: Metadata = { title: "Meet your Myte | Mytheus" };
 
 /**
  * Onboarding step 2 of 2 (ADR-0038 D11). Checks the session itself, like step 1. When the

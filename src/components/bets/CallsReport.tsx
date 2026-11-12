@@ -201,7 +201,7 @@ function Waiting({ mine, today }: { mine: MyBet[] | null; today: string }) {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[12.5px] font-semibold text-ink-3">
-                    {m.bet.status === "due" ? `Ready to score, check date ${relativeDay(m.bet.check_date, today)}` : "Suggested by your agent"}
+                    {m.bet.status === "due" ? `Ready to score, check date ${relativeDay(m.bet.check_date, today)}` : "Suggested by your Myte"}
                   </span>
                   <span className="mt-0.5 block text-[14.5px] leading-snug text-ink">{m.bet.statement}</span>
                   <span className="mt-0.5 block truncate text-[13px] text-ink-3">{m.decision_content}</span>
@@ -224,7 +224,7 @@ export function CallsReport({ cal, mine, today }: { cal: Calibration; mine: MyBe
         <EmptyState
           art="decisions"
           title="No bets yet"
-          description="Open a confirmed decision and say what it should achieve, or keep what your agent heard in the meeting. Once bets are scored, this page shows which calls the workspace gets right."
+          description="Open a confirmed decision and say what it should achieve, or keep what your Myte heard in the meeting. Once bets are scored, this page shows which calls the workspace gets right."
           action={<LinkButton href="/decisions">Open the decision log</LinkButton>}
         />
         <Waiting mine={mine} today={today} />

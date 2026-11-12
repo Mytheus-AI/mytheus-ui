@@ -33,7 +33,7 @@ import type { CallMeeting } from "@/components/call/resolve-meeting";
 import type { RoomSessionInfo } from "@/components/meeting/MeetingRoom";
 
 /* The pre-join: your own camera preview on the warm stage with mic and camera toggles and a live
-   level meter, device pickers, the meeting card, what your agent will do, and the recording
+   level meter, device pickers, the meeting card, what your Myte will do, and the recording
    consent that unlocks Join.
 
    Layout (meeting-call.css, "pre-join"): the preview and devices on the left, the meeting card
@@ -285,7 +285,7 @@ export function PreJoin({ meeting, session = null }: { meeting: CallMeeting; ses
         <main className="pj" id="page-prejoin">
           <header className="pj-head">
             <h1>Ready to join?</h1>
-            <p>Check your camera and microphone. Your agent joins with you and takes notes that only you review.</p>
+            <p>Check your camera and microphone. Your Myte joins with you and takes notes that only you review.</p>
           </header>
 
           <div className="pj-grid">
@@ -504,7 +504,7 @@ export function PreJoin({ meeting, session = null }: { meeting: CallMeeting; ses
 
               <section className="pj-card pj-agent" aria-labelledby="pj-agent-h">
                 <div className="pj-card-head">
-                  <h2 id="pj-agent-h">Your agent is ready</h2>
+                  <h2 id="pj-agent-h">Your Myte is ready</h2>
                 </div>
                 <ul className="pj-agent-list">
                   {AGENT_PREP.map((p) => (

@@ -26,7 +26,7 @@ export type ErasableMeeting = { id: string; title: string | null; when: string |
 const WHAT: Record<ErasureKind, { goes: string[]; stays: string[] }> = {
   person: {
     goes: [
-      "Their notes, promises and agent questions",
+      "Their notes, promises and Myte questions",
       "Their in-meeting chat and the updates asked of them",
       "Who they were in transcripts (lines they spoke become an unnamed speaker)",
       "Their personal access tokens and the share links they made",
@@ -35,7 +35,7 @@ const WHAT: Record<ErasureKind, { goes: string[]; stays: string[] }> = {
   },
   meeting: {
     goes: [
-      "Its notes, promises, chat and agent questions; nobody can open its transcript again",
+      "Its notes, promises, chat and Myte questions; nobody can open its transcript again",
       "Its speaker list, agenda and follow-up settings, guest addresses included",
       "Decisions and actions nobody confirmed",
       "Its share links. The meeting disappears from every list",

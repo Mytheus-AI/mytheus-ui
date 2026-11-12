@@ -46,7 +46,7 @@ export default async function MeetingsPage() {
     <Page>
       <PageHead
         title="Meetings"
-        context="Every call on your calendar, what your agent captured, and where to pick it up."
+        context="Every call on your calendar, what your Myte captured, and where to pick it up."
         action={<NewMeeting members={invitable} openFromLink recent={recent} me={me} templates={templates} goals={goals} />}
       />
       <SectionTabs section="meetings" label="Meetings sections" exact={["/meetings"]} className="mb-5" />

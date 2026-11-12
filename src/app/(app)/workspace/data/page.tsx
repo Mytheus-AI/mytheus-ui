@@ -71,7 +71,7 @@ export default async function DataExportPage() {
     <div className="flex flex-col gap-5">
       <SectionBar
         title="Data and privacy"
-        context="How long the workspace keeps what is said, what is redacted, how sure agents must be, and the requests that act on all of it. Every change is written to the audit log."
+        context="How long the workspace keeps what is said, what is redacted, how sure Mytes must be, and the requests that act on all of it. Every change is written to the audit log."
       />
 
       {settings.kind === "live" ? (

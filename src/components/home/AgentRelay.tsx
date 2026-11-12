@@ -9,7 +9,7 @@ import s from "@/components/home/home.module.css";
 
 /* Two agents, each drawn as the brand mark on its own paper disc, joined by one coral arc from
    the tail of one mark to the tail of the other. When it scrolls in, a dot carries the question
-   along the arc and down into Sarah's agent, then the answer arrives with its source. "Ask again"
+   along the arc and down into Sarah's Myte, then the answer arrives with its source. "Ask again"
    replays it. Reduced motion (and no JS) shows the answer straight away. */
 
 /* The marks are MARK_PATH at a quarter scale: left at translate(20 25), right mirrored at x=620.
@@ -61,7 +61,7 @@ export function AgentRelay() {
       }}
       className={`mx-auto max-w-[880px] ${flown ? s.flying : ""} ${answered ? s.answered : ""}`}
     >
-      <svg viewBox="0 0 640 150" role="img" aria-label="Your agent and Sarah's agent, joined by one line" className="h-auto w-full overflow-visible">
+      <svg viewBox="0 0 640 150" role="img" aria-label="Your Myte and Sarah's Myte, joined by one line" className="h-auto w-full overflow-visible">
         <circle className={s.disc} cx={68} cy={76} r={60} />
         <circle className={s.discB} cx={572} cy={76} r={60} />
         <path className={s.mark} d={MARK_PATH} transform="translate(20 25) scale(.25)" />
@@ -86,16 +86,16 @@ export function AgentRelay() {
         </circle>
       </svg>
       <div className="mt-1.5 flex justify-between font-display text-[1.1rem] italic text-ink-3">
-        <span>your agent</span>
-        <span>Sarah&apos;s agent</span>
+        <span>your Myte</span>
+        <span>Sarah&apos;s Myte</span>
       </div>
       <div className="mt-[22px] grid items-start gap-[18px] min-[641px]:grid-cols-[minmax(0,.8fr)_minmax(0,1.2fr)]">
         <div className="rounded-card border border-line bg-surface px-5 py-[18px] shadow-warm-2">
-          <h3 className="mb-1.5 text-[14.5px] font-semibold text-ink-3">Your agent asks</h3>
+          <h3 className="mb-1.5 text-[14.5px] font-semibold text-ink-3">Your Myte asks</h3>
           <p className="font-display text-[1.3rem] leading-[1.25] tracking-[-0.01em] text-ink">Who owns the pricing rework?</p>
         </div>
         <div className={`${s.answer} rounded-card border border-line bg-surface px-5 py-[18px] shadow-warm-2`}>
-          <h3 className="mb-1.5 text-[14.5px] font-semibold text-ink-3">Sarah&apos;s agent answers</h3>
+          <h3 className="mb-1.5 text-[14.5px] font-semibold text-ink-3">Sarah&apos;s Myte answers</h3>
           <p className="font-display text-[1.3rem] leading-[1.25] tracking-[-0.01em] text-ink">
             Pricing was locked at $49 in the Q2 planning call. Sarah already owns the rework.
           </p>

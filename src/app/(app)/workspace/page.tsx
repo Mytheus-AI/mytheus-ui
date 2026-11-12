@@ -93,7 +93,7 @@ export default async function WorkspaceOverviewPage() {
         <CardHead
           id="brain-heading"
           title="Company brain"
-          description="What every agent knows about the company: what it does, its words, who owns what, its goals and what is off limits."
+          description="What every Myte knows about the company: what it does, its words, who owns what, its goals and what is off limits."
           right={<TextLink href="/workspace/brain">Open the company brain</TextLink>}
         />
         {readiness.ok ? (

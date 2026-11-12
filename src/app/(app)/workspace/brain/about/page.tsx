@@ -14,7 +14,7 @@ export default async function AboutPage() {
     <section aria-label="About the company">
       <BrainSectionHead
         title="About the company"
-        lead="A few plain sentences on what the company does and for whom. Every agent reads this before it listens to a meeting."
+        lead="A few plain sentences on what the company does and for whom. Every Myte reads this before it listens to a meeting."
       />
       {!canEdit ? <ReadOnlyNote /> : null}
       {profile.ok ? (

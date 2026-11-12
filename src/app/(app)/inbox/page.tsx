@@ -7,7 +7,7 @@ import InboxLoading from "./loading";
 export const metadata: Metadata = { title: "Inbox | Mytheus" };
 export const dynamic = "force-dynamic";
 
-/* The Inbox (November 2026 IA): notifications, the updates you owe and your agents' detections to
+/* The Inbox (November 2026 IA): notifications, the updates you owe and your Mytes' detections to
    review, in one list. Each arm is read on its own and a failed arm only empties its part
    (`loadInbox`). Replaces /notifications, which redirects here. */
 export default async function InboxPage() {

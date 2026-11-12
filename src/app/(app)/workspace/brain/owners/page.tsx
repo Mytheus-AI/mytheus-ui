@@ -14,7 +14,7 @@ export default async function OwnersPage() {
     <section aria-label="Who owns what">
       <BrainSectionHead
         title="Who owns what"
-        lead="A topic and the one person who owns it. Agents suggest them as the owner of a new action and as the person to ask."
+        lead="A topic and the one person who owns it. Mytes suggest them as the owner of a new action and as the person to ask."
       />
       {!canEdit ? (
         <div className="mb-4">

@@ -1,13 +1,13 @@
 import { cardClass } from "@/components/ui/Card";
 import { ButtonBone, ChipBone, Page, TextBone, PageHeadSkeleton } from "@/components/ui/Page";
 
-/* A meeting's agent collaboration log while it loads, from the page's own frame (without this it
+/* A meeting's Myte collaboration log while it loads, from the page's own frame (without this it
    would inherit the meeting's skeleton): the title row with Open the meeting, the four counts
    (StatCard's shape), then the log card: a table from md, a list of rows below it. */
 
 export default function Loading() {
   return (
-    <Page label="Loading agent collaboration">
+    <Page label="Loading Myte collaboration">
       <PageHeadSkeleton title="w-72" context={false} actions={<ButtonBone label="Open the meeting" />}>
         <TextBone className="mt-2 max-w-[75ch] text-[15px] leading-normal" widths={["w-[600px]", "w-[580px]", "w-[120px]"]} narrow={["w-[70%]", "w-[40%]"]} />
       </PageHeadSkeleton>

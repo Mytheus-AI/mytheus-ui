@@ -309,7 +309,7 @@ export function CandidateCard({
 /** The agent changed this card in place (an update, never a second card). */
 export function UpdatedMark() {
   return (
-    <span className="mc-updated" title="Your agent updated this card from what was said next">
+    <span className="mc-updated" title="Your Myte updated this card from what was said next">
       <ArrowsClockwise size={12} weight="bold" aria-hidden />
       Updated
     </span>

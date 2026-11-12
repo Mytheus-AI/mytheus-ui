@@ -2,7 +2,7 @@
  * How a person's agent is shown (mytheus-docs ADR-0038 D2): its name, its doodle face and its
  * personality preset. Pure, so the room, the meeting page and the tests share one rule.
  *
- * - `agent_name` NULL shows "{first name}'s agent".
+ * - `agent_name` NULL shows "{first name}'s Myte".
  * - `agent_avatar_seed` NULL draws a default derived from the person's internal user id. It is
  *   salted with "agent:" so the agent never wears its person's own face (which is keyed by email).
  *
@@ -30,7 +30,7 @@ export function agentSeedFor(seed: string | null | undefined, userId: string): s
   return isDoodleSeed(seed) ? seed : defaultDoodleSeed(`agent:${userId || "someone"}`);
 }
 
-/** The first word of a display name, for "{first name}'s agent". */
+/** The first word of a display name, for "{first name}'s Myte". */
 export function firstNameOf(fullName: string | null | undefined): string {
   return (fullName ?? "").trim().split(/\s+/)[0] ?? "";
 }
@@ -40,10 +40,10 @@ export function agentDisplayName(agentName: string | null | undefined, personNam
   const named = (agentName ?? "").trim();
   if (named) return named.slice(0, 40);
   const first = firstNameOf(personName);
-  return first ? `${first}'s agent` : "Their agent";
+  return first ? `${first}'s Myte` : "Their Myte";
 }
 
-/** What the room needs to draw one person's agent. */
+/** What the room needs to draw one person's Myte. */
 export interface AgentFace {
   name: string;
   seed: string;
