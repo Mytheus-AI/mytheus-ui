@@ -72,10 +72,57 @@ const SECTIONS: LegalSection[] = [
           <strong>We never sell personal data.</strong> Your information is not a product we sell or rent to anyone.
         </li>
         <li>
-          <strong>No third-party meeting integrations.</strong> Mytheus is its own platform; we do not connect to or
-          share your data with outside meeting, chat, or task tools.
+          <strong>Integrations you connect.</strong> A workspace admin can connect tools such as Google Calendar,
+          Slack, Jira, Notion, or Confluence. Mytheus only exchanges data with a tool after it is connected, only for
+          the features described when you connect it, and you can disconnect it at any time.
         </li>
       </ul>
+    ),
+  },
+  {
+    id: "google-user-data",
+    title: "Google user data",
+    body: (
+      <>
+        <p>
+          If you connect Google Calendar, Mytheus asks Google for read-only access to your calendar
+          (<code>calendar.readonly</code>) and for your Google account email address. We do not ask for access to
+          your Gmail, Google Drive, or contacts, and we never change, create, or delete anything in your calendar.
+        </p>
+        <ul>
+          <li>
+            <strong>What we read.</strong> Your calendar events: their titles, times, descriptions, attendees, meeting
+            links, and the names of attached files. We use your Google email address to show which account is
+            connected.
+          </li>
+          <li>
+            <strong>How we use it.</strong> Only to show your upcoming meetings in Mytheus, prepare your Myte for
+            them, and link them to the meetings you run on Mytheus. We do not use Google user data for advertising.
+          </li>
+          <li>
+            <strong>Who sees it.</strong> Only you and the members of your Mytheus workspace who can see the meeting.
+            We do not sell it or transfer it to anyone else, except our hosting and AI processing providers who handle
+            it only to run Mytheus for you, or where the law requires it.
+          </li>
+          <li>
+            <strong>No model training.</strong> We do not use Google user data to develop, improve, or train
+            generalized AI or machine-learning models, and our AI provider does not train on it either.
+          </li>
+          <li>
+            <strong>Storage and deletion.</strong> Access tokens are encrypted at rest. When you disconnect Google
+            Calendar in Settings, we revoke our access at Google and stop reading your calendar; you can also remove
+            access at any time from your Google Account permissions page. Ask us to delete the calendar data we hold
+            and we will.
+          </li>
+        </ul>
+        <p>
+          Mytheus&apos;s use and transfer of information received from Google APIs adheres to the{" "}
+          <a href="https://developers.google.com/terms/api-services-user-data-policy">
+            Google API Services User Data Policy
+          </a>
+          , including the Limited Use requirements.
+        </p>
+      </>
     ),
   },
   {
@@ -162,5 +209,5 @@ const SECTIONS: LegalSection[] = [
 ];
 
 export default function Page() {
-  return <LegalLayout title="Privacy Policy" updated="June 2026" sections={SECTIONS} />;
+  return <LegalLayout title="Privacy Policy" updated="November 2026" sections={SECTIONS} />;
 }
