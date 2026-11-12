@@ -1,5 +1,6 @@
 "use client";
 
+import { useMyAgent } from "@/lib/my-agent";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ArrowSquareOut, Pause, Play, SkipBack, SkipForward, SpeakerHigh, Sparkle, Waveform } from "@phosphor-icons/react";
@@ -120,8 +121,11 @@ export function BriefingPlayer({
 
   const headingId = `${ids}-h`;
   const H = headingLevel === 2 ? "h2" : "h3";
-  const agent = briefing?.agent ?? null;
-  const seed = agentSeed(agent?.seed, user.id);
+  // The briefing stores the agent as it was when written; show the agent as it is now.
+  const mine = useMyAgent();
+  const stored = briefing?.agent ?? null;
+  const agent = stored && mine ? { ...stored, name: mine.name, seed: mine.seed } : stored;
+  const seed = mine?.seed ?? agentSeed(agent?.seed, user.id);
 
   if (!briefing || briefing.status === "empty" || briefing.status === "unavailable" || writing) {
     return (
@@ -221,6 +225,7 @@ function ReadyPlayer({
   onAsk: (() => Promise<void>) | null;
   asking: boolean;
 }) {
+  const mine = useMyAgent();
   const ids = useId();
   const [heard, setHeard] = useState(Boolean(briefing.listened_at));
   const [showAll, setShowAll] = useState(variant === "full");
@@ -242,7 +247,7 @@ function ReadyPlayer({
     personality: briefing.agent.personality,
     seed,
     title: briefing.meeting_title ? `Briefing: ${briefing.meeting_title}` : "Your briefing",
-    agentName: briefing.agent.name,
+    agentName: mine?.name ?? briefing.agent.name,
     preferredVoice: prefs.voice ?? null,
     rate,
     audio,
@@ -307,7 +312,7 @@ function ReadyPlayer({
           <div className="min-w-0 flex-[1_1_14rem]">
             <p className="text-[13px] font-semibold text-ink-3">{coverLine(briefing)}</p>
             <H id={headingId} className="display text-[22px] leading-tight text-ink sm:text-[24px]">
-              A briefing from {briefing.agent.name}
+              A briefing from {mine?.name ?? briefing.agent.name}
             </H>
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               <Chip tone="outline">{clock(state.total)} long</Chip>
