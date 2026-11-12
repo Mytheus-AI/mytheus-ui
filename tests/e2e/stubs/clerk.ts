@@ -11,3 +11,7 @@ export function useAuth() {
 export function useClerk() {
   return { signOut: async () => undefined };
 }
+// Settings > Profile reads the Clerk user to save; with none, its save buttons stay disabled.
+export function useUser() {
+  return { isLoaded: true, isSignedIn: true, user: null };
+}
