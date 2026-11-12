@@ -901,7 +901,7 @@ function Room({
     : socket.status === "disabled" || socket.status === "forbidden"
       ? "off"
       : "paused";
-  // Your agent's orb: talking while a note is still streaming in, listening while the room is on
+  // Your agent's face: talking while a note is still streaming in, listening while the room is on
   // the record, resting otherwise.
   const agentState: "idle" | "listening" | "speaking" = myNotes.some((n) => !n.final)
     ? "speaking"

@@ -5,9 +5,9 @@ import { pageTitleClass } from "@/components/ui/Page";
 /* The agent page's opener: the agent drawn large on the peach stage, inside the same dashed
    orbit the sidebar tab uses, its face inking itself in on arrival. Beside it, its name as the
    page title, who it works for, and one note written in its voice, so the page says who this
-   is before it says what can be changed. Server component; the face is the agent's live glass
-   orb (AgentOrb, a client leaf: it floats and blinks, and is one still frame under reduced
-   motion), and the orbit turns once into place and never spins after that. This portrait and the Home hero are the only two
+   is before it says what can be changed. Server component; the face is the agent's live plush
+   (AgentOrb, a client leaf: it looks around, blinks, watches the pointer and what is typed in
+   the form below, and is a still picture under reduced motion), and the orbit turns once into place and never spins after that. This portrait and the Home hero are the only two
    places in the app that carry the peach wash. The name is the page's h1, at the 34px cap. */
 
 export function AgentPortrait({
@@ -37,7 +37,7 @@ export function AgentPortrait({
             <circle cx="74" cy="4" r="5" fill="var(--signal)" stroke="var(--signal-soft)" strokeWidth="4" paintOrder="stroke" />
           </svg>
           <span className="block h-[110px] w-[110px] overflow-hidden rounded-full bg-surface shadow-warm-2 ring-4 ring-surface">
-            <AgentOrb seed={seed} mode="live" size={110} />
+            <AgentOrb seed={seed} mode="live" size={110} followInput="#ag-name, #ag-instructions" />
           </span>
         </div>
 

@@ -1,6 +1,8 @@
 "use client";
 
-import { defaultDoodleSeed, doodleSvgString, isDoodleSeed } from "./doodle";
+import { plushStillBlob } from "@/components/plush/stills";
+import { defaultDoodleSeed, isDoodleSeed } from "./doodle";
+import { PLUSH_VERSION } from "./plush";
 
 /* Saving a doodle, browser side.
 
@@ -18,35 +20,26 @@ type ClerkUserLike = {
   setProfileImage: (params: { file: Blob }) => Promise<unknown>;
 };
 
-/** Rasterise a doodle to a square PNG. Clerk takes raster images, not SVG. */
-export async function doodlePng(seed: string, size = 512): Promise<Blob> {
-  const svg = doodleSvgString(seed, size);
-  const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-  const img = new Image();
-  img.decoding = "async";
-  await new Promise<void>((resolve, reject) => {
-    img.onload = () => resolve();
-    img.onerror = () => reject(new Error("Could not draw the doodle."));
-    img.src = url;
-  });
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Could not draw the doodle.");
-  ctx.drawImage(img, 0, 0, size, size);
-  return new Promise<Blob>((resolve, reject) =>
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Could not draw the doodle."))), "image/png"),
-  );
+/** The face as a square PNG (Clerk takes raster images): the seed's plush character, on a
+ *  transparent background like every other still. Rejects when this browser cannot draw it. */
+export function doodlePng(seed: string, size = 512): Promise<Blob> {
+  return plushStillBlob(seed, size);
 }
+
+/* `doodleImage` records which picture Clerk holds. Before the plush characters it was the bare
+   seed (and the picture was an ink doodle); the prefix marks a plush upload, so an account whose
+   stored picture is still the old drawing gets its plush uploaded once, the next time it signs in. */
+const imageMark = (seed: string) => `plush${PLUSH_VERSION}:${seed}`;
 
 /** Store the seed and upload the matching picture. `doodleImage` records which seed the
  *  uploaded picture shows, so a half-finished save is finished later rather than left stale. */
 export async function saveDoodle(user: ClerkUserLike, seed: string): Promise<void> {
-  if (!isDoodleSeed(seed)) throw new Error("That doodle could not be saved.");
+  if (!isDoodleSeed(seed)) throw new Error("That face could not be saved.");
+  // Draw first: a browser that cannot draw the picture must not store a seed without one.
+  const file = await doodlePng(seed);
   await user.update({ unsafeMetadata: { ...user.unsafeMetadata, doodle: seed } });
-  await user.setProfileImage({ file: await doodlePng(seed) });
-  await user.update({ unsafeMetadata: { ...user.unsafeMetadata, doodle: seed, doodleImage: seed } });
+  await user.setProfileImage({ file });
+  await user.update({ unsafeMetadata: { ...user.unsafeMetadata, doodle: seed, doodleImage: imageMark(seed) } });
 }
 
 /**
@@ -58,6 +51,6 @@ export async function saveDoodle(user: ClerkUserLike, seed: string): Promise<voi
  */
 export function pendingDoodle(meta: Record<string, unknown> | null | undefined, email: string): string | null {
   const seed = meta?.doodle;
-  if (isDoodleSeed(seed)) return meta?.doodleImage === seed ? null : seed;
+  if (isDoodleSeed(seed)) return meta?.doodleImage === imageMark(seed) ? null : seed;
   return defaultDoodleSeed(email);
 }

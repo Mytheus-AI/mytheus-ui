@@ -4,7 +4,7 @@ import { cardClass } from "@/components/ui/Card";
 
 /* The agent as it will appear: its face, its name, whose agent it is, and one note written in
    its voice. Hook-free itself, so it re-renders on every keystroke of the form beside it; the face
-   is the agent's live orb, which rebuilds only when the seed changes. It reflects the form, so it
+   is the agent's plush still (the live one is the picker's preview, in the form). It reflects the form, so it
    is not announced on each change; the form fields carry the meaning. */
 
 export function AgentPreviewCard({
@@ -32,7 +32,7 @@ export function AgentPreviewCard({
     >
       <div className="flex items-center gap-4 px-4 py-[18px] sm:px-[22px]">
         <span className="block h-16 w-16 shrink-0 overflow-hidden rounded-full shadow-warm-2 ring-[3px] ring-surface">
-          <AgentOrb seed={seed} mode="live" size={64} />
+          <AgentOrb seed={seed} size={64} />
         </span>
         <div className="min-w-0">
           <p className="display truncate text-[22px] leading-tight text-ink">{name}</p>

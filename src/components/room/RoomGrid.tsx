@@ -74,7 +74,7 @@ function handWords(tile: RoomTile): string | null {
   return tile.handPlace ? `hand raised, ${ordinal(tile.handPlace)} in line` : "hand raised";
 }
 
-/* A participant's agent, as a small orb badge in their name tag. Its accessible name says whose
+/* A participant's agent, as a small plush badge in their name tag. Its accessible name says whose
    agent it is. */
 function AgentBadge({ agent }: { agent?: RoomTile["agent"] }) {
   if (!agent) return null;
