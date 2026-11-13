@@ -13,9 +13,11 @@ import { Note } from "@/components/ui/Note";
 import { notifySuccess } from "@/lib/toast";
 import { theadRowClass, thClass } from "@/components/admin/StatCard";
 import { setTenantSuspended } from "@/app/actions/ops";
+import { WorkspacePanel } from "@/components/ops/WorkspacePanel";
 import { REASON_MIN, canSubmitSuspend, suspendReducer, type OpsTenant } from "@/lib/ops";
 
-/* The tenant directory with suspend and reinstate. Suspending stops every member's access, so it
+/* The tenant directory with suspend and reinstate. A workspace's name opens its detail panel
+   (`WorkspacePanel`). Suspending stops every member's access, so it
    always goes through a confirm dialog with a written reason (the reason is stored with the
    `admin-events` record); reinstating confirms too. The status flip itself happens in
    identity-tenant-service, so the row updates on the refresh after the call returns. */
@@ -25,6 +27,7 @@ const date = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", 
 export function TenantDirectory({ tenants }: { tenants: OpsTenant[] }) {
   const [state, dispatch] = useReducer(suspendReducer, { step: "idle" });
   const [query, setQuery] = useState("");
+  const [opened, setOpened] = useState<{ orgId: string; name: string } | null>(null);
   const [, startTransition] = useTransition();
   const router = useRouter();
 
@@ -93,7 +96,13 @@ export function TenantDirectory({ tenants }: { tenants: OpsTenant[] }) {
                   return (
                     <tr key={t.org_id} className="transition-colors duration-150 hover:bg-surface-2">
                       <th scope="row" className="max-w-[300px] py-3 pl-[22px] pr-5 text-left font-normal">
-                        <span className="block truncate font-semibold text-ink">{t.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => setOpened({ orgId: t.org_id, name: t.name })}
+                          className="block max-w-full truncate text-left font-semibold text-ink underline decoration-line-2 underline-offset-2 hover:decoration-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal"
+                        >
+                          {t.name}
+                        </button>
                         <span className="block truncate font-mono text-[12.5px] text-ink-3" title={t.org_id}>
                           {t.org_id}
                         </span>
@@ -130,6 +139,8 @@ export function TenantDirectory({ tenants }: { tenants: OpsTenant[] }) {
           </div>
         )}
       </section>
+
+      {opened ? <WorkspacePanel orgId={opened.orgId} name={opened.name} onClose={() => setOpened(null)} /> : null}
 
       <Modal
         open={dialogOpen}
