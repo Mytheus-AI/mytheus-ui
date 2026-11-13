@@ -5,6 +5,7 @@ import { myClerkFullName, resolveOrgContext } from "@/lib/api/org-context";
 import { AppShell } from "@/components/app/AppShell";
 import { LiveInterruptions } from "@/components/listening/LiveInterruptions";
 import { TimeZoneSync } from "@/components/app/TimeZoneSync";
+import { SupportSessionBanner } from "@/components/app/SupportSessionBanner";
 import type { SidebarAgent } from "@/components/app/Sidebar";
 import { fetchMyProfile, syncDisplayName } from "@/lib/api/profile";
 import { agentDisplayName, agentSeed } from "@/lib/api/profile-types";
@@ -50,6 +51,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <OrgProvider value={orgContext}>
       <AppShell agent={agent}>
+        {/* A staff support session says so on every page (ADR-0046). */}
+        <SupportSessionBanner />
         {/* In every meeting at once: your Myte's live interruptions, on every app page. */}
         <LiveInterruptions />
         <TimeZoneSync />
