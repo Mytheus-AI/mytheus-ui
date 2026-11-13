@@ -18,8 +18,8 @@ import { MONTHS, addDays, dayKey, dayLabel, formatTime, mondayOf, sameDay, short
 import type { HubMeeting } from "./types";
 
 /* The meetings hub client island: Upcoming / Live / Past tabs, search by title or person, the
-   meetings grouped by day in aligned rows, and a rail with a month calendar (pick a day to filter
-   the list) and the week in numbers. Fed with the meetings the Server Component page read from
+   week in numbers as a strip across the top, the meetings grouped by day in aligned rows, and a
+   rail with a month calendar (pick a day to filter the list). Fed with the meetings the Server Component page read from
    core-api, and the workspace's members to name hosts and draw avatars.
 
    Everything date-shaped waits for mount: the server cannot know the visitor's time zone, so
@@ -54,8 +54,10 @@ function hours(minutes: number): string {
   return h === 0 ? "0" : h < 10 ? h.toFixed(1).replace(/\.0$/, "") : String(Math.round(h));
 }
 
-/** The week card's figures: a big number is the point of each cell. */
+/** The week strip's figures: a big number is the point of each cell. */
 const wkNumber = "text-[22px] font-bold leading-[1.15] tracking-[-0.02em] text-ink";
+const wkCell = "px-5 py-3.5";
+const wkStat = `${wkCell} border-t border-line max-sm:odd:border-l sm:border-l sm:border-t-0`;
 
 function SkeletonRows() {
   return (
@@ -278,7 +280,7 @@ export function MeetingsHub({
   return (
     <PageColumns
       sticky
-      asideLabel="Calendar and this week"
+      asideLabel="Calendar"
       aside={
         <>
           <Card flush>
@@ -351,39 +353,44 @@ export function MeetingsHub({
               </p>
             </CardBody>
           </Card>
-
-          <Card flush>
-            <CardHead title="This week" right={week ? <span className="text-[14px] text-ink-3">{week.range}</span> : null} />
-            <CardBody>
-              {week ? (
-                <dl className="grid grid-cols-2 gap-x-4 gap-y-3.5">
-                  <div>
-                    <dt className="text-[14px] text-ink-3">Meetings</dt>
-                    <dd className={wkNumber}>{week.total}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-[14px] text-ink-3">Still ahead</dt>
-                    <dd className={wkNumber}>{week.ahead}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-[14px] text-ink-3">Held</dt>
-                    <dd className={wkNumber}>{week.held}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-[14px] text-ink-3">Time booked</dt>
-                    <dd className={wkNumber}>
-                      {hours(week.booked)} <small className="text-[14px] font-semibold tracking-normal text-ink-3">hrs</small>
-                    </dd>
-                  </div>
-                </dl>
-              ) : (
-                <Bone className="h-[120px]" />
-              )}
-            </CardBody>
-          </Card>
         </>
       }
     >
+      <section aria-labelledby="mt-week-title">
+        <Card flush>
+          <dl className="grid grid-cols-2 sm:grid-cols-[minmax(0,1.25fr)_repeat(4,minmax(0,1fr))]">
+            <div className={`col-span-2 bg-surface-2 sm:col-span-1 ${wkCell}`}>
+              <dt id="mt-week-title" className="text-[15px] font-semibold text-ink">
+                This week
+              </dt>
+              <dd className="mt-0.5 text-[14px] text-ink-3">{week ? week.range : <Bone className="h-4 w-[110px]" />}</dd>
+            </div>
+            {(
+              [
+                ["Meetings", week ? String(week.total) : null, null],
+                ["Still ahead", week ? String(week.ahead) : null, null],
+                ["Held", week ? String(week.held) : null, null],
+                ["Time booked", week ? hours(week.booked) : null, "hrs"],
+              ] as const
+            ).map(([label, value, unit]) => (
+              <div key={label} className={wkStat}>
+                <dt className="text-[14px] text-ink-3">{label}</dt>
+                <dd className={wkNumber}>
+                  {value === null ? (
+                    <Bone className="mt-1 h-6 w-10" />
+                  ) : (
+                    <>
+                      {value}
+                      {unit ? <small className="text-[14px] font-semibold tracking-normal text-ink-3"> {unit}</small> : null}
+                    </>
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </Card>
+      </section>
+
       <section aria-label="Meeting list">
         <div className="mt-tools">
           <div className="mt-tabs" role="tablist" aria-label="Meeting status" onKeyDown={onTabKey}>
