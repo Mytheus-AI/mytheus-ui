@@ -10,7 +10,7 @@ import { FactList, IconFacts } from "@/components/company/Facts";
 
 export const metadata: Metadata = { title: "Enterprise | Mytheus" };
 
-const CONTACT = "mailto:enterprise@reprise.ai";
+const CONTACT = "mailto:enterprise@mytheus.cloud";
 
 const VALUES = [
   {
@@ -161,7 +161,7 @@ export default function Page() {
         ctaLabel="Talk to the team"
         secondaryHref="/pricing"
         secondaryLabel="Compare plans"
-        note="Or write to enterprise@reprise.ai."
+        note="Or write to enterprise@mytheus.cloud."
       />
     </>
   );

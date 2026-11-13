@@ -95,8 +95,8 @@ const PRACTICES = [
     detail: (
       <>
         If you believe you have found a security vulnerability, we want to hear from you. Please email{" "}
-        <a href="mailto:security@reprise.ai" className={linkClass}>
-          security@reprise.ai
+        <a href="mailto:security@mytheus.cloud" className={linkClass}>
+          security@mytheus.cloud
         </a>{" "}
         with the details and steps to reproduce. We commit to a good-faith response, will keep you updated as we
         investigate, and ask that you give us reasonable time to remediate before any public disclosure. We will not
@@ -196,7 +196,7 @@ export default function Page() {
       <CloseCTA
         title="Meet on memory you trust."
         lead="Start with security as the default: your meetings, your memory, nothing saved without your say-so."
-        secondaryHref="mailto:security@reprise.ai"
+        secondaryHref="mailto:security@mytheus.cloud"
         secondaryLabel="Report a vulnerability"
       />
     </>

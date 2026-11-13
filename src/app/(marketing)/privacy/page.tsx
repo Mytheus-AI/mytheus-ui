@@ -202,7 +202,7 @@ const SECTIONS: LegalSection[] = [
     title: "Contact",
     body: (
       <p>
-        Questions about this policy or your data? Reach us at <a href="mailto:privacy@reprise.ai">privacy@reprise.ai</a>.
+        Questions about this policy or your data? Reach us at <a href="mailto:privacy@mytheus.cloud">privacy@mytheus.cloud</a>.
       </p>
     ),
   },

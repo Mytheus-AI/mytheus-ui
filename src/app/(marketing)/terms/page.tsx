@@ -163,7 +163,7 @@ const SECTIONS: LegalSection[] = [
     title: "Contact",
     body: (
       <p>
-        Questions about these terms? Reach us at <a href="mailto:legal@reprise.ai">legal@reprise.ai</a>.
+        Questions about these terms? Reach us at <a href="mailto:legal@mytheus.cloud">legal@mytheus.cloud</a>.
       </p>
     ),
   },
