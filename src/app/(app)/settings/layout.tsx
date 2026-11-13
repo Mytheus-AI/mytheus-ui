@@ -1,7 +1,7 @@
 import { Page, PageHead } from "@/components/ui/Page";
 import { SectionTabs } from "@/components/app/SectionTabs";
 
-/* Settings: personal only (Profile, Notifications, Agent memory, Integrations, API access, Appearance). Workspace-wide
+/* Settings: personal only (Profile, Notifications, Agent memory, Integrations, API access, Appearance, Report a bug). Workspace-wide
    settings, the plan and billing live in the Workspace console. The section list sits beside the
    panel from lg up (above it below lg); panels are held to the reading width. Headings run h1
    (Settings), h2 (the panel), h3 (each card). */

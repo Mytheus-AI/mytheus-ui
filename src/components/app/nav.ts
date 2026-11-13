@@ -3,6 +3,7 @@ import {
   Brain,
   Briefcase,
   Buildings,
+  Bug,
   ChartBar,
   CheckSquare,
   ChatCircleDots,
@@ -114,6 +115,7 @@ export const SETTINGS_TABS: NavItem[] = [
   { href: "/settings/integrations", label: "Integrations", icon: PlugsConnected, keywords: "calendar slack jira notion confluence" },
   { href: "/settings/api", label: "API access", icon: Key, keywords: "personal access token mcp claude api curl" },
   { href: "/settings/appearance", label: "Appearance", icon: PaintBrush, keywords: "theme dark light shortcuts" },
+  { href: "/settings/feedback", label: "Report a bug", icon: Bug, keywords: "bug report feedback idea problem broken support contact review" },
 ];
 
 /** Screens reached from cards and the palette rather than the sidebar. */
