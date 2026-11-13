@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft } from "@phosphor-icons/react/ssr";
+import { SignOut } from "@phosphor-icons/react/ssr";
+import { SignOutButton } from "@clerk/nextjs";
 import { OrgProvider } from "@/lib/org-context";
 import { resolveOrgContext } from "@/lib/api/org-context";
 import { Wordmark } from "@/components/site/Wordmark";
@@ -21,8 +22,9 @@ export const metadata: Metadata = {
    again on every `/admin/ops/*` call.
 
    No sidebar: a 64px header in the app shell's rhythm (same height, gutters and theme toggle)
-   with the wordmark, an "Admin console" chip so it is never mistaken for the workspace, and the
-   way back. */
+   with the wordmark, an "Admin console" chip so it is never mistaken for the workspace, and Sign
+   out. There is no way "back to the app": a superadmin account belongs to no workspace and sees
+   only this console (ADR-0046 D1). */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const orgContext = await resolveOrgContext();
   return (
@@ -47,11 +49,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </Chip>
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             <ThemeToggle />
-            <Link href="/dashboard" className={buttonClass({ variant: "outline", size: "sm" })}>
-              <ArrowLeft size={16} aria-hidden />
-              <span className="hidden min-[420px]:inline">Back to app</span>
-              <span className="sr-only min-[420px]:hidden">Back to app</span>
-            </Link>
+            <SignOutButton redirectUrl="/sign-in">
+              <button type="button" className={buttonClass({ variant: "outline", size: "sm" })}>
+                <SignOut size={16} aria-hidden />
+                <span>Sign out</span>
+              </button>
+            </SignOutButton>
           </div>
         </header>
         <main id="admin-main" className="px-4 py-7 sm:px-6 lg:px-8 lg:py-10">

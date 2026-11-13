@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { OrgProvider } from "@/lib/org-context";
+import { checkOpsGate } from "@/lib/api/admin-ops";
 import { myClerkFullName, resolveOrgContext } from "@/lib/api/org-context";
 import { AppShell } from "@/components/app/AppShell";
 import { LiveInterruptions } from "@/components/listening/LiveInterruptions";
@@ -33,7 +34,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // The agent rides along with the org context: one more gateway read, on the docker network.
   // A failed read leaves the sidebar's Myte tab generic rather than failing the shell.
   const [orgContext, profile] = await Promise.all([resolveOrgContext(), fetchMyProfile()]);
-  if (!orgContext) redirect("/sign-in");
+  if (!orgContext) {
+    // A superadmin has no workspace and sees only the ops console (ADR-0046 D1).
+    if ((await checkOpsGate()) === "staff") redirect("/ops");
+    redirect("/sign-in");
+  }
 
   // Backfill the name Mytheus stores (briefings, "{first name}'s Myte") from Clerk when the two
   // differ. Not awaited and never throws: the shell renders without waiting on it.
