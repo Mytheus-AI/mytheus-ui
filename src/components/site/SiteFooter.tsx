@@ -31,8 +31,7 @@ const COLS: { title: string; links: { label: string; href: string }[] }[] = [
       { label: "About", href: "/about" },
       { label: "Blog", href: "/blog" },
       { label: "Careers", href: "/careers" },
-      { label: "LinkedIn", href: "https://www.linkedin.com/company/reprise-ai" },
-      { label: "X", href: "https://x.com/RepriseAI" },
+      { label: "GitHub", href: "https://github.com/Mytheus-AI" },
     ],
   },
 ];
