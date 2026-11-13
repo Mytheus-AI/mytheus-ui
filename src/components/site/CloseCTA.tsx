@@ -39,7 +39,7 @@ export function CloseCTA({
       <Wrap>
         <InView
           threshold={0.3}
-          className="relative overflow-hidden rounded-hero px-6 pt-[clamp(52px,7vw,92px)] text-center shadow-[inset_0_0_0_1px_rgba(255,255,255,.45)]"
+          className="relative overflow-hidden rounded-hero px-6 pt-[clamp(52px,7vw,92px)] text-center shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--surface)_45%,transparent)]"
           style={{ background: "var(--wash-glow), var(--wash)" }}
         >
           <h2 className="display mx-auto max-w-[13ch] text-[clamp(2.5rem,6.6vw,5rem)] leading-[0.98]">{title}</h2>

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { FEATURES } from "@/lib/marketing/features";
 import { Wordmark } from "@/components/site/Wordmark";
+import { ThemeToggle } from "@/components/app/ThemeToggle";
 
 /* The marketing nav: a floating frosted pill. A small coral squiggle sits under the page you are
    on and glides to the link you hover. Features opens a panel of every feature page. Below 860px
@@ -147,6 +148,9 @@ export function SiteNav() {
           </svg>
         </div>
 
+        <span className="[&>button]:rounded-full">
+          <ThemeToggle />
+        </span>
         <Link
           href="/sign-in"
           className="hidden px-3 py-2 text-[15.5px] font-semibold text-ink transition-colors hover:text-signal-ink min-[860px]:inline-block"

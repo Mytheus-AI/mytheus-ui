@@ -53,9 +53,10 @@ Never write a raw hex in a component. Use these:
 | Shadows (warm) | `--sh-1`, `--sh-2`, `--sh-3` | `shadow-warm-1/2/3` |
 | Radii | controls 12 `rounded-ctl`, cards 20 `rounded-card`, stages and big panels 28 `rounded-hero`, chips/avatars `rounded-full`. Nothing else. |
 
-Dark mode exists inside the app only (`.mx-app[data-theme="dark"]`, in `src/styles/app-theme.css`),
-and every token above flips there. App, call and admin screens must look right in both themes:
-use tokens, never `text-white`/`bg-white`/`text-black` (use `text-pill-on` on `bg-pill`).
+Dark mode is `<html data-theme="dark">` (`src/styles/app-theme.css`), and every token above flips
+there for the app (`.mx-app`), the auth pages (`.mx-auth`) and the marketing site (`.mx-site`).
+Every screen must look right in both themes: use tokens, never `text-white`/`bg-white`/`text-black`
+(use `text-pill-on` on `bg-pill`).
 
 ## Type
 
