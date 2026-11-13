@@ -178,3 +178,194 @@ const FLAG_KEY = /^[a-z][a-z0-9_.-]{1,63}$/;
 export function isFlagKey(v: unknown): v is string {
   return typeof v === "string" && FLAG_KEY.test(v);
 }
+
+/* --- The superadmin console (ADR-0046) ------------------------------------------------------- */
+
+export interface WeekCount {
+  week: string;
+  count: number;
+}
+
+export interface DayCount {
+  day: string;
+  count: number;
+}
+
+export interface OpsOverview {
+  period: string;
+  totals: {
+    tenants: number;
+    active: number;
+    suspended: number;
+    members: number;
+    meetings_7d: number;
+    meetings_total: number;
+    tokens_period: number;
+  };
+  signups_by_week: WeekCount[];
+  meetings_by_week: WeekCount[];
+  plans: { plan: string; count: number }[];
+  token_leaders: { org_id: string; name: string; tokens: number; token_quota: number | null }[];
+  ops_activity_by_day: DayCount[];
+}
+
+export interface OpsAction {
+  id: string;
+  staff_user_id: string | null;
+  action: string;
+  target_org_id: string | null;
+  details: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface SupportSessionView {
+  id: string;
+  staff_user_id: string;
+  user_id: string;
+  user_email: string | null;
+  reason: string;
+  started_at: string;
+  expires_at: string;
+  ended_at: string | null;
+  end_reason: string | null;
+  open: boolean;
+}
+
+export interface MoveRequest {
+  id: string;
+  from_region: string;
+  from_cell: string;
+  to_region: string;
+  to_cell: string;
+  status: string;
+  reason: string;
+  requested_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TenantGrant {
+  id: string;
+  staff_user_id: string;
+  scope: string;
+  expires_at: string;
+  revoked_at: string | null;
+  created_at: string;
+  active: boolean;
+}
+
+export interface TenantDetail {
+  org_id: string;
+  name: string;
+  status: string;
+  plan: string | null;
+  created_at: string;
+  residency: { region: string; db_cell: string; qdrant_region: string; object_bucket_region: string; locked_at: string | null } | null;
+  members: number;
+  meetings_total: number;
+  meetings_by_week: WeekCount[];
+  tokens_period: number;
+  token_quota: number | null;
+  period: string;
+  flags: FeatureFlag[];
+  grants: TenantGrant[];
+  sessions: SupportSessionView[];
+  migrations: MoveRequest[];
+  recent_ops: OpsAction[];
+}
+
+export interface ServiceProbe {
+  service: string;
+  status: "up" | "down";
+  latency_ms: number | null;
+  detail?: string | null;
+}
+
+export interface OpsHealth {
+  checked_at: string;
+  services: ServiceProbe[];
+  outbox_pending: number;
+  outbox_oldest_pending_at: string | null;
+  outbox_max_attempts: number;
+  outbox_tenants: { org_id: string; name: string; pending: number; oldest_pending_at: string | null; max_attempts: number }[];
+  dlq: { topic: string; count: number }[] | null;
+  consumer_lag: { group: string; topic: string; lag: number }[] | null;
+}
+
+export interface StaffMember {
+  user_id: string;
+  name?: string | null;
+  email: string | null;
+  org_id: string | null;
+  org_name: string | null;
+  last_seen_at: string | null;
+  actions_30d: number;
+}
+
+export interface StaffReport {
+  staff: StaffMember[];
+  activity_by_day: DayCount[];
+  recent: OpsAction[];
+}
+
+export interface SupportMember {
+  user_id: string;
+  name?: string | null;
+  email: string;
+  tier: string | null;
+  is_staff: boolean;
+}
+
+export const REGIONS = [
+  { value: "us", label: "United States" },
+  { value: "eu", label: "European Union" },
+  { value: "ap", label: "Asia Pacific" },
+] as const;
+export type Region = (typeof REGIONS)[number]["value"];
+export const isRegion = (v: unknown): v is Region => REGIONS.some((r) => r.value === v);
+
+export const SESSION_MINUTES = [15, 30, 45, 60] as const;
+export const isSessionMinutes = (v: unknown): v is (typeof SESSION_MINUTES)[number] =>
+  typeof v === "number" && (SESSION_MINUTES as readonly number[]).includes(v);
+
+/** A readable name for an `ops_audit_log` action. An unknown action shows as stored. */
+const ACTION_LABELS: Record<string, string> = {
+  "ops.whoami": "Opened the console",
+  "ops.denied": "Refused a non-staff call",
+  "overview.read": "Viewed the overview",
+  "tenants.list": "Listed workspaces",
+  "tenant.detail": "Opened a workspace",
+  "tenant.suspend": "Suspended a workspace",
+  "tenant.reinstate": "Reinstated a workspace",
+  "tenant.migrate": "Requested a move",
+  "tenant.migrate.cancel": "Cancelled a move",
+  "flags.list": "Viewed flags",
+  "flag.create": "Created a flag",
+  "flag.update": "Changed a flag",
+  "flag.delete": "Deleted a flag",
+  "costs.read": "Viewed costs",
+  "audit.read": "Read an audit log",
+  "health.read": "Checked health",
+  "staff.read": "Viewed staff",
+  "support.members": "Listed members for support",
+  "support.session.start": "Started a support session",
+  "support.session.end": "Ended a support session",
+};
+
+export function actionLabel(action: string): string {
+  return ACTION_LABELS[action] ?? action;
+}
+
+/** The worst state wins: one service down is never averaged away. */
+export function healthSummary(services: ServiceProbe[]): { up: number; down: number } {
+  const down = services.filter((s) => s.status !== "up").length;
+  return { up: services.length - down, down };
+}
+
+/** Round a chart's top up to a clean tick: 1, 2, 5 times a power of ten. Never below 1. */
+export function niceMax(v: number): number {
+  if (!Number.isFinite(v) || v <= 1) return 1;
+  const p = 10 ** Math.floor(Math.log10(v));
+  const n = v / p;
+  return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p;
+}

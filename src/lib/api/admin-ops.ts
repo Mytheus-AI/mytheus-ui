@@ -33,8 +33,15 @@ import {
   type CostRow,
   type CostsDashboard,
   type FeatureFlag,
+  type MoveRequest,
   type OpsGate,
+  type OpsHealth,
+  type OpsOverview,
   type OpsTenant,
+  type StaffReport,
+  type SupportMember,
+  type SupportSessionView,
+  type TenantDetail,
 } from "@/lib/ops";
 
 export async function checkOpsGate(): Promise<OpsGate> {
@@ -127,4 +134,57 @@ export async function loadCosts(): Promise<Load<CostsDashboard & { truncated: bo
 export async function searchAudit(body: { org_id: string; cursor: string | null; limit: number }): Promise<AuditPage> {
   const raw = await api<Partial<AuditPage>>("/admin/ops/audit/search", { method: "POST", body });
   return { items: Array.isArray(raw.items) ? raw.items : [], next_cursor: typeof raw.next_cursor === "string" ? raw.next_cursor : null };
+}
+
+/* --- The superadmin console (ADR-0046) -------------------------------------------------------
+ *   GET    /admin/ops/overview                    OpsOverview
+ *   GET    /admin/ops/health                      OpsHealth
+ *   GET    /admin/ops/staff                       StaffReport
+ *   POST   /admin/ops/tenants/detail              {org_id} -> TenantDetail
+ *   POST   /admin/ops/tenants/migrate             {org_id, to_region, to_cell?, reason} -> MoveRequest
+ *   POST   /admin/ops/tenants/migrations/cancel   {org_id, migration_id}
+ *   POST   /admin/ops/support/members             {org_id} (needs an impersonate grant)
+ *   POST   /admin/ops/support/sessions            {org_id, user_id, reason, minutes} -> {session, sign_in_url}
+ *   POST   /admin/ops/support/sessions/end        {org_id, session_id}
+ * Every target workspace rides in the body. */
+
+export async function loadOverview(): Promise<Load<OpsOverview>> {
+  return load<OpsOverview>("/admin/ops/overview");
+}
+
+export async function loadHealth(): Promise<Load<OpsHealth>> {
+  return load<OpsHealth>("/admin/ops/health");
+}
+
+export async function loadStaff(): Promise<Load<StaffReport>> {
+  return load<StaffReport>("/admin/ops/staff");
+}
+
+export async function fetchTenantDetail(orgId: string): Promise<TenantDetail> {
+  return api<TenantDetail>("/admin/ops/tenants/detail", { method: "POST", body: { org_id: orgId } });
+}
+
+export async function requestMove(body: { org_id: string; to_region: string; to_cell: string | null; reason: string }): Promise<MoveRequest> {
+  return api<MoveRequest>("/admin/ops/tenants/migrate", { method: "POST", body });
+}
+
+export async function cancelMove(orgId: string, migrationId: string): Promise<MoveRequest> {
+  return api<MoveRequest>("/admin/ops/tenants/migrations/cancel", { method: "POST", body: { org_id: orgId, migration_id: migrationId } });
+}
+
+export async function fetchSupportMembers(orgId: string): Promise<{ items: SupportMember[]; grant_expires_at: string }> {
+  return api("/admin/ops/support/members", { method: "POST", body: { org_id: orgId } });
+}
+
+export async function startSupportSession(body: {
+  org_id: string;
+  user_id: string;
+  reason: string;
+  minutes: number;
+}): Promise<{ session: SupportSessionView; sign_in_url: string }> {
+  return api("/admin/ops/support/sessions", { method: "POST", body });
+}
+
+export async function endSupportSession(orgId: string, sessionId: string): Promise<SupportSessionView> {
+  return api<SupportSessionView>("/admin/ops/support/sessions/end", { method: "POST", body: { org_id: orgId, session_id: sessionId } });
 }
