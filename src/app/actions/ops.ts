@@ -61,6 +61,7 @@ export async function setTenantSuspended(orgId: string, verb: "suspend" | "reins
   } catch (err) {
     return failure(err, `The tenant could not be ${verb === "suspend" ? "suspended" : "reinstated"} just now. Try again in a moment.`);
   }
+  revalidatePath("/ops/workspaces");
   revalidatePath("/ops");
   return { ok: true };
 }

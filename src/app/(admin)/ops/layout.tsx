@@ -25,7 +25,7 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
   }
   return (
     <Page>
-      <PageHead title="Ops console" context="Every workspace on the platform: tenants, feature flags, cost and lag, and the audit log." />
+      <PageHead title="Ops console" context="The superadmin console: every workspace on the platform, its health and the staff who look after it." />
       <OpsTabs />
       {children}
     </Page>
