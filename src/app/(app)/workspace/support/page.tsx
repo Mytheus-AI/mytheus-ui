@@ -11,7 +11,7 @@ import { ActionForm } from "@/components/admin/ActionForm";
 import { FormSelect } from "@/components/admin/FormSelect";
 import { FormSubmit } from "@/components/admin/FormSubmit";
 import { grantSupportAccess, revokeSupportAccess } from "@/app/actions/tenant-admin";
-import { loadSupportGrants } from "@/lib/api/admin-tenant";
+import { loadSupportGrants, loadSupportSessions } from "@/lib/api/admin-tenant";
 import { listMembers } from "@/lib/api/members";
 import { GRANT_DURATIONS, GRANT_SCOPES, grantState, type GrantState } from "@/lib/tenant-admin";
 import { zonedFormat } from "@/lib/timezone-server";
@@ -33,7 +33,8 @@ const STATE_BADGE: Record<GrantState, { tone: ChipTone; label: string }> = {
 const scopeLabel = (s: string) => GRANT_SCOPES.find((g) => g.value === s)?.label ?? s;
 
 export default async function SupportAccessPage() {
-  const [res, directory] = await Promise.all([loadSupportGrants(), listMembers()]);
+  const [res, directory, sessionsRes] = await Promise.all([loadSupportGrants(), listMembers(), loadSupportSessions()]);
+  const sessions = sessionsRes.kind === "live" ? sessionsRes.data : [];
   const names = new Map((directory ?? []).map((m) => [m.id, m.name]));
   const now = Date.now();
   const grants = res.kind === "live" ? [...res.data].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)) : [];
@@ -154,6 +155,51 @@ export default async function SupportAccessPage() {
                   </tbody>
                 </table>
               </div>
+            )}
+          </SectionCard>
+
+          <SectionCard
+            title="Support sessions"
+            headingLevel={2}
+            headingId="sessions-heading"
+            description="Each time Mytheus staff signed in as one of your members under an Act as support grant. Revoking the grant ends any open session at once."
+          >
+            {sessionsRes.kind === "unavailable" ? (
+              <p className="px-4 py-5 text-[14px] text-ink-3 sm:px-[22px]">Support sessions could not be loaded just now.</p>
+            ) : sessions.length === 0 ? (
+              <p className="px-4 py-5 text-[14px] text-ink-3 sm:px-[22px]">No support sessions. Nobody from Mytheus has acted as one of your members.</p>
+            ) : (
+              <table className="mx-table w-full border-collapse text-left text-[14px]">
+                <caption className="sr-only">Support sessions</caption>
+                <thead>
+                  <tr className={theadRowClass}>
+                    <th scope="col" className={`${thClass} !pl-[22px]`}>Started</th>
+                    <th scope="col" className={thClass}>Acted as</th>
+                    <th scope="col" className={thClass}>Reason</th>
+                    <th scope="col" className={`${thClass} !pr-[22px]`}>Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {sessions.map((s) => (
+                    <tr key={s.id}>
+                      <td className="whitespace-nowrap py-3 pl-[22px] pr-5 tabular-nums text-ink-2">{fmt(s.started_at)}</td>
+                      <td data-label="Acted as" className="px-5 py-3 text-ink">
+                        {names.get(s.user_id) ?? s.user_email ?? "A former member"}
+                      </td>
+                      <td data-label="Reason" className="max-w-[320px] px-5 py-3 text-ink-2">
+                        {s.reason}
+                      </td>
+                      <td data-label="Status" className="py-3 pl-5 pr-[22px]">
+                        {s.open ? (
+                          <Chip tone="medium">Open until {fmt(s.expires_at)}</Chip>
+                        ) : (
+                          <Chip tone="neutral">Ended {fmt(s.ended_at ?? s.expires_at)}</Chip>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </SectionCard>
         </>

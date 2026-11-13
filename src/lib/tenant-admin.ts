@@ -161,7 +161,7 @@ export function grantState(g: Pick<SupportGrant, "expires_at" | "revoked_at">, n
 export type GrantScope = "read_only" | "impersonate";
 export const GRANT_SCOPES: readonly { value: GrantScope; label: string; help: string }[] = [
   { value: "read_only", label: "Read only", help: "Staff can look at workspace settings and metadata, and change nothing." },
-  { value: "impersonate", label: "Act as support", help: "Staff can act in the workspace to fix a problem. Every action is tagged as system and logged." },
+  { value: "impersonate", label: "Act as support", help: "Staff can also sign in as one of your members, for up to an hour at a time, to reproduce a problem. Each session shows a banner, is listed below, and every action in it is tagged as support in the audit log." },
 ];
 export function isGrantScope(v: unknown): v is GrantScope {
   return v === "read_only" || v === "impersonate";

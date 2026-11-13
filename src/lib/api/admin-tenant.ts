@@ -11,6 +11,7 @@
  *   GET    /admin/tenant/support-grants          {items: SupportGrant[]}
  *   POST   /admin/tenant/support-grants          {staff_user_id, scope, expires_at}
  *   DELETE /admin/tenant/support-grants/{id}     revoke
+ *   GET    /admin/tenant/support-sessions        {items: SupportSessionView[]} (ADR-0046)
  *   GET    /admin/tenant/data-export             {items: ExportRequest[]}
  *   POST   /admin/tenant/data-export             202 ExportRequest
  *   GET    /admin/tenant/erasures                {items: Erasure[]}   erasures, each with status and stores[]
@@ -25,6 +26,7 @@
 import { ApiError, api } from "@/lib/api/client";
 import type { components as AdminSchemas } from "@/lib/api/generated/admin-ops-service";
 import type { ExportRequest, GrantScope, SupportGrant, TenantMember, TenantSettings, Tier } from "@/lib/tenant-admin";
+import type { SupportSessionView } from "@/lib/ops";
 
 /** A read, or why it failed. `forbidden` and `unavailable` get different copy on the page. */
 export type Load<T> = { kind: "live"; data: T } | { kind: "forbidden" } | { kind: "unavailable" };
@@ -65,6 +67,12 @@ export async function patchTenantSettings(body: Partial<TenantSettings>): Promis
 export async function loadSupportGrants(): Promise<Load<SupportGrant[]>> {
   const r = await load<unknown>("/admin/tenant/support-grants");
   return r.kind === "live" ? { kind: "live", data: items<SupportGrant>(r.data) } : r;
+}
+
+/** Every staff support session in this workspace (ADR-0046): who acted as whom, why, how long. */
+export async function loadSupportSessions(): Promise<Load<SupportSessionView[]>> {
+  const r = await load<unknown>("/admin/tenant/support-sessions");
+  return r.kind === "live" ? { kind: "live", data: items<SupportSessionView>(r.data) } : r;
 }
 
 export async function createSupportGrant(body: { staff_user_id: string; scope: GrantScope; expires_at: string }): Promise<SupportGrant> {
