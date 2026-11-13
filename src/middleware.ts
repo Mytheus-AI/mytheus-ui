@@ -76,6 +76,8 @@ const isPublicRoute = createRouteMatcher([
   "/s/(.*)",
 ]);
 
+const isOpsConsole = createRouteMatcher(["/ops(.*)", "/admin(.*)"]);
+
 export default clerkMiddleware(async (auth, request) => {
   // Before auth, so a signed-out visit to an app route on the apex lands on the app host's
   // sign-in rather than a sign-in on the apex whose session the app host would not see.
@@ -87,6 +89,15 @@ export default clerkMiddleware(async (auth, request) => {
   );
   if (target) return NextResponse.redirect(target, 308);
   if (isPublicRoute(request)) return;
+  // The superadmin console. Staff accounts belong to no workspace, so Clerk keeps their session
+  // "pending" (the choose-organization task) forever, and `auth.protect()` would treat that as
+  // signed out. Here a pending session counts as signed in; the console's own gate (whoami,
+  // deny by default) and admin-ops-service decide who is staff (ADR-0046 D1).
+  if (isOpsConsole(request)) {
+    const session = await auth({ treatPendingAsSignedOut: false });
+    if (!session.userId) return session.redirectToSignIn();
+    return;
+  }
   // Redirects to sign-in when there is no session. Fails closed: an unprotected `(app)` route
   // would render the shell and then have every data read rejected by the gateway with a 401,
   // which looks like a broken app rather than a sign-in prompt.

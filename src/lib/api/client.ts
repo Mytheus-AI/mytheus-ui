@@ -136,7 +136,10 @@ function idempotencyKey(): string {
  */
 export async function api<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const method = options.method ?? "GET";
-  const { getToken } = await auth();
+  // A pending session (signed in, no organization chosen yet) still sends its token. That is
+  // how a superadmin, whose account belongs to no workspace, reaches `/admin/ops/*` (ADR-0046
+  // D1); every other route refuses a token with no organization at the gateway, as before.
+  const { getToken } = await auth({ treatPendingAsSignedOut: false });
   const token = await getToken();
 
   const headers: Record<string, string> = { Accept: "application/json" };
