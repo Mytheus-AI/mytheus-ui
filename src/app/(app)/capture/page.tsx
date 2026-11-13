@@ -1,14 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { stat } from "node:fs/promises";
-import {
-  ArrowSquareOut,
-  DownloadSimple,
-  Microphone,
-  ShieldCheck,
-  SpeakerHigh,
-  StopCircle,
-} from "@phosphor-icons/react/dist/ssr";
+import { DownloadSimple } from "@phosphor-icons/react/dist/ssr";
 
 import { PageHead } from "@/components/app/PageHead";
 import { Badge } from "@/components/ui/Badge";
@@ -18,6 +11,7 @@ import { captureConfig, captureConfigured } from "@/app/api/capture/_lib/config"
 import { CAPTURE_SOURCE_LABELS, parseCapturedTitle, type CaptureSource } from "@/app/api/capture/_lib/source";
 import { listMeetings } from "@/lib/api/meetings";
 import { LocalTime } from "./LocalTime";
+import { WhatItRecords } from "./WhatItRecords";
 
 export const metadata: Metadata = { title: "Capture | Mytheus" };
 export const dynamic = "force-dynamic";
@@ -192,51 +186,11 @@ export default async function CapturePage() {
                 </li>
               ))}
             </ol>
+            <div className="mt-5 border-t border-line pt-4">
+              <WhatItRecords />
+            </div>
           </Card>
 
-          <Card className="p-6">
-            <h2 className="display text-[21px] text-ink">What it records</h2>
-            <ul className="mt-4 flex flex-col gap-3.5 text-[14.5px] leading-relaxed text-ink-2">
-              <li className="grid grid-cols-[22px_minmax(0,1fr)] gap-3">
-                <SpeakerHigh size={20} className="mt-0.5 text-ink-3" aria-hidden />
-                <span>
-                  The meeting tab&apos;s audio: everyone else on the call, told apart as Speaker 1, Speaker 2 and so on.
-                  You keep hearing the call as usual.
-                </span>
-              </li>
-              <li className="grid grid-cols-[22px_minmax(0,1fr)] gap-3">
-                <Microphone size={20} className="mt-0.5 text-ink-3" aria-hidden />
-                <span>Your microphone, as you. Without it your own words would be missing.</span>
-              </li>
-              <li className="grid grid-cols-[22px_minmax(0,1fr)] gap-3">
-                <StopCircle size={20} className="mt-0.5 text-ink-3" aria-hidden />
-                <span>
-                  Only while you transcribe. A bar on the meeting page says so the whole time, and capture stops when
-                  you press Stop, leave the call or close the tab.
-                </span>
-              </li>
-              <li className="grid grid-cols-[22px_minmax(0,1fr)] gap-3">
-                <ShieldCheck size={20} className="mt-0.5 text-ink-3" aria-hidden />
-                <span>
-                  Tell everyone first. Mytheus asks you to confirm you did before every capture, keeps that
-                  confirmation with the meeting, and gives you a note to paste into the chat.
-                </span>
-              </li>
-            </ul>
-            <p className="mt-5 text-[13.5px] leading-relaxed text-ink-3">
-              Chrome on a computer only. The Zoom desktop app is not supported; join from the browser instead.{" "}
-              <a
-                href="https://support.google.com/chrome_webstore/answer/2664769"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 font-semibold text-ink underline underline-offset-2"
-              >
-                About Chrome extensions
-                <ArrowSquareOut size={14} aria-hidden />
-                <span className="sr-only">(opens in a new tab)</span>
-              </a>
-            </p>
-          </Card>
         </aside>
       </div>
     </div>
