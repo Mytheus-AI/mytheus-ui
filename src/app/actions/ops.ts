@@ -2,8 +2,31 @@
 
 import { revalidatePath } from "next/cache";
 import { ApiError } from "@/lib/api/client";
-import { createFlag, deleteFlag, reinstateTenant, searchAudit, setFlagEnabled, suspendTenant } from "@/lib/api/admin-ops";
-import { REASON_MIN, isFlagKey, type AuditPage } from "@/lib/ops";
+import {
+  cancelMove,
+  createFlag,
+  deleteFlag,
+  endSupportSession,
+  fetchSupportMembers,
+  fetchTenantDetail,
+  reinstateTenant,
+  requestMove,
+  searchAudit,
+  setFlagEnabled,
+  startSupportSession,
+  suspendTenant,
+} from "@/lib/api/admin-ops";
+import {
+  REASON_MIN,
+  isFlagKey,
+  isRegion,
+  isSessionMinutes,
+  type AuditPage,
+  type MoveRequest,
+  type SupportMember,
+  type SupportSessionView,
+  type TenantDetail,
+} from "@/lib/ops";
 import { isUuid } from "@/lib/tenant-admin";
 import type { FormResult } from "@/app/actions/tenant-admin";
 
@@ -92,4 +115,88 @@ export async function searchAuditLog(
   } catch (err) {
     return failure(err, "The audit log could not be loaded just now. Try again in a moment.");
   }
+}
+
+/* --- The superadmin console (ADR-0046) -------------------------------------------------------
+   The workspace panel opens on demand, so its read is a server action too; like every call
+   above, admin-ops-service decides who may make it and logs it. */
+
+type Result<T> = { ok: true; data: T } | { ok: false; message: string };
+
+export async function loadTenantDetail(orgId: string): Promise<Result<TenantDetail>> {
+  if (!isUuid(orgId)) return { ok: false, message: "That workspace is not valid." };
+  try {
+    return { ok: true, data: await fetchTenantDetail(orgId) };
+  } catch (err) {
+    return failure(err, "The workspace could not be loaded just now. Try again in a moment.");
+  }
+}
+
+export async function requestTenantMove(orgId: string, region: string, reason: string): Promise<Result<MoveRequest>> {
+  if (!isUuid(orgId)) return { ok: false, message: "That workspace is not valid." };
+  if (!isRegion(region)) return { ok: false, message: "Pick a region." };
+  const why = reason.trim().slice(0, 500);
+  if (why.length < REASON_MIN) return { ok: false, message: "Give a reason of at least a few words." };
+  try {
+    const data = await requestMove({ org_id: orgId, to_region: region, to_cell: null, reason: why });
+    revalidatePath("/ops/workspaces");
+    return { ok: true, data };
+  } catch (err) {
+    return failure(err, "The move could not be requested just now. Try again in a moment.");
+  }
+}
+
+export async function cancelTenantMove(orgId: string, migrationId: string): Promise<OpsResult> {
+  if (!isUuid(orgId) || !isUuid(migrationId)) return { ok: false, message: "That request is not valid." };
+  try {
+    await cancelMove(orgId, migrationId);
+  } catch (err) {
+    return failure(err, "The request could not be cancelled just now. Try again in a moment.");
+  }
+  return { ok: true };
+}
+
+export async function listSupportMembers(orgId: string): Promise<Result<{ items: SupportMember[]; grant_expires_at: string }>> {
+  if (!isUuid(orgId)) return { ok: false, message: "That workspace is not valid." };
+  try {
+    return { ok: true, data: await fetchSupportMembers(orgId) };
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 403) {
+      return { ok: false, message: "This workspace has not given you an impersonate grant. An owner or admin can add one under Workspace, Support access." };
+    }
+    return failure(err, "The members could not be loaded just now. Try again in a moment.");
+  }
+}
+
+export async function beginSupportSession(
+  orgId: string,
+  userId: string,
+  reason: string,
+  minutes: number,
+): Promise<Result<{ session: SupportSessionView; sign_in_url: string }>> {
+  if (!isUuid(orgId) || !isUuid(userId)) return { ok: false, message: "Pick a member." };
+  if (!isSessionMinutes(minutes)) return { ok: false, message: "Pick a length." };
+  const why = reason.trim().slice(0, 500);
+  if (why.length < REASON_MIN) return { ok: false, message: "Give a reason of at least a few words." };
+  try {
+    return { ok: true, data: await startSupportSession({ org_id: orgId, user_id: userId, reason: why, minutes }) };
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 503) {
+      return { ok: false, message: "Clerk could not open the session. Check that the backend has a Clerk secret key, then try again." };
+    }
+    if (err instanceof ApiError && err.status === 403) {
+      return { ok: false, message: "The impersonate grant has expired or was revoked." };
+    }
+    return failure(err, "The session could not be started just now. Try again in a moment.");
+  }
+}
+
+export async function finishSupportSession(orgId: string, sessionId: string): Promise<OpsResult> {
+  if (!isUuid(orgId) || !isUuid(sessionId)) return { ok: false, message: "That session is not valid." };
+  try {
+    await endSupportSession(orgId, sessionId);
+  } catch (err) {
+    return failure(err, "The session could not be ended just now. Try again in a moment.");
+  }
+  return { ok: true };
 }
