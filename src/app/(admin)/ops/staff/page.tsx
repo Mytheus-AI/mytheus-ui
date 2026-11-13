@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { StatCard, theadRowClass, thClass } from "@/components/admin/StatCard";
-import { ColumnChart, dayPoints } from "@/components/ops/charts";
+import { ColumnChart } from "@/components/ops/charts";
+import { dayPoints } from "@/lib/ops-charts";
 import { SectionCard, cardPad } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { ErrorState } from "@/components/ui/ErrorState";

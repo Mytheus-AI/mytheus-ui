@@ -8,7 +8,8 @@ import { CopyButton } from "@/components/ui/CopyButton";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { textareaClass } from "@/components/ui/Form";
 import { Note } from "@/components/ui/Note";
-import { ColumnChart, Meter, weekPoints } from "@/components/ops/charts";
+import { ColumnChart, Meter } from "@/components/ops/charts";
+import { weekPoints } from "@/lib/ops-charts";
 import { notifySuccess } from "@/lib/toast";
 import {
   beginSupportSession,

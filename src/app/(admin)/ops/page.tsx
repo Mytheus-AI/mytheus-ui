@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { StatCard } from "@/components/admin/StatCard";
-import { BarList, ColumnChart, dayPoints, fmt, weekPoints } from "@/components/ops/charts";
+import { BarList, ColumnChart } from "@/components/ops/charts";
+import { dayPoints, fmt, weekPoints } from "@/lib/ops-charts";
 import { SectionCard, cardPad } from "@/components/ui/Card";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Note } from "@/components/ui/Note";
