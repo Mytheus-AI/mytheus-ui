@@ -201,6 +201,7 @@ export interface OpsOverview {
     meetings_7d: number;
     meetings_total: number;
     tokens_period: number;
+    feedback_new?: number;
   };
   signups_by_week: WeekCount[];
   meetings_by_week: WeekCount[];
@@ -350,6 +351,8 @@ const ACTION_LABELS: Record<string, string> = {
   "support.members": "Listed members for support",
   "support.session.start": "Started a support session",
   "support.session.end": "Ended a support session",
+  "feedback.list": "Read the feedback inbox",
+  "feedback.status": "Marked a feedback report",
 };
 
 export function actionLabel(action: string): string {

@@ -56,9 +56,9 @@ export default async function OpsOverviewPage() {
         <StatCard label="Meetings this week" value={whole.format(t.meetings_7d)} hint={`${whole.format(t.meetings_total)} in all`} />
         <StatCard label="Agent tokens" value={fmt(t.tokens_period)} hint={`This period, ${month}`} />
         <StatCard
-          label="Ops actions today"
-          value={whole.format(o.ops_activity_by_day.at(-1)?.count ?? 0)}
-          hint={<Link href="/ops/staff" className="underline decoration-line-2 underline-offset-2 hover:text-ink">See who did what</Link>}
+          label="New feedback"
+          value={whole.format(t.feedback_new ?? 0)}
+          hint={<Link href="/ops/feedback" className="underline decoration-line-2 underline-offset-2 hover:text-ink">Open the inbox</Link>}
         />
       </div>
 
