@@ -369,3 +369,32 @@ export function niceMax(v: number): number {
   const n = v / p;
   return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p;
 }
+
+/* --- Bug reports and feedback (ADR-0046 D6) -------------------------------------------------- */
+
+export type FeedbackKind = "bug" | "feedback";
+export type FeedbackStatus = "new" | "seen" | "resolved";
+
+export interface FeedbackReport {
+  id: string;
+  kind: FeedbackKind | string;
+  message: string;
+  page: string | null;
+  status: FeedbackStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OpsFeedback extends FeedbackReport {
+  org_id: string;
+  org_name: string | null;
+  user_id: string;
+  reporter_email: string;
+  handled_by: string | null;
+}
+
+export const FEEDBACK_MAX = 4000;
+export const FEEDBACK_STATES = ["new", "seen", "resolved"] as const;
+export const isFeedbackKind = (v: unknown): v is FeedbackKind => v === "bug" || v === "feedback";
+export const isFeedbackStatus = (v: unknown): v is FeedbackStatus => (FEEDBACK_STATES as readonly unknown[]).includes(v);
+export const FEEDBACK_STATUS_LABEL: Record<FeedbackStatus, string> = { new: "Sent", seen: "Seen by the team", resolved: "Resolved" };

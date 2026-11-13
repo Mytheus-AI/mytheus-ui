@@ -35,6 +35,7 @@ import {
   type FeatureFlag,
   type MoveRequest,
   type OpsGate,
+  type OpsFeedback,
   type OpsHealth,
   type OpsOverview,
   type OpsTenant,
@@ -187,4 +188,18 @@ export async function startSupportSession(body: {
 
 export async function endSupportSession(orgId: string, sessionId: string): Promise<SupportSessionView> {
   return api<SupportSessionView>("/admin/ops/support/sessions/end", { method: "POST", body: { org_id: orgId, session_id: sessionId } });
+}
+
+/* Bug reports and feedback, the staff inbox (ADR-0046 D6). */
+export async function loadFeedbackInbox(state: "new" | "seen" | "resolved" | "all"): Promise<Load<{ items: OpsFeedback[]; counts: Record<string, number> }>> {
+  try {
+    return { kind: "live", data: await api<{ items: OpsFeedback[]; counts: Record<string, number> }>("/admin/ops/feedback", { query: { state } }) };
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 403) return { kind: "forbidden" };
+    return { kind: "unavailable" };
+  }
+}
+
+export async function setFeedbackStatus(id: string, status: "new" | "seen" | "resolved"): Promise<OpsFeedback> {
+  return api<OpsFeedback>("/admin/ops/feedback/status", { method: "POST", body: { id, status } });
 }

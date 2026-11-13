@@ -12,6 +12,8 @@
  *   POST   /admin/tenant/support-grants          {staff_user_id, scope, expires_at}
  *   DELETE /admin/tenant/support-grants/{id}     revoke
  *   GET    /admin/tenant/support-sessions        {items: SupportSessionView[]} (ADR-0046)
+ *   GET    /admin/tenant/feedback                {items: FeedbackReport[]} (the caller's own; any member)
+ *   POST   /admin/tenant/feedback                {kind, message, page|null} (any member)
  *   GET    /admin/tenant/data-export             {items: ExportRequest[]}
  *   POST   /admin/tenant/data-export             202 ExportRequest
  *   GET    /admin/tenant/erasures                {items: Erasure[]}   erasures, each with status and stores[]
@@ -26,7 +28,7 @@
 import { ApiError, api } from "@/lib/api/client";
 import type { components as AdminSchemas } from "@/lib/api/generated/admin-ops-service";
 import type { ExportRequest, GrantScope, SupportGrant, TenantMember, TenantSettings, Tier } from "@/lib/tenant-admin";
-import type { SupportSessionView } from "@/lib/ops";
+import type { FeedbackKind, FeedbackReport, SupportSessionView } from "@/lib/ops";
 
 /** A read, or why it failed. `forbidden` and `unavailable` get different copy on the page. */
 export type Load<T> = { kind: "live"; data: T } | { kind: "forbidden" } | { kind: "unavailable" };
@@ -73,6 +75,16 @@ export async function loadSupportGrants(): Promise<Load<SupportGrant[]>> {
 export async function loadSupportSessions(): Promise<Load<SupportSessionView[]>> {
   const r = await load<unknown>("/admin/tenant/support-sessions");
   return r.kind === "live" ? { kind: "live", data: items<SupportSessionView>(r.data) } : r;
+}
+
+/** The caller's own bug reports and feedback (ADR-0046 D6). Any member. */
+export async function loadMyFeedback(): Promise<Load<FeedbackReport[]>> {
+  const r = await load<unknown>("/admin/tenant/feedback");
+  return r.kind === "live" ? { kind: "live", data: items<FeedbackReport>(r.data) } : r;
+}
+
+export async function sendFeedback(body: { kind: FeedbackKind; message: string; page: string | null }): Promise<FeedbackReport> {
+  return api<FeedbackReport>("/admin/tenant/feedback", { method: "POST", body });
 }
 
 export async function createSupportGrant(body: { staff_user_id: string; scope: GrantScope; expires_at: string }): Promise<SupportGrant> {
