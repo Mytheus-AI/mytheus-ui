@@ -45,6 +45,16 @@ import {
   type TenantDetail,
 } from "@/lib/ops";
 
+/** The caller's own Staff ID, or null when they are not staff or the service cannot answer. */
+export async function myStaffId(): Promise<string | null> {
+  try {
+    const me = await api<{ staff?: unknown; staff_id?: unknown }>("/admin/ops/whoami");
+    return me.staff === true && typeof me.staff_id === "string" ? me.staff_id : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function checkOpsGate(): Promise<OpsGate> {
   try {
     return opsGate({ ok: true, data: await api<unknown>("/admin/ops/whoami") });

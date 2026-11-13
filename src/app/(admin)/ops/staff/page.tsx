@@ -7,22 +7,24 @@ import { Chip } from "@/components/ui/Chip";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Note } from "@/components/ui/Note";
 import { SectionBar } from "@/components/ui/Page";
-import { loadStaff } from "@/lib/api/admin-ops";
+import { loadStaff, myStaffId } from "@/lib/api/admin-ops";
+import { CopyButton } from "@/components/ui/CopyButton";
 import { actionLabel } from "@/lib/ops";
 
 export const metadata: Metadata = { title: "Staff | Ops console | Mytheus" };
 export const dynamic = "force-dynamic";
 
 /* The staff themselves (ADR-0046 D1 and D3): who is on the allowlist, what each person did, and
-   how someone is added. Staff access is a deployment change on purpose, so this page explains it
-   instead of offering a button. */
+   how someone is added. A superadmin is a separate Clerk account that belongs to no workspace;
+   staff access is a deployment change on purpose, so this page explains it instead of offering a
+   button. Names and emails come from Clerk, since staff accounts have no workspace profile. */
 
 const whole = new Intl.NumberFormat("en-US");
 const when = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 const fmtWhen = (iso: string | null) => (iso && !Number.isNaN(Date.parse(iso)) ? when.format(new Date(iso)) : "");
 
 export default async function OpsStaffPage() {
-  const res = await loadStaff();
+  const [res, mine] = await Promise.all([loadStaff(), myStaffId()]);
   if (res.kind !== "live") {
     return (
       <div className="flex flex-col gap-5">
@@ -50,18 +52,27 @@ export default async function OpsStaffPage() {
       <SectionBar title="Staff" context="The Mytheus staff who can open this console, and everything they did in it." />
 
       <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="On the staff list" value={r.staff.length} hint="From MYTHEUS_STAFF_USER_IDS" />
+        <StatCard label="On the staff list" value={r.staff.length} hint="From MYTHEUS_STAFF_CLERK_USER_IDS" />
         <StatCard label="Active in 30 days" value={active30} hint={active30 === r.staff.length ? "Everyone" : `${r.staff.length - active30} quiet`} />
         <StatCard label="Calls in 14 days" value={whole.format(r.activity_by_day.reduce((s, d) => s + d.count, 0))} hint="Reads included" />
       </div>
 
-      <SectionCard title="Staff list" headingId="staff-heading" description="Names come from each person's own workspace, found the first time they open the console.">
+      {mine ? (
+        <SectionCard title="Your Staff ID" headingId="mine-heading" description="Give this to a workspace owner or admin when they grant you support access to their workspace.">
+          <div className={`${cardPad} flex flex-wrap items-center gap-3`}>
+            <span className="break-all font-mono text-[14px] text-ink">{mine}</span>
+            <CopyButton value={mine} label="Copy Staff ID" />
+          </div>
+        </SectionCard>
+      ) : null}
+
+      <SectionCard title="Staff list" headingId="staff-heading" description="Every account on the list. Names and emails come from Clerk.">
         <table className="mx-table w-full border-collapse text-left text-[14px]">
           <caption className="sr-only">Staff with workspace, last activity and actions in the last 30 days</caption>
           <thead>
             <tr className={theadRowClass}>
               <th scope="col" className={`${thClass} !pl-[22px]`}>Person</th>
-              <th scope="col" className={thClass}>Workspace</th>
+              <th scope="col" className={thClass}>Staff ID</th>
               <th scope="col" className={thClass}>Last seen</th>
               <th scope="col" className={`${thClass} text-right !pr-[22px]`}>Actions, 30 days</th>
             </tr>
@@ -76,14 +87,19 @@ export default async function OpsStaffPage() {
                       {s.name ? <span className="block truncate text-[12.5px] text-ink-3">{s.email}</span> : null}
                     </>
                   ) : (
-                    <Chip tone="neutral">Not seen yet</Chip>
+                    <span className="block text-ink-3">Not found in Clerk</span>
                   )}
-                  <span className="block truncate font-mono text-[12.5px] text-ink-3" title={s.user_id}>
-                    {s.user_id}
+                  <span className="block truncate font-mono text-[12.5px] text-ink-3" title={s.clerk_user_id}>
+                    {s.clerk_user_id}
                   </span>
+                  {s.in_workspace ? (
+                    <Chip tone="high" className="mt-1.5">
+                      In a workspace, refused
+                    </Chip>
+                  ) : null}
                 </th>
-                <td data-label="Workspace" className="px-5 py-3 text-ink-2">
-                  {s.org_name ?? ""}
+                <td data-label="Staff ID" className="max-w-[220px] truncate px-5 py-3 font-mono text-[12.5px] text-ink-3" title={s.user_id}>
+                  {s.user_id}
                 </td>
                 <td data-label="Last seen" className="whitespace-nowrap px-5 py-3 tabular-nums text-ink-3">
                   {fmtWhen(s.last_seen_at) || "Never"}
@@ -105,15 +121,16 @@ export default async function OpsStaffPage() {
         </SectionCard>
         <SectionCard title="How someone becomes staff" headingId="how-heading">
           <ol className={`${cardPad} m-0 flex list-decimal flex-col gap-2.5 pl-9 text-[14px] leading-relaxed text-ink-2 sm:pl-10`}>
-            <li>They sign up and sign in to Mytheus once, so their account exists.</li>
+            <li>They sign up for a new, separate Mytheus account and stop at the page that asks them to join or create an organization. An account that belongs to a workspace can never be staff.</li>
             <li>
-              In <span className="font-mono text-[13px]">mytheus-backend</span>, run{" "}
-              <span className="font-mono text-[13px]">uv run python -m scripts.staff_lookup their@email</span> to get their id.
+              On the server, in the admin-ops-service container, run{" "}
+              <span className="font-mono text-[13px]">python -m scripts.staff_lookup their@email</span>. It refuses any account in a workspace and prints the
+              Clerk user id to add.
             </li>
             <li>
-              Add the id to <span className="font-mono text-[13px]">MYTHEUS_STAFF_USER_IDS</span> in the admin-ops-service environment and restart that service.
+              Add that id to <span className="font-mono text-[13px]">MYTHEUS_STAFF_CLERK_USER_IDS</span> in the admin-ops-service environment and recreate that service.
             </li>
-            <li>They open /ops. Removing someone is the same edit in reverse.</li>
+            <li>They refresh the page and land here. Removing someone is the same edit in reverse.</li>
           </ol>
         </SectionCard>
       </div>

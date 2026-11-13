@@ -13,6 +13,8 @@
 
 export interface WhoAmI {
   staff: boolean;
+  /** Only for staff: the Staff ID a workspace admin enters in a support grant. */
+  staff_id?: string;
 }
 
 export interface OpsTenant {
@@ -294,11 +296,13 @@ export interface OpsHealth {
 }
 
 export interface StaffMember {
+  /** The Staff ID (what a support grant names), derived from the Clerk user id. */
   user_id: string;
+  clerk_user_id: string;
   name?: string | null;
   email: string | null;
-  org_id: string | null;
-  org_name: string | null;
+  /** Clerk says this account belongs to an organization: it is listed but refused as staff. */
+  in_workspace?: boolean;
   last_seen_at: string | null;
   actions_30d: number;
 }
