@@ -37,6 +37,8 @@ export function WorkspacePanel({ orgId, name, onClose }: { orgId: string; name: 
   const [load, setLoad] = useState<Load>({ state: "loading" });
   const closeRef = useRef<HTMLButtonElement>(null);
   const opener = useRef<Element | null>(null);
+  const closeFn = useRef(onClose);
+  closeFn.current = onClose;
 
   const refresh = useCallback(async () => {
     const res = await loadTenantDetail(orgId);
@@ -48,14 +50,14 @@ export function WorkspacePanel({ orgId, name, onClose }: { orgId: string; name: 
     closeRef.current?.focus();
     void refresh();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !e.defaultPrevented) onClose();
+      if (e.key === "Escape" && !e.defaultPrevented) closeFn.current();
     };
     window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("keydown", onKey);
       if (opener.current instanceof HTMLElement) opener.current.focus();
     };
-  }, [refresh, onClose]);
+  }, [refresh]);
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
