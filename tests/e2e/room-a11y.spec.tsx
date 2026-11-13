@@ -265,16 +265,20 @@ for (const theme of ["light", "dark"] as const) {
     await expect(sheet.getByRole("timer")).toBeVisible();
     await expect.poll(() => page.evaluate(() => window.__gatewayLog!.some((e) => e.event === "wrap-up"))).toBe(true);
     expect(await axe(page)).toEqual([]);
-    // One-click owner, then confirm.
+    // A task with no owner is the host's to settle, or to hand to someone in one click.
+    await expect(sheet.getByRole("button", { name: "Confirm: Write the release notes" })).toBeVisible();
     await sheet.getByRole("combobox", { name: "Assign: Write the release notes" }).click();
     await sheet.getByRole("option", { name: "Raj Patel" }).click();
     await expect(sheet.locator(".wu-owner").getByText("Raj Patel")).toBeVisible();
-    await sheet.getByRole("button", { name: "Confirm: Write the release notes" }).click();
-    await expect(sheet.getByText("Write the release notes")).toBeHidden();
+    // Once it is Raj's, only Raj accepts or declines it: the host has no buttons for it.
+    await expect(sheet.getByText("Stays with Raj Patel to accept or decline.")).toBeVisible();
+    await expect(sheet.getByRole("button", { name: "Confirm: Write the release notes" })).toHaveCount(0);
+    await expect(sheet.getByRole("button", { name: "Dismiss: Write the release notes" })).toHaveCount(0);
+    expect(await axe(page)).toEqual([]);
     // End now closes the meeting for everyone.
     await sheet.getByRole("button", { name: "End now" }).click();
     await expect(page.getByRole("heading", { name: "You ended the meeting for everyone" })).toBeVisible();
-    await expect(page.getByText(/1 cards nobody confirmed are in your review queue|cards nobody confirmed are in your review queue/)).toBeVisible();
+    await expect(page.getByText(/cards nobody confirmed are in review queues: each task with the person it is for, the rest in yours/)).toBeVisible();
   });
 }
 

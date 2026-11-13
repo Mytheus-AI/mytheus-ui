@@ -19,11 +19,13 @@ import type { MeetingSocketState, RoomAck } from "@/lib/realtime/useMeetingSocke
 
    `WrapUpSheet`, for the host: "End for everyone" no longer ends the call at once. It opens this
    sheet with a 60-second countdown everyone shares (the deadline is core-api's stored start plus
-   60 s). In that minute the host settles what would otherwise drift: the cards nobody confirmed
-   (Confirm, Dismiss, and an owner for a task that has none), and the agenda items still open
-   (Covered, Skip). "End now", or the countdown running out, closes the meeting through core-api:
-   it ends for everyone, and every card still open goes to the review queue of the person named at
-   the bottom (you, by default), so nothing is left without an owner. "Keep the meeting going"
+   60 s). In that minute the host settles what would otherwise drift: the decisions nobody
+   confirmed and the tasks with no owner (Confirm, Dismiss, and an owner for a task that has
+   none), and the agenda items still open (Covered, Skip). A task that is someone's is theirs
+   alone to accept or decline, so it is listed without buttons. "End now", or the countdown
+   running out, closes the meeting through core-api: it ends for everyone, each open task goes to
+   the review queue of the person it is for, and every other open card to the person named at the
+   bottom (you, by default), so nothing is left without an owner. "Keep the meeting going"
    (or Escape) cancels the wrap-up for the whole room.
 
    `WrappingBanner`, for everyone else: "Maya is wrapping up" with the same countdown and a way to
@@ -219,7 +221,7 @@ export function WrapUpSheet({
         <p className="sr-only" aria-live="assertive">
           {warned}
         </p>
-        <p className="wu-lead">Everyone sees that you are wrapping up. Settle what you can; whatever is left goes to one person&rsquo;s review queue.</p>
+        <p className="wu-lead">Everyone sees that you are wrapping up. Settle what you can. Tasks stay with the person they are for; whatever else is left goes to one person&rsquo;s review queue.</p>
 
         {data === null && !loadFailed ? (
           <div className="wu-loading" aria-busy="true">
@@ -253,6 +255,11 @@ export function WrapUpSheet({
               {pending.map((card) => {
                 const isBusy = Boolean(busy[card.id]);
                 const noOwner = card.kind === "action" && unowned.has(card.id);
+                // A task belongs to the person it is for: only they accept or decline it
+                // (core-api enforces it), so it stays with them after the meeting.
+                const theirs =
+                  card.kind === "action" && Boolean(card.assignee_id) && card.assignee_id !== meId && participantIds.includes(card.assignee_id as string);
+                const yours = card.kind === "action" && Boolean(card.assignee_id) && card.assignee_id === meId;
                 return (
                   <li key={card.id} className="wu-card">
                     <p className="wu-kind">{card.kind === "decision" ? "Decision" : "Task"}</p>
@@ -282,26 +289,30 @@ export function WrapUpSheet({
                         )}
                       </div>
                     ) : null}
-                    <div className="wu-acts">
-                      <button
-                        type="button"
-                        className="nfy-act tap"
-                        disabled={isBusy}
-                        aria-label={`Confirm: ${card.content}`}
-                        onClick={() => void settle(card, "confirmed")}
-                      >
-                        Confirm
-                      </button>
-                      <button
-                        type="button"
-                        className="nfy-act is-quiet tap"
-                        disabled={isBusy}
-                        aria-label={`Dismiss: ${card.content}`}
-                        onClick={() => void settle(card, "dismissed")}
-                      >
-                        Dismiss
-                      </button>
-                    </div>
+                    {theirs ? (
+                      <p className="wu-kind">Stays with {nameOf(card.assignee_id as string)} to accept or decline.</p>
+                    ) : (
+                      <div className="wu-acts">
+                        <button
+                          type="button"
+                          className="nfy-act tap"
+                          disabled={isBusy}
+                          aria-label={`${yours ? "Accept" : "Confirm"}: ${card.content}`}
+                          onClick={() => void settle(card, "confirmed")}
+                        >
+                          {yours ? "Accept" : "Confirm"}
+                        </button>
+                        <button
+                          type="button"
+                          className="nfy-act is-quiet tap"
+                          disabled={isBusy}
+                          aria-label={`${yours ? "Decline" : "Dismiss"}: ${card.content}`}
+                          onClick={() => void settle(card, "dismissed")}
+                        >
+                          {yours ? "Decline" : "Dismiss"}
+                        </button>
+                      </div>
+                    )}
                   </li>
                 );
               })}
@@ -348,11 +359,11 @@ export function WrapUpSheet({
 
         <div className="wu-foot">
           <label htmlFor={`${uid}-owner`} className="wu-foot-label">
-            Leftover cards go to
+            Leftover decisions go to
           </label>
           <Dropdown
             id={`${uid}-owner`}
-            label="Leftover cards go to"
+            label="Leftover decisions go to"
             size="sm"
             className="wu-select"
             value={owner}

@@ -306,3 +306,100 @@ test("notes fold under the agenda item; saved questions are a count that opens t
   await expect(fold).toHaveAttribute("aria-expanded", "true");
   await expect(panel.locator(`#${await fold.getAttribute("aria-controls")}`).getByText("Is the date in the release notes?")).toBeVisible();
 });
+
+/* Who settles what (ownership.ts): a task is its owner's alone, a decision is the host's. */
+
+const TASK_RAJ = "cdcdcdcd-cdcd-4dcd-8dcd-cdcdcdcdcdcd";
+const TASK_MAYA = "dededede-dede-4ede-8ede-dededededede";
+
+async function ownedCards(page: Page) {
+  await ready(page);
+  await push(page, "agent-candidate", {
+    windowId: `${MEETING_ID}:60000`,
+    agent: "DecisionAgent",
+    kind: "decision_candidate",
+    candidates: [{ id: DECISION, content: "Ship the beta on 2 December", confidence: 0.86, rationale: null }],
+  });
+  await push(page, "agent-candidate", {
+    windowId: `${MEETING_ID}:70000`,
+    agent: "ActionAgent",
+    kind: "action_candidate",
+    candidates: [
+      { id: TASK_RAJ, content: "Send the pricing deck", confidence: 0.9, assignee_id: "u-raj", due_date: null },
+      { id: TASK_MAYA, content: "Book the launch review", confidence: 0.9, assignee_id: "u-maya", due_date: null },
+    ],
+  });
+}
+
+const cardOf = (page: Page, text: string) => agent(page).locator(".nfy-card").filter({ hasText: text });
+
+test("the host settles decisions and their own task, never someone else's task", async ({ mount, page }) => {
+  await mount(<RoomHarness />);
+  await ownedCards(page);
+  await agent(page).getByRole("button", { name: /more waiting/ }).click();
+
+  await expect(cardOf(page, "Ship the beta on 2 December").getByRole("button", { name: "Confirm" })).toBeVisible();
+  const mine = cardOf(page, "Book the launch review");
+  await expect(mine.getByRole("button", { name: "Accept" })).toBeVisible();
+  await expect(mine.getByRole("button", { name: "Decline" })).toBeVisible();
+
+  const rajs = cardOf(page, "Send the pricing deck");
+  await expect(rajs.getByText("Waiting for Raj Patel to accept it")).toBeVisible();
+  await expect(rajs.getByRole("button", { name: /Confirm|Accept|Edit|Dismiss|Decline/ })).toHaveCount(0);
+  await expect(rajs.getByRole("button", { name: "Hide for me" })).toBeVisible();
+  expect(await axe(page)).toEqual([]);
+});
+
+test("a guest accepts their own task and only watches the rest", async ({ mount, page }) => {
+  await mount(<RoomHarness asHost={false} />);
+  await ownedCards(page);
+  // Their own task is what needs them: it is the Now slot, ahead of the cards that wait for others.
+  const now = agent(page).getByRole("group", { name: "Now" });
+  await expect(now.getByText("Book the launch review")).toBeVisible();
+  await expect(now.getByRole("button", { name: "Accept" })).toBeVisible();
+
+  await agent(page).getByRole("button", { name: /more waiting/ }).click();
+  const decision = cardOf(page, "Ship the beta on 2 December");
+  await expect(decision.getByText("Waiting for the host to confirm it")).toBeVisible();
+  await expect(decision.getByRole("button", { name: "Confirm" })).toHaveCount(0);
+  await expect(cardOf(page, "Send the pricing deck").getByText("Waiting for Raj Patel to accept it")).toBeVisible();
+});
+
+/* The question dock (QuestionDock): a question comes up over the room, not only in the panel. */
+
+test("a suggested question comes up at the bottom left, even with the panel closed", async ({ mount, page }) => {
+  await mount(<RoomHarness />);
+  await ready(page);
+  await page.getByRole("button", { name: /Hide the side panel|Close the side panel|Hide panel/ }).first().click().catch(() => undefined);
+  await push(page, "agent-suggestion", {
+    windowId: `${MEETING_ID}:90000`,
+    agent: "QuestionAgent",
+    kind: "suggestion",
+    suggestions: [
+      { id: QUESTION, question: "Who signs off on the new date?", priority: 1, confidence: 0.9, why: "Nobody owns the sign-off yet." },
+      { id: SAVED, question: "Is the budget approved?", priority: 2, confidence: 0.8 },
+    ],
+  });
+  const dock = page.getByRole("region", { name: "A question your Myte suggests you ask" });
+  await expect(dock).toBeVisible();
+  await expect(dock.getByRole("alert")).toHaveText("Who signs off on the new date?");
+  await expect(dock.getByText("Nobody owns the sign-off yet.")).toBeVisible();
+  await expect(dock.getByText("1 more question after this one")).toBeVisible();
+  const box = await dock.boundingBox();
+  const viewport = page.viewportSize()!;
+  expect(box!.x).toBeLessThan(40);
+  expect(box!.y + box!.height).toBeGreaterThan(viewport.height / 2);
+  expect(await axe(page)).toEqual([]);
+
+  // Minimise keeps the count; opening it brings the question back.
+  await dock.getByRole("button", { name: "Minimise this question" }).click();
+  const pill = page.getByRole("button", { name: "Show the 2 questions your Myte suggests" });
+  await expect(pill).toBeVisible();
+  await pill.click();
+
+  // Asked: the next question takes its place.
+  await dock.getByRole("button", { name: "I asked it" }).click();
+  await expect(dock.getByRole("status")).toHaveText("Is the budget approved?");
+  await dock.getByRole("button", { name: "Dismiss" }).click();
+  await expect(dock).toHaveCount(0);
+});

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ArrowsClockwise, CheckCircle, CheckSquare, EyeSlash, PencilSimple, Scales, Trash } from "@phosphor-icons/react";
+import { ArrowsClockwise, CheckCircle, CheckSquare, EyeSlash, HourglassMedium, PencilSimple, Scales, Trash } from "@phosphor-icons/react";
 import { confirmCandidate, dismissCandidate, editCandidate } from "@/app/actions/candidates";
 import { checkAcceptedAction } from "@/app/actions/promises";
 import type { Candidate, Settlement } from "@/lib/realtime/candidates";
@@ -16,8 +16,12 @@ import { useRoomName } from "@/lib/realtime/room-names";
    - Edit rewrites the draft for everyone. While you edit, the card is locked for the others
      ("Raj is editing"), so two people never overwrite each other.
    - Hide for me takes it off your screen only. Nobody else is told and nothing is saved or
-     deleted. The host (or the meeting's creator) can instead Dismiss for everyone, after one
-     confirming click, and the room sees who did. */
+     deleted. The card's owner can instead Dismiss it for everyone (Decline, for a task), after
+     one confirming click, and the room sees who did.
+
+   Only the card's owner gets Confirm, Edit and Dismiss (ownership.ts; core-api enforces it): a
+   task belongs to the person it is for, who Accepts or Declines it; a decision, and a task with
+   no owner, belongs to the host. Everyone else sees the card and who it is waiting for. */
 
 const dueFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
@@ -38,7 +42,8 @@ export function CandidateCard({
   moment,
   leaving,
   meId,
-  canDismissForEveryone,
+  canAct,
+  waitingFor,
   lockedBy,
   onConfirmed,
   onEdited,
@@ -56,8 +61,10 @@ export function CandidateCard({
   leaving: boolean;
   /** Your internal user id. */
   meId: string | null;
-  /** You host or created the meeting. */
-  canDismissForEveryone: boolean;
+  /** The card is yours to settle: your task, or (as host) a decision or a task with no owner. */
+  canAct: boolean;
+  /** Not yours: who it waits for, e.g. "Maya" or "the host". */
+  waitingFor: string;
   /** Someone else is editing this card right now (their internal user id). */
   lockedBy: string | null;
   /** core-api confirmed it; `by` is who core-api says confirmed it. */
@@ -79,6 +86,11 @@ export function CandidateCard({
   const [detail, setDetail] = useState(candidate.kind === "decision" ? (candidate.rationale ?? "") : (candidate.dueDate ?? ""));
   const isDecision = candidate.kind === "decision";
   const noun = isDecision ? "decision" : "task";
+  // A task that is yours is accepted or declined; everything else is confirmed or dismissed.
+  const yourTask = !isDecision && Boolean(candidate.assigneeId) && candidate.assigneeId === meId;
+  const say = yourTask
+    ? { confirm: "Accept", confirming: "Accepting...", dismiss: "Decline", dismissing: "Declining...", ask: "Decline this task? It leaves every screen and is not saved." }
+    : { confirm: "Confirm", confirming: "Confirming...", dismiss: "Dismiss", dismissing: "Dismissing...", ask: "Dismiss for everyone? It leaves every screen and is not saved." };
   const locked = Boolean(lockedBy) && !editing;
   const editorName = lockedBy ? nameOf(lockedBy, "Someone") : null;
   const onLockRef = useRef(onLock);
@@ -258,20 +270,38 @@ export function CandidateCard({
           ) : null}
           {askDismiss ? (
             <div className="nfy-confirm" role="group" aria-label={`Dismiss this ${noun} for everyone?`}>
-              <p>Dismiss for everyone? It leaves every screen and is not saved.</p>
+              <p>{say.ask}</p>
               <div className="nfy-acts">
                 <button type="button" className="nfy-act is-danger tap" disabled={busy !== null} onClick={() => void dismissForEveryone()} autoFocus>
-                  {busy === "dismiss" ? "Dismissing..." : "Dismiss for everyone"}
+                  {busy === "dismiss" ? say.dismissing : yourTask ? "Decline task" : "Dismiss for everyone"}
                 </button>
                 <button type="button" className="nfy-act is-quiet tap" disabled={busy !== null} onClick={() => setAskDismiss(false)}>
                   Keep it
                 </button>
               </div>
             </div>
+          ) : !canAct ? (
+            <>
+              <p className="nfy-wait" role="status">
+                <HourglassMedium size={14} aria-hidden />
+                Waiting for {waitingFor} to {isDecision ? "confirm" : "accept"} it
+              </p>
+              <div className="nfy-acts">
+                <button
+                  type="button"
+                  className="nfy-act is-quiet tap"
+                  onClick={onHide}
+                  title="Takes this card off your screen only. Others still see it."
+                >
+                  <EyeSlash size={14} aria-hidden />
+                  Hide for me
+                </button>
+              </div>
+            </>
           ) : (
             <div className="nfy-acts">
               <button type="button" className="nfy-act tap" disabled={disabled} onClick={() => void confirm()}>
-                {busy === "confirm" ? "Confirming..." : "Confirm"}
+                {busy === "confirm" ? say.confirming : say.confirm}
               </button>
               <button
                 ref={editButton}
@@ -292,12 +322,10 @@ export function CandidateCard({
                 <EyeSlash size={14} aria-hidden />
                 Hide for me
               </button>
-              {canDismissForEveryone ? (
-                <button type="button" className="nfy-act is-quiet tap" disabled={disabled} onClick={() => setAskDismiss(true)}>
-                  <Trash size={14} aria-hidden />
-                  Dismiss
-                </button>
-              ) : null}
+              <button type="button" className="nfy-act is-quiet tap" disabled={disabled} onClick={() => setAskDismiss(true)}>
+                <Trash size={14} aria-hidden />
+                {say.dismiss}
+              </button>
             </div>
           )}
         </>

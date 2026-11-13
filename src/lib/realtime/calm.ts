@@ -32,7 +32,8 @@ export type QueueEntry =
  * Rank, lower first. Priority-1 alerts are not here: they are the red banner pinned above
  * everything. Then: an "act now" question, an amber alert, cards that wait for a confirm (shared
  * with the room, so they matter to everyone), "attention" questions, blue alerts and context for
- * you, and last the informational questions.
+ * you, the informational questions, and last the cards that wait for someone else (you can see
+ * them, but only their owner can settle them: ownership.ts).
  */
 export const RANK = {
   suggestionHigh: 1,
@@ -42,6 +43,7 @@ export const RANK = {
   alertLow: 5,
   context: 5,
   suggestionLow: 6,
+  watching: 7,
 } as const;
 
 export function needsYouQueue(input: {
@@ -49,6 +51,8 @@ export function needsYouQueue(input: {
   moments: readonly MomentCard[];
   suggestions: readonly Suggestion[];
   fills?: readonly ContextFill[];
+  /** Whether a card holds something YOU can settle; a card that only waits for others sinks. */
+  mine?: (card: MomentCard) => boolean;
 }): QueueEntry[] {
   const out: Array<QueueEntry & { order: number }> = [];
   let order = 0;
@@ -57,7 +61,8 @@ export function needsYouQueue(input: {
     out.push({ type: "alert", key: `alert:${a.id}`, rank: a.priority === 2 ? RANK.alertMedium : RANK.alertLow, alert: a, order: order++ });
   }
   for (const card of input.moments) {
-    out.push({ type: "moment", key: `moment:${card.key}`, rank: RANK.moment, card, order: order++ });
+    const rank = !input.mine || input.mine(card) ? RANK.moment : RANK.watching;
+    out.push({ type: "moment", key: `moment:${card.key}`, rank, card, order: order++ });
   }
   for (const s of input.suggestions) {
     const rank = s.priority === 1 ? RANK.suggestionHigh : s.priority === 2 ? RANK.suggestionMedium : RANK.suggestionLow;

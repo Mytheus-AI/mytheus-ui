@@ -42,6 +42,8 @@ import { RoomNamesProvider, type RoomNames } from "@/lib/realtime/room-names";
 import { orderedNotes } from "@/lib/realtime/notes";
 import { decidedItems, lockedBy, orderedCandidates, recentSettlements } from "@/lib/realtime/candidates";
 import { openSuggestions, savedSuggestions } from "@/lib/realtime/suggestions";
+import { cardOwner } from "@/lib/realtime/ownership";
+import { QuestionDock } from "@/components/room/QuestionDock";
 import { visibleContextFills } from "@/lib/realtime/contextFills";
 import { orderedAlerts } from "@/lib/realtime/alerts";
 import { useMeetingSocket } from "@/lib/realtime/useMeetingSocket";
@@ -882,7 +884,7 @@ function Room({
   const ledger = useMemo<CandidateLedger>(
     () => ({
       meId,
-      steers: Boolean(me?.steers),
+      owner: (c) => cardOwner(c, { meId, steers: Boolean(me?.steers), participantIds: meeting.participantIds }),
       settlements,
       lockedBy: (id) => lockedBy(socket.candidates, id, meId, Date.now()),
       settle: socket.settleCandidate,
@@ -891,7 +893,7 @@ function Room({
       hide: socket.hideCandidate,
       lock: socket.lockCandidate,
     }),
-    [meId, me?.steers, settlements, socket.candidates, socket.settleCandidate, socket.announceCandidate, socket.updateCandidate, socket.hideCandidate, socket.lockCandidate],
+    [meId, me?.steers, meeting.participantIds, settlements, socket.candidates, socket.settleCandidate, socket.announceCandidate, socket.updateCandidate, socket.hideCandidate, socket.lockCandidate],
   );
 
   const liveState: "listening" | "paused" | "off" | "off_record" = joined
@@ -1005,9 +1007,9 @@ function Room({
               <p>
                 {byMe
                   ? closedInfo && closedInfo.moved_decisions + closedInfo.moved_actions > 0
-                    ? `Everyone has left the call. Confirmed decisions and tasks are saved; the ${closedInfo.moved_decisions + closedInfo.moved_actions} cards nobody confirmed are in ${closedInfo.review_owner_id && closedInfo.review_owner_id !== meId ? `${names[closedInfo.review_owner_id]?.name ?? "their"}'s` : "your"} review queue.`
+                    ? `Everyone has left the call. Confirmed decisions and tasks are saved; the ${closedInfo.moved_decisions + closedInfo.moved_actions} cards nobody confirmed are in review queues: each task with the person it is for, the rest in ${closedInfo.review_owner_id && closedInfo.review_owner_id !== meId ? `${names[closedInfo.review_owner_id]?.name ?? "their"}'s` : "yours"}.`
                     : "Everyone has left the call. Confirmed decisions and tasks are saved."
-                  : `${names[ended.byUserId]?.name ?? "The host"} ended this meeting for everyone. Confirmed decisions and tasks are saved, and anything left open went to the host's review queue.`}
+                  : `${names[ended.byUserId]?.name ?? "The host"} ended this meeting for everyone. Confirmed decisions and tasks are saved. A task still open is in its owner's review queue, and anything else went to the host's.`}
               </p>
               <Link href={`/meetings/${meeting.id}`} className="room-ended-link tap" autoFocus>
                 <ArrowLeft size={16} weight="bold" aria-hidden />
@@ -1165,6 +1167,18 @@ function Room({
           )}
         </main>
       </div>
+
+      {/* A question is asked while the topic is live, so it comes up over the room itself, in
+          either mode and whatever the panel shows; decisions and tasks can wait in the panel. */}
+      {live.status !== "consent" && joined ? (
+        <QuestionDock
+          suggestions={suggestions}
+          localSpeaking={Boolean(live.participants.find((p) => p.isLocal)?.isSpeaking)}
+          onResolved={socket.resolveSuggestion}
+          onSaved={socket.markSuggestionSaved}
+          onNotice={toast}
+        />
+      ) : null}
 
       {me?.steers && socket.wrapUp ? (
         <WrapUpSheet

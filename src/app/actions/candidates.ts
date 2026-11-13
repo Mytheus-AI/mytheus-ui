@@ -5,7 +5,8 @@ import { api, ApiError } from "@/lib/api/client";
 /* Confirm / Edit / Dismiss for the agent's decision and action candidates (Plan 7-9 section 3.8
    step 1). Confirm is the ONLY thing that commits: `core-api` writes the row and publishes the
    `decisions` / `actions` event in one transaction. Edit rewrites the proposed row. Dismiss
-   publishes nothing. Nothing about the tenant or the user is taken from the input. */
+   publishes nothing. core-api lets only the card's owner do any of them: the person a task is
+   for; the meeting's host (or creator) for a decision or a task with no owner. Nothing about the tenant or the user is taken from the input. */
 
 export type CandidateKind = "decision" | "action";
 
@@ -28,6 +29,13 @@ const noun = (kind: CandidateKind) => (kind === "decision" ? "decision" : "task"
 function failure(err: unknown, kind: CandidateKind, verb: string): CandidateResult {
   if (err instanceof ApiError) {
     if (err.isAuthFailure) return { ok: false, message: "Your session expired. Sign in again." };
+    if (err.status === 403 && err.code === "FORBIDDEN_ROLE") {
+      // core-api: a card is settled only by the person it belongs to.
+      return {
+        ok: false,
+        message: kind === "decision" ? `Only the meeting's host can ${verb} a decision.` : `Only the person this task is for can ${verb} it.`,
+      };
+    }
     if (err.status === 403) return { ok: false, message: `Only people in this meeting can ${verb} its ${noun(kind)}s.` };
     if (err.status === 404) return { ok: false, message: `That ${noun(kind)} is no longer here.`, gone: true };
     if (err.status === 409) return { ok: false, message: `Someone already settled this ${noun(kind)}.`, gone: true };

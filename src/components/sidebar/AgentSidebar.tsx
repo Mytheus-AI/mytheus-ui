@@ -20,6 +20,7 @@ import {
 import { useCallToast } from "@/components/call/CallToast";
 import type { LiveNote } from "@/lib/realtime/notes";
 import type { Candidate, CandidateOutcome, Settlement } from "@/lib/realtime/candidates";
+import type { CardOwner } from "@/lib/realtime/ownership";
 import { CandidateCard, SettledCard, type CandidateRoomAck } from "@/components/sidebar/CandidateCard";
 import type { Suggestion } from "@/lib/realtime/suggestions";
 import { SuggestionCard, type SuggestionOutcome } from "@/components/sidebar/SuggestionCard";
@@ -56,9 +57,11 @@ import "./sidebar-calm.css";
 
    Every card is live:
    - Decision and action candidates are the meeting's shared ledger (ADR-0031; polish program
-     Phase 0). Confirm calls core-api, which is the only thing that commits; then the room is told,
-     so everyone's card settles ("Confirmed by Maya"). Edit locks the card for the others. Hide for
-     me is personal; the host can dismiss for everyone.
+     Phase 0). Everyone sees them, but only a card's owner settles it (ownership.ts): a task is
+     accepted or declined by the person it is for; a decision, and a task with no owner, by the
+     host. Confirm calls core-api, which is the only thing that commits; then the room is told, so
+     everyone's card settles ("Confirmed by Maya"). Edit locks the card for the others. Hide for me
+     is personal. A card that waits for someone else says who, and sinks below what needs you.
    - Suggested questions (ADR-0034), context fills (P10), promises and notes are private to you.
    - ProactiveAgent alerts (P11) are private to you; a priority-1 alert (a conflict) is the red
      banner pinned above everything and cannot be dismissed from view by arrival order.
@@ -115,8 +118,8 @@ export interface AgentAttention {
 /** The candidate ledger's callbacks, wired to the meeting socket by the room. */
 export interface CandidateLedger {
   meId: string | null;
-  /** You host or created the meeting: you may dismiss a card for everyone. */
-  steers: boolean;
+  /** Whose card it is: yours to settle, or who it waits for (ownership.ts). */
+  owner: (c: Candidate) => CardOwner;
   settlements: Settlement[];
   lockedBy: (id: string) => string | null;
   settle: (id: string, outcome: "confirmed" | "dismissed", by?: string | null) => void;
@@ -207,7 +210,9 @@ export function AgentSidebar({
   const alertCards = useMemo(() => cardAlerts(alerts), [alerts]);
   const label = speakerLabel ?? ((sid: string) => nameOf(sid, "Someone"));
 
-  const count = alertsNeedingAttention(alerts) + candidates.length + suggestions.filter((s) => s.priority !== 3).length;
+  // Only what YOU can settle asks for your attention; a card waiting for someone else does not.
+  const mine = candidates.filter((c) => ledger.owner(c).mine).length;
+  const count = alertsNeedingAttention(alerts) + mine + suggestions.filter((s) => s.priority !== 3).length;
   const hasConflict = banners.some((a) => a.status === "unread");
   useEffect(() => {
     onAttentionChange?.({ count, conflict: hasConflict });
@@ -227,10 +232,19 @@ export function AgentSidebar({
   const cards = useMemo(() => momentCards(candidates, notes), [candidates, notes]);
   const onCard = useMemo(() => cardMomentIds(cards), [cards]);
   const queue = useMemo(
-    () => needsYouQueue({ alerts: alertCards, moments: cards, suggestions: shownSuggestions, fills: contextFills }),
+    () =>
+      needsYouQueue({
+        alerts: alertCards,
+        moments: cards,
+        suggestions: shownSuggestions,
+        fills: contextFills,
+        // A card is yours when it holds a decision or task you can settle, or a promise or note
+        // of yours; one that only waits for other people sinks to the end of the queue.
+        mine: (card) => card.parts.some((p) => !("candidate" in p) || ledger.owner(p.candidate).mine),
+      }),
     // `shownSuggestions` is derived each render; its ids are what matter.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [alertCards, cards, contextFills, shownSuggestions.map((s) => s.id).join(",")],
+    [alertCards, cards, contextFills, ledger.owner, shownSuggestions.map((s) => s.id).join(",")],
   );
   const groups = useMemo(() => notesByAgenda(notes, agendaItems, startedAt), [notes, agendaItems, startedAt]);
 
@@ -292,7 +306,7 @@ export function AgentSidebar({
     slideOut(setLeavingCandidates, c.id, () => {
       ledger.settle(c.id, "confirmed", by);
       if (!by || by === ledger.meId) {
-        toast(c.kind === "decision" ? "Decision confirmed for the team" : "Task confirmed", "success");
+        toast(c.kind === "decision" ? "Decision confirmed for the team" : c.assigneeId === ledger.meId ? "Task accepted" : "Task confirmed", "success");
         void ledger.announce(c.id, "confirmed");
       }
     });
@@ -300,7 +314,7 @@ export function AgentSidebar({
   const onCandidateDismissed = (c: Candidate) => {
     slideOut(setLeavingCandidates, c.id, () => {
       ledger.settle(c.id, "dismissed");
-      toast(`Dismissed for everyone`, "success");
+      toast(c.kind === "action" && c.assigneeId === ledger.meId ? "Task declined" : "Dismissed for everyone", "success");
       void ledger.announce(c.id, "dismissed");
     });
   };
@@ -428,6 +442,14 @@ export function AgentSidebar({
       </div>
     ) : null;
 
+  const cardActions = (c: Candidate) => {
+    const owner = ledger.owner(c);
+    return {
+      canAct: owner.mine,
+      waitingFor: owner.mine ? "" : owner.waitsFor === "host" ? "the host" : nameOf(owner.userId, "its owner"),
+    };
+  };
+
   const renderCandidate = (c: Candidate, opts: { asPart: boolean; moment?: ReactNode }) => (
     <CandidateCard
       key={c.id}
@@ -436,7 +458,7 @@ export function AgentSidebar({
       moment={opts.moment}
       leaving={leavingCandidates.has(c.id)}
       meId={ledger.meId}
-      canDismissForEveryone={ledger.steers}
+      {...cardActions(c)}
       lockedBy={ledger.lockedBy(c.id)}
       onConfirmed={(by) => onCandidateConfirmed(c, by)}
       onEdited={(patch) => {
