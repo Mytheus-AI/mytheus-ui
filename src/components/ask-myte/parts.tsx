@@ -46,17 +46,39 @@ export function MyteFace({
   );
 }
 
-/** "Pip, your Myte" with its small plush: how every answer is signed. */
-export function MyteSignature({ seed, name, state }: { seed: string; name: string; state?: FaceState }) {
+/** "Pip, your Myte" with its plush: how every answer is signed. The latest answer's Myte is
+ *  live and large enough to watch (thinking while it looks things up, speaking while the answer
+ *  streams, idle and blinking after); older answers keep a still face. */
+export function MyteSignature({
+  seed,
+  name,
+  state,
+  live = false,
+}: {
+  seed: string;
+  name: string;
+  state?: FaceState;
+  live?: boolean;
+}) {
   return (
-    <div className="flex items-center gap-2.5">
-      <span className="block h-8 w-8 overflow-hidden rounded-full bg-surface-2 ring-1 ring-line">
-        <AgentOrb seed={seed} size={32} />
-      </span>
-      <p className="text-[14px] leading-tight">
+    <div className="flex items-center gap-3">
+      {live ? (
+        <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-surface-2 ring-1 ring-line">
+          <MyteFace seed={seed} name={name} state={state ?? "idle"} size={56} />
+        </span>
+      ) : (
+        <span className="block h-10 w-10 shrink-0 overflow-hidden rounded-full bg-surface-2 ring-1 ring-line">
+          <AgentOrb seed={seed} size={40} />
+        </span>
+      )}
+      <p className="text-[15px] leading-tight">
         <span className="font-semibold text-ink">{name}</span>
         <span className="text-ink-3"> your Myte</span>
-        {state && state !== "idle" ? <span className="text-ink-3">, {faceLabel(state)}</span> : null}
+        {state && state !== "idle" ? (
+          <span className="mt-0.5 block text-[13px] text-ink-3" aria-live="polite">
+            {faceLabel(state)}
+          </span>
+        ) : null}
       </p>
     </div>
   );

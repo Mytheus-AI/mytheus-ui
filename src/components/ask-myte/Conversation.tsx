@@ -189,7 +189,7 @@ function AnswerBlock({
         }}
         className="rounded-card outline-none focus-visible:ring-2 focus-visible:ring-signal focus-visible:ring-offset-4 focus-visible:ring-offset-bg"
       >
-        <MyteSignature seed={persona.seed} name={persona.name} state={streaming ? face : undefined} />
+        <MyteSignature seed={persona.seed} name={persona.name} state={last ? face : undefined} live={last} />
 
         <StepsLine steps={answer.steps} streaming={streaming} />
         {streaming && answer.steps.length === 0 && !hasText ? (
