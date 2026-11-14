@@ -795,3 +795,39 @@ export async function sendInvitations(_meetingId: string, userIds: string[]) {
     },
   };
 }
+
+/* ---------------- Ask Myte (ADR-0047) ---------------- */
+import { MENTIONS as ASK_MENTIONS, STARTERS as ASK_STARTERS, THREAD as ASK_THREAD, THREADS as ASK_THREADS } from "../ask-myte-fixture";
+const aw = () => window as unknown as { __askConfirmed?: unknown[]; __askFeedback?: unknown[] };
+export async function listMyteThreads() {
+  return { ok: true as const, list: ASK_THREADS };
+}
+export async function getMyteThread() {
+  return { ok: true as const, thread: ASK_THREAD };
+}
+export async function renameMyteThread(id: string, title: string) {
+  return { ok: true as const, thread: { ...ASK_THREADS.items.find((t) => t.id === id)!, title } };
+}
+export async function pinMyteThread(id: string, pinned: boolean) {
+  return { ok: true as const, thread: { ...ASK_THREADS.items.find((t) => t.id === id)!, pinned } };
+}
+export async function deleteMyteThread() {
+  return { ok: true as const };
+}
+export async function deleteAllMyteThreads() {
+  return { ok: true as const };
+}
+export async function sendMyteFeedback(id: string, feedback: number, reason: string | null) {
+  (aw().__askFeedback ??= []).push({ id, feedback, reason });
+  return { ok: true as const, message: { id } };
+}
+export async function myteStarters() {
+  return ASK_STARTERS.slice(0, 3);
+}
+export async function myteMentions() {
+  return ASK_MENTIONS;
+}
+export async function confirmMyteProposal(proposal: { kind: string; title: string }, edits: unknown) {
+  (aw().__askConfirmed ??= []).push({ proposal, edits });
+  return { ok: true as const, done: "Task added", href: "/work/tasks" };
+}
