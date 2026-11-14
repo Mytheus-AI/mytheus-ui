@@ -14,7 +14,7 @@ const flush = async (n = 6) => {
 
 type Pending = { text: string; voice?: string; speed: number; resolve: (r: ChunkResponse) => void; reject: (e: unknown) => void; signal: AbortSignal };
 
-function harness(opts: { unlock?: boolean } = {}) {
+function harness(opts: { unlock?: boolean; elapsed?: () => number } = {}) {
   const requests: Pending[] = [];
   const fetchChunk: FetchChunk = (body, signal) =>
     new Promise<ChunkResponse>((resolve, reject) => {
@@ -34,7 +34,7 @@ function harness(opts: { unlock?: boolean } = {}) {
           p.stopped = true;
           log.push(`stop:${p.text}`);
         },
-        elapsed: () => 1,
+        elapsed: opts.elapsed ?? (() => 1),
       };
     },
     unlock: async () => opts.unlock ?? true,
@@ -283,4 +283,115 @@ test("warm: concurrency is configurable; cancel stops what is still queued; a fa
   void h.speaker.speak({ key: "x", text: "A one." });
   await flush();
   assert.equal(h.requests.length, 3, "the failed one is fetched for real");
+});
+
+/* ---------------- streams (Talk mode speaks while the answer is written) ---------------- */
+
+const clipOf = (text: string) => ({ duration: 2, text }) as Clip & { text: string };
+
+test("stream: units are fetched as they are pushed, each after the one before has arrived, and play in order", async () => {
+  const h = harness();
+  const events: string[] = [];
+  const st = h.speaker.stream({ key: "talk:a", speed: 1.1, onAnswer: () => events.push("answer") });
+  await flush();
+  assert.equal(h.requests.length, 0, "nothing to say yet");
+  st.push("Two decisions were confirmed,");
+  await flush();
+  assert.equal(h.requests.length, 1);
+  assert.equal(h.requests[0]!.text, "Two decisions were confirmed,");
+  assert.equal(h.requests[0]!.speed, 1.1);
+  st.push("on Thursday.");
+  await flush();
+  assert.equal(h.requests.length, 1, "the first unit renders alone");
+  h.requests[0]!.resolve(h.ok("u0"));
+  await flush();
+  assert.deepEqual(h.log, ["play:u0"]);
+  assert.deepEqual(events, ["answer"]);
+  assert.equal(h.requests.length, 2, "the next renders while the first plays");
+  h.requests[1]!.resolve(h.ok("u1"));
+  await flush();
+  h.playing[0]!.end();
+  await flush();
+  assert.deepEqual(h.log, ["play:u0", "play:u1"]);
+  // Everything pushed is said, the answer is still being written: it waits.
+  h.playing[1]!.end();
+  await flush();
+  assert.equal(h.speaker.getSnapshot().status, "loading");
+  st.push("Meetings go live on join.");
+  await flush();
+  h.requests[2]!.resolve(h.ok("u2"));
+  await flush();
+  assert.deepEqual(h.log, ["play:u0", "play:u1", "play:u2"]);
+  st.end();
+  h.playing[2]!.end();
+  assert.equal(await st.done, "ended");
+  assert.equal(h.speaker.getSnapshot().status, "idle");
+});
+
+test("stream: a filler plays while the answer renders; the answer's first audio cuts it and plays", async () => {
+  const h = harness();
+  const events: string[] = [];
+  const st = h.speaker.stream({ key: "talk:a", onFiller: (id) => events.push(`filler:${id}`), onAnswer: () => events.push("answer") });
+  const filler = st.filler(clipOf("Got it."), "ack");
+  await flush();
+  assert.deepEqual(h.log, ["play:Got it."]);
+  assert.equal(st.fillerPlaying(), true);
+  assert.equal(h.speaker.getSnapshot().status, "speaking", "the plush reads its level");
+  assert.equal(await st.filler(clipOf("Checking your tasks."), "step"), "skipped", "one filler at a time");
+  st.push("You owe Raj the pricing draft.");
+  await flush();
+  h.requests[0]!.resolve(h.ok("u0"));
+  await flush();
+  // 1 s of the 2 s filler is left: more than 300 ms, so it is cut (faded) and the answer starts.
+  assert.deepEqual(h.log, ["play:Got it.", "stop:Got it.", "play:u0"]);
+  assert.equal(await filler, "cut");
+  assert.deepEqual(events, ["filler:ack", "answer"]);
+  assert.equal(await st.filler(clipOf("Still looking."), "slow"), "skipped", "never once the answer has started");
+  st.end();
+  h.playing[1]!.end();
+  assert.equal(await st.done, "ended");
+});
+
+test("stream: a filler with less than 300 ms left finishes before the answer starts", async () => {
+  const h = harness({ elapsed: () => 1.8 });
+  const st = h.speaker.stream({ key: "talk:a" });
+  const filler = st.filler(clipOf("Got it."));
+  st.push("Yes.");
+  await flush();
+  h.requests[0]!.resolve(h.ok("u0"));
+  await flush();
+  assert.deepEqual(h.log, ["play:Got it."], "the answer waits for the last word");
+  h.playing[0]!.end();
+  await flush();
+  assert.deepEqual(h.log, ["play:Got it.", "play:u0"]);
+  assert.equal(await filler, "ended");
+});
+
+test("stream: ended with nothing but a filler resolves when the filler ends; stop cuts a filler", async () => {
+  const h = harness();
+  const st = h.speaker.stream({ key: "talk:a" });
+  void st.filler(clipOf("Got it."));
+  st.end();
+  await flush();
+  assert.equal(h.speaker.getSnapshot().status, "speaking");
+  h.playing[0]!.end();
+  assert.equal(await st.done, "ended");
+
+  const st2 = h.speaker.stream({ key: "talk:b" });
+  const f2 = st2.filler(clipOf("Sure, one sec."));
+  await flush();
+  h.speaker.stop("talk:b");
+  assert.equal(await f2, "cut");
+  assert.equal(await st2.done, "stopped");
+  assert.ok(h.log.includes("stop:Sure, one sec."));
+});
+
+test("stream: a failing unit ends the stream with its reason", async () => {
+  const h = harness();
+  const st = h.speaker.stream({ key: "talk:a" });
+  st.push("Hello there.");
+  await flush();
+  h.requests[0]!.resolve(h.err(429, { reason: "rate_limited" }));
+  assert.equal(await st.done, "error");
+  assert.equal(h.speaker.getSnapshot().error, "rate_limited");
 });

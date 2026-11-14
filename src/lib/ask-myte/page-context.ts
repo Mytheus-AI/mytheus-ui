@@ -48,6 +48,51 @@ export function pageChipLabel(page: AskPage): string {
   return page.title ? `${noun}: ${page.title}` : noun;
 }
 
+/** "This meeting", "This decision", "This person": the scope button's words for a page. */
+export function pageChipNoun(page: Pick<AskPage, "kind">): string {
+  return page.kind === "meeting" ? "This meeting" : page.kind === "decision" ? "This decision" : "This person";
+}
+
+const shortDate = (iso: string, locale: string, now: Date): string | null => {
+  const d = new Date(`${iso.slice(0, 10)}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  const sameYear = d.getUTCFullYear() === now.getUTCFullYear();
+  return new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }), timeZone: "UTC" }).format(d);
+};
+
+/** The composer's scope button: "All of Mytheus", "Samar Rihan", "Feature Update", "As of Nov 3". */
+export function scopeShortLabel(scope: AskScope, locale = "en-US", now = new Date()): string {
+  switch (scope.kind) {
+    case "meeting":
+      return scope.label?.trim() || "A meeting";
+    case "person":
+      return scope.label?.trim() || "A person";
+    case "as_of": {
+      const d = scope.as_of ? shortDate(scope.as_of, locale, now) : null;
+      return d ? `As of ${d}` : "As of a date";
+    }
+    default:
+      return "All of Mytheus";
+  }
+}
+
+/** The composer's placeholder for a scope: "Ask about Samar Rihan…", "Ask as of Nov 3…", or
+    `fallback` ("Ask Pip anything…") when everything is in scope. */
+export function scopePlaceholder(scope: AskScope, fallback: string, locale = "en-US", now = new Date()): string {
+  switch (scope.kind) {
+    case "meeting":
+      return scope.label?.trim() ? `Ask about ${scope.label.trim()}…` : "Ask about this meeting…";
+    case "person":
+      return scope.label?.trim() ? `Ask about ${scope.label.trim()}…` : "Ask about this person…";
+    case "as_of": {
+      const d = scope.as_of ? shortDate(scope.as_of, locale, now) : null;
+      return d ? `Ask as of ${d}…` : fallback;
+    }
+    default:
+      return fallback;
+  }
+}
+
 /** The words a scope chip shows. */
 export function scopeLabel(scope: AskScope, locale = "en-US"): string {
   switch (scope.kind) {

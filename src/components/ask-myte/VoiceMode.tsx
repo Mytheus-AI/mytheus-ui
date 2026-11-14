@@ -4,7 +4,11 @@ import { useCallback, useEffect, useId, useMemo, useReducer, useRef, useState } 
 import { Microphone, Pause, PhoneDisconnect, Play, SpeakerHigh, SpeakerSimpleSlash } from "@phosphor-icons/react";
 import { AgentOrb } from "@/components/agent/AgentOrb";
 import { failureNote } from "@/lib/voice/catalog";
-import { myteSpeaker, useVoiceSpeed } from "@/lib/voice/myte-voice";
+import { myteFillers, myteSpeaker, useVoiceSpeed } from "@/lib/voice/myte-voice";
+import { FILLER_PHRASES, createFillerScheduler, type FillerAction } from "@/lib/voice/fillers";
+import { createSegmenter, type Segmenter } from "@/lib/voice/stream-text";
+import { TIMING_MARKS, createTurnTiming, formatMs, formatSummary, wantsVoiceDebug, type TurnSummary, type TurnTiming } from "@/lib/voice/turn-timing";
+import type { SpeechStream } from "@/lib/voice/speaker";
 import { failureCopy } from "@/lib/ask-myte/compose";
 import { plainText, type Answer } from "@/lib/ask-myte/reducer";
 import { firstNameOf, initialVoice, phaseWords, pickGreeting, plushFor, spaceEvent, voiceReducer } from "@/lib/ask-myte/voice-machine";
@@ -23,14 +27,42 @@ import type { AskMyteState } from "./useAskMyte";
    pre-roll, so the first syllable is kept) and ends (about 1.2 s of quiet, 30 s at most). The
    clip is transcribed by the server (POST /api/voice/transcribe, faster-whisper), so it works in
    every browser that can record, not only where the browser's own recognition works. The words
-   go into the normal Ask Myte thread, the answer is spoken, and it listens again. It never
-   records while it speaks; Space interrupts it.
+   go into the normal Ask Myte thread and the answer is spoken while it streams, with short
+   fillers in its voice ("Got it.", "Checking your calendar.") covering the wait; then it listens
+   again. It never records while it speaks; Space interrupts it, fillers included.
+
+   Every turn is timed (lib/voice/turn-timing.ts): a one-line summary goes to the console, and
+   `?voice-debug=1` shows the numbers in a small overlay.
 
    Keyboard: Space interrupts, sends what it is hearing, or pauses; Esc ends. Controls: pause,
    mute (answers are shown but not read aloud), end. */
 
 const TICK_MS = 50;
 const SLOW_TRANSCRIBE_MS = 5000;
+
+/** One spoken turn, followed from the question to the last word said. */
+type Turn = {
+  n: number;
+  /** the answer's key, once it starts streaming */
+  key: string | null;
+  /** false once interrupted, muted or ended: the text keeps streaming, nothing more is said */
+  active: boolean;
+  timing: TurnTiming;
+  segmenter: Segmenter;
+  stepSeen: boolean;
+  textSeen: boolean;
+  settled: boolean;
+  logged: boolean;
+};
+
+const TIMING_LABEL: Record<(typeof TIMING_MARKS)[number], string> = {
+  stt: "Transcript",
+  step: "First step",
+  text: "First text",
+  audio: "First answer audio",
+  done: "Done",
+  filler: "First filler",
+};
 
 export default function VoiceMode({
   conv,
@@ -67,10 +99,18 @@ export default function VoiceMode({
   const [voiceNote, setVoiceNote] = useState<string | null>(null);
   const [greeting] = useState(() => pickGreeting(persona.name, firstNameOf(firstName)));
   const [speed] = useVoiceSpeed();
+  const speedRef = useRef(speed);
+  speedRef.current = speed;
   const spokenKey = useRef<string | null>(null);
   const sentTurn = useRef(0);
-  const answerKey = useRef<string | null>(null);
-  const settledKey = useRef<string | null>(null);
+  const turnRef = useRef<Turn | null>(null);
+  const talkStream = useRef<SpeechStream | null>(null);
+  const [sched] = useState(() => createFillerScheduler({ ready: (p) => myteFillers().ready(p, speedRef.current) }));
+  const pendingTiming = useRef<TurnTiming | null>(null);
+  const [fillerOn, setFillerOn] = useState<string | null>(null);
+  const [timings, setTimings] = useState<TurnSummary | null>(null);
+  const [debug, setDebug] = useState(false);
+  const warmed = useRef(false);
   const phaseRef = useRef(s.phase);
   phaseRef.current = s.phase;
   const mounted = useRef(true);
@@ -103,6 +143,13 @@ export default function VoiceMode({
     micOpening.current = null;
   }, []);
 
+  /** Render the fillers in this voice (once per visit; the bank keeps them). */
+  const warmFillers = useCallback(() => {
+    if (warmed.current || !mounted.current) return;
+    warmed.current = true;
+    myteFillers().warm(FILLER_PHRASES, { speed: speedRef.current, language: "en" });
+  }, []);
+
   // One loop: the level for the plush and the meter, and voice-activity detection while listening.
   useEffect(() => {
     const t = window.setInterval(() => {
@@ -130,7 +177,8 @@ export default function VoiceMode({
           r.arm();
           dispatch({ type: "speech-discard" });
         }
-      } else if (phase === "speaking" || phase === "greeting") {
+      } else if (phase === "speaking" || phase === "greeting" || phase === "thinking") {
+        // While thinking this is a filler's level: the plush thinks with its speaking mouth.
         level.current = myteSpeaker().level();
       } else level.current *= 0.8;
       if (meter.current) meter.current.style.transform = `scaleX(${Math.min(1, level.current * 1.6).toFixed(3)})`;
@@ -151,6 +199,9 @@ export default function VoiceMode({
   useEffect(() => {
     if (s.phase !== "transcribing" || s.clip <= handledClip.current) return;
     handledClip.current = s.clip;
+    // The end of speech: the turn's clock starts here.
+    const timing = createTurnTiming(s.turn + 1, performance.now());
+    pendingTiming.current = timing;
     const r = rec.current;
     rec.current = null;
     vad.current.finish(Date.now());
@@ -166,7 +217,10 @@ export default function VoiceMode({
       }
       const res = await transcribe(clip, { language: document.documentElement.lang, signal: ctrl.signal });
       if (ctrl.signal.aborted) return;
-      if (res.ok) dispatch({ type: "transcript", text: res.text });
+      if (res.ok) {
+        timing.mark("stt", performance.now());
+        dispatch({ type: "transcript", text: res.text });
+      }
       else if (res.reason !== "aborted")
         dispatch({ type: "transcribe-failed", message: listenFailureNote(res.reason), fatal: res.reason === "listening_not_connected" || res.reason === "signed_out" || res.reason === "unsupported" });
     })().finally(() => {
@@ -174,44 +228,162 @@ export default function VoiceMode({
       if (transcribing.current === ctrl) transcribing.current = null;
       setSlow(false);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per clip
   }, [s.phase, s.clip]);
 
-  /* ---------------- sending and the answer ---------------- */
+  /* ---------------- sending, fillers and the streamed answer ---------------- */
+  // A turn: the question goes, an acknowledgment plays at once ("Got it."), a step filler covers
+  // the look-up ("Checking your calendar."), and the answer is spoken while it streams: the text
+  // is cut into units as it arrives (lib/voice/stream-text.ts) and pushed into one speech stream,
+  // which plays them in order and cuts a filler for the first one. Interrupting, muting or ending
+  // stops the stream; the words keep streaming on screen.
+  const stopTalk = useCallback(() => {
+    const t = turnRef.current;
+    if (t) t.active = false;
+    sched.end();
+    const st = talkStream.current;
+    talkStream.current = null;
+    setFillerOn(null);
+    if (st && myteSpeaker().getSnapshot().key === st.key) myteSpeaker().stop(st.key);
+  }, [sched]);
+
+  const report = useCallback((t: Turn) => {
+    if (t.logged) return;
+    t.logged = true;
+    const sum = t.timing.summary();
+    console.info(formatSummary(sum));
+    if (mounted.current) setTimings(sum);
+  }, []);
+
+  const playFiller = useCallback(
+    (action: FillerAction | null) => {
+      const st = talkStream.current;
+      const t = turnRef.current;
+      if (!action || !st || !t?.active) return;
+      const clip = myteFillers().get(action.phrase, speedRef.current);
+      if (!clip) {
+        playFiller(sched.ended(performance.now()));
+        return;
+      }
+      void st.filler(clip, action.kind).then(() => {
+        if (talkStream.current !== st) return;
+        setFillerOn(null);
+        playFiller(sched.ended(performance.now()));
+      });
+    },
+    [sched],
+  );
+
   useEffect(() => {
     if (s.phase === "thinking" && s.sent && s.turn > sentTurn.current) {
       sentTurn.current = s.turn;
-      answerKey.current = null;
-      settledKey.current = null;
+      // A barge-in left the last answer streaming on screen: it stops for the new question.
+      if (conv.streaming) conv.stop();
+      stopTalk();
+      const timing = pendingTiming.current ?? createTurnTiming(s.turn, performance.now());
+      pendingTiming.current = null;
+      const t: Turn = { n: s.turn, key: null, active: true, timing, segmenter: createSegmenter(), stepSeen: false, textSeen: false, settled: false, logged: false };
+      turnRef.current = t;
+      setTimings(timing.summary());
       conv.send(s.sent, scope, page);
+      if (!s.muted) {
+        const st = myteSpeaker().stream({
+          key: `talk:turn-${s.turn}`,
+          speed: speedRef.current,
+          onFiller: (kind) => {
+            timing.mark("filler", performance.now());
+            setFillerOn(kind);
+            setTimings(timing.summary());
+          },
+          onAnswer: () => {
+            timing.mark("audio", performance.now());
+            setFillerOn(null);
+            setTimings(timing.summary());
+            if (turnRef.current === t && t.active) dispatch({ type: "answer-audio" });
+          },
+        });
+        talkStream.current = st;
+        void st.done.then((outcome) => {
+          if (talkStream.current === st) talkStream.current = null;
+          if (!mounted.current || turnRef.current !== t) return;
+          setFillerOn(null);
+          if (outcome === "error") setVoiceNote(failureNote(myteSpeaker().getSnapshot().error ?? "voice_failed"));
+          if (t.settled) report(t);
+          if (outcome !== "stopped" && t.active) dispatch({ type: "spoken" });
+        });
+        playFiller(sched.begin(performance.now()));
+      }
     }
-  }, [s.phase, s.sent, s.turn, conv, scope, page]);
+  }, [s.phase, s.sent, s.turn, s.muted, conv, scope, page, stopTalk, playFiller, report, sched]);
 
   const lastAnswer = useMemo(() => [...conv.messages].reverse().find((m): m is Answer => m.role === "myte") ?? null, [conv.messages]);
 
+  // Follow this turn's answer as it streams: steps feed the fillers, text feeds the voice.
   useEffect(() => {
-    if (s.phase !== "thinking" || !lastAnswer) return;
+    const t = turnRef.current;
+    if (!t || !lastAnswer || t.settled) return;
+    if (t.key === null) {
+      // The answer of this turn is the one that starts streaming after the question went.
+      if (lastAnswer.status !== "streaming") return;
+      t.key = lastAnswer.key;
+    }
+    if (lastAnswer.key !== t.key) return;
+    const now = performance.now();
+    const st = talkStream.current;
+    const running = lastAnswer.steps.find((x) => x.state === "running") ?? lastAnswer.steps[0];
+    if (running && !t.stepSeen) {
+      t.stepSeen = true;
+      t.timing.mark("step", now);
+      if (t.active) playFiller(sched.step(running.label, now));
+    }
+    if (lastAnswer.text && !t.textSeen) {
+      t.textSeen = true;
+      t.timing.mark("text", now);
+      sched.text();
+    }
+    if (t.active && st && lastAnswer.text) for (const unit of t.segmenter.feed(lastAnswer.text)) st.push(unit);
     if (lastAnswer.status === "streaming") {
-      answerKey.current = lastAnswer.key;
+      setTimings(t.timing.summary());
       return;
     }
-    if (answerKey.current !== lastAnswer.key || settledKey.current === lastAnswer.key) return;
-    settledKey.current = lastAnswer.key;
-    if (lastAnswer.status === "done") dispatch({ type: "answer-done", spoken: !!plainText(lastAnswer.text) });
-    else {
-      const copy = lastAnswer.error ? failureCopy(lastAnswer.error.reason, { name: persona.name, message: lastAnswer.error.message, isAdmin }) : failureCopy("stopped", { name: persona.name });
-      dispatch({ type: "answer-failed", message: copy.title });
+    t.settled = true;
+    sched.end();
+    if (lastAnswer.status === "done") {
+      t.timing.mark("done", now);
+      if (t.active && st) {
+        for (const unit of t.segmenter.finish()) st.push(unit);
+        st.end();
+      }
+      const spoken = !!plainText(lastAnswer.text) && !!talkStream.current && !s.muted;
+      if (!talkStream.current) report(t);
+      else setTimings(t.timing.summary());
+      if (t.active) dispatch({ type: "answer-done", spoken });
+    } else {
+      report(t);
+      if (t.active) {
+        stopTalk();
+        const copy = lastAnswer.error ? failureCopy(lastAnswer.error.reason, { name: persona.name, message: lastAnswer.error.message, isAdmin }) : failureCopy("stopped", { name: persona.name });
+        dispatch({ type: "answer-failed", message: copy.title });
+      }
     }
-  }, [s.phase, lastAnswer, persona.name, isAdmin]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- follows the answer; the rest is read live
+  }, [lastAnswer]);
+
+  // The slow-path line: about 4 s with nothing to say yet.
+  useEffect(() => {
+    if (s.phase !== "thinking" || s.muted) return;
+    const timer = window.setInterval(() => playFiller(sched.tick(performance.now())), 200);
+    return () => window.clearInterval(timer);
+  }, [s.phase, s.muted, playFiller, sched]);
 
   /* ---------------- speaking ---------------- */
-  // The greeting, then each answer, in the Myte's own voice (ADR-0050), through the shared
-  // speaker. Pause holds the sound where it is and Resume carries on; interrupting, muting or
-  // ending stops it. If the voice is unavailable it says so quietly and listens; the words stay
-  // on screen.
+  // The greeting, in the Myte's own voice (ADR-0050), through the shared speaker; the answers go
+  // through the turn's stream above. Pause holds the sound where it is and Resume carries on;
+  // interrupting, muting or ending stops it. If the voice is unavailable it says so quietly and
+  // listens; the words stay on screen.
   useEffect(() => {
     const speaker = myteSpeaker();
-    const key = s.phase === "greeting" ? "talk:greeting" : lastAnswer ? `talk:${lastAnswer.key}` : null;
-    const owns = (k: string | null = key) => k !== null && speaker.getSnapshot().key === k;
+    const snap = speaker.getSnapshot();
     if (s.phase === "greeting") {
       if (spokenKey.current === "talk:greeting") return;
       spokenKey.current = "talk:greeting";
@@ -220,30 +392,25 @@ export default function VoiceMode({
         if (outcome === "error") setVoiceNote(failureNote(speaker.getSnapshot().error ?? "voice_failed"));
         if (outcome !== "stopped") dispatch({ type: "greeted" });
       });
+      // Fillers render while the greeting plays (after its first words were asked for).
+      window.setTimeout(() => warmFillers(), 400);
       return;
     }
-    if (owns("talk:greeting")) speaker.stop("talk:greeting");
-    if (s.phase === "speaking" && lastAnswer && key) {
-      if (owns() && speaker.getSnapshot().status === "paused") {
-        speaker.resume();
-        return;
-      }
-      if (spokenKey.current === key && owns()) return;
-      spokenKey.current = key;
-      setVoiceNote(null);
-      void speaker.speak({ key, text: lastAnswer.text, speed }).then((outcome) => {
-        if (spokenKey.current !== key) return;
-        if (outcome === "error") setVoiceNote(failureNote(speaker.getSnapshot().error ?? "voice_failed"));
-        if (outcome !== "stopped") dispatch({ type: "spoken" });
-      });
-    } else if (s.phase === "paused") {
-      if (owns()) speaker.pause();
-    } else if (owns()) {
-      spokenKey.current = null;
-      speaker.stop(key ?? undefined);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the phase and the answer only
-  }, [s.phase, lastAnswer?.key]);
+    if (snap.key === "talk:greeting") speaker.stop("talk:greeting");
+    const st = talkStream.current;
+    const owns = st !== null && snap.key === st.key;
+    if (s.phase === "paused") {
+      if (owns) speaker.pause();
+    } else if (s.phase === "speaking" || s.phase === "thinking") {
+      if (owns && snap.status === "paused") speaker.resume();
+    } else if (st) stopTalk();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the phase only
+  }, [s.phase]);
+
+  // Muting mid-turn stops the voice (fillers included); the answer still streams on screen.
+  useEffect(() => {
+    if (s.muted) stopTalk();
+  }, [s.muted, stopTalk]);
 
   /* ---------------- start, end, keys ---------------- */
   useEffect(() => {
@@ -253,16 +420,23 @@ export default function VoiceMode({
     // The Myte speaks first; the microphone opens meanwhile, so asking permission overlaps the greeting.
     dispatch({ type: "start", greet: true });
     void ensureMic();
+    setDebug(wantsVoiceDebug(window.location.search));
     const t = window.setTimeout(() => root.current?.querySelector<HTMLElement>("[data-voice-primary]")?.focus(), 30);
+    // Without a greeting (muted, or the voice was slow) the fillers still get rendered.
+    const w = window.setTimeout(() => warmFillers(), 2500);
     return () => {
       mounted.current = false;
       spokenKey.current = null;
       window.clearTimeout(t);
+      window.clearTimeout(w);
+      if (turnRef.current) turnRef.current.active = false;
+      sched.end();
+      talkStream.current = null;
       transcribing.current?.abort();
       closeMic();
       if (myteSpeaker().getSnapshot().key?.startsWith("talk:")) myteSpeaker().stop();
     };
-  }, [ensureMic, closeMic]);
+  }, [ensureMic, closeMic, warmFillers, sched]);
 
   const end = useCallback(() => {
     dispatch({ type: "end" });
@@ -328,7 +502,9 @@ export default function VoiceMode({
           ? { label: "Resume", icon: Play, ev: { type: "resume" } as const }
           : s.phase === "idle" || s.phase === "ended"
             ? { label: "Start talking", icon: Microphone, ev: { type: "start" } as const }
-            : { label: "Thinking", icon: Pause, ev: null };
+            : s.phase === "thinking"
+              ? { label: "Stop and listen", icon: Microphone, ev: { type: "interrupt" } as const }
+              : { label: "Thinking", icon: Pause, ev: null };
 
   return (
     <div
@@ -339,8 +515,22 @@ export default function VoiceMode({
       aria-describedby={`${uid}-k`}
       tabIndex={-1}
       onKeyDown={onKeyDown}
+      data-filler={fillerOn ?? undefined}
       className="absolute inset-0 z-40 flex flex-col overflow-y-auto bg-bg outline-none"
     >
+      {debug ? (
+        <aside aria-label="Voice timing" className="pointer-events-none absolute left-3 top-3 z-10 rounded-ctl border border-line bg-surface/95 px-3 py-2 text-[12.5px] leading-5 text-ink-3 shadow-warm-1">
+          <p className="font-semibold text-ink-2">Turn {timings?.turn ?? "-"}, from end of speech</p>
+          <dl className="grid grid-cols-[auto_auto] gap-x-3 tabular-nums">
+            {TIMING_MARKS.map((m) => (
+              <div key={m} className="contents">
+                <dt>{TIMING_LABEL[m]}</dt>
+                <dd className="text-right text-ink-2">{formatMs(timings?.[m] ?? null)}</dd>
+              </div>
+            ))}
+          </dl>
+        </aside>
+      ) : null}
       <div className="mx-auto flex w-full max-w-[640px] flex-1 flex-col items-center px-4 pb-6 pt-6 sm:px-6 sm:pt-10">
         <h2 id={`${uid}-t`} className="sr-only">
           Talking with {persona.name}

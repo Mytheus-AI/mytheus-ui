@@ -10,26 +10,38 @@
  */
 
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import { createSpeaker, type Speaker, type SpeakerSnapshot, type SpeakRequest } from "./speaker";
+import { createSpeaker, type FetchChunk, type Speaker, type SpeakerSnapshot, type SpeakRequest } from "./speaker";
+import { createFillerBank, type FillerBank } from "./filler-bank";
 import { createWebAudioOut } from "./web-audio";
 import { DEFAULT_SPEED, SPEED_STEPS, nearestStep, SPEED_KEY } from "./speed";
 
 let shared: Speaker | null = null;
+let fillers: FillerBank | null = null;
+
+const fetchSpeech: FetchChunk = (body, signal) =>
+  fetch("/api/voice/speech", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "audio/mpeg" },
+    body: JSON.stringify(body),
+    signal,
+    cache: "no-store",
+  });
 
 export function myteSpeaker(): Speaker {
   if (shared) return shared;
-  shared = createSpeaker({
-    fetchChunk: (body, signal) =>
-      fetch("/api/voice/speech", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "audio/mpeg" },
-        body: JSON.stringify(body),
-        signal,
-        cache: "no-store",
-      }),
-    out: createWebAudioOut,
-  });
+  shared = createSpeaker({ fetchChunk: fetchSpeech, out: createWebAudioOut });
   return shared;
+}
+
+/** Talk mode's fillers ("Got it.") in the person's voice, kept for the visit. */
+export function myteFillers(): FillerBank {
+  fillers ??= createFillerBank({ fetchChunk: fetchSpeech, decode: (data) => myteSpeaker().decode(data) });
+  return fillers;
+}
+
+/** The person chose another voice: fillers rendered in the old one are dropped. */
+export function forgetFillers(): void {
+  fillers?.clear();
 }
 
 const SERVER_SNAPSHOT: SpeakerSnapshot = { status: "idle", key: null, error: null, chunk: 0, chunks: 0 };

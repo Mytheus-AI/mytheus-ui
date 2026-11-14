@@ -261,9 +261,9 @@ for (const theme of ["light", "dark"] as const) {
     const voice = page.getByRole("dialog", { name: "Talking with Pip" });
     await expect(voice).toBeVisible();
     // It speaks first, in character, with the person's first name.
-    await expect.poll(() => spoken.length).toBeGreaterThan(0);
+    await expect.poll(() => spoken.length).toBeGreaterThan(1);
     expect(spoken[0]!.text).toMatch(/Sushan/);
-    expect(spoken[0]!.text).toMatch(/Pip/);
+    expect(spoken.map((x) => x.text).join(" ")).toMatch(/Pip/);
     await expect(voice.getByText("Pip is listening")).toBeVisible({ timeout: 10_000 });
     await expect(voice.getByText("Listening…")).toBeVisible();
     await expect(voice.getByRole("button", { name: "Pause" })).toBeVisible();
@@ -298,6 +298,126 @@ for (const theme of ["light", "dark"] as const) {
     await expect(page.getByRole("article", { name: "Pip's answer" }).getByText("One thing is on you")).toBeVisible();
   });
 }
+
+/* A stream that arrives over time: the page's fetch for /api/ask-myte answers a ReadableStream
+   that sends each event after its delay and holds `done` until the test calls __releaseDone(). */
+async function slowStream(page: Page, events: { at: number; ev: StreamEvent }[], done: StreamEvent) {
+  await page.evaluate(
+    ({ events, done }) => {
+      const w = window as unknown as Record<string, unknown>;
+      const real = window.fetch.bind(window);
+      let release: () => void = () => {};
+      w.__releaseDone = () => release();
+      w.__askBodies = [];
+      window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+        if (!url.endsWith("/api/ask-myte")) return real(input, init);
+        (w.__askBodies as unknown[]).push(JSON.parse(String(init?.body ?? "{}")));
+        const enc = new TextEncoder();
+        const line = (e: { event: string; data: unknown }) => enc.encode(`event: ${e.event}\ndata: ${JSON.stringify(e.data)}\n\n`);
+        const body = new ReadableStream<Uint8Array>({
+          async start(ctrl) {
+            const t0 = Date.now();
+            for (const { at, ev } of events) {
+              await new Promise((r) => setTimeout(r, Math.max(0, at - (Date.now() - t0))));
+              ctrl.enqueue(line(ev));
+            }
+            await new Promise<void>((r) => (release = r));
+            ctrl.enqueue(line(done));
+            ctrl.close();
+          },
+        });
+        return new Response(body, { status: 200, headers: { "content-type": "text/event-stream" } });
+      };
+    },
+    { events, done },
+  );
+}
+
+test("voice mode: an acknowledgment at once, a step filler, then the answer spoken before done", async ({ mount, page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await fakeMic(page);
+  await fakeTranscribe(page, { text: "what is on my calendar tomorrow" });
+  const spoken = await fakeVoice(page, { msPerWord: 160 });
+  const logs: string[] = [];
+  page.on("console", (m) => logs.push(m.text()));
+  await mount(<AskMyteHarness />);
+  await slowStream(
+    page,
+    [
+      { at: 50, ev: { event: "step", data: { id: "s1", label: "Reading your calendar", state: "running" } } },
+      { at: 1500, ev: { event: "delta", data: { text: "Tomorrow you have two meetings, " } } },
+      { at: 1600, ev: { event: "delta", data: { text: "the Feature Update at 10 [1] and a call with Samar at 3. " } } },
+      { at: 1700, ev: { event: "delta", data: { text: "Nothing is due." } } },
+    ],
+    { event: "done", data: { abstained: false, degraded: false, cited: [1] } },
+  );
+  // Every filler change on the dialog, in order.
+  await page.evaluate(() => {
+    const w = window as unknown as { __fillers: string[] };
+    w.__fillers = [];
+    new MutationObserver((list) => {
+      for (const m of list) {
+        const v = (m.target as HTMLElement).getAttribute("data-filler");
+        if (m.attributeName === "data-filler" && v) w.__fillers.push(v);
+      }
+    }).observe(document.body, { attributes: true, subtree: true, attributeFilter: ["data-filler"] });
+  });
+
+  await page.getByRole("button", { name: "Talk to Pip" }).click();
+  const voice = page.getByRole("dialog", { name: "Talking with Pip" });
+  // The fillers are rendered in its voice while it greets.
+  await expect.poll(() => spoken.map((x) => x.text), { timeout: 10_000 }).toEqual(expect.arrayContaining(["Got it.", "Checking your calendar."]));
+  await voice.focus();
+  await page.keyboard.press("Space"); // skip the greeting
+  await expect(voice.getByText("Pip is listening")).toBeVisible({ timeout: 10_000 });
+  await page.waitForTimeout(600);
+  await say(page, 500);
+
+  // The acknowledgment plays as the question goes, then the calendar filler after it.
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __fillers: string[] }).__fillers), { timeout: 8000 }).toEqual(["ack", "schedule"]);
+  // The answer is spoken while it streams: done has not been sent yet.
+  await expect(voice.getByText("Pip is speaking")).toBeVisible({ timeout: 10_000 });
+  const units = spoken.map((x) => x.text);
+  expect(units).toContain("Tomorrow you have two meetings,");
+  expect(units.some((u) => /\[\d\]/.test(u))).toBe(false);
+  await expect(voice.getByRole("region", { name: "Pip's answer" }).getByText("Nothing is due.")).toBeVisible();
+  // Never more than two fillers in the turn.
+  expect(await page.evaluate(() => (window as unknown as { __fillers: string[] }).__fillers.length)).toBe(2);
+
+  await page.evaluate(() => (window as unknown as { __releaseDone: () => void }).__releaseDone());
+  await expect(voice.getByText("Pip is listening")).toBeVisible({ timeout: 15_000 });
+  expect(spoken.map((x) => x.text)).toEqual(expect.arrayContaining(["the Feature Update at 10 and a call with Samar at 3.", "Nothing is due."]));
+  // One timing line per turn, from the end of speech.
+  const line = logs.find((l) => l.startsWith("[talk] turn 1"));
+  expect(line).toMatch(/stt \d+ ms, step [\d.]+ m?s, text [\d.]+ m?s, audio [\d.]+ m?s, done [\d.]+ m?s, filler [\d.]+ m?s/);
+  if (SHOTS) console.log(line);
+});
+
+test("voice mode: Space while a filler plays stops it and listens", async ({ mount, page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await fakeMic(page);
+  await fakeTranscribe(page, { text: "who owns pricing" });
+  await fakeVoice(page, { msPerWord: 400 });
+  await mount(<AskMyteHarness />);
+  await slowStream(page, [{ at: 50, ev: { event: "step", data: { id: "s1", label: "Looking up people", state: "running" } } }], { event: "done", data: {} });
+  await page.getByRole("button", { name: "Talk to Pip" }).click();
+  const voice = page.getByRole("dialog", { name: "Talking with Pip" });
+  await page.waitForTimeout(3000); // the fillers render
+  await voice.focus();
+  await page.keyboard.press("Space");
+  await expect(voice.getByText("Pip is listening")).toBeVisible({ timeout: 10_000 });
+  await page.waitForTimeout(600);
+  await say(page, 500);
+  await expect(voice).toHaveAttribute("data-filler", /ack|people/, { timeout: 8000 });
+  await expect(voice.getByRole("button", { name: "Stop and listen" })).toBeVisible();
+  await voice.focus();
+  await page.keyboard.press("Space");
+  await expect(voice.getByText("Pip is listening")).toBeVisible();
+  await expect(voice).not.toHaveAttribute("data-filler", /.+/);
+  await page.keyboard.press("Escape");
+  await expect(voice).toHaveCount(0);
+});
 
 test("voice mode: Space interrupts the greeting, pauses and resumes; mute keeps it quiet; nothing heard is never sent", async ({ mount, page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });

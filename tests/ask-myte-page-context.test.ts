@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { cleanPage, cleanScope, pageChipLabel, parsePageContext, scopeForPage, scopeLabel } from "../src/lib/ask-myte/page-context.ts";
+import { cleanPage, cleanScope, pageChipLabel, pageChipNoun, parsePageContext, scopeForPage, scopeLabel, scopePlaceholder, scopeShortLabel } from "../src/lib/ask-myte/page-context.ts";
 import {
   applyMention,
   expandShortcut,
@@ -85,4 +85,23 @@ test("failure copy speaks in the first person", () => {
   assert.equal(failureCopy("budget", { name: "Pip", message: "Back on Dec 1." }).detail, "Back on Dec 1.");
   assert.equal(failureCopy("stopped", { name: "Pip" }).retry, true);
   assert.equal(failureCopy("session", { name: "Pip" }).retry, false);
+});
+
+test("the composer's scope button and placeholder follow the scope", () => {
+  const now = new Date("2026-11-14T10:00:00Z");
+  const all = { kind: "all" as const, meeting_id: null, person_id: null, as_of: null };
+  const person = { kind: "person" as const, meeting_id: null, person_id: "p", as_of: null, label: "Samar Rihan" };
+  const meeting = { kind: "meeting" as const, meeting_id: "m", person_id: null, as_of: null, label: "Feature Update" };
+  const asOf = { kind: "as_of" as const, meeting_id: null, person_id: null, as_of: "2026-11-03" };
+  assert.equal(scopeShortLabel(all, "en-US", now), "All of Mytheus");
+  assert.equal(scopeShortLabel(person, "en-US", now), "Samar Rihan");
+  assert.equal(scopeShortLabel(meeting, "en-US", now), "Feature Update");
+  assert.equal(scopeShortLabel(asOf, "en-US", now), "As of Nov 3");
+  assert.equal(scopeShortLabel({ ...asOf, as_of: "2025-02-01" }, "en-US", now), "As of Feb 1, 2025");
+  assert.equal(scopeShortLabel({ ...person, label: null }, "en-US", now), "A person");
+  assert.equal(scopePlaceholder(all, "Ask Probe anything…", "en-US", now), "Ask Probe anything…");
+  assert.equal(scopePlaceholder(person, "x", "en-US", now), "Ask about Samar Rihan…");
+  assert.equal(scopePlaceholder(meeting, "x", "en-US", now), "Ask about Feature Update…");
+  assert.equal(scopePlaceholder(asOf, "x", "en-US", now), "Ask as of Nov 3…");
+  assert.equal(pageChipNoun({ kind: "meeting" }), "This meeting");
 });

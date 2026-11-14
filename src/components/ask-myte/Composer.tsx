@@ -1,17 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
-import { ArrowUp, CalendarBlank, FileText, Microphone, Paperclip, Stop, User, VideoCamera, X, Scales, Globe } from "@phosphor-icons/react";
+import { ArrowUp, CalendarBlank, CaretDown, Check, FileText, Microphone, Paperclip, Stop, User, VideoCamera, X, Scales, Globe } from "@phosphor-icons/react";
 import { myteMentions } from "@/app/actions/myte-threads";
 import { applyMention, expandShortcut, matchShortcuts, mentionAt, rankMentions, type Mentionable, type Shortcut } from "@/lib/ask-myte/compose";
-import { scopeLabel } from "@/lib/ask-myte/page-context";
+import { scopeLabel, scopeShortLabel } from "@/lib/ask-myte/page-context";
 import { ALL_SCOPE, LIMITS, type AskScope, type ScopeKind } from "@/lib/ask-myte/types";
 import { ACCEPT, MAX_FILE_BYTES, PASTE_ATTACH_FROM, acceptsFile, addAttachment, pastedName, sizeLabel, totalChars, type PendingAttachment } from "@/lib/ask-myte/attachments";
 import { useSpeechInput } from "./voice";
 
-/* The ask box (the approved plan, "The ask box"): a multiline field that grows with what you type
-   (Enter sends, Shift+Enter is a new line, Up on an empty box brings back your last question),
-   scope chips (All of Mytheus, a meeting, a person, as of a date) with their pickers, `@` mentions
+/* The ask box (the approved plan, "The ask box"; layout option A, November 2026): a full-width
+   field that grows with what you type (Enter sends, Shift+Enter is a new line, Up on an empty box
+   brings back your last question), attachments as chips above it, and one toolbar row below it:
+   the scope as a single button with a menu (All of Mytheus, a meeting, a person, as of a date,
+   each opening its picker) and a clear, then attach, mic and send, `@` mentions
    of meetings, people and decisions with type-ahead from what you can already see, the shortcuts
    /prep /recap /owe /asof /draft, the mic where the browser can listen, and Send that turns into
    Stop while an answer streams.
@@ -42,8 +44,8 @@ export interface ComposerProps {
   onStop: () => void;
   scope: AskScope;
   onScope: (s: AskScope) => void;
-  /** the page the sheet opened on, as its own removable chip */
-  pageChip?: { label: string; onRemove: () => void } | null;
+  /** the page the sheet opened on: the scope button shows it (`short`, "This meeting"), with a clear */
+  pageChip?: { label: string; short?: string; kind?: "meeting" | "decision" | "person" | null; onRemove: () => void } | null;
   inputRef: RefObject<HTMLTextAreaElement>;
   lastQuestion: string | null;
   placeholder: string;
@@ -92,6 +94,7 @@ export function Composer({
   const fileInput = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [fileNote, setFileNote] = useState<{ text: string; undoPaste?: string } | null>(null);
+  const [sendNote, setSendNote] = useState<string | null>(null);
   const attachRef = useRef(attachments);
   attachRef.current = attachments;
 
@@ -197,7 +200,18 @@ export function Composer({
 
   const submit = () => {
     const text = value.trim();
-    if (!text || streaming || offline) return;
+    if (streaming) return;
+    // Send stays pressable when it cannot send, and says why.
+    if (offline) {
+      setSendNote("You're offline. I'll be ready when you're back.");
+      return;
+    }
+    if (!text) {
+      setSendNote(speech.supported ? "Type a question first, or use the mic to ask by voice." : "Type a question first.");
+      requestAnimationFrame(() => inputRef.current?.focus());
+      return;
+    }
+    setSendNote(null);
     const short = expandShortcut(text);
     if (short?.picker === "as_of") {
       onChange(short.question);
@@ -361,9 +375,10 @@ export function Composer({
           setDragging(false);
           void attachFiles(e.dataTransfer.files);
         }}
+        data-composer={compact ? "sheet" : "page"}
         className={`relative rounded-hero border bg-surface shadow-warm-1 transition-[border-color,box-shadow] duration-150 focus-within:border-ink-4 focus-within:shadow-warm-2 ${
           dragging ? "border-dashed border-signal-line" : "border-line-2"
-        } ${compact ? "p-2.5" : "p-3"}`}
+        } ${compact ? "px-2.5 pb-2 pt-2.5" : "px-3 pb-2.5 pt-3"}`}
       >
         {dragging ? (
           <div aria-hidden className="pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-hero bg-surface/90 text-[15px] font-semibold text-signal-ink">
@@ -374,7 +389,7 @@ export function Composer({
           <div className="mb-1.5 px-1">
             <ul className="flex flex-wrap gap-1.5" aria-label="Attached to this question">
               {attachments.map((a) => (
-                <li key={a.key} className="inline-flex h-9 max-w-full items-center gap-1.5 rounded-full border border-line bg-surface-2 pl-3 pr-1 text-[13.5px] text-ink-2">
+                <li key={a.key} className="inline-flex h-8 max-w-full items-center gap-1.5 rounded-full border border-line bg-surface-2 pl-3 pr-1 text-[13px] text-ink-2">
                   <FileText size={15} aria-hidden className="shrink-0 text-ink-3" />
                   <span className="min-w-0 truncate font-semibold text-ink">{a.name}</span>
                   <span className="shrink-0 text-ink-3">{sizeLabel(a.size)}</span>
@@ -386,7 +401,7 @@ export function Composer({
                       requestAnimationFrame(() => inputRef.current?.focus());
                     }}
                     aria-label={`Remove ${a.name}`}
-                    className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-ink-3 hover:bg-surface hover:text-ink"
+                    className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-ink-3 hover:bg-surface hover:text-ink"
                   >
                     <X size={12} weight="bold" aria-hidden />
                   </button>
@@ -415,6 +430,7 @@ export function Composer({
           data-ask-input={compact ? "sheet" : "page"}
           onChange={(e) => {
             onChange(e.target.value);
+            if (e.target.value.trim()) setSendNote(null);
             caret.current = e.target.selectionStart ?? e.target.value.length;
             void refreshSuggest(e.target.value, caret.current);
           }}
@@ -447,14 +463,14 @@ export function Composer({
             onFocusChange?.(false);
             setTimeout(() => setSuggest(null), 120);
           }}
-          className={`block w-full resize-none overflow-y-hidden bg-transparent px-2 py-1.5 leading-relaxed text-ink !outline-none placeholder:text-ink-3 ${compact ? "text-[15px]" : "text-[16px]"}`}
+          className={`block w-full resize-none overflow-y-hidden bg-transparent px-1.5 py-1 leading-relaxed text-ink !outline-none placeholder:text-ink-3 ${compact ? "text-[15px]" : "text-[16px]"}`}
         />
         <p id={hintId} className="sr-only">
           Enter sends, Shift and Enter adds a line. Type @ to mention a meeting, person or decision, or / for shortcuts. Paste or drop a text file to attach it.
         </p>
 
         {pasted && value.length > 400 ? (
-          <div className="mx-1 mb-2 mt-1 flex flex-wrap items-center gap-2 rounded-ctl bg-surface-2 px-3 py-2 text-[13.5px] text-ink-2">
+          <div className="mb-2 mt-1 flex flex-wrap items-center gap-2 rounded-ctl bg-surface-2 px-3 py-2 text-[13.5px] text-ink-2">
             <span className="flex-1">That&apos;s a long message.</span>
             <button
               type="button"
@@ -470,7 +486,7 @@ export function Composer({
         ) : null}
 
         {fileNote ? (
-          <div className="mx-1 mb-2 flex flex-wrap items-center gap-2 rounded-ctl bg-surface-2 px-3 py-2 text-[13.5px] text-ink-2" role="status">
+          <div className="mb-2 flex flex-wrap items-center gap-2 rounded-ctl bg-surface-2 px-3 py-2 text-[13.5px] text-ink-2" role="status">
             <span className="min-w-0 flex-1">{fileNote.text}</span>
             {fileNote.undoPaste ? (
               <button
@@ -492,109 +508,99 @@ export function Composer({
           </div>
         ) : null}
 
-        <div className="flex items-center gap-2">
-          <div
-            className="-my-1 flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto py-1 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden"
-            role="group"
-            aria-label="What to look in"
-          >
-            {pageChip ? (
-              <span className="inline-flex h-8 min-w-0 max-w-full items-center gap-1 rounded-full bg-signal-soft pl-3 pr-1 text-[13px] font-semibold text-signal-ink">
-                <span className="truncate">{pageChip.label}</span>
+        {/* One toolbar row: the scope on the left; attach, mic and send on the right. Never wraps. */}
+        <div className="mt-1.5 flex items-center gap-2" data-composer-toolbar="">
+          <div className="flex min-w-0 flex-1 items-center" role="group" aria-label="What to look in">
+            <ScopeMenu
+              scope={scope}
+              pageChip={pageChip}
+              onScope={onScope}
+              onPicker={setPicker}
+              onDone={() => requestAnimationFrame(() => inputRef.current?.focus())}
+            />
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {onAttachments ? (
+              <>
+                <input
+                  ref={fileInput}
+                  type="file"
+                  accept={ACCEPT}
+                  multiple
+                  tabIndex={-1}
+                  aria-hidden
+                  className="sr-only"
+                  onChange={(e) => {
+                    if (e.target.files) void attachFiles(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
                 <button
                   type="button"
-                  onClick={pageChip.onRemove}
-                  aria-label={`Stop scoping to ${pageChip.label}`}
-                  className="grid h-6 w-6 shrink-0 place-items-center rounded-full hover:bg-surface"
+                  onClick={() => fileInput.current?.click()}
+                  disabled={attachments.length >= LIMITS.attachments}
+                  aria-label="Attach a text file"
+                  title="Attach .txt, .md or .csv (or drop it here)"
+                  className={`${TOOL} text-ink-3 hover:bg-bg-2 hover:text-ink disabled:opacity-40`}
                 >
-                  <X size={12} weight="bold" aria-hidden />
+                  <Paperclip size={18} aria-hidden />
                 </button>
-              </span>
-            ) : (
-              <ScopeChips scope={scope} onScope={onScope} onPicker={setPicker} compact={compact} />
-            )}
-          </div>
-          {onAttachments ? (
-            <>
-              <input
-                ref={fileInput}
-                type="file"
-                accept={ACCEPT}
-                multiple
-                tabIndex={-1}
-                aria-hidden
-                className="sr-only"
-                onChange={(e) => {
-                  if (e.target.files) void attachFiles(e.target.files);
-                  e.target.value = "";
-                }}
-              />
+              </>
+            ) : null}
+            {speech.supported ? (
               <button
                 type="button"
-                onClick={() => fileInput.current?.click()}
-                disabled={attachments.length >= LIMITS.attachments}
-                aria-label="Attach a text file"
-                title="Attach .txt, .md or .csv (or drop it here)"
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink-3 transition-colors hover:bg-bg-2 hover:text-ink disabled:opacity-40"
-              >
-                <Paperclip size={19} aria-hidden />
-              </button>
-            </>
-          ) : null}
-          {speech.supported ? (
-            <button
-              type="button"
-              aria-pressed={speech.listening}
-              aria-busy={speech.busy || undefined}
-              aria-label={speech.listening ? "Stop listening" : "Ask by voice"}
-              title={speech.listening ? "Stop listening" : "Hold to ask by voice, or press to start"}
-              onPointerDown={micDown}
-              onPointerUp={micUp}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  if (speech.listening) speech.stop();
-                  else if (!speech.busy) {
-                    speechBase.current = value.trim();
-                    speech.start();
+                aria-pressed={speech.listening}
+                aria-busy={speech.busy || undefined}
+                aria-label={speech.listening ? "Stop listening" : "Ask by voice"}
+                title={speech.listening ? "Stop listening" : "Hold to ask by voice, or press to start"}
+                onPointerDown={micDown}
+                onPointerUp={micUp}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    if (speech.listening) speech.stop();
+                    else if (!speech.busy) {
+                      speechBase.current = value.trim();
+                      speech.start();
+                    }
                   }
-                }
-              }}
-              onClick={(e) => {
-                // Pointer presses are handled above; this keeps a stray click from double-toggling.
-                if (e.detail === 0) return;
-                if (speech.listening && !heldSince.current) speech.stop();
-              }}
-              className={`grid h-10 w-10 shrink-0 place-items-center rounded-full transition-colors ${speech.listening ? "bg-signal-soft text-signal-ink" : "text-ink-3 hover:bg-bg-2 hover:text-ink"}`}
-            >
-              <Microphone size={19} weight={speech.listening ? "fill" : "regular"} aria-hidden />
-            </button>
-          ) : null}
-          {streaming ? (
-            <button
-              type="button"
-              onClick={onStop}
-              aria-label="Stop the answer"
-              title="Stop (Esc)"
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-pill text-pill-on transition-colors hover:bg-pill-2"
-            >
-              <Stop size={16} weight="fill" aria-hidden />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={submit}
-              disabled={!canSend}
-              aria-label="Send"
-              title={offline ? "You're offline" : "Send (Enter)"}
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-pill text-pill-on transition-[background-color,opacity] hover:bg-pill-2 disabled:opacity-40"
-            >
-              <ArrowUp size={18} weight="bold" aria-hidden />
-            </button>
-          )}
+                }}
+                onClick={(e) => {
+                  // Pointer presses are handled above; this keeps a stray click from double-toggling.
+                  if (e.detail === 0) return;
+                  if (speech.listening && !heldSince.current) speech.stop();
+                }}
+                className={`${TOOL} ${speech.listening ? "bg-signal-soft text-signal-ink" : "text-ink-3 hover:bg-bg-2 hover:text-ink"}`}
+              >
+                <Microphone size={18} weight={speech.listening ? "fill" : "regular"} aria-hidden />
+              </button>
+            ) : null}
+            {streaming ? (
+              <button type="button" onClick={onStop} aria-label="Stop the answer" title="Stop (Esc)" className={`${TOOL} bg-pill text-pill-on hover:bg-pill-2`}>
+                <Stop size={14} weight="fill" aria-hidden />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={submit}
+                aria-label="Send"
+                aria-describedby={sendNote ? `${uid}-sendnote` : undefined}
+                title={offline ? "You're offline" : canSend ? "Send (Enter)" : "Type a question to send"}
+                data-ready={canSend ? "" : undefined}
+                className={`${TOOL} ${canSend ? "bg-pill text-pill-on hover:bg-pill-2" : "border border-line-2 text-ink-3 hover:bg-bg-2 hover:text-ink-2"}`}
+              >
+                <ArrowUp size={16} weight="bold" aria-hidden />
+              </button>
+            )}
+          </div>
         </div>
       </div>
-      {speech.listening || speech.busy || speech.note ? (
+      {sendNote ? (
+        <p id={`${uid}-sendnote`} className="mt-1.5 px-3 text-[13px] text-ink-3" role="status">
+          {sendNote}
+        </p>
+      ) : speech.listening || speech.busy || speech.note ? (
         <p className="mt-1.5 px-3 text-[13px] text-ink-3" role="status">
           {speech.listening ? "Listening. Pause, let go or press the mic again to stop." : speech.busy ? "Writing down what you said…" : speech.note}
         </p>
@@ -603,49 +609,189 @@ export function Composer({
   );
 }
 
-const CHIPS: { kind: ScopeKind; label: string; icon: typeof Globe }[] = [
+/** The toolbar's icon buttons: a 32 px disc, with a 40 px hit area around it. */
+const TOOL =
+  "relative grid h-8 w-8 shrink-0 place-items-center rounded-full transition-colors before:absolute before:-inset-1 before:rounded-full before:content-['']";
+
+type ScopeChoice = { kind: ScopeKind | "page"; label: string; icon: typeof Globe };
+
+const CHOICES: ScopeChoice[] = [
   { kind: "all", label: "All of Mytheus", icon: Globe },
   { kind: "meeting", label: "A meeting", icon: VideoCamera },
   { kind: "person", label: "A person", icon: User },
   { kind: "as_of", label: "As of a date", icon: CalendarBlank },
 ];
 
-function ScopeChips({ scope, onScope, onPicker, compact }: { scope: AskScope; onScope: (s: AskScope) => void; onPicker: (k: ScopeKind) => void; compact: boolean }) {
-  // On a narrow box only the chosen scope shows, with a way back to everything.
-  const shown = compact && scope.kind !== "all" ? CHIPS.filter((c) => c.kind === scope.kind) : CHIPS;
+const KIND_ICONS: Record<ScopeKind, typeof Globe> = { all: Globe, meeting: VideoCamera, person: User, as_of: CalendarBlank };
+
+/* The scope as one button: what it looks in now, with a menu to change it (All of Mytheus, a
+   meeting, a person, as of a date) and a clear button when it is narrowed. Menu button pattern:
+   Enter, Space or Down opens it on the current choice; Up and Down move, Home and End jump;
+   Enter or Space picks; Escape or Tab closes it and focus returns to the button. */
+function ScopeMenu({
+  scope,
+  pageChip,
+  onScope,
+  onPicker,
+  onDone,
+}: {
+  scope: AskScope;
+  pageChip: ComposerProps["pageChip"];
+  onScope: (s: AskScope) => void;
+  onPicker: (k: ScopeKind) => void;
+  onDone: () => void;
+}) {
+  const uid = useId();
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const button = useRef<HTMLButtonElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
+  const items = useRef<(HTMLDivElement | null)[]>([]);
+
+  const page = pageChip ?? null;
+  const choices: ScopeChoice[] = page ? [{ kind: "page", label: page.short ?? page.label, icon: VideoCamera }, ...CHOICES] : CHOICES;
+  const current = page ? 0 : Math.max(0, choices.findIndex((c) => c.kind === scope.kind));
+  const narrowed = page !== null || scope.kind !== "all";
+  const Icon = page ? (page.kind === "person" ? User : page.kind === "decision" ? Scales : VideoCamera) : KIND_ICONS[scope.kind];
+  const text = page ? (page.short ?? page.label) : scopeShortLabel(scope);
+
+  const openAt = (i: number) => {
+    setActive(i);
+    setOpen(true);
+  };
+  const close = (refocus = true) => {
+    setOpen(false);
+    if (refocus) requestAnimationFrame(() => button.current?.focus());
+  };
+
+  useEffect(() => {
+    if (open) items.current[active]?.focus();
+  }, [open, active]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (!menu.current?.contains(t) && !button.current?.contains(t)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
+
+  const choose = (c: ScopeChoice) => {
+    setOpen(false);
+    if (c.kind === "page") {
+      onDone();
+      return;
+    }
+    if (page) page.onRemove();
+    if (c.kind === "all") {
+      onScope(ALL_SCOPE);
+      onDone();
+    } else onPicker(c.kind);
+  };
+
+  const onMenuKey = (e: React.KeyboardEvent) => {
+    const n = choices.length;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActive((a) => (a + 1) % n);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActive((a) => (a - 1 + n) % n);
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      setActive(0);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      setActive(n - 1);
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      choose(choices[active]!);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      close();
+    } else if (e.key === "Tab") {
+      setOpen(false);
+    }
+  };
+
   return (
-    <>
-      {shown.map((c) => {
-        const on = scope.kind === c.kind;
-        const Icon = c.icon;
-        const text = on && c.kind !== "all" ? scopeLabel(scope) : c.label;
-        return (
-          <span key={c.kind} className="inline-flex max-w-full shrink-0">
-            <button
-              type="button"
-              aria-pressed={on}
-              onClick={() => (c.kind === "all" ? onScope(ALL_SCOPE) : onPicker(c.kind))}
-              className={`inline-flex h-8 max-w-full items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold transition-colors ${
-                on ? "bg-pill text-pill-on" : "text-ink-3 hover:bg-bg-2 hover:text-ink"
-              } ${on && c.kind !== "all" ? "rounded-r-none pr-2" : ""}`}
-            >
-              <Icon size={14} weight={on ? "fill" : "regular"} aria-hidden className="shrink-0" />
-              <span className="truncate">{text}</span>
-            </button>
-            {on && c.kind !== "all" ? (
-              <button
-                type="button"
-                onClick={() => onScope(ALL_SCOPE)}
-                aria-label={`Clear ${text}`}
-                className="grid h-8 w-7 place-items-center rounded-r-full bg-pill text-pill-on hover:bg-pill-2"
+    <div className="relative flex min-w-0 max-w-full items-center">
+      <button
+        ref={button}
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={open ? `${uid}-menu` : undefined}
+        aria-label={`Look in: ${page ? page.label : scopeLabel(scope)}. Change scope`}
+        title={page ? page.label : scopeLabel(scope)}
+        onClick={() => (open ? close(false) : openAt(current))}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+            e.preventDefault();
+            openAt(e.key === "ArrowUp" ? choices.length - 1 : current);
+          }
+        }}
+        data-scope={page ? "page" : scope.kind}
+        className={`inline-flex h-8 min-w-0 max-w-full items-center gap-1.5 pl-2.5 text-[13px] font-semibold transition-colors ${
+          narrowed ? "rounded-l-full bg-signal-soft pr-1.5 text-signal-ink hover:bg-[color:color-mix(in_srgb,var(--signal-soft)_80%,var(--signal))]" : "rounded-full pr-2 text-ink-2 hover:bg-bg-2 hover:text-ink"
+        }`}
+      >
+        <Icon size={15} weight={narrowed ? "fill" : "regular"} aria-hidden className="shrink-0" />
+        <span className="min-w-0 truncate">{text}</span>
+        {narrowed ? null : <CaretDown size={12} weight="bold" aria-hidden className="shrink-0 text-ink-3" />}
+      </button>
+      {narrowed ? (
+        <button
+          type="button"
+          onClick={() => {
+            if (page) page.onRemove();
+            else onScope(ALL_SCOPE);
+            requestAnimationFrame(() => button.current?.focus());
+          }}
+          aria-label={`Clear ${text}: ask about all of Mytheus`}
+          title="Back to all of Mytheus"
+          className="grid h-8 w-7 shrink-0 place-items-center rounded-r-full bg-signal-soft pr-0.5 text-signal-ink transition-colors hover:bg-[color:color-mix(in_srgb,var(--signal-soft)_80%,var(--signal))]"
+        >
+          <X size={12} weight="bold" aria-hidden />
+        </button>
+      ) : null}
+      {open ? (
+        <div
+          ref={menu}
+          id={`${uid}-menu`}
+          role="menu"
+          aria-label="Where to look"
+          onKeyDown={onMenuKey}
+          className="absolute bottom-[calc(100%+8px)] left-0 z-40 w-[248px] max-w-[calc(100vw-48px)] rounded-card border border-line bg-surface p-1.5 shadow-warm-3"
+        >
+          {choices.map((c, i) => {
+            const on = i === current;
+            const CIcon = c.icon;
+            return (
+              <div
+                key={c.kind}
+                ref={(el) => {
+                  items.current[i] = el;
+                }}
+                role="menuitemradio"
+                aria-checked={on}
+                tabIndex={i === active ? 0 : -1}
+                onClick={() => choose(c)}
+                onMouseMove={() => i !== active && setActive(i)}
+                className={`flex min-h-10 cursor-pointer items-center gap-2.5 rounded-ctl px-2.5 text-[14px] outline-none ${i === active ? "bg-bg-2 text-ink" : "text-ink-2"}`}
               >
-                <X size={12} weight="bold" aria-hidden />
-              </button>
-            ) : null}
-          </span>
-        );
-      })}
-    </>
+                <CIcon size={17} weight={on ? "fill" : "regular"} aria-hidden className={on ? "shrink-0 text-signal-ink" : "shrink-0 text-ink-3"} />
+                <span className="min-w-0 flex-1 truncate">{c.label}</span>
+                {on ? <Check size={15} weight="bold" aria-hidden className="shrink-0 text-signal-ink" /> : null}
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
   );
 }
 

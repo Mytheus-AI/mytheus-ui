@@ -8,7 +8,7 @@ import type { PeerQuestion } from "@/lib/ask-myte/types";
 import { RoutineDialog } from "./RoutineDialog";
 import { faceState, faceWords, plainText, type Answer, type FaceState } from "@/lib/ask-myte/reducer";
 import { failureCopy } from "@/lib/ask-myte/compose";
-import { pageChipLabel, scopeForPage } from "@/lib/ask-myte/page-context";
+import { pageChipLabel, pageChipNoun, scopeForPage, scopePlaceholder } from "@/lib/ask-myte/page-context";
 import type { Starter } from "@/lib/ask-myte/starters";
 import { ALL_SCOPE, type AskPage, type AskScope } from "@/lib/ask-myte/types";
 import { Composer } from "./Composer";
@@ -297,10 +297,10 @@ export function AskMyteChat({
               onStop={conv.stop}
               scope={scope}
               onScope={setScope}
-              pageChip={page && usePage ? { label: pageChipLabel(page), onRemove: () => setUsePage(false) } : null}
+              pageChip={page && usePage ? { label: pageChipLabel(page), short: pageChipNoun(page), kind: page.kind, onRemove: () => setUsePage(false) } : null}
               inputRef={composerRef}
               lastQuestion={conv.lastQuestion}
-              placeholder={empty ? `Ask ${persona.name} anything...` : "Ask a follow-up"}
+              placeholder={scopePlaceholder(effectiveScope, empty ? `Ask ${persona.name} anything…` : "Ask a follow-up…")}
               label={`Ask ${persona.name}`}
               offline={offline}
               compact={sheet}
