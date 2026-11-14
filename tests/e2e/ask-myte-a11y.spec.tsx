@@ -57,7 +57,9 @@ for (const theme of ["light", "dark"] as const) {
     await expect(answer.getByText("your Myte", { exact: false }).first()).toBeVisible();
     await expect(answer.getByRole("button", { name: /^Source 1: Transcript/ })).toBeVisible();
     await expect(page.getByRole("button", { name: "Who else was in that meeting?" })).toBeVisible();
-    await expect(answer.getByRole("region", { name: "Confirmed decision" })).toBeVisible();
+    const card = answer.getByRole("region", { name: "Confirmed decision" });
+    await expect(card).toBeVisible();
+    await expect(card.getByText("a decision from a meeting you were not in")).toBeVisible();
     // the polite announcement carries the answer
     await expect(page.getByRole("status").filter({ hasText: "Pip answered" })).toHaveCount(1);
 

@@ -50,7 +50,19 @@ export const ANSWER_EVENTS: StreamEvent[] = [
   { event: "step", data: { id: "step-3", label: "Checked your tasks", state: "done" } },
   { event: "delta", data: { text: "Two decisions were confirmed on Thursday. Google Drive access is dropped, so Calendar is the only Google permission [1]. " } },
   { event: "delta", data: { text: "Meetings now go live only when someone joins [2].\n\nOne thing is on you: reconnect Google Calendar, due Friday [3]." } },
-  { event: "card", data: { kind: "decision", source_ns: [2], data: { items: [], detail: { lineage: [{ content: "Read Drive attachments", role: "ancestor", recorded_at: iso(11) }] } } } },
+  { event: "card", data: { kind: "decision", source_ns: [2], data: {
+        items: [],
+        detail: {
+          content: "A meeting is live when a person joins, and ends only after it was live.",
+          status: "confirmed",
+          rationale: "Empty rooms were showing as live all day.",
+          lineage: [
+            { relation: "subject", visible: true, content: "A meeting is live when a person joins", status: "confirmed" },
+            { relation: "supersedes", visible: true, content: "A meeting is live from its start time", status: "superseded" },
+            { relation: "superseded_by", visible: false, content: "", status: null },
+          ],
+        },
+      }, } },
   { event: "proposal", data: { id: "p-1", kind: "task", title: "Upload the Mytheus logo for Google verification", due_date: iso(-2).slice(0, 10) } },
   { event: "followups", data: { items: ["Who else was in that meeting?", "What's left for Google verification?", "Draft a recap for Slack"] } },
   { event: "title", data: { text: "Backend update: what we decided" } },

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowBendDownRight, CalendarBlank, CheckSquare, Gauge, Handshake, Scales, VideoCamera } from "@phosphor-icons/react";
 import { sourceHref, sourceMeta, sourceTitle } from "@/lib/ask-myte/citations";
 import type { CardEvent, Source } from "@/lib/ask-myte/types";
+import { capacityView, decisionView, meetingView, minutesWords, relationWords, type Load } from "@/lib/ask-myte/cards";
 
 /* Rich cards instead of walls of text (ADR-0047 D4 `show_card`): a meeting, a decision with its
    lineage, a task list, the promise ledger, capacity. rag-service builds each from the sources it
@@ -13,8 +14,6 @@ import type { CardEvent, Source } from "@/lib/ask-myte/types";
 
 type Rec = Record<string, unknown>;
 const isRec = (v: unknown): v is Rec => !!v && typeof v === "object" && !Array.isArray(v);
-const str = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v.trim() : null);
-const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
 const dateFmt = (iso: string | null | undefined, withTime = false): string | null => {
   if (!iso) return null;
@@ -65,24 +64,65 @@ function Shell({ icon, kicker, children, ns, onOpen }: { icon: React.ReactNode; 
   );
 }
 
-function MeetingCard({ items, detail, ns, onOpen }: { items: Source[]; detail: Rec | null; ns: number[]; onOpen: (n: number) => void }) {
-  const first = items[0];
-  const title = str(detail?.title) ?? (first ? sourceTitle(first) : "Meeting");
-  const start = str(detail?.start) ?? str(detail?.scheduled_start) ?? first?.occurred_at ?? null;
-  const href = first ? sourceHref(first) : null;
-  const attendees = num(detail?.attendee_count);
+function MeetingCard({ items, detail, ns, onOpen }: { items: Source[]; detail: unknown; ns: number[]; onOpen: (n: number) => void }) {
+  const v = meetingView(detail, items);
+  const href = v.id ? `/meetings/${v.id}` : items[0] ? sourceHref(items[0]) : null;
+  const facts = [
+    v.hosting ? "You host" : v.host ? `Hosted by ${v.host}` : null,
+    v.attendees !== null ? (v.attendees === 1 ? "1 person" : `${v.attendees} people`) : null,
+    v.attendance === "agent" ? "Your Myte attends for you" : null,
+  ].filter(Boolean);
   return (
-    <Shell icon={<VideoCamera size={16} weight="fill" />} kicker="Meeting" ns={ns} onOpen={onOpen}>
-      <p className="display text-[19px] leading-snug text-ink">{title}</p>
+    <Shell icon={<VideoCamera size={16} weight="fill" />} kicker={v.live ? "Meeting, live now" : "Meeting"} ns={ns} onOpen={onOpen}>
+      <p className="display text-[19px] leading-snug text-ink">{v.title}</p>
       <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] text-ink-3">
-        {start ? (
+        {v.start ? (
           <span className="inline-flex items-center gap-1.5">
             <CalendarBlank size={15} aria-hidden />
-            {dateFmt(start, true)}
+            {dateFmt(v.start, true)}
           </span>
         ) : null}
-        {attendees !== null ? <span>{attendees === 1 ? "1 person" : `${attendees} people`}</span> : null}
+        {facts.map((f) => (
+          <span key={f}>{f}</span>
+        ))}
       </p>
+      {v.decisions.length || v.actions.length || v.agenda.length ? (
+        <dl className="mt-3 space-y-2.5 text-[14px]">
+          {v.decisions.length ? (
+            <div>
+              <dt className="font-semibold text-ink-3">Decided</dt>
+              <dd>
+                <ul className="mt-0.5 list-disc space-y-0.5 pl-5 text-ink-2 marker:text-ink-4">
+                  {v.decisions.slice(0, 3).map((x) => (
+                    <li key={x}>{x}</li>
+                  ))}
+                </ul>
+              </dd>
+            </div>
+          ) : null}
+          {v.actions.length ? (
+            <div>
+              <dt className="font-semibold text-ink-3">Tasks</dt>
+              <dd>
+                <ul className="mt-0.5 list-disc space-y-0.5 pl-5 text-ink-2 marker:text-ink-4">
+                  {v.actions.slice(0, 3).map((x) => (
+                    <li key={x.content}>
+                      {x.content}
+                      {x.owner || x.due ? <span className="text-ink-3">{`, ${[x.owner, x.due ? `due ${dateFmt(x.due)}` : null].filter(Boolean).join(", ")}`}</span> : null}
+                    </li>
+                  ))}
+                </ul>
+              </dd>
+            </div>
+          ) : null}
+          {!v.decisions.length && !v.actions.length && v.agenda.length ? (
+            <div>
+              <dt className="font-semibold text-ink-3">Agenda</dt>
+              <dd className="mt-0.5 text-ink-2">{v.agenda.slice(0, 4).map((x) => x.title).join(", ")}</dd>
+            </div>
+          ) : null}
+        </dl>
+      ) : null}
       {href ? (
         <Link href={href} className="mt-3 inline-flex min-h-9 items-center text-[14px] font-semibold text-signal-ink underline-offset-4 hover:underline">
           Open meeting
@@ -92,35 +132,34 @@ function MeetingCard({ items, detail, ns, onOpen }: { items: Source[]; detail: R
   );
 }
 
-function lineageOf(detail: Rec | null): { content: string; at: string | null; role: string | null }[] {
-  const raw = (detail?.lineage ?? detail?.chain ?? detail?.ancestors) as unknown;
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .filter(isRec)
-    .map((r) => ({ content: str(r.content) ?? str(r.title) ?? "", at: str(r.recorded_at) ?? str(r.confirmed_at) ?? str(r.at) ?? null, role: str(r.role) }))
-    .filter((r) => r.content && r.role !== "subject");
-}
-
-function DecisionCard({ items, detail, ns, onOpen }: { items: Source[]; detail: Rec | null; ns: number[]; onOpen: (n: number) => void }) {
-  const first = items[0];
-  const content = str(detail?.content) ?? first?.text ?? (first ? sourceTitle(first) : "");
-  const superseded = (str(detail?.status) ?? first?.status) === "superseded";
-  const lineage = lineageOf(detail);
-  const meta = first ? sourceMeta(first) : "";
-  const href = first ? sourceHref(first) : null;
+function DecisionCard({ items, detail, ns, onOpen }: { items: Source[]; detail: unknown; ns: number[]; onOpen: (n: number) => void }) {
+  const v = decisionView(detail, items);
+  const superseded = v.status === "superseded";
+  const meta = items[0] ? sourceMeta(items[0]) : v.meetingTitle ?? "";
+  const href = items[0] ? sourceHref(items[0]) : null;
   return (
     <Shell icon={<Scales size={16} weight="fill" />} kicker={superseded ? "Superseded decision" : "Confirmed decision"} ns={ns} onOpen={onOpen}>
-      <p className="display text-[19px] leading-snug text-ink">{content}</p>
+      <p className="display text-[19px] leading-snug text-ink">{v.content}</p>
       {meta ? <p className="mt-1 text-[14px] text-ink-3">{meta}</p> : null}
-      {lineage.length ? (
+      {v.rationale ? (
+        <p className="mt-2 text-[14.5px] leading-snug text-ink-2">
+          <span className="font-semibold text-ink">Why: </span>
+          {v.rationale}
+        </p>
+      ) : null}
+      {v.lineage.length ? (
         <ol className="mt-3 space-y-1.5" aria-label="Its lineage">
-          {lineage.map((l, i) => (
+          {v.lineage.map((l, i) => (
             <li key={i} className="flex gap-2 text-[14px] text-ink-3">
               <ArrowBendDownRight size={15} aria-hidden className="mt-0.5 shrink-0 text-ink-4" />
               <span>
-                {l.role === "descendant" ? "Later: " : "Replaces "}
-                <span className="text-ink-2">&ldquo;{l.content}&rdquo;</span>
-                {l.at ? ` from ${dateFmt(l.at)}` : ""}
+                {relationWords(l.relation)}{" "}
+                {l.content === null ? (
+                  <span>a decision from a meeting you were not in</span>
+                ) : (
+                  <span className="text-ink-2">&ldquo;{l.content}&rdquo;</span>
+                )}
+                {l.status === "superseded" ? ", since superseded" : ""}
               </span>
             </li>
           ))}
@@ -166,27 +205,59 @@ function ListCard({ kind, items, ns, onOpen }: { kind: "tasks" | "promises"; ite
   );
 }
 
-function CapacityCard({ items, detail, ns, onOpen }: { items: Source[]; detail: Rec | null; ns: number[]; onOpen: (n: number) => void }) {
-  const summary = str(detail?.summary) ?? str(detail?.verdict_text) ?? items[0]?.text ?? null;
-  const days = Array.isArray(detail?.days)
-    ? (detail!.days as unknown[]).filter(isRec).map((d) => ({ label: str(d.label) ?? str(d.date) ?? "", load: num(d.load) ?? num(d.hours) ?? num(d.count) ?? 0, over: d.over === true }))
-    : [];
-  const max = Math.max(1, ...days.map((d) => d.load));
+const LOAD_BAR: Record<Load, string> = {
+  light: "bg-ok",
+  ok: "bg-signal",
+  busy: "bg-priority-medium",
+  full: "bg-priority-high",
+  away: "bg-ink-4",
+  unknown: "bg-signal",
+};
+const LOAD_WORDS: Record<Load, string> = { light: "light", ok: "fine", busy: "busy", full: "full", away: "away", unknown: "" };
+
+function CapacityCard({ items, detail, ns, onOpen }: { items: Source[]; detail: unknown; ns: number[]; onOpen: (n: number) => void }) {
+  const v = capacityView(detail, items);
   return (
     <Shell icon={<Gauge size={16} weight="fill" />} kicker="Your capacity" ns={ns} onOpen={onOpen}>
-      {summary ? <p className="text-[15px] leading-snug text-ink-2">{summary}</p> : null}
-      {days.length ? (
-        <ul className="mt-3 grid grid-cols-7 items-end gap-1.5" aria-label="Load by day">
-          {days.slice(0, 7).map((d, i) => (
-            <li key={i} className="flex flex-col items-center gap-1">
-              <span className="flex h-14 w-full items-end overflow-hidden rounded-ctl bg-bg-2" aria-hidden>
-                <span className={`w-full rounded-ctl ${d.over ? "bg-priority-medium" : "bg-signal"}`} style={{ height: `${Math.max(6, (d.load / max) * 100)}%` }} />
-              </span>
-              <span className="text-[12.5px] text-ink-3">{d.label.slice(0, 3)}</span>
-              <span className="sr-only">{`${d.label}: ${d.load}${d.over ? ", over capacity" : ""}`}</span>
-            </li>
-          ))}
-        </ul>
+      {v.shape === "day" ? (
+        <>
+          {v.message ? <p className="text-[15px] leading-snug text-ink-2">{v.message}</p> : null}
+          <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[14px] text-ink-3">
+            {v.dueLabel ? <span>{v.dueLabel}</span> : null}
+            {v.itemsOnDay !== null ? <span>{v.itemsOnDay === 1 ? "1 thing due" : `${v.itemsOnDay} things due`}</span> : null}
+            {minutesWords(v.meetingMinutes) ? <span>{minutesWords(v.meetingMinutes)} of meetings</span> : null}
+          </p>
+          {v.suggestedLabel ? (
+            <p className="mt-2 text-[14.5px] text-ink">
+              <span className="font-semibold">A better day:</span> {v.suggestedLabel}
+            </p>
+          ) : null}
+        </>
+      ) : v.shape === "week" ? (
+        <>
+          {v.days.length ? (
+            <ul className="grid grid-cols-7 items-end gap-1.5" aria-label="Your week">
+              {v.days.slice(0, 7).map((d, i) => {
+                const max = Math.max(1, ...v.days.map((x) => x.items));
+                return (
+                  <li key={i} className="flex flex-col items-center gap-1">
+                    <span className="flex h-14 w-full items-end overflow-hidden rounded-ctl bg-bg-2" aria-hidden>
+                      <span className={`w-full rounded-ctl ${LOAD_BAR[d.load]}`} style={{ height: `${d.load === "away" ? 100 : Math.max(8, (d.items / max) * 100)}%`, opacity: d.load === "away" ? 0.35 : 1 }} />
+                    </span>
+                    <span className="text-[12.5px] text-ink-3">{d.label.slice(0, 3)}</span>
+                    <span className="sr-only">{`${d.label}: ${d.load === "away" ? "away" : `${d.items} item${d.items === 1 ? "" : "s"}`}${LOAD_WORDS[d.load] && d.load !== "away" ? `, ${LOAD_WORDS[d.load]}` : ""}`}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+          <p className="mt-2 flex flex-wrap gap-x-3 text-[13.5px] text-ink-3">
+            {v.overdue ? <span>{v.overdue === 1 ? "1 thing overdue" : `${v.overdue} things overdue`}</span> : null}
+            {v.calendarSynced === false ? <span>Your calendar isn&apos;t connected, so meetings aren&apos;t counted.</span> : null}
+          </p>
+        </>
+      ) : v.text ? (
+        <p className="text-[15px] leading-snug text-ink-2">{v.text}</p>
       ) : null}
     </Shell>
   );
@@ -194,7 +265,7 @@ function CapacityCard({ items, detail, ns, onOpen }: { items: Source[]; detail: 
 
 export function AnswerCard({ card, sources, onOpen }: { card: CardEvent; sources: Source[]; onOpen: (n: number) => void }) {
   const items = itemsOf(card, sources);
-  const detail = isRec(card.data?.detail) ? (card.data!.detail as Rec) : null;
+  const detail = card.data?.detail ?? null;
   const ns = card.source_ns.filter((n) => sources.some((s) => s.n === n));
   switch (card.kind) {
     case "meeting":
