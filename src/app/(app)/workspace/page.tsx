@@ -7,6 +7,8 @@ import { Card, CardHead, cardClass } from "@/components/ui/Card";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { SectionBar } from "@/components/ui/Page";
 import { TextLink } from "@/components/ui/TextLink";
+import { LinkButton } from "@/components/ui/Button";
+import { isNoCap, planLabel, tokensShort } from "@/lib/plans";
 import { StatCard } from "@/components/admin/StatCard";
 import { WorkspaceInvite } from "@/components/admin/WorkspaceInvite";
 import { ReadinessStrip } from "@/components/org-brain/ReadinessMeter";
@@ -85,7 +87,7 @@ function TokenAllowance({ usage }: { usage: UsageOut | null }) {
           </p>
         </div>
       </div>
-      {b && b.token_quota > 0 ? (
+      {b && b.token_quota > 0 && !isNoCap(b.token_quota) ? (
         <div className="mt-auto">
           <p className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
             <span className="display text-[34px] leading-none tabular-nums text-ink-display">{formatNumber(b.tokens_consumed)}</span>
@@ -104,10 +106,51 @@ function TokenAllowance({ usage }: { usage: UsageOut | null }) {
       ) : b ? (
         <p className="mt-auto text-[14px] text-ink-2">
           <span className="display text-[34px] leading-none tabular-nums text-ink-display">{formatNumber(b.tokens_consumed)}</span> tokens, no
-          monthly limit on this plan.
+          cap on this plan.
+          {usage?.payg ? ` ${currency.format(usage.payg.cost_cents / 100)} of the ${currency.format(usage.payg.deposit_cents / 100)} deposit used so far.` : ""}
         </p>
       ) : null}
     </section>
+  );
+}
+
+/* The plan, with the way up beside it: Upgrade opens the Plans page (the four plans as cards,
+   paid through Razorpay). A top plan or a staff-set one has nothing to upgrade to. */
+function PlanCard({ usage }: { usage: UsageOut | null }) {
+  const plan = usage?.plan ?? null;
+  const top = plan ? ["payg", "unlimited", "enterprise"].includes(plan.code) : false;
+  const until = usage?.paid_until ? new Date(usage.paid_until).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : null;
+  const line = !plan
+    ? "The plan could not be loaded just now."
+    : plan.code === "payg"
+      ? `A ${currency.format(plan.seat_price_cents / 100)} deposit, settled on what you use${until ? ` on ${until}` : ""}.`
+      : plan.code === "unlimited"
+        ? "Set by Mytheus staff. No cap and nothing to pay."
+        : plan.seat_price_cents > 0
+          ? `${currency.format(plan.seat_price_cents / 100)} a month${until ? `, paid until ${until}` : ""}.`
+          : `${tokensShort(plan.included_agent_tokens)} AI tokens a month, no charge.`;
+  return (
+    <div className={cardClass({ className: "flex items-start gap-4" })}>
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-ctl bg-bg-2 text-ink-2" aria-hidden="true">
+        <ChartBar size={20} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <Link href="/workspace/billing" className="block text-[17px] font-semibold text-ink hover:underline">
+          {plan ? `${planLabel(plan.code)} plan` : "Usage and billing"}
+        </Link>
+        <p className="mt-0.5 text-[14px] leading-relaxed text-ink-3">{line}</p>
+      </div>
+      {plan && !top ? (
+        <LinkButton href="/workspace/billing/plans" size="sm" className="shrink-0">
+          <Sparkle size={15} weight="fill" aria-hidden />
+          Upgrade
+        </LinkButton>
+      ) : (
+        <LinkButton href="/workspace/billing/plans" size="sm" variant="outline" className="shrink-0">
+          Plans
+        </LinkButton>
+      )}
+    </div>
   );
 }
 
@@ -136,7 +179,7 @@ export default async function WorkspaceOverviewPage() {
           value={invited ?? "Not loaded"}
           hint={invited === null ? "Clerk did not answer" : invited ? "Waiting to accept" : "None waiting"}
         />
-        <StatCard label="Plan" value={plan?.name ?? "Not loaded"} hint={plan ? "From billing" : "Billing did not answer"} />
+        <StatCard label="Plan" value={plan ? planLabel(plan.code) : "Not loaded"} hint={plan ? "From billing" : "Billing did not answer"} />
         <StatCard
           label="Integrations"
           value={connected ?? "Not loaded"}
@@ -169,11 +212,7 @@ export default async function WorkspaceOverviewPage() {
           <QuickLink href="/workspace/members" icon={UsersThree} title="Members">
             {members ? `${members.length} ${members.length === 1 ? "person" : "people"}. Change access or remove it.` : "The member list could not be loaded just now."}
           </QuickLink>
-          <QuickLink href="/workspace/billing" icon={ChartBar} title={plan ? `${plan.name} plan` : "Usage and billing"}>
-            {plan
-              ? `${plan.seat_price_cents > 0 ? `${currency.format(plan.seat_price_cents / 100)} per seat on the price list.` : "No charge on this plan."} Payments are not connected yet.`
-              : "The plan could not be loaded just now."}
-          </QuickLink>
+          <PlanCard usage={usage.kind === "live" ? usage.usage : null} />
           <QuickLink href="/settings/integrations" icon={PlugsConnected} title="Integrations">
             {connected === null
               ? "Calendar, Slack and Jira connections could not be loaded just now."
