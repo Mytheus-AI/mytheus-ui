@@ -231,7 +231,7 @@ export function AgentPanel({
 
       {beforeSave}
 
-      <div className={cardClass({ flush: true, className: "xl:col-start-1 xl:row-start-3" })}>
+      <div className={cardClass({ flush: true, className: hidePreview ? "" : "xl:col-start-1 xl:row-start-3" })}>
         <FormFooter className="!border-t-0">
           <Button disabled={!dirty || saving} onClick={() => void save(form)}>
             {saving ? "Saving Myte" : "Save Myte"}
