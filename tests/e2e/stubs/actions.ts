@@ -974,9 +974,26 @@ export async function myteNudgeData() {
   return V2_NUDGES;
 }
 
-// The save-your-time-zone prompt: the member's saved zone, set by a test on `window.__savedTimeZone`
-// before mounting (default UTC, the column default).
-export async function savedTimeZone(): Promise<string | null> {
-  const g = globalThis as { __savedTimeZone?: string | null };
-  return "__savedTimeZone" in g ? (g.__savedTimeZone ?? null) : "UTC";
+// The where-do-you-work prompt and the Location card: the member's saved location and zone come
+// from `window.__location` (a test sets it before mounting); saves are recorded on
+// `window.__savedLocation` so a test can read what was sent.
+type LocationStub = { country: string | null; subdivision: string | null; savedZone: string | null; suggestedCountry: string | null };
+export async function locationState(_browserZone: string | null) {
+  const g = globalThis as { __location?: Partial<LocationStub> };
+  return {
+    country: null,
+    subdivision: null,
+    savedZone: "UTC",
+    suggestedCountry: "IN",
+    ...(g.__location ?? {}),
+    countries: [
+      { code: "DE", name: "Germany" },
+      { code: "IN", name: "India" },
+      { code: "US", name: "United States" },
+    ],
+  };
+}
+export async function saveLocation(input: { country: string; subdivision: string | null; timeZone: string | null }) {
+  (globalThis as { __savedLocation?: unknown[] }).__savedLocation = [...(((globalThis as { __savedLocation?: unknown[] }).__savedLocation) ?? []), input];
+  return { ok: true as const };
 }
