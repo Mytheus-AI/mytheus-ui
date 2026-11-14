@@ -112,31 +112,33 @@ export function TopicWatchEditor({ initial }: { initial: TopicWatch[] }) {
           ))}
         </ul>
       ) : (
-        <div className="flex items-start gap-3 rounded-ctl bg-surface-2 px-4 py-3.5">
-          <Binoculars size={20} aria-hidden className="mt-0.5 shrink-0 text-ink-3" />
-          <div className="min-w-0">
-            <p className="text-[14px] font-semibold text-ink">No topics yet</p>
-            <p className="mt-0.5 text-[14px] text-ink-3">Try a project, a customer or a codename.</p>
-            <div className="mt-2.5 flex flex-wrap gap-1.5">
-              {SUGGESTIONS.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => void add(s)}
-                  aria-label={`Watch ${s}`}
-                  className="inline-flex h-9 items-center gap-1 rounded-full border border-dashed border-line-2 px-3 text-[14px] font-semibold text-ink-2 transition-colors hover:border-ink-4 hover:bg-surface hover:text-ink"
-                >
-                  <Plus size={12} weight="bold" aria-hidden />
-                  {s}
-                </button>
-              ))}
+        <div className="rounded-ctl bg-surface-2 px-4 py-3.5">
+          <div className="flex items-start gap-2.5">
+            <Binoculars size={18} aria-hidden className="mt-0.5 shrink-0 text-ink-3" />
+            <div className="min-w-0">
+              <p className="text-[14px] font-semibold text-ink">No topics yet</p>
+              <p className="mt-0.5 text-[14px] text-ink-3">Try a project, a customer or a codename.</p>
             </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {SUGGESTIONS.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => void add(s)}
+                aria-label={`Watch ${s}`}
+                className="inline-flex h-8 items-center gap-1 whitespace-nowrap rounded-full border border-line-2 bg-surface px-2.5 text-[13px] font-semibold text-ink-2 transition-colors hover:border-ink-4 hover:text-ink"
+              >
+                <Plus size={11} weight="bold" aria-hidden />
+                {s}
+              </button>
+            ))}
           </div>
         </div>
       )}
 
-      <form onSubmit={submit} className="mt-4 flex flex-wrap items-start gap-2 sm:flex-nowrap">
-        <div className="min-w-0 flex-1 basis-[220px]">
+      <form onSubmit={submit} className="mt-4 flex items-start gap-2">
+        <div className="min-w-0 flex-1">
           <label htmlFor={inputId} className="sr-only">
             Add a topic to watch
           </label>
@@ -150,7 +152,7 @@ export function TopicWatchEditor({ initial }: { initial: TopicWatch[] }) {
               setDraft(e.target.value);
               if (error) setError(null);
             }}
-            placeholder={full ? "Remove a topic to add another" : "Add a topic, like SSO or Acme renewal"}
+            placeholder={full ? "Remove a topic to add another" : "Add a topic"}
             aria-invalid={error ? true : undefined}
             aria-describedby={`${countId}${error ? ` ${errId}` : ""}`}
             className={`${fieldClass} disabled:cursor-not-allowed`}
