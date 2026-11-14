@@ -215,6 +215,8 @@ export interface OpsOverview {
   /** Members by saved time zone (`listening_preferences.time_zone`), largest first; absent from
       an older service. */
   member_zones?: { time_zone: string; members: number }[];
+  /** Members by the country and ISO 3166-2 subdivision they set; both null is "not set". */
+  member_places?: { country: string | null; subdivision: string | null; members: number }[];
 }
 
 /** One data-residency region on the overview. `unplaced` holds workspaces with no residency row. */

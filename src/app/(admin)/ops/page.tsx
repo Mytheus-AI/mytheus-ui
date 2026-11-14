@@ -9,7 +9,7 @@ import { Donut } from "@/components/ops/viz/Donut";
 import { Heatmap } from "@/components/ops/viz/Heatmap";
 import { TrendPanel } from "@/components/ops/overview/TrendPanel";
 import { MembersPanel } from "@/components/ops/overview/MembersPanel";
-import { memberPlaces } from "@/lib/ops-geo";
+import { memberPlaces, placesFromCountries } from "@/lib/ops-geo";
 import { RefreshButton } from "@/components/ops/RefreshButton";
 import { REGION_PLACES, fmt, periodLabel, planFill, planLabel, planRank, weekPoints } from "@/lib/ops-charts";
 import { loadOverview } from "@/lib/api/admin-ops";
@@ -56,7 +56,12 @@ export default async function OpsOverviewPage() {
     count -= signups[i].value;
   }
 
-  const where = o.member_zones ? memberPlaces(o.member_zones, t.members) : null;
+  // Where members are: the country and state they set (newer services), else their saved zone.
+  const where = o.member_places
+    ? placesFromCountries(o.member_places, o.member_zones ?? [], t.members)
+    : o.member_zones
+      ? memberPlaces(o.member_zones, t.members)
+      : null;
   // Storage is a separate fact from where people are: say which region holds the data, and that
   // it is the default every workspace is given when it is created.
   const placed = (o.regions ?? []).filter((r) => r.region !== "unplaced");
@@ -121,7 +126,7 @@ export default async function OpsOverviewPage() {
         <SectionCard
           title="Where members are"
           headingId="regions-heading"
-          description="Each member placed by the time zone they saved, at that zone's city, grouped by country. A hub grows with its members."
+          description="Members by the country and state they say they work in. A hub grows with its members; states are listed beside it."
           clip={false}
           aside={
             <Link href="/ops/workspaces" className={linkClass}>

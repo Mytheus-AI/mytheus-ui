@@ -29,7 +29,7 @@ export function MembersPanel({ places, notSet, total, storage }: { places: Membe
       <div className="min-w-0">
         <ul className="m-0 flex list-none flex-col p-0" aria-label="Members by country">
           {places.length === 0 ? (
-            <li className="px-3 py-3 text-[14px] text-ink-3">No member has saved a time zone yet.</li>
+            <li className="px-3 py-3 text-[14px] text-ink-3">No member has said where they work yet. Each is asked when they sign in.</li>
           ) : null}
           {places.map((p) => (
             <li
@@ -51,16 +51,25 @@ export function MembersPanel({ places, notSet, total, storage }: { places: Membe
               <div className="mt-2 h-1.5 rounded-full bg-bg-2" aria-hidden>
                 <div className="h-full min-w-1.5 rounded-full bg-pill" style={{ width: `${share(p.count)}%` }} />
               </div>
-              <p className="mt-2 truncate text-[13px] text-ink-3" title={p.zones.join(", ")}>
-                {p.zones.join(", ")}
-              </p>
+              {p.states?.length ? (
+                <p className="mt-2 truncate text-[13px] text-ink-3" title={p.states.map((st) => `${st.name} ${st.count}`).join(", ")}>
+                  {p.states
+                    .slice(0, 3)
+                    .map((st) => `${st.name} ${whole.format(st.count)}`)
+                    .join(", ")}
+                  {p.states.length > 3 ? `, and ${p.states.length - 3} more` : ""}
+                </p>
+              ) : p.zones.length ? (
+                <p className="mt-2 truncate text-[13px] text-ink-3" title={p.zones.join(", ")}>
+                  {p.zones.join(", ")}
+                </p>
+              ) : null}
             </li>
           ))}
         </ul>
         <div className="mt-2 border-t border-line px-3 pt-3 text-[13px] leading-relaxed text-ink-3">
           <p>
-            <span className="font-semibold text-ink-2">{plural(notSet, "member has", "members have")}</span> not saved a time zone, so{" "}
-            {notSet === 1 ? "is" : "are"} not on the map.
+            <span className="font-semibold text-ink-2">{plural(notSet, "member has", "members have")}</span> not said where they work yet, so {notSet === 1 ? "is" : "are"} not on the map. Each is asked when they sign in.
           </p>
           {storage ? <p className="mt-1.5">{storage}</p> : null}
         </div>

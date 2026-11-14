@@ -45,3 +45,36 @@ test("UTC, unknown zones and members with no saved preferences are not set, neve
   assert.equal(r.placed, 1);
   assert.equal(r.notSet, 5);
 });
+
+test("members are placed by the country and state they set, states largest first", async () => {
+  const { placesFromCountries } = await import("../src/lib/ops-geo.ts");
+  const r = placesFromCountries(
+    [
+      { country: "IN", subdivision: "IN-KA", members: 5 },
+      { country: "IN", subdivision: "IN-MH", members: 2 },
+      { country: "IN", subdivision: null, members: 1 },
+      { country: "US", subdivision: "US-CA", members: 1 },
+      { country: null, subdivision: null, members: 3 },
+    ],
+    [{ time_zone: "Asia/Calcutta", members: 8 }],
+    13,
+  );
+  assert.deepEqual(
+    r.places.map((p) => [p.key, p.count]),
+    [
+      ["IN", 8],
+      ["US", 1],
+    ],
+  );
+  assert.deepEqual(r.places[0].states, [
+    { name: "Karnataka", count: 5 },
+    { name: "Maharashtra", count: 2 },
+  ]);
+  // India sits at Kolkata (its members' saved zone); the US, with no zone saved, in the middle
+  // of its zones: inside the country, never off its coast.
+  assert.ok(r.places[0].lat > 20 && r.places[0].lon > 85);
+  const us = r.places[1];
+  assert.ok(us.lat > 25 && us.lat < 50 && us.lon > -125 && us.lon < -67, `${us.lat},${us.lon}`);
+  // Three said nothing, and one member is not counted at all.
+  assert.equal(r.notSet, 4);
+});
