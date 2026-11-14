@@ -381,6 +381,9 @@ export function DecisionsLog({ decisions }: { decisions: Decision[] }) {
       ) : (
         <>
           <div className="flex flex-col gap-3">
+            {/* One toolbar row: search, the meeting filter beside it, then status. The count and
+                Clear filters only appear while a filter narrows the log; unfiltered, the month
+                headings already carry the counts. */}
             <div className="flex flex-wrap items-center gap-3">
               <div className="relative min-w-0 flex-1 basis-64">
                 <MagnifyingGlass
@@ -398,6 +401,16 @@ export function DecisionsLog({ decisions }: { decisions: Decision[] }) {
                   className={`${fieldClass} pl-10`}
                 />
               </div>
+              <Select
+                label="Filter by meeting"
+                value={meeting}
+                onChange={setMeeting}
+                className="w-full shrink-0 sm:w-[240px]"
+                options={[
+                  { value: "all", label: "All meetings", icon: <VideoCamera size={16} aria-hidden /> },
+                  ...meetings.map((m) => ({ value: m.id, label: m.title })),
+                ]}
+              />
               <div
                 role="group"
                 aria-label="Status"
@@ -424,29 +437,21 @@ export function DecisionsLog({ decisions }: { decisions: Decision[] }) {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <Select
-                label="Filter by meeting"
-                value={meeting}
-                onChange={setMeeting}
-                className="min-w-0 flex-1 basis-48 sm:max-w-[300px]"
-                options={[
-                  { value: "all", label: "All meetings", icon: <VideoCamera size={16} aria-hidden /> },
-                  ...meetings.map((m) => ({ value: m.id, label: m.title })),
-                ]}
-              />
-              {anyFilter ? (
+            {anyFilter ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="text-[14px] text-ink-3" aria-live="polite">
+                  {`${visible.length} of ${sorted.length} decisions`}
+                </p>
                 <Button variant="ghost" size="sm" onClick={clear}>
                   <X size={14} aria-hidden />
                   Clear filters
                 </Button>
-              ) : null}
-              <p className="text-[14px] text-ink-3 max-sm:w-full sm:ml-auto" aria-live="polite">
-                {visible.length === sorted.length
-                  ? `${sorted.length} ${sorted.length === 1 ? "decision" : "decisions"}`
-                  : `${visible.length} of ${sorted.length} decisions`}
+              </div>
+            ) : (
+              <p className="sr-only" aria-live="polite">
+                {`${sorted.length} ${sorted.length === 1 ? "decision" : "decisions"}`}
               </p>
-            </div>
+            )}
           </div>
 
           {visible.length === 0 ? (
