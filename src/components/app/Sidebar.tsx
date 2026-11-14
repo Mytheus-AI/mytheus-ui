@@ -10,9 +10,11 @@ import { AgentOrb } from "@/components/agent/AgentOrb";
 import { defaultDoodleSeed } from "@/lib/doodle";
 import { buttonClass } from "@/components/ui/Button";
 import { countLabel } from "@/lib/inbox";
+import { useModKey } from "@/components/ask-myte/mod-key";
 import {
   ADMIN_ITEMS,
   AGENT_ITEM,
+  ASK_ITEM,
   FOOT_ITEMS,
   MAIN_ITEMS,
   NEW_MEETING_HREF,
@@ -83,7 +85,7 @@ const AGENT: Lay = {
 export type LiveCall = { href: string; title: string };
 
 /** The signed-in person's Myte as the sidebar draws it. */
-export type SidebarAgent = { name: string; seed: string };
+export type SidebarAgent = { name: string; seed: string; personality?: string | null };
 
 /* Up/Down move between the sidebar's items, Home/End jump to the ends. */
 function onNavKey(e: KeyboardEvent<HTMLElement>) {
@@ -121,6 +123,7 @@ export function Sidebar({
   onClose?: () => void;
 }) {
   const pathname = usePathname();
+  const mod = useModKey();
   const { org, user } = useOrgContext();
   const isAdmin = user.role === "admin";
   const railed = rail && !drawer;
@@ -151,7 +154,7 @@ export function Sidebar({
     : "grid";
 
   // The deepest matching href wins, so /tenant/usage does not also light up /tenant.
-  const current = currentNavHref(pathname, [AGENT_ITEM, ...MAIN_ITEMS, ...(isAdmin ? ADMIN_ITEMS : []), ...FOOT_ITEMS]);
+  const current = currentNavHref(pathname, [AGENT_ITEM, ASK_ITEM, ...MAIN_ITEMS, ...(isAdmin ? ADMIN_ITEMS : []), ...FOOT_ITEMS]);
 
   const toggleRail = (e: MouseEvent<HTMLButtonElement>) => {
     if (!rail) {
@@ -183,6 +186,7 @@ export function Sidebar({
         data-sb-item=""
         aria-current={active ? "page" : undefined}
         aria-label={badge ? `${it.label}, ${inboxCount} waiting` : undefined}
+        aria-keyshortcuts={it.shortcut ? `${mod === "⌘" ? "Meta" : "Control"}+${it.shortcut}` : undefined}
         className={`relative flex h-[42px] shrink-0 items-center ${lay(ROW)} rounded-ctl text-[14px] font-semibold transition-[background-color,color,transform] duration-150 motion-safe:active:scale-[0.98] ${
           active ? "bg-surface text-ink" : "text-ink-3 hover:bg-bg-2 hover:text-ink"
         }`}
@@ -197,6 +201,16 @@ export function Sidebar({
           ) : null}
         </span>
         <span className={`sb-fade min-w-0 flex-1 ${label}`}>{it.label}</span>
+        {it.shortcut ? (
+          <kbd
+            aria-hidden
+            className={`sb-fade ml-auto shrink-0 rounded-full border border-line-2 bg-surface-2 px-1.5 py-px font-sans text-[12.5px] font-semibold text-ink-3 ${pillShow}`}
+          >
+            {mod}
+            {mod === "⌘" ? "" : " "}
+            {it.shortcut}
+          </kbd>
+        ) : null}
         {badge ? (
           <span
             aria-hidden
@@ -286,6 +300,8 @@ export function Sidebar({
         label={label}
         onNavigate={onNavigate}
       />
+      {/* Ask Myte sits right under your Myte, above Home (ADR-0047 D1). */}
+      <div className="-mt-2 mb-3.5 flex flex-col">{item(ASK_ITEM)}</div>
       <div aria-hidden className={railRule} />
 
       {liveCall ? (

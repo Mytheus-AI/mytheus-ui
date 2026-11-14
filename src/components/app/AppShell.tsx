@@ -13,12 +13,13 @@ import { Toaster } from "@/components/ui/Toaster";
 import { inboxCount as readInboxCount } from "@/app/actions/inbox";
 import { INBOX_COUNT_EVENT } from "@/lib/inbox";
 import { appFontClass } from "@/lib/fonts";
+import { AskMyteLayer, AskMyteProvider } from "@/components/ask-myte/AskMyteProvider";
 
 /* The authenticated shell. On desktop the nav is an icon rail or a labelled column (the user's
    choice, remembered); below lg it becomes an overlay drawer opened from the Topbar. Route
    changes, Escape, the scrim, the drawer's close button and nav clicks close the drawer; focus
    moves into it on open, stays inside while it is open, and returns to the menu button on close.
-   Cmd/Ctrl+K opens the palette. The shell also holds the Inbox's open count for the sidebar
+   Cmd/Ctrl+K opens the palette; Cmd/Ctrl+J opens Ask Myte (AskMyteProvider). The shell also holds the Inbox's open count for the sidebar
    (read after load, again when the route changes or the window regains focus, at most every 30
    seconds, and set directly by the Inbox as you triage it through the `mx-inbox-count` event),
    the topbar breadcrumb's state, and the one toast surface. The `.mx-app` root scopes the redesigned theme (see
@@ -171,6 +172,7 @@ export function AppShell({
   return (
     <MyAgentProvider value={agent ?? null}>
     <CrumbProvider>
+    <AskMyteProvider>
     <div suppressHydrationWarning className={`mx-app ${appFontClass} flex h-dvh bg-bg ${sbSynced ? "" : "sb-instant"}`}>
       <a
         href="#main"
@@ -230,8 +232,10 @@ export function AppShell({
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} agentName={agent?.name ?? null} />
       <DoodleImageSync />
+      <AskMyteLayer />
       <Toaster />
     </div>
+    </AskMyteProvider>
     </CrumbProvider>
     </MyAgentProvider>
   );

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AskAboutButton } from "@/components/ask-myte/AskBox";
 import type { ComponentProps } from "react";
 import Link from "next/link";
 import {
@@ -756,6 +757,7 @@ export default async function MeetingDetailPage({ params }: { params: { meetingI
           </div>
         </div>
         <div className="mx-actions">
+          <AskAboutButton kind="meeting" id={meeting.id} title={meeting.title} />
           {ended ? (
             chunks.length > 0 ? (
               <LinkButton href={`/meetings/${meeting.id}/transcript`}>

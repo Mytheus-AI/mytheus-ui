@@ -126,6 +126,10 @@ export function AskAgent({ meetingId }: { meetingId: string }) {
   const fieldId = useId();
   const hintId = useId();
   const loading = history.some((h) => h.status === "loading");
+  const latest = history.find((h) => h.status !== "loading") ?? null;
+  const continueHref = latest
+    ? `/ask?q=${encodeURIComponent(latest.question)}${latest.thisMeeting ? `&meeting=${encodeURIComponent(meetingId)}` : ""}`
+    : `/ask?meeting=${encodeURIComponent(meetingId)}`;
 
   const run = async (q: string, scoped: boolean, reuseId?: number) => {
     const id = reuseId ?? ++seq.current;
@@ -208,6 +212,14 @@ export function AskAgent({ meetingId }: { meetingId: string }) {
           Answers come from your meetings and the company brain. Nothing is shared with the room.
         </span>
       </div>
+      {/* Ask Myte (ADR-0047 D1): carry the last question on to the full page, in a new tab so the
+          call stays put. It is asked there again as the start of a thread you can follow up on. */}
+      <p className="ask-continue">
+        <Link href={continueHref} target="_blank" rel="noopener" className="ask-source-link tap">
+          {history.length ? "Continue in Ask Myte" : "Open Ask Myte"}
+          <span className="sr-only"> (opens in a new tab)</span>
+        </Link>
+      </p>
       <p className="sr-only" role="status" aria-live="polite">
         {announce}
       </p>

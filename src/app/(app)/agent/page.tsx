@@ -9,6 +9,8 @@ import { KeptNotes } from "@/components/agent/KeptNotes";
 import { TopicWatchCard } from "@/components/watch/TopicWatchCard";
 import { Page, PageHead } from "@/components/ui/Page";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { AskBox } from "@/components/ask-myte/AskBox";
+import { agentDisplayName, agentSeed } from "@/lib/api/profile-types";
 
 export const metadata: Metadata = { title: "Your Myte | Mytheus" };
 
@@ -38,8 +40,23 @@ export default async function AgentPage() {
     </>
   );
 
+  // Ask Myte (ADR-0047 D1): a large ask box at the top; sending opens /ask with it already asked.
+  const askName = agentDisplayName(profile?.agent_name ?? null, personName);
+  const ask = (
+    <section aria-label={`Ask ${askName}`} className="mb-6">
+      <AskBox
+        size="lg"
+        name={askName}
+        seed={profile ? agentSeed(profile.agent_avatar_seed, profile.id) : null}
+        placeholder="Ask me anything about your work..."
+        openButton
+      />
+    </section>
+  );
+
   return (
     <Page className="pt-2">
+      {ask}
       {profile ? (
         <AgentWorkspace profile={profile} personName={personName} aside={aside} />
       ) : (

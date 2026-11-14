@@ -24,6 +24,8 @@ import { fetchReadiness } from "@/lib/api/org-brain";
 import { welcomeDaysLeft } from "@/lib/api/org-brain-types";
 import { checklistSteps } from "@/lib/checklist";
 import { fetchMyOpenTasks } from "@/lib/api/tasks";
+import { AskBox } from "@/components/ask-myte/AskBox";
+import { agentDisplayName, agentSeed } from "@/lib/api/profile-types";
 
 export const metadata: Metadata = {
   title: "Dashboard | Mytheus",
@@ -113,6 +115,12 @@ export default async function DashboardPage() {
   const newJoiner = welcomeDaysLeft(profile?.created_at, now) !== null;
 
   const today = meetings.filter(isToday);
+
+  const askName = agentDisplayName(profile?.agent_name ?? null, profile?.display_name || orgContext?.user.name || "");
+  const askStarters = [
+    next && !calendarFailed ? { question: next.status === "live" ? `What should I know for ${next.title}?` : `Prep me for ${next.title}` } : { question: "What's on my calendar today?" },
+    { question: "What do I owe this week?", hint: tasks.failed ? undefined : `${tasks.items.length} open task${tasks.items.length === 1 ? "" : "s"}` },
+  ];
   const later = meetings.filter((m) => !isToday(m) && m.status !== "past");
 
   return (
@@ -127,6 +135,16 @@ export default async function DashboardPage() {
         openTasks={tasks.failed ? null : tasks.items.length}
         needsYou={review.failed ? null : review.items.length}
       />
+
+      {/* Ask Myte (ADR-0047 D1): an ask bar under the greeting with two starters from today. */}
+      <div className="mb-6">
+        <AskBox
+          name={askName}
+          seed={profile ? agentSeed(profile.agent_avatar_seed, profile.id) : null}
+          placeholder={`Ask ${askName} about your day...`}
+          starters={askStarters}
+        />
+      </div>
 
       <FirstRunChecklist steps={steps} welcomeHref={newJoiner ? "/welcome" : null} />
 

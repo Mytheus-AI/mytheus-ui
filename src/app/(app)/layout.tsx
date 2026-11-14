@@ -50,6 +50,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     ? {
         name: agentDisplayName(profile.agent_name, orgContext.user.name),
         seed: agentSeed(profile.agent_avatar_seed, profile.id),
+        personality: profile.agent_personality,
       }
     : null;
 
