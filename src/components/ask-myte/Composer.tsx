@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
-import { ArrowUp, CalendarBlank, Microphone, Stop, User, VideoCamera, X, Scales, Globe } from "@phosphor-icons/react";
+import { ArrowUp, CalendarBlank, FileText, Microphone, Paperclip, Stop, User, VideoCamera, X, Scales, Globe } from "@phosphor-icons/react";
 import { myteMentions } from "@/app/actions/myte-threads";
 import { applyMention, expandShortcut, matchShortcuts, mentionAt, rankMentions, type Mentionable, type Shortcut } from "@/lib/ask-myte/compose";
 import { scopeLabel } from "@/lib/ask-myte/page-context";
 import { ALL_SCOPE, LIMITS, type AskScope, type ScopeKind } from "@/lib/ask-myte/types";
+import { ACCEPT, MAX_FILE_BYTES, PASTE_ATTACH_FROM, acceptsFile, addAttachment, pastedName, sizeLabel, totalChars, type PendingAttachment } from "@/lib/ask-myte/attachments";
 import { useSpeechInput } from "./voice";
 
 /* The ask box (the approved plan, "The ask box"): a multiline field that grows with what you type
@@ -51,7 +52,14 @@ export interface ComposerProps {
   onFocusChange?: (focused: boolean) => void;
   /** names the field for screen readers */
   label: string;
+  /** ADR-0049 F7: files and pasted text going with the next question */
+  attachments?: PendingAttachment[];
+  onAttachments?: (list: PendingAttachment[]) => void;
+  /** ADR-0049 F5: the /routine shortcut opens the routine form with this question */
+  onRoutine?: (question: string) => void;
 }
+
+let fileSeq = 0;
 
 export function Composer({
   value,
@@ -69,6 +77,9 @@ export function Composer({
   compact = false,
   onFocusChange,
   label,
+  attachments = [],
+  onAttachments,
+  onRoutine,
 }: ComposerProps) {
   const uid = useId();
   const [suggest, setSuggest] = useState<Suggest | null>(null);
@@ -78,6 +89,43 @@ export function Composer({
   const caret = useRef(0);
   const speechBase = useRef("");
   const heldSince = useRef(0);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+  const [fileNote, setFileNote] = useState<{ text: string; undoPaste?: string } | null>(null);
+  const attachRef = useRef(attachments);
+  attachRef.current = attachments;
+
+  const attachText = (file: { name: string; text: string; type?: string; size?: number }): boolean => {
+    if (!onAttachments) return false;
+    const res = addAttachment(attachRef.current, file, `f${Date.now().toString(36)}${fileSeq++}`);
+    if (!res.ok) {
+      setFileNote({ text: res.message });
+      return false;
+    }
+    attachRef.current = res.list;
+    onAttachments(res.list);
+    return true;
+  };
+
+  const attachFiles = async (files: FileList | File[]) => {
+    setFileNote(null);
+    for (const f of Array.from(files)) {
+      if (!acceptsFile(f.name, f.type)) {
+        setFileNote({ text: `${f.name} isn't a text file. Attach .txt, .md or .csv.` });
+        continue;
+      }
+      if (f.size > MAX_FILE_BYTES) {
+        setFileNote({ text: `${f.name} is too large to attach.` });
+        continue;
+      }
+      const text = await f.text().catch(() => null);
+      if (text === null) {
+        setFileNote({ text: `${f.name} couldn't be read.` });
+        continue;
+      }
+      attachText({ name: f.name, text, type: f.type, size: f.size });
+    }
+  };
 
   const speech = useSpeechInput((text) => {
     onChange(`${speechBase.current}${speechBase.current && text ? " " : ""}${text}`.slice(0, LIMITS.question));
@@ -147,6 +195,13 @@ export function Composer({
       setPicker("as_of");
       return;
     }
+    if (short?.picker === "routine") {
+      if (onRoutine) {
+        onRoutine(short.question);
+        onChange("");
+      }
+      return;
+    }
     setSuggest(null);
     setPasted(false);
     onSubmit(short ? short.question : text);
@@ -197,6 +252,7 @@ export function Composer({
   const optId = (i: number) => `${uid}-opt-${i}`;
   const hintId = `${uid}-hint`;
   const canSend = !!value.trim() && !offline;
+  const chars = totalChars(attachments);
 
   const micDown = () => {
     if (speech.listening) return;
@@ -278,8 +334,61 @@ export function Composer({
       ) : null}
 
       <div
-        className={`rounded-hero border border-line-2 bg-surface shadow-warm-1 transition-[border-color,box-shadow] duration-150 focus-within:border-ink-4 focus-within:shadow-warm-2 ${compact ? "p-2.5" : "p-3"}`}
+        onDragEnter={(e) => {
+          if (onAttachments && Array.from(e.dataTransfer.types).includes("Files")) {
+            e.preventDefault();
+            setDragging(true);
+          }
+        }}
+        onDragOver={(e) => {
+          if (onAttachments && Array.from(e.dataTransfer.types).includes("Files")) e.preventDefault();
+        }}
+        onDragLeave={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false);
+        }}
+        onDrop={(e) => {
+          if (!onAttachments) return;
+          e.preventDefault();
+          setDragging(false);
+          void attachFiles(e.dataTransfer.files);
+        }}
+        className={`relative rounded-hero border bg-surface shadow-warm-1 transition-[border-color,box-shadow] duration-150 focus-within:border-ink-4 focus-within:shadow-warm-2 ${
+          dragging ? "border-dashed border-signal-line" : "border-line-2"
+        } ${compact ? "p-2.5" : "p-3"}`}
       >
+        {dragging ? (
+          <div aria-hidden className="pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-hero bg-surface/90 text-[15px] font-semibold text-signal-ink">
+            Drop .txt, .md or .csv files to attach
+          </div>
+        ) : null}
+        {attachments.length ? (
+          <div className="mb-1.5 px-1">
+            <ul className="flex flex-wrap gap-1.5" aria-label="Attached to this question">
+              {attachments.map((a) => (
+                <li key={a.key} className="inline-flex h-9 max-w-full items-center gap-1.5 rounded-full border border-line bg-surface-2 pl-3 pr-1 text-[13.5px] text-ink-2">
+                  <FileText size={15} aria-hidden className="shrink-0 text-ink-3" />
+                  <span className="min-w-0 truncate font-semibold text-ink">{a.name}</span>
+                  <span className="shrink-0 text-ink-3">{sizeLabel(a.size)}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onAttachments?.(attachments.filter((x) => x.key !== a.key));
+                      setFileNote(null);
+                      requestAnimationFrame(() => inputRef.current?.focus());
+                    }}
+                    aria-label={`Remove ${a.name}`}
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-ink-3 hover:bg-surface hover:text-ink"
+                  >
+                    <X size={12} weight="bold" aria-hidden />
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1 px-1 text-[12.5px] text-ink-3">
+              {attachments.length} of {LIMITS.attachments} files, {chars.toLocaleString("en")} of {LIMITS.attachmentChars.toLocaleString("en")} characters. Only the names are kept with your history.
+            </p>
+          </div>
+        ) : null}
         <label htmlFor={`${uid}-q`} className="sr-only">
           {label}
         </label>
@@ -308,7 +417,20 @@ export function Composer({
             }
           }}
           onPaste={(e) => {
-            if (e.clipboardData.getData("text").length > 400) setPasted(true);
+            const files = Array.from(e.clipboardData.files ?? []);
+            if (files.length && onAttachments) {
+              e.preventDefault();
+              void attachFiles(files);
+              return;
+            }
+            const text = e.clipboardData.getData("text");
+            // Long text goes in as an attachment, so the question stays a question.
+            if (onAttachments && text.length >= PASTE_ATTACH_FROM) {
+              e.preventDefault();
+              if (attachText({ name: pastedName(attachRef.current), text })) setFileNote({ text: `Attached the pasted text (${text.length.toLocaleString("en")} characters).`, undoPaste: text });
+              return;
+            }
+            if (text.length > 400) setPasted(true);
           }}
           onKeyDown={onKeyDown}
           onFocus={() => onFocusChange?.(true)}
@@ -319,7 +441,7 @@ export function Composer({
           className={`block w-full resize-none bg-transparent px-2 py-1.5 leading-relaxed text-ink !outline-none placeholder:text-ink-3 ${compact ? "text-[15px]" : "text-[16px]"}`}
         />
         <p id={hintId} className="sr-only">
-          Enter sends, Shift and Enter adds a line. Type @ to mention a meeting, person or decision, or / for shortcuts.
+          Enter sends, Shift and Enter adds a line. Type @ to mention a meeting, person or decision, or / for shortcuts. Paste or drop a text file to attach it.
         </p>
 
         {pasted && value.length > 400 ? (
@@ -334,6 +456,29 @@ export function Composer({
               }}
             >
               Check it against our decisions
+            </button>
+          </div>
+        ) : null}
+
+        {fileNote ? (
+          <div className="mx-1 mb-2 flex flex-wrap items-center gap-2 rounded-ctl bg-surface-2 px-3 py-2 text-[13.5px] text-ink-2" role="status">
+            <span className="min-w-0 flex-1">{fileNote.text}</span>
+            {fileNote.undoPaste ? (
+              <button
+                type="button"
+                className="font-semibold text-signal-ink underline-offset-4 hover:underline"
+                onClick={() => {
+                  const text = fileNote.undoPaste ?? "";
+                  onAttachments?.(attachRef.current.filter((a) => a.text !== text));
+                  onChange(`${value}${value ? "\n" : ""}${text}`.slice(0, LIMITS.question));
+                  setFileNote(null);
+                }}
+              >
+                Paste as text instead
+              </button>
+            ) : null}
+            <button type="button" aria-label="Dismiss" onClick={() => setFileNote(null)} className="grid h-7 w-7 place-items-center rounded-full text-ink-3 hover:bg-surface hover:text-ink">
+              <X size={12} weight="bold" aria-hidden />
             </button>
           </div>
         ) : null}
@@ -360,6 +505,33 @@ export function Composer({
               <ScopeChips scope={scope} onScope={onScope} onPicker={setPicker} compact={compact} />
             )}
           </div>
+          {onAttachments ? (
+            <>
+              <input
+                ref={fileInput}
+                type="file"
+                accept={ACCEPT}
+                multiple
+                tabIndex={-1}
+                aria-hidden
+                className="sr-only"
+                onChange={(e) => {
+                  if (e.target.files) void attachFiles(e.target.files);
+                  e.target.value = "";
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => fileInput.current?.click()}
+                disabled={attachments.length >= LIMITS.attachments}
+                aria-label="Attach a text file"
+                title="Attach .txt, .md or .csv (or drop it here)"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink-3 transition-colors hover:bg-bg-2 hover:text-ink disabled:opacity-40"
+              >
+                <Paperclip size={19} aria-hidden />
+              </button>
+            </>
+          ) : null}
           {speech.supported ? (
             <button
               type="button"

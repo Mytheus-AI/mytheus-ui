@@ -10,6 +10,7 @@ import type { Starter } from "@/lib/ask-myte/starters";
 import type { AskPage } from "@/lib/ask-myte/types";
 import { AskMyteChat, type MytePersona } from "./AskMyteChat";
 import { MyteFace } from "./parts";
+import { TalkButton } from "./TalkButton";
 import { useAskMyte } from "./useAskMyte";
 
 /* The ⌘J sheet (the approved plan, "⌘J on any page"): a panel on the right (full screen on a
@@ -48,6 +49,7 @@ export function AskMyteSheet({
   const [starters, setStarters] = useState<Record<string, Starter[] | null>>({});
   const [autoSend, setAutoSend] = useState<{ q: string; n: number } | null>(null);
   const [chatKey, setChatKey] = useState(0);
+  const [talk, setTalk] = useState(0);
 
   const page = request?.page ?? pathPage;
   const pageKey = page?.id ? `${page.kind}:${page.id}` : "home";
@@ -85,6 +87,9 @@ export function AskMyteSheet({
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    // A dialog inside the sheet (voice mode, the routine form) handles its own keys.
+    const inner = (e.target as HTMLElement | null)?.closest?.('[role="dialog"]');
+    if (inner && inner !== panel.current) return;
     if (e.key === "Escape" && !e.defaultPrevented) {
       e.preventDefault();
       if (conv.streaming) conv.stop();
@@ -126,6 +131,7 @@ export function AskMyteSheet({
               <span aria-hidden>{face.state === "idle" ? "" : `, ${face.words.replace(`${persona.name} is `, "")}`}</span>
             </p>
           </div>
+          <TalkButton compact name={persona.name} onTalk={() => setTalk((n) => n + 1)} disabled={conv.streaming} />
           {!empty ? (
             <button
               type="button"
@@ -172,6 +178,7 @@ export function AskMyteSheet({
             autoSend={autoSend?.q ?? null}
             composerRef={composerRef}
             onFace={(state, words) => setFace((f) => (f.state === state && f.words === words ? f : { state, words }))}
+            talkSignal={talk}
           />
         </div>
       </div>

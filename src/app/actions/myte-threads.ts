@@ -13,6 +13,12 @@ import type { Mentionable } from "@/lib/ask-myte/compose";
 import type { AskPage, ProposalEvent, StoredMessage, Thread, ThreadList, ThreadSummary } from "@/lib/ask-myte/types";
 import { LIMITS } from "@/lib/ask-myte/types";
 import type { AgendaItem } from "@/lib/api/meeting-agenda-types";
+import { createMeeting, inviteToMeeting } from "@/app/actions/meetings";
+import { createDecisionShare, exportDecision } from "@/app/actions/decision-reach";
+import { addMemory, askPeerQuestion } from "@/app/actions/myte-v2";
+import { fetchDecisionLog } from "@/lib/api/decisions";
+import { minutesBetween, proposalProblem } from "@/lib/ask-myte/proposals";
+import type { Memory, PeerQuestion } from "@/lib/ask-myte/types";
 
 /* Ask Myte's threads and actions (mytheus-docs ADR-0047 D4, D7). Threads are private to their
    owner: core-api filters every route on the caller, admins included, and answers 404 for anyone
@@ -138,13 +144,25 @@ export async function myteMentions(): Promise<Mentionable[]> {
 
 /* ---------------- proposals (D4) ---------------- */
 
-export type ConfirmResult = Ok<{ done: string; href: string | null }> | Fail;
+/** What a confirmed write produced, for the card's success state (ADR-0049 F3). */
+export type ConfirmOutcome =
+  | { type: "meeting"; id: string }
+  | { type: "share"; url: string }
+  | { type: "exports"; urls: string[]; count: number; failed: number }
+  | { type: "peer"; question: PeerQuestion }
+  | { type: "memory"; memory: Memory }
+  | { type: "invites"; added: number };
+
+export type ConfirmResult = Ok<{ done: string; href: string | null; outcome?: ConfirmOutcome }> | Fail;
+
+/** What Edit can change, beyond the event's own fields: where an export goes. */
+export type ConfirmEdits = Partial<ProposalEvent> & { target?: string | null };
 
 /**
  * Confirm one proposal, through the app's own write for its kind. `edits` are what the person
  * changed with Edit. The outcome's `done` is the toast ("Task added"); `href` is where it now is.
  */
-export async function confirmMyteProposal(proposal: ProposalEvent, edits: { title?: string; due_date?: string | null; note?: string | null; choice?: ProposalEvent["choice"] } = {}, tz: string | null = null): Promise<ConfirmResult> {
+export async function confirmMyteProposal(proposal: ProposalEvent, edits: ConfirmEdits = {}, tz: string | null = null, threadId: string | null = null): Promise<ConfirmResult> {
   const title = (edits.title ?? proposal.title ?? "").replace(/\s+/g, " ").trim();
   const due = (edits.due_date !== undefined ? edits.due_date : proposal.due_date) ?? null;
   const dueDate = due && DATE.test(due.slice(0, 10)) ? due.slice(0, 10) : null;
@@ -186,6 +204,82 @@ export async function confirmMyteProposal(proposal: ProposalEvent, edits: { titl
       ]);
       return res.ok ? { ok: true, done: "Added to the agenda", href: `/meetings/${meetingId}` } : { ok: false, message: res.message };
     }
+    default:
+      return confirmV2({ ...proposal, ...stripUndefined(edits), title: title || proposal.title }, edits.target ?? null, threadId);
+  }
+}
+
+function stripUndefined<T extends object>(o: T): Partial<T> {
+  return Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as Partial<T>;
+}
+
+/* ADR-0049 F3: the new kinds, each through the app's existing write for it. */
+async function confirmV2(p: ProposalEvent, target: string | null, threadId: string | null): Promise<ConfirmResult> {
+  const problem = proposalProblem(p);
+  if (problem) return { ok: false, message: problem };
+  switch (p.kind) {
+    case "schedule_meeting": {
+      const res = await createMeeting({
+        title: p.title,
+        scheduledStart: p.start as string,
+        durationMinutes: minutesBetween(p.start, p.end),
+        participantIds: p.attendee_ids ?? [],
+      });
+      return res.ok ? { ok: true, done: "Meeting scheduled", href: `/meetings/${res.id}`, outcome: { type: "meeting", id: res.id } } : { ok: false, message: res.message };
+    }
+    case "invite_people": {
+      const res = await inviteToMeeting(p.meeting_id as string, p.user_ids ?? []);
+      if (!res.ok) return { ok: false, message: res.message };
+      return {
+        ok: true,
+        done: res.added === 0 ? "Already in the meeting" : `Added ${res.added === 1 ? "1 person" : `${res.added} people`}`,
+        href: `/meetings/${p.meeting_id}`,
+        outcome: { type: "invites", added: res.added },
+      };
+    }
+    case "share_decision": {
+      const res = await createDecisionShare(p.decision_id as string, p.meeting_id ?? "");
+      return res.ok ? { ok: true, done: "Share link created", href: null, outcome: { type: "share", url: res.url } } : { ok: false, message: res.message };
+    }
+    case "export_decisions": {
+      const provider = p.destination ?? "notion";
+      if (provider !== "slack" && !target) return { ok: false, message: provider === "notion" ? "Pick the Notion page to put it under." : "Pick the Confluence space to put it in." };
+      let decisions: { id: string; meetingId: string }[] = [];
+      if (p.decision_ids?.length) {
+        const log = await fetchDecisionLog().catch(() => null);
+        decisions = p.decision_ids.map((id) => ({ id, meetingId: log?.find((d) => d.id === id)?.meetingId ?? p.meeting_id ?? "" }));
+      } else if (p.meeting_id) {
+        const log = await fetchDecisionLog().catch(() => null);
+        if (!log) return { ok: false, message: "That meeting's decisions couldn't be read just now." };
+        decisions = log.filter((d) => d.meetingId === p.meeting_id && d.status !== "superseded").map((d) => ({ id: d.id, meetingId: d.meetingId }));
+      }
+      if (!decisions.length) return { ok: false, message: "There are no confirmed decisions to export." };
+      const results = await Promise.all(decisions.slice(0, 20).map((d) => exportDecision({ decisionId: d.id, meetingId: d.meetingId, provider, destination: provider === "slack" ? (target?.trim() || "dm") : (target as string) })));
+      const done = results.filter((r): r is Extract<typeof r, { ok: true }> => r.ok);
+      if (!done.length) {
+        const first = results.find((r): r is Extract<typeof r, { ok: false }> => !r.ok);
+        return { ok: false, message: first?.message ?? "The export didn't go through. Try again." };
+      }
+      const name = provider === "notion" ? "Notion" : provider === "confluence" ? "Confluence" : "Slack";
+      return {
+        ok: true,
+        done: `Exported ${done.length === 1 ? "1 decision" : `${done.length} decisions`} to ${name}`,
+        href: null,
+        outcome: { type: "exports", urls: done.map((r) => r.url).filter((u): u is string => !!u), count: done.length, failed: results.length - done.length },
+      };
+    }
+    case "ask_myte": {
+      const res = await askPeerQuestion({ toUserId: p.person_id as string, question: p.question as string, threadId });
+      return res.ok ? { ok: true, done: "Question sent", href: null, outcome: { type: "peer", question: res.question } } : { ok: false, message: res.message };
+    }
+    case "memory": {
+      const res = await addMemory(p.text as string, threadId);
+      return res.ok ? { ok: true, done: "Remembered", href: "/agent#myte-memory", outcome: { type: "memory", memory: res.memory } } : { ok: false, message: res.message };
+    }
+    case "slack_post":
+      // No public route posts to Slack (integration-service only posts on its own triggers); the
+      // card copies the message and opens Slack instead, so this is never called for it.
+      return { ok: false, message: "Copy the message and post it in Slack yourself." };
     default:
       return { ok: false, message: "I can't do that kind of thing yet." };
   }

@@ -849,7 +849,24 @@ export async function myteMentions() {
 }
 export async function confirmMyteProposal(proposal: { kind: string; title: string }, edits: unknown) {
   (aw().__askConfirmed ??= []).push({ proposal, edits });
-  return { ok: true as const, done: "Task added", href: "/work/tasks" };
+  switch (proposal.kind) {
+    case "schedule_meeting":
+      return { ok: true as const, done: "Meeting scheduled", href: "/meetings/m-new", outcome: { type: "meeting" as const, id: "m-new" } };
+    case "share_decision":
+      return { ok: true as const, done: "Share link created", href: null, outcome: { type: "share" as const, url: "https://app.mytheus.test/s/7Kq2xV" } };
+    case "export_decisions":
+      return { ok: true as const, done: "Exported 2 decisions to Notion", href: null, outcome: { type: "exports" as const, urls: ["https://notion.so/p/abc"], count: 2, failed: 0 } };
+    case "invite_people":
+      return { ok: true as const, done: "Added 1 person", href: "/meetings/x", outcome: { type: "invites" as const, added: 1 } };
+    case "memory":
+      return { ok: true as const, done: "Remembered", href: "/agent#myte-memory" };
+    case "ask_myte": {
+      const { PEER_SENT } = await import("../ask-myte-v2-fixture");
+      return { ok: true as const, done: "Question sent", href: null, outcome: { type: "peer" as const, question: PEER_SENT } };
+    }
+    default:
+      return { ok: true as const, done: "Task added", href: "/work/tasks" };
+  }
 }
 // The workspace logo editor (ADR-0048). `window.__logoUpload` steers a test: "slow" holds the
 // The workspace logo editor (ADR-0048). `window.__logoUpload` steers a test: "slow" holds the
@@ -866,4 +883,81 @@ export async function removeOrgLogo() {
 // The workspace chooser hands a chosen workspace to the API; nothing to provision in a test.
 export async function provisionActiveWorkspace() {
   return { ok: true as const };
+}
+
+/* ---------------- Ask Myte v2 (ADR-0049) ---------------- */
+import { MEMBERS as V2_MEMBERS, MEMORIES as V2_MEMORIES, NUDGE_DATA as V2_NUDGES, PEER_INBOX as V2_PEER_INBOX, PEER_SENT as V2_PEER_SENT, ROUTINES as V2_ROUTINES } from "../ask-myte-v2-fixture";
+type V2Win = { __v2?: Record<string, unknown[]>; __v2Reach?: Record<string, { configured: boolean; connected: boolean }>; __v2PeerAnswered?: boolean };
+const v2 = () => window as unknown as V2Win;
+const v2log = (name: string, args: unknown) => (((v2().__v2 ??= {})[name] ??= []).push(args));
+export async function setMyteProposalStates(id: string, states: unknown) {
+  v2log("states", { id, states });
+  return { ok: true as const };
+}
+export async function listPeerQuestions(box: string) {
+  if (box === "sent") return { ok: true as const, items: [V2_PEER_SENT] };
+  return { ok: true as const, items: V2_PEER_INBOX };
+}
+export async function getPeerQuestion(id: string) {
+  if (v2().__v2PeerAnswered) return { ok: true as const, question: { ...V2_PEER_SENT, status: "answered", answer: "The copy is final. Maya signs it off on Monday.", answered_at: new Date().toISOString() } };
+  return { ok: true as const, question: id === V2_PEER_SENT.id ? V2_PEER_SENT : V2_PEER_INBOX[0] };
+}
+export async function askPeerQuestion(input: unknown) {
+  v2log("ask", input);
+  return { ok: true as const, question: V2_PEER_SENT };
+}
+export async function answerPeerQuestion(id: string, answer: string) {
+  v2log("answer", { id, answer });
+  return { ok: true as const, question: { ...V2_PEER_INBOX[0], status: "answered", answer } };
+}
+export async function declinePeerQuestion(id: string, reason: string | null) {
+  v2log("decline", { id, reason });
+  return { ok: true as const, question: { ...V2_PEER_INBOX[0], status: "declined", decline_reason: reason } };
+}
+export async function withdrawPeerQuestion() {
+  return { ok: true as const };
+}
+export async function listMemories() {
+  return { ok: true as const, items: V2_MEMORIES };
+}
+export async function addMemory(text: string) {
+  v2log("memory", text);
+  return { ok: true as const, memory: { id: `m-${Date.now()}`, text, source_thread_id: null, created_at: new Date().toISOString() } };
+}
+export async function deleteMemory(id: string) {
+  v2log("forget", id);
+  return { ok: true as const };
+}
+export async function listRoutines() {
+  return { ok: true as const, items: V2_ROUTINES };
+}
+export async function createRoutine(draft: Record<string, unknown>) {
+  v2log("routine", draft);
+  return { ok: true as const, routine: { ...V2_ROUTINES[0], ...draft, id: `r-${Date.now()}`, enabled: true, last_thread_id: null } };
+}
+export async function updateRoutine(id: string, patch: Record<string, unknown>) {
+  v2log("routine-update", { id, patch });
+  return { ok: true as const, routine: { ...V2_ROUTINES.find((r) => r.id === id)!, ...patch } };
+}
+export async function deleteRoutine(id: string) {
+  v2log("routine-delete", id);
+  return { ok: true as const };
+}
+export async function dueRoutines() {
+  return [];
+}
+export async function markRoutineRan() {
+  return { ok: false as const, message: "Not in tests." };
+}
+export async function myteMembers() {
+  return V2_MEMBERS;
+}
+export async function myteReach(provider: string) {
+  const r = v2().__v2Reach?.[provider] ?? { configured: true, connected: true };
+  return { kind: "live" as const, ...r, destinations: provider === "notion" ? [{ id: "pg-1", name: "Product decisions", kind: "page" as const }] : provider === "confluence" ? [{ id: "ENG", name: "Engineering", kind: "space" as const }] : [], note: null };
+}
+export async function myteNudgeData() {
+  // Only the Home tests turn the nudges on, so the bubble stays out of the other screens' way.
+  if (!(window as unknown as { __v2Nudges?: boolean }).__v2Nudges) return { meetings: [], tasks: [], promises: [], decisions: [], peerQuestions: [] };
+  return V2_NUDGES;
 }

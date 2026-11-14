@@ -54,7 +54,8 @@ test("history groups", () => {
 
 test("slash shortcuts", () => {
   assert.deepEqual(matchShortcuts("/re")?.map((s) => s.name), ["recap"]);
-  assert.equal(matchShortcuts("/"!)?.length, 5);
+  assert.equal(matchShortcuts("/"!)?.length, 6);
+  assert.deepEqual(expandShortcut("/routine what changed in pricing"), { question: "what changed in pricing", picker: "routine" });
   assert.equal(matchShortcuts("hello /re"), null);
   assert.deepEqual(expandShortcut("/prep"), { question: "Prep me for my next meeting", picker: null });
   assert.deepEqual(expandShortcut("/prep Test tomorrow"), { question: "Prep me for Test tomorrow", picker: null });

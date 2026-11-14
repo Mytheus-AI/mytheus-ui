@@ -12,7 +12,7 @@ import { fetchMyOpenTasks } from "@/lib/api/tasks";
 import { fetchLedger } from "@/lib/api/promises";
 import { viewerTimeZone } from "@/lib/timezone-server";
 import { buildStarters, dayIn, weekOf, type Starter } from "./starters";
-import type { Thread, ThreadList } from "./types";
+import type { Memory, PeerQuestion, Routine, Thread, ThreadList } from "./types";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -64,4 +64,27 @@ export async function loadStarters(): Promise<Starter[]> {
     openPromises: promises,
     decisions: decisions?.map((d) => ({ content: d.content, meeting_title: d.meeting_title, created_at: d.created_at })) ?? null,
   });
+}
+
+/* ---------------- ADR-0049 ---------------- */
+
+/** Questions teammates asked your Myte, newest first (pending and recently settled). An empty
+    list when core-api has no such route yet (404); null when it could not be read. */
+export async function readPeerInbox(): Promise<PeerQuestion[] | null> {
+  const res = await apiSafe<{ items?: PeerQuestion[] }>("/api/v1/myte/peer-questions", { query: { box: "inbox", limit: 30 } });
+  if (!res.ok) return res.error.status === 404 ? [] : null;
+  return Array.isArray(res.data?.items) ? res.data.items : [];
+}
+
+/** What Your Myte's memory and routines cards start from. Null on a failed read. */
+export async function readMemories(): Promise<Memory[] | null> {
+  const res = await apiSafe<{ items?: Memory[] }>("/api/v1/myte/memories");
+  if (!res.ok) return res.error.status === 404 ? [] : null;
+  return Array.isArray(res.data?.items) ? res.data.items : [];
+}
+
+export async function readRoutines(): Promise<Routine[] | null> {
+  const res = await apiSafe<{ items?: Routine[] }>("/api/v1/myte/routines");
+  if (!res.ok) return res.error.status === 404 ? [] : null;
+  return Array.isArray(res.data?.items) ? res.data.items : [];
 }

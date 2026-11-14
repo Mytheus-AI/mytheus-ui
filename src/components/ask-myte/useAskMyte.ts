@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createSseParser } from "@/lib/ask-myte/sse";
+import { setMyteProposalStates } from "@/app/actions/myte-v2";
 import {
   failAnswer,
   fromStored,
   historyFrom,
   newAnswer,
+  proposalStatesOf,
   reduceAnswer,
   setProposalStatus,
   stopAnswer,
@@ -15,7 +17,7 @@ import {
   type ProposalStatus,
   type Question,
 } from "@/lib/ask-myte/reducer";
-import type { AskPage, AskScope, ProposalEvent, StreamEvent, Thread } from "@/lib/ask-myte/types";
+import type { AskPage, AskScope, Attachment, ProposalEvent, StreamEvent, Thread } from "@/lib/ask-myte/types";
 import { browserTimeZone } from "@/lib/timezone";
 
 /* One Ask Myte conversation in the browser: posts a question to `/api/ask-myte`, reads the
@@ -25,9 +27,10 @@ import { browserTimeZone } from "@/lib/timezone";
    - Stop aborts the request (the route then aborts rag-service) and keeps what streamed.
    - Offline: a question asked offline fails at once as "offline"; going offline mid-answer stops
      it the same way, keeping the text.
-   - A proposal's confirmed or dismissed state is kept per stored message in this browser
-     (localStorage), because the ADR has no route to edit a stored payload. The write itself is
-     the truth; this only stops a confirmed card from offering Confirm again after a reload. */
+   - A proposal's confirmed or dismissed state is stored on the message (ADR-0049 R2, `PATCH
+     /myte/messages/{id}` `proposal_states`), so Confirm never reappears on another device. This
+     browser also keeps it in localStorage as an instant cache: it applies before the server's
+     copy is read, and covers an answer whose message id has not arrived yet. */
 
 const ENDPOINT = "/api/ask-myte";
 const MARKS_KEY = "mx-ask-proposals";
@@ -83,7 +86,7 @@ export interface AskMyteState {
   streaming: boolean;
   /** ticks once a second while streaming, for the "Still looking" line */
   now: number;
-  send: (question: string, scope: AskScope, page: AskPage | null) => void;
+  send: (question: string, scope: AskScope, page: AskPage | null, extra?: { attachments?: Attachment[] }) => void;
   stop: () => void;
   retry: (answerKey: string) => void;
   /** start a new conversation */
@@ -116,6 +119,13 @@ export function useAskMyte({
   messagesRef.current = messages;
   const onSavedRef = useRef(onSaved);
   onSavedRef.current = onSaved;
+  /** proposals settled before their answer had a message id: stored once `saved` arrives */
+  const unsentStates = useRef(new Set<string>());
+
+  const storeStates = useCallback((messageId: string, answer: Answer) => {
+    const states = proposalStatesOf(answer);
+    if (Object.keys(states).length) void setMyteProposalStates(messageId, states);
+  }, []);
 
   // Apply this browser's proposal marks after mount (the server render cannot read them).
   useEffect(() => {
@@ -158,8 +168,15 @@ export function useAskMyte({
   useEffect(() => () => abort.current?.abort(), []);
 
   const run = useCallback(
-    async (question: string, scope: AskScope, page: AskPage | null, base: Message[]) => {
-      const q: Question = { key: nextKey("q"), role: "user", id: null, text: question, scope: scope.kind === "all" ? null : scope };
+    async (question: string, scope: AskScope, page: AskPage | null, base: Message[], attachments: Attachment[] = []) => {
+      const q: Question = {
+        key: nextKey("q"),
+        role: "user",
+        id: null,
+        text: question,
+        scope: scope.kind === "all" ? null : scope,
+        ...(attachments.length ? { attachments: attachments.map((a) => a.name) } : {}),
+      };
       const answer = newAnswer(nextKey("a"), Date.now());
       setMessages([...base, q, answer]);
       setStreaming(true);
@@ -181,7 +198,14 @@ export function useAskMyte({
           if (streamTitle) setTitle(streamTitle);
           onSavedRef.current?.(ev.data.thread_id, streamTitle);
         }
-        patch(answer.key, (a) => reduceAnswer(a, ev, Date.now()));
+        patch(answer.key, (a) => {
+          const next = reduceAnswer(a, ev, Date.now());
+          if (ev.event === "saved" && next.id && unsentStates.current.has(a.key)) {
+            unsentStates.current.delete(a.key);
+            storeStates(next.id, next);
+          }
+          return next;
+        });
       };
 
       try {
@@ -195,6 +219,7 @@ export function useAskMyte({
             page,
             history: threadRef.current ? undefined : historyFrom(base),
             timezone: browserTimeZone(),
+            ...(attachments.length ? { attachments } : {}),
           }),
           signal: controller.signal,
         });
@@ -222,14 +247,14 @@ export function useAskMyte({
         if (abort.current === controller || abort.current === null) finish();
       }
     },
-    [patch, finish],
+    [patch, finish, storeStates],
   );
 
   const send = useCallback(
-    (question: string, scope: AskScope, page: AskPage | null) => {
+    (question: string, scope: AskScope, page: AskPage | null, extra?: { attachments?: Attachment[] }) => {
       const text = question.trim();
       if (!text || live.current) return;
-      void run(text, scope, page, messagesRef.current);
+      void run(text, scope, page, messagesRef.current, extra?.attachments ?? []);
     },
     [run],
   );
@@ -278,9 +303,15 @@ export function useAskMyte({
     (answerKey: string, proposalId: string, status: ProposalStatus, edits?: Partial<ProposalEvent>) => {
       const target = messagesRef.current.find((m): m is Answer => m.role === "myte" && m.key === answerKey);
       patch(answerKey, (a) => setProposalStatus(a, proposalId, status, edits));
-      if (target?.id) writeMark(`${target.id}:${proposalId}`, { status, title: edits?.title, due_date: edits?.due_date });
+      if (!target) return;
+      const next = setProposalStatus(target, proposalId, status, edits);
+      if (target.id) {
+        writeMark(`${target.id}:${proposalId}`, { status, title: edits?.title, due_date: edits?.due_date });
+        // "open" again (Show again) is not a stored state; the rest are.
+        storeStates(target.id, next);
+      } else unsentStates.current.add(answerKey);
     },
-    [patch],
+    [patch, storeStates],
   );
 
   const setFeedback = useCallback(

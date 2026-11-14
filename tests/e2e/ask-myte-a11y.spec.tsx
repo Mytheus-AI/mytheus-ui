@@ -75,7 +75,7 @@ for (const theme of ["light", "dark"] as const) {
 
     // confirm the proposal from the keyboard
     await page.getByRole("button", { name: "Close sources" }).first().click();
-    const confirm = answer.getByRole("button", { name: "Confirm", exact: true });
+    const confirm = answer.getByRole("button", { name: "Add task", exact: true });
     await confirm.focus();
     await page.keyboard.press("Enter");
     await expect(answer.getByText("Task added.")).toBeVisible();
@@ -126,6 +126,7 @@ test("phone width: no sideways scroll, history opens as a drawer", async ({ moun
   await page.getByRole("button", { name: "Your questions" }).click();
   const drawer = page.getByRole("dialog", { name: "Your questions" });
   await expect(drawer).toBeVisible();
+  await expect(drawer.getByRole("button", { name: "Close your questions" })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(drawer).toHaveCount(0);
   await page.getByRole("button", { name: /Prep me for Test/ }).click();

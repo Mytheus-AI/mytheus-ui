@@ -134,7 +134,7 @@ type Result = { ok: true } | { ok: false; message: string; gone?: boolean };
 const plain = (r: { ok: true } | { ok: false; message: string; gone?: boolean }): Result =>
   r.ok ? { ok: true } : { ok: false, message: r.message, gone: r.gone };
 
-export function InboxView({ initial, failed, nowIso }: { initial: InboxItem[]; failed: InboxArm[]; nowIso: string }) {
+export function InboxView({ initial, failed, nowIso, before = null }: { initial: InboxItem[]; failed: InboxArm[]; nowIso: string; before?: React.ReactNode }) {
   const router = useRouter();
   const params = useSearchParams();
   const [filter, setFilterState] = useState<InboxFilter>(asFilter(params.get("filter")));
@@ -398,6 +398,8 @@ export function InboxView({ initial, failed, nowIso }: { initial: InboxItem[]; f
           </>
         }
       />
+
+      {before}
 
       <div role="group" aria-label="Show" className="mb-5 flex flex-wrap gap-2">
         {FILTERS.map((f) => {

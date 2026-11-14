@@ -1,6 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
+import dynamic from "next/dynamic";
+import { listPeerQuestions } from "@/app/actions/myte-v2";
+import type { PendingAttachment } from "@/lib/ask-myte/attachments";
+import type { PeerQuestion } from "@/lib/ask-myte/types";
+import { RoutineDialog } from "./RoutineDialog";
 import { faceState, faceWords, plainText, type Answer, type FaceState } from "@/lib/ask-myte/reducer";
 import { failureCopy } from "@/lib/ask-myte/compose";
 import { pageChipLabel, scopeForPage } from "@/lib/ask-myte/page-context";
@@ -20,6 +25,9 @@ import { useMyteVoice } from "./voice";
 
 export type MytePersona = { name: string; seed: string; personality: string | null };
 
+// Voice mode is heavy (speech engines, Web Audio) and rarely opened: loaded on the first Talk.
+const VoiceMode = dynamic(() => import("./VoiceMode").then((m) => m.default), { ssr: false });
+
 const HAPPY_MS = 1400;
 const DRAFT_PREFIX = "mx-ask-draft:";
 
@@ -37,6 +45,7 @@ export function AskMyteChat({
   composerRef,
   onFace,
   header,
+  talkSignal = 0,
 }: {
   conv: AskMyteState;
   persona: MytePersona;
@@ -54,6 +63,8 @@ export function AskMyteChat({
   /** the face's state, for a header that shows it */
   onFace?: (state: FaceState, words: string) => void;
   header?: ReactNode;
+  /** bumped by the frame's Talk button to open voice mode (ADR-0049 F6) */
+  talkSignal?: number;
 }) {
   const sheet = variant === "sheet";
   const draftKey = `${DRAFT_PREFIX}${variant}`;
@@ -72,6 +83,10 @@ export function AskMyteChat({
   const sentAuto = useRef(false);
   const sourcesId = useId();
   const voice = useMyteVoice(persona.seed, persona.personality);
+  const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
+  const [routine, setRoutine] = useState<{ open: boolean; question: string }>({ open: false, question: "" });
+  const [talking, setTalking] = useState(false);
+  const [sentPeer, setSentPeer] = useState<PeerQuestion[]>([]);
 
   // Drafts survive a reload (per surface); a sent question clears its draft.
   useEffect(() => {
@@ -110,15 +125,38 @@ export function AskMyteChat({
   const ask = useCallback(
     (q: string) => {
       voice.stop();
-      conv.send(q, effectiveScope, effectivePage);
+      conv.send(q, effectiveScope, effectivePage, { attachments: attachments.map(({ name, text }) => ({ name, text })) });
+      setAttachments([]);
       changeDraft("");
       pinned.current = true;
       setOpenSource(null);
     },
     // changeDraft is stable enough (closes over draftKey only)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [conv.send, effectiveScope, effectivePage, voice.stop],
+    [conv.send, effectiveScope, effectivePage, voice.stop, attachments],
   );
+
+  useEffect(() => {
+    if (talkSignal > 0) {
+      voice.stop();
+      setTalking(true);
+    }
+    // only when the frame asks
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [talkSignal]);
+
+  // Questions this thread sent to teammates' Mytes (ADR-0049 F1), for its confirmed proposals.
+  const hasPeer = conv.messages.some((m) => m.role === "myte" && m.proposals.some((p) => p.kind === "ask_myte" && p.status === "confirmed"));
+  useEffect(() => {
+    if (!conv.threadId || !hasPeer) return;
+    let live = true;
+    void listPeerQuestions("sent").then((res) => {
+      if (live && res.ok) setSentPeer(res.items.filter((q) => q.thread_id === conv.threadId));
+    });
+    return () => {
+      live = false;
+    };
+  }, [conv.threadId, hasPeer]);
 
   useEffect(() => {
     if (autoSend && !sentAuto.current) {
@@ -235,6 +273,9 @@ export function AskMyteChat({
                   onFollowup={ask}
                   onProposal={onProposal}
                   onFeedback={(key, fb, reason) => conv.setFeedback(key, fb, reason)}
+                  onRoutine={(question) => setRoutine({ open: true, question })}
+                  threadId={conv.threadId}
+                  sentPeer={sentPeer}
                 />
               </div>
             )}
@@ -264,6 +305,9 @@ export function AskMyteChat({
               offline={offline}
               compact={sheet}
               onFocusChange={setFocused}
+              attachments={attachments}
+              onAttachments={setAttachments}
+              onRoutine={(question) => setRoutine({ open: true, question })}
             />
             {!sheet ? <p className="mt-2 text-center text-[12.5px] text-ink-3">{persona.name} answers from what you can see in Mytheus and cites every claim.</p> : null}
           </div>
@@ -305,6 +349,29 @@ export function AskMyteChat({
       <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {announce}
       </p>
+
+      {talking ? (
+        <VoiceMode
+          conv={conv}
+          persona={persona}
+          scope={effectiveScope}
+          page={effectivePage}
+          isAdmin={isAdmin}
+          size={sheet ? 168 : 200}
+          onClose={() => {
+            setTalking(false);
+            requestAnimationFrame(() => composerRef.current?.focus());
+          }}
+        />
+      ) : null}
+
+      <RoutineDialog
+        open={routine.open}
+        question={routine.question}
+        scope={effectiveScope.kind === "all" ? null : effectiveScope}
+        myteName={persona.name}
+        onClose={() => setRoutine((r) => ({ ...r, open: false }))}
+      />
     </div>
   );
 }

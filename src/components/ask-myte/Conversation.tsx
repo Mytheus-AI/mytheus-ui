@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 import Link from "next/link";
-import { ArrowClockwise, Copy, SpeakerHigh, SpeakerSlash, ThumbsDown, ThumbsUp, WarningCircle } from "@phosphor-icons/react";
+import { ArrowClockwise, Copy, FileText, Repeat, SpeakerHigh, SpeakerSlash, ThumbsDown, ThumbsUp, WarningCircle } from "@phosphor-icons/react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { sendMyteFeedback } from "@/app/actions/myte-threads";
@@ -10,7 +10,8 @@ import { notifyError, notifySuccess } from "@/lib/toast";
 import { failureCopy } from "@/lib/ask-myte/compose";
 import { scopeLabel } from "@/lib/ask-myte/page-context";
 import { isSlow, plainText, type Answer, type FaceState, type Message, type Proposal, type Question } from "@/lib/ask-myte/reducer";
-import type { ProposalEvent } from "@/lib/ask-myte/types";
+import { matchesProposal } from "@/lib/ask-myte/peer";
+import type { PeerQuestion, ProposalEvent } from "@/lib/ask-myte/types";
 import { AnswerCard } from "./Cards";
 import { ProposalCard } from "./ProposalCard";
 import { AnswerText, MyteSignature, StepsLine } from "./parts";
@@ -33,6 +34,16 @@ function QuestionBubble({ q, viewer }: { q: Question; viewer: Viewer }) {
         <p className="sr-only">You asked:</p>
         <p className="whitespace-pre-line text-[16px] leading-relaxed text-ink">{q.text}</p>
         {q.scope && q.scope.kind !== "all" ? <p className="mt-1.5 text-[13px] font-semibold text-ink-3">{scopeLabel(q.scope)}</p> : null}
+        {q.attachments?.length ? (
+          <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Attached">
+            {q.attachments.map((name) => (
+              <li key={name} className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 text-[13px] text-ink-2">
+                <FileText size={13} aria-hidden className="shrink-0 text-ink-3" />
+                <span className="truncate">{name}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </div>
       <Avatar name={viewer.name} id={viewer.email} seed={viewer.seed} src={viewer.image} size="sm" className="mt-1" />
     </li>
@@ -62,12 +73,13 @@ function Feedback({ answer, onFeedback }: { answer: Answer; onFeedback: (fb: -1 
         variant="ghost"
         aria-pressed={answer.feedback === 1}
         disabled={!saved}
-        title={title}
+        title={title ?? "Helpful"}
+        icon
         onClick={() => void send(answer.feedback === 1 ? 0 : 1, null)}
         className={answer.feedback === 1 ? "!text-signal-ink" : ""}
       >
         <ThumbsUp size={16} weight={answer.feedback === 1 ? "fill" : "regular"} aria-hidden />
-        Helpful
+        <span className="sr-only">Helpful</span>
       </Button>
       <Button
         size="sm"
@@ -76,12 +88,13 @@ function Feedback({ answer, onFeedback }: { answer: Answer; onFeedback: (fb: -1 
         aria-expanded={asking}
         aria-controls={`${id}-why`}
         disabled={!saved}
-        title={title}
+        title={title ?? "Not helpful"}
+        icon
         onClick={() => (answer.feedback === -1 ? void send(0, null) : setAsking((v) => !v))}
         className={answer.feedback === -1 ? "!text-signal-ink" : ""}
       >
         <ThumbsDown size={16} weight={answer.feedback === -1 ? "fill" : "regular"} aria-hidden />
-        Not helpful
+        <span className="sr-only">Not helpful</span>
       </Button>
       {asking ? (
         <div id={`${id}-why`} className="basis-full rounded-card border border-line bg-surface p-3.5">
@@ -143,7 +156,10 @@ function AnswerBlock({
   onFollowup,
   onProposal,
   onFeedback,
+  onRoutine,
   last,
+  threadId,
+  sentPeer,
 }: {
   answer: Answer;
   persona: Persona;
@@ -156,7 +172,10 @@ function AnswerBlock({
   onFollowup: (q: string) => void;
   onProposal: (id: string, status: Proposal["status"], edits?: Partial<ProposalEvent>) => void;
   onFeedback: (fb: -1 | 0 | 1, reason: string | null) => void;
+  onRoutine?: () => void;
   last: boolean;
+  threadId: string | null;
+  sentPeer: PeerQuestion[];
 }) {
   const streaming = answer.status === "streaming";
   const slow = isSlow(answer, now);
@@ -219,7 +238,14 @@ function AnswerBlock({
         {answer.proposals.length ? (
           <div className="mt-4 space-y-3">
             {answer.proposals.map((p) => (
-              <ProposalCard key={p.id} proposal={p} onSettled={(status, edits) => onProposal(p.id, status, edits)} />
+              <ProposalCard
+                key={p.id}
+                proposal={p}
+                threadId={threadId}
+                isAdmin={isAdmin}
+                peer={p.kind === "ask_myte" ? sentPeer.find((q) => matchesProposal(q, p)) ?? null : null}
+                onSettled={(status, edits) => onProposal(p.id, status, edits)}
+              />
             ))}
           </div>
         ) : null}
@@ -303,6 +329,12 @@ function AnswerBlock({
                 Retry
               </Button>
             ) : null}
+            {onRoutine && !answer.abstained ? (
+              <Button size="sm" variant="ghost" onClick={onRoutine}>
+                <Repeat size={16} aria-hidden />
+                Make this a routine
+              </Button>
+            ) : null}
             <Feedback answer={answer} onFeedback={onFeedback} />
           </div>
         ) : null}
@@ -324,6 +356,9 @@ export function Conversation({
   onFollowup,
   onProposal,
   onFeedback,
+  onRoutine,
+  threadId = null,
+  sentPeer = [],
 }: {
   messages: Message[];
   persona: Persona;
@@ -337,11 +372,16 @@ export function Conversation({
   onFollowup: (q: string) => void;
   onProposal: (answerKey: string, id: string, status: Proposal["status"], edits?: Partial<ProposalEvent>) => void;
   onFeedback: (answerKey: string, fb: -1 | 0 | 1, reason: string | null) => void;
+  /** "Make this a routine" for the question an answer answered */
+  onRoutine?: (question: string) => void;
+  threadId?: string | null;
+  /** questions this thread sent to teammates' Mytes, for confirmed ask_myte proposals */
+  sentPeer?: PeerQuestion[];
 }) {
   const lastAnswer = [...messages].reverse().find((m) => m.role === "myte")?.key;
   return (
     <ol className="space-y-8" aria-label="Conversation">
-      {messages.map((m) =>
+      {messages.map((m, i) =>
         m.role === "user" ? (
           <QuestionBubble key={m.key} q={m} viewer={viewer} />
         ) : (
@@ -359,6 +399,9 @@ export function Conversation({
             onFollowup={onFollowup}
             onProposal={(id, status, edits) => onProposal(m.key, id, status, edits)}
             onFeedback={(fb, reason) => onFeedback(m.key, fb, reason)}
+            onRoutine={onRoutine && messages[i - 1]?.role === "user" ? () => onRoutine((messages[i - 1] as Question).text) : undefined}
+            threadId={threadId}
+            sentPeer={sentPeer}
           />
         ),
       )}

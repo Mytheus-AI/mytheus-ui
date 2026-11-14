@@ -26,6 +26,10 @@ import { checklistSteps } from "@/lib/checklist";
 import { fetchMyOpenTasks } from "@/lib/api/tasks";
 import { AskBox } from "@/components/ask-myte/AskBox";
 import { agentDisplayName, agentSeed } from "@/lib/api/profile-types";
+import { fetchLedger } from "@/lib/api/promises";
+import { readPeerInbox } from "@/lib/ask-myte/server";
+import { TodayFromMyte } from "@/components/ask-myte/TodayFromMyte";
+import type { NudgeData } from "@/app/actions/myte-v2";
 
 export const metadata: Metadata = {
   title: "Dashboard | Mytheus",
@@ -57,12 +61,14 @@ export const metadata: Metadata = {
  * Needs you queue's Confirm and Dismiss.
  */
 export default async function DashboardPage() {
-  const [orgContext, dashboard, profile, integrations, myTasks] = await Promise.all([
+  const [orgContext, dashboard, profile, integrations, myTasks, ledger, peerInbox] = await Promise.all([
     resolveOrgContext(),
     apiSafe<DashboardResponse>("/bff/dashboard"),
     fetchMyProfile(),
     loadIntegrations(),
     fetchMyOpenTasks(),
+    fetchLedger().catch(() => null),
+    readPeerInbox(),
   ]);
   const isAdmin = orgContext?.user.role === "admin";
   const readiness = isAdmin ? await fetchReadiness() : null;
@@ -123,6 +129,16 @@ export default async function DashboardPage() {
   ];
   const later = meetings.filter((m) => !isToday(m) && m.status !== "past");
 
+  // ADR-0049 F2: "Today from Myte", from the reads above (nothing new is fetched for it but your
+  // promises and the questions teammates asked your Myte).
+  const nudgeData: NudgeData = {
+    meetings: calendarFailed ? null : (meetingsArm?.items ?? []).map((m) => ({ id: m.id, title: m.title ?? "", start: m.scheduled_start ?? null, status: m.status ?? null })),
+    tasks: tasks.failed ? null : tasks.items.map((t) => ({ id: t.id, title: t.content, due_date: t.due_date ?? null })),
+    promises: ledger ? ledger.items.filter((p) => p.status === "open").map((p) => ({ id: p.id, title: p.content, due_at: p.due_at })) : null,
+    decisions: decisions.failed ? null : decisions.items.map((d) => ({ id: d.id, content: d.content, created_at: d.created_at })),
+    peerQuestions: peerInbox ? peerInbox.filter((q) => q.status === "pending").map((q) => ({ id: q.id, from_name: q.from_user.name, question: q.question })) : null,
+  };
+
   return (
     <Page>
       <DashboardHeader
@@ -174,6 +190,7 @@ export default async function DashboardPage() {
           aria-label="Today, tasks, notes and decisions"
           className="grid min-w-0 grid-cols-1 items-start gap-5 min-[721px]:grid-cols-2 min-[1101px]:flex min-[1101px]:flex-col min-[1101px]:items-stretch"
         >
+          <TodayFromMyte data={nudgeData} name={askName} seed={profile ? agentSeed(profile.agent_avatar_seed, profile.id) : agentSeed(null, orgContext?.user.id ?? "")} />
           <TodayTimeline today={today} later={later} nextId={next?.id} calendarFailed={calendarFailed} nowMs={nowMs} />
           <TaskList tasks={tasks.items} failed={tasks.failed} nowIso={now.toISOString()} />
           <MyNotes notes={notes} failed={notesFailed} />

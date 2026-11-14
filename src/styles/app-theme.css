@@ -125,6 +125,16 @@
   to { opacity: 1; transform: none; }
 }
 
+/* Myte's nudge bubble (ADR-0049 F2): a calm rise beside the floating Myte; in place when motion
+   is reduced (the class only applies under no-preference). */
+@media (prefers-reduced-motion: no-preference) {
+  .mx-app .mx-nudge { animation: mx-nudge-in 0.22s var(--ease-out) both; }
+}
+@keyframes mx-nudge-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
 /* The memory line on Home: one coral thread that joins recent meetings, drawn segment by segment
    when the page loads (the view's one orchestrated moment). `--dl` staggers each segment. */
 .mx-app .mx-thread { transform-origin: 50% 0; }

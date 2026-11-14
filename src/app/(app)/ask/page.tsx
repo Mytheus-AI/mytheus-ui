@@ -26,7 +26,8 @@ const one = (v: string | string[] | undefined) => (typeof v === "string" ? v : u
  * plain questions, no profile still answers as "{first name}'s Myte".
  */
 export default async function AskPage({ searchParams }: { searchParams?: Record<string, string | string[] | undefined> }) {
-  const t = one(searchParams?.t);
+  // `?thread=` is the link core-api puts in a peer answer notification (ADR-0049 F1).
+  const t = one(searchParams?.t) ?? one(searchParams?.thread);
   const q = one(searchParams?.q)?.trim().slice(0, LIMITS.question) || null;
   const meeting = one(searchParams?.meeting);
   const meetingTitle = one(searchParams?.title)?.slice(0, 200) ?? null;

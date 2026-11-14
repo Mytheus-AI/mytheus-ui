@@ -26,6 +26,13 @@
  *
  * Every failure reaches the browser as a D8 `error` event in the stream, never as a bare status,
  * except a request with no session (401 JSON, before any stream starts).
+ *
+ * ADR-0049 additions: up to 30 of the caller's memories (`GET /api/v1/myte/memories`) go with
+ * every ask; `attachments` pass through after the same limits the composer applies (3 files,
+ * 40,000 characters), and only their names are stored; `mode: "peer_answer"` runs only when
+ * core-api says the question (`GET /api/v1/myte/peer-questions/{id}`) is addressed to the caller
+ * and still pending, takes the question's words from core-api, and is never stored as a thread;
+ * `thread_title` names a routine run's new thread.
  */
 
 import { auth, clerkClient } from "@clerk/nextjs/server";
@@ -36,8 +43,8 @@ import { agentDisplayName } from "@/lib/api/profile-types";
 import { asPersonality } from "@/lib/realtime/agent-persona";
 import { createSseParser, encodeSse } from "@/lib/ask-myte/sse";
 import { fallbackTitle, historyFrom, newAnswer, reduceAnswer, titleFrom, toPayload, type Answer } from "@/lib/ask-myte/reducer";
-import { checkAskBody, upstreamBody, upstreamError, type CheckedAsk } from "@/lib/ask-myte/upstream";
-import type { ErrorEvent, HistoryItem, Persona, StoredMessage, StreamEvent, Thread } from "@/lib/ask-myte/types";
+import { checkAskBody, memoriesFor, upstreamBody, upstreamError, type CheckedAsk } from "@/lib/ask-myte/upstream";
+import type { ErrorEvent, HistoryItem, MemoryRef, PeerQuestion, Persona, StoredMessage, StreamEvent, Thread } from "@/lib/ask-myte/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -77,13 +84,43 @@ async function loadHistory(token: string | null, ask: CheckedAsk): Promise<{ thr
   }
 }
 
-async function loadPersona(): Promise<Persona> {
+async function loadPersona(): Promise<{ persona: Persona; userId: string | null }> {
   const profile = await fetchMyProfile().catch(() => null);
   return {
-    name: agentDisplayName(profile?.agent_name ?? null, profile?.display_name ?? ""),
-    personality: asPersonality(profile?.agent_personality),
-    instructions: profile?.agent_instructions?.trim() ? profile.agent_instructions.trim().slice(0, 1000) : null,
+    persona: {
+      name: agentDisplayName(profile?.agent_name ?? null, profile?.display_name ?? ""),
+      personality: asPersonality(profile?.agent_personality),
+      instructions: profile?.agent_instructions?.trim() ? profile.agent_instructions.trim().slice(0, 1000) : null,
+    },
+    userId: profile?.id ?? null,
   };
+}
+
+/** ADR-0049 F4: up to 30 of the person's memories go with every ask. A failed read sends none. */
+async function loadMemories(token: string | null): Promise<MemoryRef[]> {
+  try {
+    return memoriesFor(await gatewayJson<unknown>(token, "/api/v1/myte/memories"));
+  } catch {
+    return [];
+  }
+}
+
+/** ADR-0049 F1: a peer draft runs only for the question's recipient, while it is still waiting.
+    The question's words come from core-api, never from the browser. */
+async function checkPeer(token: string | null, ask: CheckedAsk, userId: string | null): Promise<{ ok: true; ask: CheckedAsk } | { ok: false; message: string }> {
+  if (ask.mode !== "peer_answer" || !ask.peer) return { ok: true, ask };
+  let q: PeerQuestion;
+  try {
+    q = await gatewayJson<PeerQuestion>(token, `/api/v1/myte/peer-questions/${ask.peer.question_id}`);
+  } catch {
+    return { ok: false, message: "That question is no longer there." };
+  }
+  if (!userId || q.to_user?.id !== userId) return { ok: false, message: "Only the person it was sent to can draft an answer." };
+  if (q.status !== "pending") return { ok: false, message: "That question was already answered or declined." };
+  const peer = { question_id: q.id, from_name: q.from_user?.name ?? ask.peer.from_name, question: q.question };
+  // The typed instruction stays; with none, the question itself is asked.
+  const question = ask.question === ask.peer.question ? q.question : ask.question;
+  return { ok: true, ask: { ...ask, peer, question, threadId: null } };
 }
 
 async function persist(
@@ -100,13 +137,18 @@ async function persist(
     const created = await gatewayJson<{ id: string }>(token, "/api/v1/myte/threads", {
       method: "POST",
       key: `${key}-thread`,
-      body: { title: titleFrom(events) ?? fallbackTitle(ask.question), scope: ask.scope },
+      body: { title: ask.threadTitle ?? titleFrom(events) ?? fallbackTitle(ask.question), scope: ask.scope },
     });
     id = created.id;
   }
   const body = {
     messages: [
-      { role: "user", content: ask.question, payload: { scope: { ...ask.scope, label: ask.scopeLabel }, page: ask.page } },
+      {
+        role: "user",
+        content: ask.question,
+        // Attachments are not stored beyond their names (ADR-0049 F7).
+        payload: { scope: { ...ask.scope, label: ask.scopeLabel }, page: ask.page, ...(ask.attachments.length ? { attachments: ask.attachments.map((a) => a.name) } : {}) },
+      },
       { role: "myte", content: answer.text, payload: toPayload(answer) },
     ],
   };
@@ -194,8 +236,13 @@ export async function POST(request: Request): Promise<Response> {
           fail({ reason: "session", message: "" });
           return close();
         }
-        const [{ threadId, history }, persona] = await Promise.all([loadHistory(token, ask), loadPersona()]);
-        const effective: CheckedAsk = { ...ask, threadId };
+        const [{ threadId, history }, { persona, userId }, memories] = await Promise.all([loadHistory(token, ask), loadPersona(), loadMemories(token)]);
+        const peerCheck = await checkPeer(token, { ...ask, threadId }, userId);
+        if (!peerCheck.ok) {
+          fail({ reason: "invalid", message: peerCheck.message });
+          return close();
+        }
+        const effective: CheckedAsk = peerCheck.ask;
 
         const upstream = await fetch(`${gatewayUrl()}/api/rag/myte`, {
           method: "POST",
@@ -204,7 +251,7 @@ export async function POST(request: Request): Promise<Response> {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(upstreamBody(effective, persona, history)),
+          body: JSON.stringify(upstreamBody(effective, persona, effective.mode === "peer_answer" ? ask.history : history, memories)),
           cache: "no-store",
           signal: upstreamAbort.signal,
         });
@@ -256,6 +303,8 @@ export async function POST(request: Request): Promise<Response> {
           return close();
         }
         if (answer.status !== "done") return close();
+        // A peer draft is the recipient's to edit and send; it is never stored as a thread.
+        if (effective.mode === "peer_answer") return close();
 
         try {
           const saved = await persist(freshToken, effective, threadId, answer, events, key);

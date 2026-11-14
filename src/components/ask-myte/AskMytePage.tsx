@@ -11,6 +11,7 @@ import { AskMyteChat, type MytePersona } from "./AskMyteChat";
 import type { Viewer } from "./Conversation";
 import { HistoryRail } from "./HistoryRail";
 import { MyteFace } from "./parts";
+import { TalkButton } from "./TalkButton";
 import { useAskMyte } from "./useAskMyte";
 
 /* /ask: history on the left, the conversation in the middle (at most 720px), sources on the right
@@ -45,6 +46,7 @@ export function AskMytePage({
 }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [drawer, setDrawer] = useState(false);
+  const [talk, setTalk] = useState(0);
   const [face, setFace] = useState<{ state: FaceState; words: string }>({ state: "idle", words: `${persona.name} is here` });
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -167,6 +169,7 @@ export function AskMytePage({
           </div>
         </>
       )}
+      <TalkButton name={persona.name} onTalk={() => setTalk((n) => n + 1)} disabled={conv.streaming} />
       <button
         type="button"
         onClick={newQuestion}
@@ -239,6 +242,7 @@ export function AskMytePage({
           composerRef={composerRef}
           onFace={(state, words) => setFace((f) => (f.state === state && f.words === words ? f : { state, words }))}
           header={header}
+          talkSignal={talk}
         />
       </section>
     </div>

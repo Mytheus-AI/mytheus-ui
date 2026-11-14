@@ -44,7 +44,7 @@ export function groupThreads(items: readonly ThreadSummary[], now: Date, timeZon
 /* ---------------- slash shortcuts ---------------- */
 
 export interface Shortcut {
-  name: "prep" | "recap" | "owe" | "asof" | "draft";
+  name: "prep" | "recap" | "owe" | "asof" | "draft" | "routine";
   label: string;
   description: string;
 }
@@ -55,6 +55,7 @@ export const SHORTCUTS: readonly Shortcut[] = [
   { name: "owe", label: "/owe", description: "What I owe this week" },
   { name: "asof", label: "/asof", description: "Ask what was true on a date" },
   { name: "draft", label: "/draft", description: "Draft a follow-up I can copy" },
+  { name: "routine", label: "/routine", description: "Ask something on a schedule" },
 ];
 
 /** The shortcuts matching what is typed so far ("/re" offers /recap). Null unless the text is a
@@ -68,8 +69,8 @@ export function matchShortcuts(text: string): Shortcut[] | null {
 
 /** A typed shortcut turned into the question it stands for. `asof` opens the date picker and
     keeps whatever followed it as the question. Null when the text is not a shortcut. */
-export function expandShortcut(text: string): { question: string; picker: "as_of" | null } | null {
-  const m = /^\/(prep|recap|owe|asof|draft)\b\s*([\s\S]*)$/i.exec(text.trim());
+export function expandShortcut(text: string): { question: string; picker: "as_of" | "routine" | null } | null {
+  const m = /^\/(prep|recap|owe|asof|draft|routine)\b\s*([\s\S]*)$/i.exec(text.trim());
   if (!m) return null;
   const rest = m[2].trim();
   switch (m[1].toLowerCase()) {
@@ -81,6 +82,8 @@ export function expandShortcut(text: string): { question: string; picker: "as_of
       return { question: rest ? `What do I owe ${rest}?` : "What do I owe this week?", picker: null };
     case "draft":
       return { question: rest ? `Draft ${rest}` : "Draft a follow-up for my last meeting that I can copy", picker: null };
+    case "routine":
+      return { question: rest, picker: "routine" };
     default:
       return { question: rest, picker: "as_of" };
   }
