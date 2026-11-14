@@ -86,7 +86,7 @@ export interface AskMyteState {
   streaming: boolean;
   /** ticks once a second while streaming, for the "Still looking" line */
   now: number;
-  send: (question: string, scope: AskScope, page: AskPage | null, extra?: { attachments?: Attachment[] }) => void;
+  send: (question: string, scope: AskScope, page: AskPage | null, extra?: { attachments?: Attachment[]; channel?: "text" | "voice" }) => void;
   stop: () => void;
   retry: (answerKey: string) => void;
   /** start a new conversation */
@@ -110,6 +110,7 @@ export function useAskMyte({
   const [title, setTitle] = useState<string | null>(initialThread?.title ?? null);
   const [messages, setMessages] = useState<Message[]>(() => hydrate(initialThread));
   const [streaming, setStreaming] = useState(false);
+  const channelRef = useRef<"text" | "voice">("text");
   const [now, setNow] = useState(() => Date.now());
   const abort = useRef<AbortController | null>(null);
   const live = useRef<string | null>(null);
@@ -220,6 +221,8 @@ export function useAskMyte({
             history: threadRef.current ? undefined : historyFrom(base),
             timezone: browserTimeZone(),
             ...(attachments.length ? { attachments } : {}),
+            // Talk mode: Haiku, short spoken answers, text released early (latency first).
+            ...(channelRef.current === "voice" ? { channel: "voice" } : {}),
           }),
           signal: controller.signal,
         });
@@ -251,9 +254,10 @@ export function useAskMyte({
   );
 
   const send = useCallback(
-    (question: string, scope: AskScope, page: AskPage | null, extra?: { attachments?: Attachment[] }) => {
+    (question: string, scope: AskScope, page: AskPage | null, extra?: { attachments?: Attachment[]; channel?: "text" | "voice" }) => {
       const text = question.trim();
       if (!text || live.current) return;
+      channelRef.current = extra?.channel ?? "text";
       void run(text, scope, page, messagesRef.current, extra?.attachments ?? []);
     },
     [run],
