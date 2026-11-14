@@ -795,3 +795,23 @@ export async function sendInvitations(_meetingId: string, userIds: string[]) {
     },
   };
 }
+
+/* Ops console (WorkspacePanel): not exercised by CT specs; present so the bundle builds. */
+export async function loadTenantDetail(_orgId: string) {
+  return { ok: false as const, message: "Not available in the component harness." };
+}
+export async function listSupportMembers(_orgId: string) {
+  return { ok: true as const, members: [] as { id: string; name: string; email: string }[] };
+}
+export async function beginSupportSession(..._args: unknown[]) {
+  return { ok: false as const, message: "Not available in the component harness." };
+}
+export async function finishSupportSession(..._args: unknown[]) {
+  return { ok: true as const };
+}
+export async function cancelTenantMove(..._args: unknown[]) {
+  return { ok: true as const };
+}
+export async function requestTenantMove(..._args: unknown[]) {
+  return { ok: false as const, message: "Not available in the component harness." };
+}
