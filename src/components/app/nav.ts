@@ -7,6 +7,7 @@ import {
   ChartBar,
   CheckSquare,
   ChatCircleDots,
+  ChatCircleText,
   Compass,
   Gauge,
   GearSix,
@@ -41,7 +42,7 @@ import {
 /* The app's information architecture, in one place. One list feeds the sidebar, the topbar
    breadcrumb, the section tabs and the command palette, so a screen is added in exactly one place.
 
-   Sidebar, top to bottom: your Myte, then Home, Inbox (with its count), Meetings, Capture a call
+   Sidebar, top to bottom: your Myte, Ask Myte (with its ⌘J hint), then Home, Inbox (with its count), Meetings, Capture a call
    (the companion for Zoom, Meet and Teams calls, /capture, built on its own branch), My work,
    Decisions and People; then Admin (Workspace, admins only); then Settings (personal only). */
 
@@ -53,11 +54,23 @@ export type NavItem = {
   keywords?: string;
   /** shows the open count beside it */
   count?: "inbox";
+  /** a keyboard shortcut shown beside it ("J" draws as ⌘J or Ctrl J) */
+  shortcut?: string;
 };
 export type NavSection = { label: string | null; items: NavItem[] };
 
 /** Your Myte has its own row at the top of the sidebar, drawn with its face. */
 export const AGENT_ITEM: NavItem = { href: "/agent", label: "Your Myte", icon: Smiley, keywords: "myte agent profile persona listen" };
+
+/** Ask Myte (ADR-0047 D1): right under your Myte, with its shortcut. ⌘J opens the sheet anywhere;
+    the row opens the full page. */
+export const ASK_ITEM: NavItem = {
+  href: "/ask",
+  label: "Ask Myte",
+  icon: ChatCircleText,
+  keywords: "ask myte question answer chat assistant search what did we decide",
+  shortcut: "J",
+};
 
 export const MAIN_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Home", icon: House, keywords: "dashboard today" },
@@ -148,6 +161,7 @@ export const NAV_SECTIONS: NavSection[] = [{ label: null, items: MAIN_ITEMS }];
 export function allNavItems(isAdmin: boolean): NavItem[] {
   return [
     AGENT_ITEM,
+    ASK_ITEM,
     ...MAIN_ITEMS,
     ...WORK_TABS,
     ...MEETINGS_TABS.filter((t) => t.href !== "/meetings"),

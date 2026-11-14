@@ -38,6 +38,7 @@ export default defineConfig({
           { find: "@clerk/nextjs", replacement: stub("clerk.ts") },
           { find: /^next\/link$/, replacement: stub("next-link.tsx") },
           { find: /^next\/navigation$/, replacement: stub("next-navigation.ts") },
+          { find: /^next\/dynamic$/, replacement: stub("next-dynamic.tsx") },
           { find: /^socket\.io-client$/, replacement: stub("socket.io-client.ts") },
           { find: /^@\/components\/room\/actions$/, replacement: stub("room-actions.ts") },
           { find: /^@\/components\/room\/stage-actions$/, replacement: stub("stage-actions.ts") },

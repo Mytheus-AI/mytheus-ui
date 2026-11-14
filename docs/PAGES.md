@@ -49,6 +49,7 @@ screen-shaped `bff` endpoint (or resource endpoint) each swaps to.
 | `/tasks` | Client | `action_items` read + confirm/complete Server Actions | UI done; writes are visual-only |
 | `/org` | RSC | departments/teams read endpoint | done |
 | `/search` | Client | `search-service` / `rag-service` | done (mock index) |
+| `/ask` (+ the ⌘J sheet on every app page) | RSC + client `AskMytePage` / `AskMyteSheet` | `POST /api/ask-myte` (route handler, relays rag-service `POST /api/rag/myte`) + core-api `/api/v1/myte/*` (ADR-0047) | done; needs the backend and intelligence pieces deployed |
 | `/settings` | Client | `tenant_settings` | done |
 | `/settings/profile` | Client | user profile + `get_user_context` fields | done |
 | `/settings/integrations` | Client | `integration_connections` | done (toggles visual-only) |

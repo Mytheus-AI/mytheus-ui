@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AskAboutButton } from "@/components/ask-myte/AskBox";
 import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
@@ -149,7 +150,12 @@ export default async function DecisionLineagePage({
       <Crumb label={clip(title)} icon="decision" />
       <PageHead
         title={title}
-        action={openMeeting}
+        action={
+          <>
+            <AskAboutButton kind="decision" id={params.decisionId} title={clip(title)} />
+            {openMeeting}
+          </>
+        }
         context={
           <span className="inline-flex flex-wrap items-center gap-2">
             {isReopened(why) ? (

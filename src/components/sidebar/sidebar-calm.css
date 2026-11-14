@@ -290,6 +290,8 @@
 }
 .mx-meet .ask-check input { width: 16px; height: 16px; accent-color: var(--signal); }
 .mx-meet .ask-hint { flex: 1 1 100%; }
+/* "Continue in Ask Myte": a quiet link under the box (ADR-0047 D1). */
+.mx-meet .ask-continue { margin-top: 6px; font-size: 13px; }
 
 .mx-meet .ask-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
 .mx-meet .ask-item {

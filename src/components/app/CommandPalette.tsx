@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   ArrowBendDownLeft,
   CheckSquare,
+  ChatCircleText,
   ClockCounterClockwise,
   MagnifyingGlass,
   Moon,
@@ -27,7 +28,7 @@ import { toggleTheme } from "@/lib/prefs";
 
 /* Cmd/Ctrl+K. Searches your meetings, people, decisions, recent items and every screen, runs
    actions (new meeting, new task, switch theme, switch workspace, open your Myte), or sends free
-   text to Ask. Meetings, people and decisions come from the same reads their screens use
+   text to Ask Myte (`/ask?q=`) or to search. Meetings, people and decisions come from the same reads their screens use
    (`paletteIndex`, read once when the palette first opens), so it never shows anything the caller
    cannot already see. Ranking lives in `lib/palette.ts` (tested).
 
@@ -144,11 +145,19 @@ export function CommandPalette({ open, onClose, agentName = null }: { open: bool
             key: "ask",
             label: "Ask",
             entries: [
+              // Ask Myte (ADR-0047 D1): any text can go to your Myte as a question, asked at once.
               {
                 key: "ask",
                 group: "actions",
-                label: `Ask Mytheus: ${q}`,
+                label: `Ask Myte: ${q}`,
                 hint: "enter",
+                href: `/ask?q=${encodeURIComponent(q.slice(0, 2000))}`,
+                node: <ChatCircleText size={19} weight="fill" />,
+              },
+              {
+                key: "search",
+                group: "actions",
+                label: `Search meetings for: ${q}`,
                 href: `/search?q=${encodeURIComponent(q)}`,
                 node: <Sparkle size={19} weight="fill" />,
               },

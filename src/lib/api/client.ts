@@ -71,6 +71,12 @@ export interface RequestOptions {
 const MUTATING = new Set(["POST", "PATCH", "PUT"]);
 const READ_TIMEOUT_MS = 6000;
 
+/** The gateway's base URL, for a route handler that must stream (`app/api/ask-myte`), where
+    `api()`'s JSON-only fetch does not fit. Same rule: no default, ever. */
+export function gatewayUrl(): string {
+  return baseUrl();
+}
+
 function baseUrl(): string {
   const url = process.env.API_GATEWAY_URL ?? process.env.NEXT_PUBLIC_API_GATEWAY_URL;
   if (!url) {
