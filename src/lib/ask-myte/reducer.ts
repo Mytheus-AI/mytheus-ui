@@ -16,12 +16,14 @@ import type {
   HistoryItem,
   MessagePayload,
   ProposalEvent,
+  ProposalState,
   Source,
   StepEvent,
   StoredMessage,
   StreamEvent,
 } from "./types.ts";
 import { LIMITS } from "./types.ts";
+import { normalizeProposal } from "./proposals.ts";
 
 export type ProposalStatus = "open" | "confirmed" | "dismissed";
 export type Proposal = ProposalEvent & { status: ProposalStatus };
@@ -61,6 +63,8 @@ export interface Question {
   id: string | null;
   text: string;
   scope: AskScope | null;
+  /** names of the files sent with it (ADR-0049 F7) */
+  attachments?: string[];
 }
 
 export type Message = Question | Answer;
@@ -133,8 +137,8 @@ export function reduceAnswer(a: Answer, ev: StreamEvent, now: number): Answer {
       return { ...a, cards: [...a.cards, { kind: c.kind, source_ns: Array.isArray(c.source_ns) ? c.source_ns : [], data: c.data ?? null }] };
     }
     case "proposal": {
-      const p = ev.data;
-      if (!p || typeof p.id !== "string" || typeof p.title !== "string") return a;
+      const p = normalizeProposal(ev.data);
+      if (!p) return a;
       return { ...a, proposals: upsert(a.proposals, { ...p, status: "open" as const }, (x) => x.id === p.id) };
     }
     case "followups": {
@@ -227,10 +231,11 @@ const toFeedback = (v: unknown): -1 | 0 | 1 => (v === 1 || v === -1 ? v : 0);
 /** A stored message back into the model the page renders. */
 export function fromStored(m: StoredMessage): Message {
   if (m.role === "user") {
-    return { key: m.id, role: "user", id: m.id, text: m.content, scope: m.payload?.scope ?? null };
+    const files = Array.isArray(m.payload?.attachments) ? m.payload.attachments.filter((x): x is string => typeof x === "string") : [];
+    return { key: m.id, role: "user", id: m.id, text: m.content, scope: m.payload?.scope ?? null, ...(files.length ? { attachments: files } : {}) };
   }
   const p = m.payload ?? {};
-  return {
+  const stored: Answer = {
     ...newAnswer(m.id, 0),
     id: m.id,
     status: "done",
@@ -239,7 +244,10 @@ export function fromStored(m: StoredMessage): Message {
     sources: Array.isArray(p.sources) ? [...p.sources].sort((x, y) => x.n - y.n) : [],
     cards: Array.isArray(p.cards) ? p.cards : [],
     proposals: Array.isArray(p.proposals)
-      ? p.proposals.map(({ confirmed, ...rest }) => ({ ...rest, status: confirmed ? ("confirmed" as const) : ("open" as const) }))
+      ? p.proposals.flatMap(({ confirmed, ...rest }) => {
+          const clean = normalizeProposal(rest);
+          return clean ? [{ ...clean, status: confirmed ? ("confirmed" as const) : ("open" as const) }] : [];
+        })
       : [],
     followups: Array.isArray(p.followups) ? p.followups : [],
     abstained: p.abstained === true,
@@ -248,6 +256,36 @@ export function fromStored(m: StoredMessage): Message {
     feedbackReason: m.feedback_reason ?? null,
     saved: true,
   };
+  return applyProposalStates(stored, p.proposal_states);
+}
+
+/* ---------------- proposal states (ADR-0049 R2) ---------------- */
+
+/** Stored states win over the `confirmed` flag the payload was written with: Confirm on one
+    device never reappears on another. Unknown ids and values are ignored. */
+export function applyProposalStates(a: Answer, states: unknown): Answer {
+  if (!states || typeof states !== "object") return a;
+  const map = states as Record<string, unknown>;
+  let changed = false;
+  const proposals = a.proposals.map((p): Proposal => {
+    const v = map[p.id];
+    if ((v === "confirmed" || v === "dismissed") && p.status !== v) {
+      changed = true;
+      return { ...p, status: v };
+    }
+    return p;
+  });
+  return changed ? { ...a, proposals } : a;
+}
+
+/** The states to store for an answer: every settled proposal, at most 20 (the server's limit). */
+export function proposalStatesOf(a: Pick<Answer, "proposals">): Record<string, ProposalState> {
+  const out: Record<string, ProposalState> = {};
+  for (const p of a.proposals) {
+    if (p.status === "confirmed" || p.status === "dismissed") out[p.id] = p.status;
+    if (Object.keys(out).length >= LIMITS.proposalStates) break;
+  }
+  return out;
 }
 
 /** The last 12 turns for the loop (D8): questions, and the answers that finished. */

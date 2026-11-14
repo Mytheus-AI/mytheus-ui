@@ -56,6 +56,33 @@ export interface AskRequest {
   history?: HistoryItem[];
   /** IANA zone: sets "today" for the loop and the capacity check */
   timezone?: string | null;
+  /** ADR-0049 F7: pasted or dropped text files, sent with this question only */
+  attachments?: Attachment[];
+  /** ADR-0049 F1: `peer_answer` drafts a reply to a teammate's question (never stored as a thread) */
+  mode?: AskMode;
+  peer?: PeerContext | null;
+  /** ADR-0049 F5: a routine run names its new thread after the routine */
+  thread_title?: string | null;
+}
+
+/* ---------------- v2 additions (ADR-0049) ---------------- */
+
+export type AskMode = "ask" | "peer_answer";
+
+export interface Attachment {
+  name: string;
+  text: string;
+}
+
+export interface PeerContext {
+  question_id: string;
+  from_name: string;
+  question: string;
+}
+
+export interface MemoryRef {
+  id: string;
+  text: string;
 }
 
 /* ---------------- the stream (D8) ---------------- */
@@ -97,8 +124,24 @@ export interface CardEvent {
   data: { items?: Source[]; detail?: unknown } | null;
 }
 
-export type ProposalKind = "task" | "promise" | "attendance" | "agenda_item";
+export const PROPOSAL_KINDS = [
+  "task",
+  "promise",
+  "attendance",
+  "agenda_item",
+  "schedule_meeting",
+  "invite_people",
+  "slack_post",
+  "export_decisions",
+  "share_decision",
+  "ask_myte",
+  "memory",
+] as const;
+export type ProposalKind = (typeof PROPOSAL_KINDS)[number];
 export type AttendanceChoice = "attend" | "agent" | "skip";
+export type ExportDestination = "notion" | "confluence" | "slack";
+/** Every field is flat on the event (ADR-0049 F3, confirmed by rag-service); only the ones for
+    its kind are set. `title` is always present. */
 export interface ProposalEvent {
   id: string;
   kind: ProposalKind;
@@ -107,6 +150,26 @@ export interface ProposalEvent {
   meeting_id?: string | null;
   choice?: AttendanceChoice | null;
   note?: string | null;
+  /* schedule_meeting */
+  start?: string | null;
+  end?: string | null;
+  attendee_ids?: string[] | null;
+  attendee_names?: string[] | null;
+  /* invite_people */
+  user_ids?: string[] | null;
+  user_names?: string[] | null;
+  /* slack_post */
+  text?: string | null;
+  channel?: string | null;
+  /* export_decisions */
+  destination?: ExportDestination | null;
+  decision_ids?: string[] | null;
+  /* share_decision */
+  decision_id?: string | null;
+  /* ask_myte */
+  person_id?: string | null;
+  person_name?: string | null;
+  question?: string | null;
 }
 
 export type ErrorReason = "budget" | "not_connected" | "unavailable" | "invalid" | "session";
@@ -157,7 +220,13 @@ export interface ThreadList {
 }
 
 /** What a Myte message keeps besides its text (max 64 KB on the server). */
+export type ProposalState = "confirmed" | "dismissed";
+
 export interface MessagePayload {
+  /** ADR-0049 R2: what the person did with each proposal, stored by `PATCH /myte/messages/{id}` */
+  proposal_states?: Record<string, ProposalState>;
+  /** user messages: the names of attached files (never their text) */
+  attachments?: string[];
   steps?: StepEvent[];
   sources?: Source[];
   cards?: CardEvent[];
@@ -186,6 +255,58 @@ export interface Thread extends ThreadSummary {
   messages: StoredMessage[];
 }
 
+/* ---------------- peer questions (F1) ---------------- */
+
+export interface PeerUser {
+  id: string;
+  name: string;
+  agent_name: string | null;
+  agent_avatar_seed: string | null;
+}
+
+export type PeerStatus = "pending" | "answered" | "declined";
+
+export interface PeerQuestion {
+  id: string;
+  from_user: PeerUser;
+  to_user: PeerUser;
+  question: string;
+  thread_id: string | null;
+  status: PeerStatus;
+  answer: string | null;
+  decline_reason: string | null;
+  created_at: string;
+  answered_at: string | null;
+}
+
+/* ---------------- memory (F4) ---------------- */
+
+export interface Memory {
+  id: string;
+  text: string;
+  source_thread_id?: string | null;
+  created_at?: string | null;
+}
+
+/* ---------------- routines (F5) ---------------- */
+
+export type Cadence = "daily" | "weekdays" | "weekly";
+
+export interface Routine {
+  id: string;
+  question: string;
+  scope: Omit<AskScope, "label"> | null;
+  cadence: Cadence;
+  weekday: number | null;
+  hour: number;
+  timezone: string;
+  enabled: boolean;
+  next_run_at: string | null;
+  last_run_at: string | null;
+  last_thread_id: string | null;
+  created_at?: string | null;
+}
+
 export const LIMITS = {
   question: 2000,
   history: 12,
@@ -193,6 +314,14 @@ export const LIMITS = {
   title: 120,
   payloadBytes: 64 * 1024,
   feedbackReason: 500,
+  memories: 30,
+  memoryText: 300,
+  attachments: 3,
+  attachmentChars: 40_000,
+  peerQuestion: 1000,
+  peerAnswer: 8000,
+  declineReason: 500,
+  proposalStates: 20,
 } as const;
 
 export const ALL_SCOPE: AskScope = { kind: "all", meeting_id: null, person_id: null, as_of: null, label: null };
