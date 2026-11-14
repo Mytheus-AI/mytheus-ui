@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 import Link from "next/link";
-import { ArrowClockwise, Copy, FileText, Repeat, SpeakerHigh, SpeakerSlash, ThumbsDown, ThumbsUp, WarningCircle } from "@phosphor-icons/react";
+import { ArrowClockwise, ArrowElbowDownRight, Copy, FileText, Repeat, SpeakerHigh, SpeakerSlash, ThumbsDown, ThumbsUp, WarningCircle } from "@phosphor-icons/react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { sendMyteFeedback } from "@/app/actions/myte-threads";
@@ -13,6 +13,7 @@ import { isSlow, plainText, type Answer, type FaceState, type Message, type Prop
 import { matchesProposal } from "@/lib/ask-myte/peer";
 import type { PeerQuestion, ProposalEvent } from "@/lib/ask-myte/types";
 import { AnswerCard } from "./Cards";
+import { Tip } from "./Tip";
 import { ProposalCard } from "./ProposalCard";
 import { AnswerText, MyteSignature, StepsLine } from "./parts";
 
@@ -57,6 +58,47 @@ function QuestionBubble({ q, viewer }: { q: Question; viewer: Viewer }) {
   );
 }
 
+/* One quiet icon button under an answer, naming itself on hover and focus. */
+function IconAction({
+  label,
+  onClick,
+  children,
+  pressed,
+  expanded,
+  controls,
+  disabled = false,
+  first = false,
+}: {
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+  pressed?: boolean;
+  expanded?: boolean;
+  controls?: string;
+  disabled?: boolean;
+  first?: boolean;
+}) {
+  return (
+    <span className="group relative inline-flex">
+      <button
+        type="button"
+        aria-label={label}
+        aria-pressed={pressed}
+        aria-expanded={expanded}
+        aria-controls={controls}
+        disabled={disabled}
+        onClick={onClick}
+        className={`grid h-9 w-9 place-items-center rounded-full transition-colors disabled:opacity-40 ${
+          pressed ? "bg-signal-soft text-signal-ink" : "text-ink-3 hover:bg-bg-2 hover:text-ink"
+        }`}
+      >
+        {children}
+      </button>
+      <Tip text={label} align={first ? "start" : "center"} />
+    </span>
+  );
+}
+
 function Feedback({ answer, onFeedback }: { answer: Answer; onFeedback: (fb: -1 | 0 | 1, reason: string | null) => void }) {
   const [asking, setAsking] = useState(false);
   const [other, setOther] = useState("");
@@ -75,34 +117,24 @@ function Feedback({ answer, onFeedback }: { answer: Answer; onFeedback: (fb: -1 
   const title = saved ? undefined : "Feedback works once the answer is saved";
   return (
     <>
-      <Button
-        size="sm"
-        variant="ghost"
-        aria-pressed={answer.feedback === 1}
+      <IconAction
+        label={title ?? "Helpful"}
+        pressed={answer.feedback === 1}
         disabled={!saved}
-        title={title ?? "Helpful"}
-        icon
         onClick={() => void send(answer.feedback === 1 ? 0 : 1, null)}
-        className={answer.feedback === 1 ? "!text-signal-ink" : ""}
       >
-        <ThumbsUp size={16} weight={answer.feedback === 1 ? "fill" : "regular"} aria-hidden />
-        <span className="sr-only">Helpful</span>
-      </Button>
-      <Button
-        size="sm"
-        variant="ghost"
-        aria-pressed={answer.feedback === -1}
-        aria-expanded={asking}
-        aria-controls={`${id}-why`}
+        <ThumbsUp size={17} weight={answer.feedback === 1 ? "fill" : "regular"} aria-hidden />
+      </IconAction>
+      <IconAction
+        label={title ?? "Not helpful"}
+        pressed={answer.feedback === -1}
+        expanded={asking}
+        controls={`${id}-why`}
         disabled={!saved}
-        title={title ?? "Not helpful"}
-        icon
         onClick={() => (answer.feedback === -1 ? void send(0, null) : setAsking((v) => !v))}
-        className={answer.feedback === -1 ? "!text-signal-ink" : ""}
       >
-        <ThumbsDown size={16} weight={answer.feedback === -1 ? "fill" : "regular"} aria-hidden />
-        <span className="sr-only">Not helpful</span>
-      </Button>
+        <ThumbsDown size={17} weight={answer.feedback === -1 ? "fill" : "regular"} aria-hidden />
+      </IconAction>
       {asking ? (
         <div id={`${id}-why`} className="basis-full rounded-card border border-line bg-surface p-3.5">
           <p className="text-[14px] font-semibold text-ink">What was wrong with it?</p>
@@ -295,25 +327,30 @@ function AnswerBlock({
         ) : null}
 
         {settled && answer.followups.length && last ? (
-          <div className="mt-4 flex flex-wrap gap-2" aria-label="Ask next">
-            {answer.followups.map((f) => (
-              <button
-                key={f}
-                type="button"
-                onClick={() => onFollowup(f)}
-                className="min-h-10 rounded-full border border-line-2 bg-surface px-4 text-left text-[14px] font-medium text-ink-2 transition-colors hover:border-signal-line hover:text-ink"
-              >
-                {f}
-              </button>
-            ))}
-          </div>
+          <nav className="mt-5 border-t border-line pt-3" aria-label="Ask next">
+            <p className="px-1 text-[12.5px] font-semibold uppercase tracking-[0.06em] text-ink-4">Ask next</p>
+            <ul className="mt-1.5 flex list-none flex-col p-0">
+              {answer.followups.map((f) => (
+                <li key={f}>
+                  <button
+                    type="button"
+                    onClick={() => onFollowup(f)}
+                    className="group flex w-full items-start gap-2.5 rounded-ctl px-1 py-2 text-left text-[14.5px] leading-snug text-ink-2 transition-colors hover:bg-bg-2 hover:text-ink"
+                  >
+                    <ArrowElbowDownRight size={15} aria-hidden className="mt-[3px] shrink-0 text-ink-4 transition-colors group-hover:text-signal" />
+                    <span className="min-w-0">{f}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
         ) : null}
 
         {settled && hasText ? (
-          <div className="mt-3 flex flex-wrap items-center gap-1">
-            <Button
-              size="sm"
-              variant="ghost"
+          <div className="mt-2 flex flex-wrap items-center gap-0.5" role="group" aria-label="This answer">
+            <IconAction
+              label="Copy"
+              first
               onClick={() => {
                 void navigator.clipboard
                   ?.writeText(plainText(answer.text))
@@ -321,27 +358,28 @@ function AnswerBlock({
                   .catch(() => notifyError("Couldn't copy. Select the text instead."));
               }}
             >
-              <Copy size={16} aria-hidden />
-              Copy
-            </Button>
+              <Copy size={17} aria-hidden />
+            </IconAction>
             {voice.supported ? (
-              <Button size="sm" variant="ghost" aria-pressed={reading} onClick={() => (reading ? voice.stop() : voice.speak(answer.key, answer.text))}>
-                {reading ? <SpeakerSlash size={16} aria-hidden /> : <SpeakerHigh size={16} aria-hidden />}
-                {reading ? "Stop reading" : "Read aloud"}
-              </Button>
+              <IconAction
+                label={reading ? "Stop reading" : "Read aloud"}
+                pressed={reading}
+                onClick={() => (reading ? voice.stop() : voice.speak(answer.key, answer.text))}
+              >
+                {reading ? <SpeakerSlash size={17} weight="fill" aria-hidden /> : <SpeakerHigh size={17} aria-hidden />}
+              </IconAction>
             ) : null}
             {last ? (
-              <Button size="sm" variant="ghost" onClick={onRetry}>
-                <ArrowClockwise size={16} aria-hidden />
-                Retry
-              </Button>
+              <IconAction label="Retry" onClick={onRetry}>
+                <ArrowClockwise size={17} aria-hidden />
+              </IconAction>
             ) : null}
             {onRoutine && !answer.abstained ? (
-              <Button size="sm" variant="ghost" onClick={onRoutine}>
-                <Repeat size={16} aria-hidden />
-                Make this a routine
-              </Button>
+              <IconAction label="Make this a routine" onClick={onRoutine}>
+                <Repeat size={17} aria-hidden />
+              </IconAction>
             ) : null}
+            <span aria-hidden className="mx-1 h-4 w-px bg-line" />
             <Feedback answer={answer} onFeedback={onFeedback} />
           </div>
         ) : null}
