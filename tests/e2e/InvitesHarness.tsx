@@ -19,7 +19,7 @@ export function InvitesHarness({ state = "host", theme = "light" }: { state?: ke
       }}
     >
       <div className="mx-app mx-meet min-h-dvh bg-bg p-4 sm:p-6" data-theme={theme}>
-        <div className="md-col md-rail" style={{ maxWidth: 400 }}>
+        <div className="md-col md-rail" style={{ maxWidth: 360 }}>
           <InviteShareCard meetingId="m-1" initial={INVITES[state]} members={PEOPLE} />
         </div>
       </div>
