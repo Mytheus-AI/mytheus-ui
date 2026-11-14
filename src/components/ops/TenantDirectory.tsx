@@ -1,5 +1,6 @@
 "use client";
 
+import { planLabel } from "@/lib/plans";
 import { useReducer, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { MagnifyingGlass } from "@phosphor-icons/react";
@@ -107,8 +108,8 @@ export function TenantDirectory({ tenants }: { tenants: OpsTenant[] }) {
                           {t.org_id}
                         </span>
                       </th>
-                      <td data-label="Plan" className="px-5 py-3 capitalize text-ink-2">
-                        {t.plan ?? "None"}
+                      <td data-label="Plan" className="px-5 py-3 text-ink-2">
+                        {t.plan ? planLabel(t.plan) : "None"}
                       </td>
                       <td data-label="Members" className="px-5 py-3 tabular-nums text-ink-2">
                         {t.member_count}

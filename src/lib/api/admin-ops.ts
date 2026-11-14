@@ -175,6 +175,16 @@ export async function fetchTenantDetail(orgId: string): Promise<TenantDetail> {
   return api<TenantDetail>("/admin/ops/tenants/detail", { method: "POST", body: { org_id: orgId } });
 }
 
+export async function changePlan(body: { org_id: string; plan_code: string; reason: string | null }): Promise<{
+  org_id: string;
+  plan_code: string;
+  token_quota: number;
+  tokens_consumed: number;
+  state: string;
+}> {
+  return api("/admin/ops/tenants/plan", { method: "POST", body });
+}
+
 export async function requestMove(body: { org_id: string; to_region: string; to_cell: string | null; reason: string }): Promise<MoveRequest> {
   return api<MoveRequest>("/admin/ops/tenants/migrate", { method: "POST", body });
 }

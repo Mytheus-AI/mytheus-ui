@@ -11,6 +11,7 @@ import {
   fetchTenantDetail,
   reinstateTenant,
   requestMove,
+  changePlan,
   searchAudit,
   setFlagEnabled,
   startSupportSession,
@@ -28,6 +29,7 @@ import {
   type TenantDetail,
 } from "@/lib/ops";
 import { isUuid } from "@/lib/tenant-admin";
+import { STAFF_PLANS } from "@/lib/plans";
 import type { FormResult } from "@/app/actions/tenant-admin";
 
 /* Writes and the audit search for the internal-ops console (Phase P12, plan 3.13 step 3).
@@ -154,6 +156,21 @@ export async function requestTenantMove(orgId: string, region: string, reason: s
   } catch (err) {
     return failure(err, "The move could not be requested just now. Try again in a moment.");
   }
+}
+
+/** Put a workspace on any plan, Unlimited included, with no payment (staff only, logged). */
+export async function setTenantPlan(orgId: string, planCode: string, reason: string): Promise<OpsResult> {
+  if (!isUuid(orgId)) return { ok: false, message: "That workspace is not valid." };
+  if (!(STAFF_PLANS as string[]).includes(planCode)) return { ok: false, message: "Pick a plan." };
+  try {
+    await changePlan({ org_id: orgId, plan_code: planCode, reason: reason.trim().slice(0, 500) || null });
+  } catch (err) {
+    return failure(err, "The plan could not be changed just now. Try again in a moment.");
+  }
+  revalidatePath("/ops/workspaces");
+  revalidatePath("/ops/costs");
+  revalidatePath("/ops");
+  return { ok: true };
 }
 
 export async function cancelTenantMove(orgId: string, migrationId: string): Promise<OpsResult> {

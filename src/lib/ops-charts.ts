@@ -70,12 +70,14 @@ export const REGION_PLACES: Record<string, { label: string; short: string; lon: 
 
 export const regionLabel = (code: string) => REGION_PLACES[code]?.label ?? (code === "unplaced" ? "No region recorded" : code.toUpperCase());
 
+import { planLabel as planName } from "./plans.ts";
+
 /** Plan codes in rank order (billing's `plans.code`, plus "none"), mapped onto the four-step
     ordinal scale: no plan is the lightest step, enterprise the darkest. */
-const PLAN_ORDER = ["none", "free", "pro", "enterprise"];
+const PLAN_ORDER = ["none", "free", "pro", "ultra", "payg", "unlimited", "enterprise"];
 export const planRank = (plan: string) => {
   const i = PLAN_ORDER.indexOf(plan.toLowerCase());
   return i === -1 ? PLAN_ORDER.length : i;
 };
 export const planFill = (plan: string) => `var(--ord-${Math.min(planRank(plan), 3) + 1})`;
-export const planLabel = (plan: string) => (plan === "none" ? "No plan" : plan.charAt(0).toUpperCase() + plan.slice(1));
+export const planLabel = (plan: string) => (plan === "none" ? "No plan" : planName(plan));

@@ -19,7 +19,9 @@ import {
   listSupportMembers,
   loadTenantDetail,
   requestTenantMove,
+  setTenantPlan,
 } from "@/app/actions/ops";
+import { STAFF_PLANS, isNoCap, planLabel } from "@/lib/plans";
 import { REASON_MIN, REGIONS, SESSION_MINUTES, actionLabel, type SupportMember, type TenantDetail } from "@/lib/ops";
 
 /* One workspace, opened from the directory (ADR-0046 D3). A side panel rather than a page: the
@@ -107,6 +109,61 @@ export function WorkspacePanel({ orgId, name, onClose }: { orgId: string; name: 
   );
 }
 
+/* Staff can put a workspace on any plan without a payment: the four customers can buy, plus
+   Unlimited for testing. It applies to this month's allowance at once and never lapses. */
+function PlanSection({ detail: d, refresh }: { detail: TenantDetail; refresh: () => Promise<void> }) {
+  const [plan, setPlan] = useState<string>(d.plan ?? "free");
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+  const same = plan === (d.plan ?? "free");
+  return (
+    <Section title="Plan" description="Switch this workspace's plan with no payment. It takes effect now and does not lapse.">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-end gap-3">
+          <Dropdown
+            label="Plan"
+            value={plan}
+            onChange={setPlan}
+            options={STAFF_PLANS.map((c) => ({ value: c, label: planLabel(c), description: c === "unlimited" ? "Testing only, no cap" : undefined }))}
+            className="min-w-[220px] flex-1"
+          />
+          <Button
+            type="button"
+            size="md"
+            disabled={same || pending}
+            onClick={() =>
+              start(async () => {
+                setError(null);
+                const res = await setTenantPlan(d.org_id, plan, reason);
+                if (!res.ok) {
+                  setError(res.message);
+                  return;
+                }
+                notifySuccess(`${d.name} is on ${planLabel(plan)}`);
+                setReason("");
+                await refresh();
+              })
+            }
+          >
+            {pending ? "Switching\u2026" : "Switch plan"}
+          </Button>
+        </div>
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          rows={2}
+          maxLength={500}
+          placeholder="Why (optional, kept in the ops audit log)"
+          aria-label="Reason for the plan change"
+          className={textareaClass}
+        />
+        {error ? <Note tone="error">{error}</Note> : null}
+      </div>
+    </Section>
+  );
+}
+
 function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
     <section className="rounded-card border border-line bg-surface px-4 py-4 sm:px-5">
@@ -133,7 +190,7 @@ function Detail({ detail: d, refresh }: { detail: TenantDetail; refresh: () => P
     <div className="flex flex-col gap-4">
       <dl className="m-0 grid grid-cols-2 gap-x-5 gap-y-3.5 rounded-card border border-line bg-surface px-4 py-4 sm:grid-cols-3 sm:px-5">
         <Fact label="Status" value={<Chip tone={d.status === "suspended" ? "high" : "ok"} className="capitalize">{d.status}</Chip>} />
-        <Fact label="Plan" value={<span className="capitalize">{d.plan ?? "None"}</span>} />
+        <Fact label="Plan" value={d.plan ? planLabel(d.plan) : "None"} />
         <Fact label="Created" value={fmtDay(d.created_at)} />
         <Fact label="Members" value={d.members} />
         <Fact label="Meetings" value={d.meetings_total} />
@@ -145,8 +202,16 @@ function Detail({ detail: d, refresh }: { detail: TenantDetail; refresh: () => P
       </Section>
 
       <Section title="Agent tokens this period" description={`Billing period ${d.period}.`}>
-        <Meter value={d.tokens_period} max={d.token_quota} label={`${d.name} agent tokens used`} />
+        {isNoCap(d.token_quota) ? (
+          <p className="text-[14px] text-ink-2">
+            <span className="font-semibold text-ink">{d.tokens_period.toLocaleString("en-US")}</span> tokens used. No cap on this plan.
+          </p>
+        ) : (
+          <Meter value={d.tokens_period} max={d.token_quota} label={`${d.name} agent tokens used`} />
+        )}
       </Section>
+
+      <PlanSection detail={d} refresh={refresh} />
 
       <SupportSection detail={d} grantExpires={impersonate?.expires_at ?? null} refresh={refresh} />
       <MoveSection detail={d} refresh={refresh} />

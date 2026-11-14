@@ -11,6 +11,8 @@
  * `npm run generate:api` once the backend PR merges and switch these to the generated schema.
  */
 
+import { isNoCap } from "./plans.ts";
+
 export interface WhoAmI {
   staff: boolean;
   /** Only for staff: the Staff ID a workspace admin enters in a support grant. */
@@ -172,6 +174,8 @@ export function suspendReducer(s: SuspendState, e: SuspendEvent): SuspendState {
 /** Highest token use first; a tenant with a quota sorts by share of it, ahead of raw volume. */
 export function sortCosts(rows: CostRow[]): (CostRow & { ratio: number | null })[] {
   return rows
+    // A no-cap plan (Pay as you go, Unlimited) has no quota to measure against: shown as "no quota".
+    .map((r) => (isNoCap(r.token_quota) ? { ...r, token_quota: null } : r))
     .map((r) => ({ ...r, ratio: r.token_quota && r.token_quota > 0 ? r.tokens_consumed / r.token_quota : null }))
     .sort((a, b) => (b.ratio ?? -1) - (a.ratio ?? -1) || b.tokens_consumed - a.tokens_consumed);
 }
