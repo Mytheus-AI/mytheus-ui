@@ -354,6 +354,7 @@ export function AskMyteChat({
         <VoiceMode
           conv={conv}
           persona={persona}
+          firstName={firstName}
           scope={effectiveScope}
           page={effectivePage}
           isAdmin={isAdmin}

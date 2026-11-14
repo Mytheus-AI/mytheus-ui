@@ -131,12 +131,21 @@ export function Composer({
     onChange(`${speechBase.current}${speechBase.current && text ? " " : ""}${text}`.slice(0, LIMITS.question));
   });
 
-  // Grow with the text, up to about eight lines.
+  // Grow with the text, up to six lines on the page and four in the sheet. No scrollbar while it
+  // fits (rounding can leave a 1 px overflow, which drew a native thumb); past the limit it
+  // scrolls with the app's thin scrollbar.
   useLayoutEffect(() => {
     const el = inputRef.current;
     if (!el) return;
+    const cs = window.getComputedStyle(el);
+    const line = parseFloat(cs.lineHeight) || (compact ? 24 : 26);
+    const pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+    const max = Math.round(line * (compact ? 4 : 6) + pad);
+    el.style.overflowY = "hidden";
     el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, compact ? 168 : 216)}px`;
+    const full = el.scrollHeight;
+    el.style.height = `${Math.min(full, max)}px`;
+    el.style.overflowY = full > max + 1 ? "auto" : "hidden";
   }, [value, inputRef, compact]);
 
   const refreshSuggest = useCallback(
@@ -255,7 +264,7 @@ export function Composer({
   const chars = totalChars(attachments);
 
   const micDown = () => {
-    if (speech.listening) return;
+    if (speech.listening || speech.busy) return;
     heldSince.current = Date.now();
     speechBase.current = value.trim();
     speech.start();
@@ -438,7 +447,7 @@ export function Composer({
             onFocusChange?.(false);
             setTimeout(() => setSuggest(null), 120);
           }}
-          className={`block w-full resize-none bg-transparent px-2 py-1.5 leading-relaxed text-ink !outline-none placeholder:text-ink-3 ${compact ? "text-[15px]" : "text-[16px]"}`}
+          className={`block w-full resize-none overflow-y-hidden bg-transparent px-2 py-1.5 leading-relaxed text-ink !outline-none placeholder:text-ink-3 ${compact ? "text-[15px]" : "text-[16px]"}`}
         />
         <p id={hintId} className="sr-only">
           Enter sends, Shift and Enter adds a line. Type @ to mention a meeting, person or decision, or / for shortcuts. Paste or drop a text file to attach it.
@@ -536,6 +545,7 @@ export function Composer({
             <button
               type="button"
               aria-pressed={speech.listening}
+              aria-busy={speech.busy || undefined}
               aria-label={speech.listening ? "Stop listening" : "Ask by voice"}
               title={speech.listening ? "Stop listening" : "Hold to ask by voice, or press to start"}
               onPointerDown={micDown}
@@ -544,7 +554,7 @@ export function Composer({
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   if (speech.listening) speech.stop();
-                  else {
+                  else if (!speech.busy) {
                     speechBase.current = value.trim();
                     speech.start();
                   }
@@ -584,9 +594,9 @@ export function Composer({
           )}
         </div>
       </div>
-      {speech.listening ? (
+      {speech.listening || speech.busy || speech.note ? (
         <p className="mt-1.5 px-3 text-[13px] text-ink-3" role="status">
-          Listening. Let go or press the mic again to stop.
+          {speech.listening ? "Listening. Pause, let go or press the mic again to stop." : speech.busy ? "Writing down what you said…" : speech.note}
         </p>
       ) : null}
     </div>
