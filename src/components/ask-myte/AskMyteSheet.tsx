@@ -1,5 +1,6 @@
 "use client";
 
+import { useAiPaused } from "@/lib/ai-status";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowsOut, Plus, X } from "@phosphor-icons/react";
@@ -46,6 +47,7 @@ export function AskMyteSheet({
   const panel = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const [face, setFace] = useState<{ state: FaceState; words: string }>({ state: "idle", words: `${persona.name} is here` });
+  const aiPaused = useAiPaused();
   const [starters, setStarters] = useState<Record<string, Starter[] | null>>({});
   const [autoSend, setAutoSend] = useState<{ q: string; n: number } | null>(null);
   const [chatKey, setChatKey] = useState(0);
@@ -131,7 +133,7 @@ export function AskMyteSheet({
               <span aria-hidden>{face.state === "idle" ? "" : `, ${face.words.replace(`${persona.name} is `, "")}`}</span>
             </p>
           </div>
-          <TalkButton compact name={persona.name} onTalk={() => setTalk((n) => n + 1)} disabled={conv.streaming} />
+          <TalkButton compact name={persona.name} onTalk={() => setTalk((n) => n + 1)} disabled={conv.streaming || aiPaused} />
           {!empty ? (
             <button
               type="button"

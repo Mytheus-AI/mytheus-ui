@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { OrgProvider } from "@/lib/org-context";
+import { AiStatusProvider } from "@/lib/ai-status";
 import { checkOpsGate } from "@/lib/api/admin-ops";
 import { myClerkFullName, resolveOrgContext } from "@/lib/api/org-context";
 import { AppShell } from "@/components/app/AppShell";
@@ -59,6 +60,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <OrgProvider value={orgContext}>
+      <AiStatusProvider paused={billing?.blocked ?? false}>
       <AppShell agent={agent}>
         {/* A staff support session says so on every page (ADR-0046). */}
         <SupportSessionBanner />
@@ -73,6 +75,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <LocationPrompt />
         {children}
       </AppShell>
+      </AiStatusProvider>
     </OrgProvider>
   );
 }

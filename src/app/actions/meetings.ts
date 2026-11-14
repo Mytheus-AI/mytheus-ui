@@ -98,6 +98,10 @@ export async function createMeeting(input: CreateMeetingInput): Promise<CreateMe
     if (err instanceof ApiError) {
       if (err.isAuthFailure) return { ok: false, message: "Your session expired. Sign in again." };
       if (err.status === 403) return { ok: false, message: "You don't have permission to create meetings here." };
+      // ADR-0051 D2: AI is paused for the workspace, so core-api starts no new meeting.
+      if (err.status === 402) {
+        return { ok: false, message: "AI is paused for this workspace: this month's allowance is used up, so no new meeting can start until it is topped up." };
+      }
       // Callers branch on the status, never the prose: a 422 names the field only in its detail.
       if (err.status === 422) {
         return {

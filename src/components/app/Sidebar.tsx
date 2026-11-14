@@ -1,5 +1,6 @@
 "use client";
 
+import { AI_PAUSED_TITLE, useAiPaused } from "@/lib/ai-status";
 import { useState, type KeyboardEvent, type MouseEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -126,6 +127,7 @@ export function Sidebar({
   const pathname = usePathname();
   const mod = useModKey();
   const { org, user } = useOrgContext();
+  const aiPaused = useAiPaused();
   const isAdmin = user.role === "admin";
   const railed = rail && !drawer;
   // Set when the user collapses with the pointer still over the panel; cleared when it leaves.
@@ -281,16 +283,30 @@ export function Sidebar({
         <CaretUpDown size={16} aria-hidden className={`shrink-0 text-ink-3 ${openOnly}`} />
       </Link>
 
-      <Link
-        href={NEW_MEETING_HREF}
-        onClick={onNavigate}
-        data-sb-item=""
-        aria-label="New meeting"
-        className={`${buttonClass({ variant: "primary", size: "md" })} mb-3.5 !flex ${lay(CTA)}`}
-      >
-        <Plus size={18} weight="bold" aria-hidden className="shrink-0" />
-        <span className={`sb-fade ${label}`}>New meeting</span>
-      </Link>
+      {aiPaused ? (
+        <button
+          type="button"
+          disabled
+          data-sb-item=""
+          aria-label={`New meeting. ${AI_PAUSED_TITLE}`}
+          title={`${AI_PAUSED_TITLE}: no new meetings until it is topped up`}
+          className={`${buttonClass({ variant: "primary", size: "md" })} mb-3.5 !flex cursor-not-allowed opacity-50 ${lay(CTA)}`}
+        >
+          <Plus size={18} weight="bold" aria-hidden className="shrink-0" />
+          <span className={`sb-fade ${label}`}>New meeting</span>
+        </button>
+      ) : (
+        <Link
+          href={NEW_MEETING_HREF}
+          onClick={onNavigate}
+          data-sb-item=""
+          aria-label="New meeting"
+          className={`${buttonClass({ variant: "primary", size: "md" })} mb-3.5 !flex ${lay(CTA)}`}
+        >
+          <Plus size={18} weight="bold" aria-hidden className="shrink-0" />
+          <span className={`sb-fade ${label}`}>New meeting</span>
+        </Link>
+      )}
 
       <AgentTab
         agent={agent ?? { name: user.name.split(" ")[0] ? `${user.name.split(" ")[0]}'s Myte` : "Your Myte", seed: defaultDoodleSeed(`agent:${user.id}`) }}

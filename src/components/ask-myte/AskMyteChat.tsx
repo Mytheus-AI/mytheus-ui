@@ -1,5 +1,6 @@
 "use client";
 
+import { AiPausedNote, useAiPaused } from "@/lib/ai-status";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import dynamic from "next/dynamic";
 import { listPeerQuestions } from "@/app/actions/myte-v2";
@@ -92,6 +93,8 @@ export function AskMyteChat({
   const [routine, setRoutine] = useState<{ open: boolean; question: string }>({ open: false, question: "" });
   const [talking, setTalking] = useState(false);
   const [sentPeer, setSentPeer] = useState<PeerQuestion[]>([]);
+  // AI paused for the workspace (ADR-0051 D2): nothing is sent; the composer says why instead.
+  const paused = useAiPaused();
 
   // Drafts survive a reload (per surface); a sent question clears its draft.
   useEffect(() => {
@@ -129,6 +132,7 @@ export function AskMyteChat({
 
   const ask = useCallback(
     (q: string) => {
+      if (paused) return;
       voice.stop();
       conv.send(q, effectiveScope, effectivePage, { attachments: attachments.map(({ name, text }) => ({ name, text })) });
       setAttachments([]);
@@ -138,11 +142,11 @@ export function AskMyteChat({
     },
     // changeDraft is stable enough (closes over draftKey only)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [conv.send, effectiveScope, effectivePage, voice.stop, attachments],
+    [conv.send, effectiveScope, effectivePage, voice.stop, attachments, paused],
   );
 
   useEffect(() => {
-    if (talkSignal > 0) {
+    if (talkSignal > 0 && !paused) {
       voice.stop();
       setTalking(true);
     }
@@ -229,7 +233,7 @@ export function AskMyteChat({
               <button
                 type="button"
                 onClick={() => ask(s.question)}
-                disabled={offline}
+                disabled={offline || paused}
                 className="flex min-h-[64px] w-full flex-col justify-center rounded-card border border-line bg-surface px-4 py-3 text-left transition-[border-color,box-shadow] duration-150 hover:border-line-2 hover:shadow-warm-1 disabled:opacity-60"
               >
                 <span className="text-[15px] font-semibold leading-snug text-ink">{s.question}</span>
@@ -294,6 +298,9 @@ export function AskMyteChat({
                 You&apos;re offline. I&apos;ll be ready when you&apos;re back.
               </p>
             ) : null}
+            {paused ? (
+              <AiPausedNote what={`${persona.name} can't answer or take new questions right now. Your past chats stay here.`} />
+            ) : (
             <Composer
               value={draft}
               onChange={changeDraft}
@@ -314,7 +321,8 @@ export function AskMyteChat({
               onAttachments={setAttachments}
               onRoutine={(question) => setRoutine({ open: true, question })}
             />
-            {!sheet ? <p className="mt-2 text-center text-[12.5px] text-ink-3">{persona.name} answers from what you can see in Mytheus and cites every claim.</p> : null}
+            )}
+            {!sheet && !paused ? <p className="mt-2 text-center text-[12.5px] text-ink-3">{persona.name} answers from what you can see in Mytheus and cites every claim.</p> : null}
           </div>
         </div>
       </div>

@@ -10,6 +10,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { captureConfig, captureConfigured } from "@/app/api/capture/_lib/config";
 import { CAPTURE_SOURCE_LABELS, parseCapturedTitle, type CaptureSource } from "@/app/api/capture/_lib/source";
 import { listMeetings } from "@/lib/api/meetings";
+import { fetchBillingStatus } from "@/lib/api/billing";
+import { AiPausedNote } from "@/lib/ai-status";
 import { LocalTime } from "./LocalTime";
 import { WhatItRecords } from "./WhatItRecords";
 
@@ -65,7 +67,7 @@ const STEPS: { title: string; body: string }[] = [
 
 export default async function CapturePage() {
   const config = captureConfig();
-  const [meetings, downloadable] = await Promise.all([listMeetings(), zipAvailable(config.zipPath)]);
+  const [meetings, downloadable, billing] = await Promise.all([listMeetings(), zipAvailable(config.zipPath), fetchBillingStatus()]);
   const configured = captureConfigured(config);
 
   const captured: CapturedCall[] | null =
@@ -95,6 +97,9 @@ export default async function CapturePage() {
         context="Bring calls on Google Meet, Microsoft Teams and Zoom into Mytheus, with no bot joining. Your Myte, notes, decisions and minutes work on them like any Mytheus meeting."
         action={download}
       >
+        {billing?.blocked ? (
+          <AiPausedNote className="mt-4 max-w-[70ch]" what="A new capture can't start, and your Myte takes no notes on calls right now." />
+        ) : null}
         {!configured ? (
           <p
             role="status"

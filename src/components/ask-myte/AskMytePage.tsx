@@ -1,5 +1,6 @@
 "use client";
 
+import { useAiPaused } from "@/lib/ai-status";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ClockCounterClockwise, Plus, X } from "@phosphor-icons/react";
 import { getMyteThread } from "@/app/actions/myte-threads";
@@ -47,6 +48,7 @@ export function AskMytePage({
   const [refreshKey, setRefreshKey] = useState(0);
   const [drawer, setDrawer] = useState(false);
   const [talk, setTalk] = useState(0);
+  const aiPaused = useAiPaused();
   const [face, setFace] = useState<{ state: FaceState; words: string }>({ state: "idle", words: `${persona.name} is here` });
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -169,7 +171,7 @@ export function AskMytePage({
           </div>
         </>
       )}
-      <TalkButton name={persona.name} onTalk={() => setTalk((n) => n + 1)} disabled={conv.streaming} />
+      <TalkButton name={persona.name} onTalk={() => setTalk((n) => n + 1)} disabled={conv.streaming || aiPaused} />
       <button
         type="button"
         onClick={newQuestion}
@@ -183,7 +185,7 @@ export function AskMytePage({
   );
 
   return (
-    <div className="-mb-12 flex h-[calc(100dvh-68px-20px)] min-h-[520px] overflow-hidden rounded-hero border border-line bg-bg shadow-warm-1">
+    <div className="-mb-12 flex h-[calc(100dvh-68px-20px-var(--ai-banner-h,0px))] min-h-[520px] overflow-hidden rounded-hero border border-line bg-bg shadow-warm-1">
       <aside aria-label="Your chats" className="hidden w-[272px] shrink-0 border-r border-line bg-bg lg:flex lg:flex-col">
         {rail}
       </aside>

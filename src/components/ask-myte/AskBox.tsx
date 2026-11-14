@@ -8,6 +8,7 @@ import { LinkButton, buttonClass } from "@/components/ui/Button";
 import { LIMITS } from "@/lib/ask-myte/types";
 import { useAskMyteSheet } from "./sheet-context";
 import { useModKey } from "./mod-key";
+import { AI_PAUSED_TITLE, useAiPaused } from "@/lib/ai-status";
 
 /* An ask box that hands off to Ask Myte: Your Myte's page (a large box at the top, plus "Open Ask
    Myte") and Home (a bar under the greeting with two starters). Sending opens /ask with the
@@ -39,7 +40,10 @@ export function AskBox({
   const mod = useModKey();
   const [q, setQ] = useState("");
   const id = useId();
+  // AI paused for the workspace: the box stays where it is, says so and sends nothing.
+  const paused = useAiPaused();
   const go = (question: string) => {
+    if (paused) return;
     const text = question.trim().slice(0, LIMITS.question);
     if (!text) return;
     if (sheet) open({ question: text });
@@ -72,24 +76,25 @@ export function AskBox({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           maxLength={LIMITS.question}
-          placeholder={placeholder}
+          placeholder={paused ? AI_PAUSED_TITLE : placeholder}
+          disabled={paused}
           autoComplete="off"
           data-ring="none"
-          className={`min-w-0 flex-1 bg-transparent px-1 text-ink !outline-none placeholder:text-ink-3 ${lg ? "h-11 text-[17px]" : "h-10 text-[15.5px]"}`}
+          className={`min-w-0 flex-1 bg-transparent px-1 text-ink !outline-none placeholder:text-ink-3 disabled:cursor-not-allowed ${lg ? "h-11 text-[17px]" : "h-10 text-[15.5px]"}`}
         />
         <kbd aria-hidden className="hidden shrink-0 rounded-full border border-line-2 bg-surface-2 px-2 py-0.5 font-sans text-[12.5px] font-semibold text-ink-3 md:inline">
           {mod === "⌘" ? "⌘J" : `${mod} J`}
         </kbd>
         <button
           type="submit"
-          disabled={!q.trim()}
+          disabled={paused || !q.trim()}
           aria-label={`Ask ${name}`}
           className={`grid shrink-0 place-items-center rounded-full bg-pill text-pill-on transition-[background-color,opacity] hover:bg-pill-2 disabled:opacity-40 ${lg ? "h-11 w-11" : "h-10 w-10"}`}
         >
           <ArrowUp size={18} weight="bold" aria-hidden />
         </button>
       </form>
-      {starters.length || openButton ? (
+      {!paused && (starters.length || openButton) ? (
         <div className="mt-2.5 flex flex-wrap items-center gap-2">
           {starters.map((s) => (
             <button

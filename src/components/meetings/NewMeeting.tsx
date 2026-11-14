@@ -1,5 +1,6 @@
 "use client";
 
+import { AI_PAUSED_TITLE, useAiPaused } from "@/lib/ai-status";
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -132,6 +133,8 @@ export function NewMeeting({
 }) {
   const router = useRouter();
   const params = useSearchParams();
+  // AI paused for the workspace (ADR-0051 D2): no new meeting; core-api refuses one too.
+  const paused = useAiPaused();
   const pathname = usePathname();
   const ids = useId();
   const titleRef = useRef<HTMLInputElement>(null);
@@ -216,7 +219,7 @@ export function NewMeeting({
   const wantsNew = openFromLink && params.get("new") === "1";
   useEffect(() => {
     if (!wantsNew) return;
-    show();
+    if (!paused) show();
     router.replace(pathname, { scroll: false });
     // `show` only resets local fields; running once per arrival is the intent.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -381,7 +384,14 @@ export function NewMeeting({
 
   return (
     <>
-      <button ref={openerRef} type="button" className="mx-btn tap" onClick={show}>
+      <button
+        ref={openerRef}
+        type="button"
+        className="mx-btn tap disabled:cursor-not-allowed disabled:opacity-50"
+        onClick={show}
+        disabled={paused}
+        title={paused ? `${AI_PAUSED_TITLE}: no new meetings until it is topped up` : undefined}
+      >
         <CalendarPlus size={18} weight="bold" aria-hidden="true" />
         New meeting
       </button>
