@@ -1,44 +1,41 @@
 import type { Metadata } from "next";
-import { StatCard, theadRowClass, thClass } from "@/components/admin/StatCard";
+import { theadRowClass, thClass } from "@/components/admin/StatCard";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { SectionCard } from "@/components/ui/Card";
+import { SectionCard, cardPad } from "@/components/ui/Card";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Note } from "@/components/ui/Note";
-import { SectionBar } from "@/components/ui/Page";
+import { PageHead } from "@/components/ui/Page";
+import { KpiStrip, QuotaList } from "@/components/ops/viz/Figures";
+import { Treemap, type TreeItem } from "@/components/ops/viz/Treemap";
+import { fmt, periodLabel } from "@/lib/ops-charts";
 import { loadCosts } from "@/lib/api/admin-ops";
 import { sortCosts } from "@/lib/ops";
 
-export const metadata: Metadata = { title: "Cost and lag | Mytheus" };
+export const metadata: Metadata = { title: "Cost and lag | Ops console | Mytheus" };
 export const dynamic = "force-dynamic";
 
 /* Cost and lag (plan 3.13 step 3): per-tenant agent-token use this period from
    `usage_aggregates`, plus dead-letter counts and consumer lag when the service can read them.
    Aggregates only, never tenant content. A section the server cannot fill (null) says so instead
-   of showing zeros. Each tenant's use is one meter against its quota, in one hue; the figure is
-   always printed beside it. */
+   of showing zeros. The treemap answers "who is spending it"; the meters under it answer "who is
+   about to run out", highest share of quota first. */
 
-const compact = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
 const whole = new Intl.NumberFormat("en-US");
-const pct = (v: number) => `${Math.round(v * 100)}%`;
-
-function periodLabel(period: string): string {
-  const [y, m] = period.split("-").map(Number);
-  if (!y || !m) return period;
-  return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(y, m - 1, 1)));
-}
+const TOP = 11;
 
 export default async function OpsCostsPage() {
   const res = await loadCosts();
+  const title = "Cost and lag";
   if (res.kind !== "live") {
     return (
-      <div className="flex flex-col gap-5">
-        <SectionBar title="Cost and lag" context="Model spend by tenant and pipeline health." />
+      <>
+        <PageHead title={title} context="Model spend by workspace and pipeline health." />
         {res.kind === "forbidden" ? (
           <Note tone="error">This account is not on the Mytheus staff list.</Note>
         ) : (
           <ErrorState title="The cost and lag figures could not be loaded" />
         )}
-      </div>
+      </>
     );
   }
 
@@ -46,81 +43,94 @@ export default async function OpsCostsPage() {
   const rows = sortCosts(Array.isArray(d.tenants) ? d.tenants : []);
   const total = rows.reduce((s, r) => s + (Number(r.tokens_consumed) || 0), 0);
   const nearQuota = rows.filter((r) => r.ratio !== null && r.ratio >= 0.8).length;
+  const overQuota = rows.filter((r) => r.ratio !== null && r.ratio >= 1).length;
   const dlqTotal = d.dlq ? d.dlq.reduce((s, x) => s + x.count, 0) : null;
+  const spenders = [...rows].filter((r) => r.tokens_consumed > 0).sort((a, b) => b.tokens_consumed - a.tokens_consumed);
+  const top = spenders.slice(0, TOP);
+  const tail = spenders.slice(TOP);
+  const tiles: TreeItem[] = [
+    ...top.map((r) => ({
+      key: r.org_id,
+      label: r.name,
+      value: r.tokens_consumed,
+      state: (r.ratio === null ? "ok" : r.ratio >= 0.95 ? "high" : r.ratio >= 0.8 ? "medium" : "ok") as TreeItem["state"],
+      note: r.token_quota ? `${Math.round((r.ratio ?? 0) * 100)}% of its ${fmt(r.token_quota)} quota` : "no quota set",
+    })),
+    ...(tail.length
+      ? [
+          {
+            key: "other",
+            label: `${tail.length} other ${tail.length === 1 ? "workspace" : "workspaces"}`,
+            value: tail.reduce((s, r) => s + r.tokens_consumed, 0),
+            state: "other" as const,
+          },
+        ]
+      : []),
+  ];
+  const leader = spenders[0];
 
   return (
-    <div className="flex flex-col gap-5">
-      <SectionBar title="Cost and lag" context={`Agent token use by tenant${d.period ? ` for ${periodLabel(d.period)}` : ""}, and pipeline health. Aggregates only.`} />
+    <>
+      <PageHead title={title} context={`Agent token use by workspace${d.period ? ` for ${periodLabel(d.period)}` : ""}, and pipeline health. Aggregates only.`} />
 
-      {d.truncated ? (
-        <Note tone="warning">Showing the {rows.length} newest tenants only, so the totals below leave out older tenants.</Note>
-      ) : null}
+      <div className="flex flex-col gap-5 xl:gap-6">
+        {d.truncated ? <Note tone="warning">Showing the {rows.length} newest workspaces only, so the totals below leave out older workspaces.</Note> : null}
 
-      <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="Agent tokens this period" value={compact.format(total)} hint={`${whole.format(total)} in all`} />
-        <StatCard label="Tenants past 80%" value={nearQuota} hint={nearQuota ? "Near their quota" : "None near quota"} />
-        <StatCard
-          label="Dead letters"
-          value={dlqTotal === null ? "Not readable" : whole.format(dlqTotal)}
-          hint={dlqTotal === null ? "Not readable from the ops service yet" : "Across every queue"}
+        <KpiStrip
+          label="Cost figures"
+          items={[
+            { label: "Agent tokens this period", value: fmt(total), hint: `${whole.format(total)} in all` },
+            {
+              label: "Largest spender",
+              value: leader ? `${Math.round((leader.tokens_consumed / Math.max(1, total)) * 100)}%` : "None",
+              hint: leader ? `${leader.name}, of all tokens` : "No use recorded",
+            },
+            { label: "Past 80% of quota", value: nearQuota, hint: overQuota ? `${overQuota} past their quota` : nearQuota ? "Near their quota" : "None near quota" },
+            {
+              label: "Dead letters",
+              value: dlqTotal === null ? "Not readable" : whole.format(dlqTotal),
+              hint: dlqTotal === null ? "Not readable from the ops service yet" : "Across every queue",
+            },
+          ]}
         />
-      </div>
 
-      <SectionCard
-        title="Agent tokens by tenant"
-        headingLevel={2}
-        headingId="tokens-heading"
-        description="Highest share of quota first. Ticks mark 80% and 95%."
-      >
-        {rows.length === 0 ? (
-          <EmptyState
-            inCard
-            art="billing"
-            title="No token use yet"
-            description="No agent token use is recorded for this period."
-          />
-        ) : (
-          rows.map((r) => (
-            <div key={r.org_id} className="px-4 py-4 sm:px-[22px]">
-              <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                <p className="min-w-0 truncate text-[15px] font-semibold text-ink">{r.name}</p>
-                <p className="shrink-0 text-[14px] tabular-nums text-ink-2">
-                  <span className="font-semibold text-ink">{compact.format(r.tokens_consumed)}</span>
-                  {r.token_quota ? (
-                    <>
-                      {" "}
-                      of {compact.format(r.token_quota)} <span className="ml-1.5 text-ink-3">{pct(r.ratio ?? 0)}</span>
-                    </>
-                  ) : (
-                    <span className="ml-1.5 text-ink-3">no quota</span>
-                  )}
-                </p>
+        <SectionCard
+          title="Share of agent tokens"
+          headingLevel={2}
+          headingId="share-heading"
+          description={`Each tile is one workspace, sized by its share of this period's tokens; the ${TOP} largest, then everyone else together. Colour shows how close it is to its quota.`}
+          clip={false}
+        >
+          <div className={cardPad}>
+            <Treemap items={tiles} caption="Workspaces by share of agent tokens this period" />
+          </div>
+        </SectionCard>
+
+        <SectionCard
+          title="Agent tokens against quota"
+          headingLevel={2}
+          headingId="tokens-heading"
+          description="Every workspace, highest share of its quota first. Ticks mark 80% and 95%."
+        >
+          {rows.length === 0 ? (
+            <EmptyState inCard art="billing" title="No token use yet" description="No agent token use is recorded for this period." />
+          ) : (
+            <div className={cardPad}>
+              <div className="grid gap-x-10 gap-y-4 lg:grid-cols-2">
+                <QuotaList
+                  empty=""
+                  rows={rows.slice(0, Math.ceil(rows.length / 2)).map((r) => ({ key: r.org_id, name: r.name, value: r.tokens_consumed, quota: r.token_quota }))}
+                />
+                <QuotaList
+                  empty=""
+                  rows={rows.slice(Math.ceil(rows.length / 2)).map((r) => ({ key: r.org_id, name: r.name, value: r.tokens_consumed, quota: r.token_quota }))}
+                />
               </div>
-              {r.ratio !== null ? (
-                <div
-                  className="relative h-2.5 rounded-full bg-bg-2"
-                  role="meter"
-                  aria-label={`${r.name} agent tokens used`}
-                  aria-valuemin={0}
-                  aria-valuemax={r.token_quota ?? 0}
-                  aria-valuenow={Math.min(r.tokens_consumed, r.token_quota ?? r.tokens_consumed)}
-                  aria-valuetext={`${pct(r.ratio)} of quota`}
-                >
-                  <div
-                    className={`h-full rounded-full ${r.ratio >= 0.95 ? "bg-priority-high" : r.ratio >= 0.8 ? "bg-priority-medium" : "bg-pill"} ${r.tokens_consumed > 0 ? "min-w-2.5" : ""}`}
-                    style={{ width: `${Math.min(r.ratio, 1) * 100}%` }}
-                  />
-                  {[0.8, 0.95].map((t) => (
-                    <span key={t} aria-hidden className="absolute -top-[3px] h-4 w-[2px] rounded-full bg-ink-4 ring-2 ring-surface" style={{ left: `${t * 100}%` }} />
-                  ))}
-                </div>
-              ) : null}
             </div>
-          ))
-        )}
-      </SectionCard>
+          )}
+        </SectionCard>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2 xl:gap-6">
         <SectionCard title="Dead-letter queues" headingLevel={2} headingId="dlq-heading" description="Messages that failed processing and were set aside.">
           {d.dlq === null ? (
             <p className="px-4 py-5 text-[14px] text-ink-3 sm:px-[22px]">Not readable from the ops service yet.</p>
@@ -183,6 +193,7 @@ export default async function OpsCostsPage() {
           )}
         </SectionCard>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

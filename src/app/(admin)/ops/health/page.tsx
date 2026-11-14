@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import { CheckCircle, WarningCircle } from "@phosphor-icons/react/dist/ssr";
-import { StatCard, theadRowClass, thClass } from "@/components/admin/StatCard";
-import { BarList } from "@/components/ops/charts";
 import { SectionCard, cardPad } from "@/components/ui/Card";
-import { Chip } from "@/components/ui/Chip";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Note } from "@/components/ui/Note";
-import { SectionBar } from "@/components/ui/Page";
+import { PageHead } from "@/components/ui/Page";
+import { BarList } from "@/components/ops/charts";
+import { KpiStrip, LatencyPlot } from "@/components/ops/viz/Figures";
+import { RefreshButton } from "@/components/ops/RefreshButton";
 import { loadHealth } from "@/lib/api/admin-ops";
 import { healthSummary } from "@/lib/ops";
+import { zonedFormat } from "@/lib/timezone-server";
 
 export const metadata: Metadata = { title: "Health | Ops console | Mytheus" };
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ export const dynamic = "force-dynamic";
    and Prometheus, which the ops service cannot read yet, and the page says so. */
 
 const whole = new Intl.NumberFormat("en-US");
-const time = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit" });
+const SELF = "admin-ops-service";
 
 function age(iso: string | null, now: number): string {
   if (!iso) return "None waiting";
@@ -34,16 +35,13 @@ function age(iso: string | null, now: number): string {
 
 export default async function OpsHealthPage() {
   const res = await loadHealth();
+  const title = "Health";
   if (res.kind !== "live") {
     return (
-      <div className="flex flex-col gap-5">
-        <SectionBar title="Health" context="Backend services and the event outbox." />
-        {res.kind === "forbidden" ? (
-          <Note tone="error">This account is not on the Mytheus staff list.</Note>
-        ) : (
-          <ErrorState title="Health could not be checked" />
-        )}
-      </div>
+      <>
+        <PageHead title={title} context="Backend services and the event outbox." />
+        {res.kind === "forbidden" ? <Note tone="error">This account is not on the Mytheus staff list.</Note> : <ErrorState title="Health could not be checked" />}
+      </>
     );
   }
 
@@ -51,84 +49,98 @@ export default async function OpsHealthPage() {
   const { up, down } = healthSummary(h.services);
   const checked = Date.parse(h.checked_at);
   const now = Number.isFinite(checked) ? checked : Date.now();
+  const time = zonedFormat({ hour: "numeric", minute: "2-digit", second: "2-digit" }).format(new Date(now));
+  const downNames = h.services.filter((s) => s.status !== "up").map((s) => s.service);
+  const answered = h.services.filter((s) => s.status === "up" && s.service !== SELF && s.latency_ms !== null).map((s) => s.latency_ms as number);
+  const slowest = answered.length ? Math.max(...answered) : null;
+  const median = answered.length ? [...answered].sort((a, b) => a - b)[Math.floor((answered.length - 1) / 2)] : null;
+  // Down first, then slowest first: the eye lands on what needs it.
+  const probes = [...h.services]
+    .sort((a, b) => Number(a.status === "up") - Number(b.status === "up") || (b.latency_ms ?? -1) - (a.latency_ms ?? -1))
+    .map((s) => ({
+      service: s.service,
+      up: s.status === "up",
+      ms: s.service === SELF ? null : s.latency_ms,
+      note: s.service === SELF ? "This service" : undefined,
+      detail: s.detail ?? null,
+    }));
 
   return (
-    <div className="flex flex-col gap-5">
-      <SectionBar
-        title="Health"
-        context={`Backend services and the event outbox, checked ${Number.isFinite(checked) ? `at ${time.format(new Date(checked))}` : "just now"}. Reload to check again.`}
-      />
+    <>
+      <PageHead title={title} context="Backend services and the event outbox, probed from the ops service on the internal network." action={<RefreshButton readAt={time} />} />
 
-      {down > 0 ? (
-        <Note tone="error">
-          {down === 1 ? "One service is" : `${down} services are`} not answering: {h.services.filter((s) => s.status !== "up").map((s) => s.service).join(", ")}.
-        </Note>
-      ) : null}
+      <div className="flex flex-col gap-5 xl:gap-6">
+        <div
+          role="status"
+          className={`flex items-center gap-3 rounded-card border px-4 py-3.5 sm:px-[22px] ${
+            down ? "border-[color:color-mix(in_srgb,var(--priority-high)_30%,var(--line))] bg-priority-high-soft" : "border-line bg-surface shadow-warm-1"
+          }`}
+        >
+          {down ? (
+            <WarningCircle size={22} weight="fill" className="shrink-0 text-priority-high" aria-hidden />
+          ) : (
+            <CheckCircle size={22} weight="fill" className="shrink-0 text-ok" aria-hidden />
+          )}
+          <p className="min-w-0 text-[15px] text-ink-2">
+            {down ? (
+              <>
+                <span className="font-semibold text-priority-high">{down === 1 ? "One service is not answering" : `${down} services are not answering`}</span>: {downNames.join(", ")}.
+              </>
+            ) : (
+              <>
+                <span className="font-semibold text-ink">All {h.services.length} services are answering.</span> Checked at {time}.
+              </>
+            )}
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="Services up" value={`${up} of ${h.services.length}`} hint={down ? `${down} down` : "All answering"} />
-        <StatCard label="Events waiting to publish" value={whole.format(h.outbox_pending)} hint={`Oldest: ${age(h.outbox_oldest_pending_at, now)}`} />
-        <StatCard label="Most retries on one event" value={whole.format(h.outbox_max_attempts)} hint={h.outbox_max_attempts >= 3 ? "Worth a look" : "Nothing stuck"} />
-      </div>
+        <KpiStrip
+          label="Health figures"
+          items={[
+            { label: "Services up", value: `${up} of ${h.services.length}`, hint: down ? `${down} down` : "All answering" },
+            {
+              label: "Typical response",
+              value: median === null ? "None" : `${whole.format(median)} ms`,
+              hint: slowest === null ? "No service answered" : `Slowest ${whole.format(slowest)} ms`,
+            },
+            { label: "Events waiting to publish", value: whole.format(h.outbox_pending), hint: `Oldest: ${age(h.outbox_oldest_pending_at, now)}` },
+            { label: "Most retries on one event", value: whole.format(h.outbox_max_attempts), hint: h.outbox_max_attempts >= 3 ? "Worth a look" : "Nothing stuck" },
+          ]}
+        />
 
-      <SectionCard title="Services" headingId="services-heading" description="Each service's health endpoint, called from the ops service with a 2 second limit.">
-        <table className="mx-table w-full border-collapse text-left text-[14px]">
-          <caption className="sr-only">Backend services with status and response time</caption>
-          <thead>
-            <tr className={theadRowClass}>
-              <th scope="col" className={`${thClass} !pl-[22px]`}>Service</th>
-              <th scope="col" className={thClass}>Status</th>
-              <th scope="col" className={`${thClass} text-right !pr-[22px]`}>Response</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {h.services.map((s) => (
-              <tr key={s.service}>
-                <th scope="row" className="py-3 pl-[22px] pr-5 text-left font-mono text-[14px] font-normal text-ink">
-                  {s.service}
-                </th>
-                <td data-label="Status" className="px-5 py-3">
-                  {s.status === "up" ? (
-                    <Chip tone="ok">
-                      <CheckCircle size={14} weight="fill" aria-hidden /> Up
-                    </Chip>
-                  ) : (
-                    <Chip tone="high">
-                      <WarningCircle size={14} weight="fill" aria-hidden /> Down{s.detail ? `, ${s.detail}` : ""}
-                    </Chip>
-                  )}
-                </td>
-                <td data-label="Response" className="py-3 pl-5 pr-[22px] text-right tabular-nums text-ink-2">
-                  {s.service === "admin-ops-service" ? "This service" : s.latency_ms === null ? "No answer" : `${whole.format(s.latency_ms)} ms`}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </SectionCard>
-
-      <div className="grid gap-5 lg:grid-cols-2">
-        <SectionCard title="Outbox backlog by workspace" headingId="outbox-heading" description="Events written but not yet published to Redpanda. A growing number means the relay is behind.">
+        <SectionCard
+          title="Services"
+          headingId="services-heading"
+          description="Each service's health endpoint, with its response time on one scale. Down first, then slowest first; the probe gives up after 2 seconds."
+        >
           <div className={cardPad}>
-            <BarList
-              caption="Unpublished events per workspace"
-              empty="Nothing waiting. Every event has been published."
-              items={h.outbox_tenants.map((r) => ({
-                key: r.org_id,
-                label: r.name,
-                value: r.pending,
-                note: `oldest ${age(r.oldest_pending_at, now)}${r.max_attempts ? `, ${r.max_attempts} retries` : ""}`,
-                tone: r.max_attempts >= 3 ? "medium" : "default",
-              }))}
-            />
+            <LatencyPlot probes={probes} />
           </div>
         </SectionCard>
-        <SectionCard title="Queues and lag" headingId="queues-heading" description="Dead-letter queues and consumer lag.">
-          <p className={`${cardPad} text-[14px] leading-relaxed text-ink-3`}>
-            Not readable from the ops service yet. Both live in Redpanda and Prometheus, which this service cannot reach. Use Grafana on the server for now.
-          </p>
-        </SectionCard>
+
+        <div className="grid gap-5 lg:grid-cols-2 xl:gap-6">
+          <SectionCard title="Outbox backlog by workspace" headingId="outbox-heading" description="Events written but not yet published to Redpanda. A growing number means the relay is behind.">
+            <div className={cardPad}>
+              <BarList
+                caption="Unpublished events per workspace"
+                empty="Nothing waiting. Every event has been published."
+                items={h.outbox_tenants.map((r) => ({
+                  key: r.org_id,
+                  label: r.name,
+                  value: r.pending,
+                  note: `oldest ${age(r.oldest_pending_at, now)}${r.max_attempts ? `, ${r.max_attempts} retries` : ""}`,
+                  tone: r.max_attempts >= 3 ? "medium" : "default",
+                }))}
+              />
+            </div>
+          </SectionCard>
+          <SectionCard title="Queues and lag" headingId="queues-heading" description="Dead-letter queues and consumer lag.">
+            <p className={`${cardPad} text-[14px] leading-relaxed text-ink-3`}>
+              Not readable from the ops service yet. Both live in Redpanda and Prometheus, which this service cannot reach. Use Grafana on the server for now.
+            </p>
+          </SectionCard>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

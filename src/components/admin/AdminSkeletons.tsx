@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { cardClass } from "@/components/ui/Card";
-import { Bone, CardHeadSkeleton, SectionBarSkeleton, TextBone } from "@/components/ui/Page";
+import { Bone, CardHeadSkeleton, PageHeadSkeleton, SectionBarSkeleton, TextBone } from "@/components/ui/Page";
 
 /* Skeleton pieces the Workspace console and the ops console share, built on the shared kit and on
    the same classes as the real pieces: a titled SectionBar, a StatCard, a SectionCard and a
@@ -180,12 +180,8 @@ export function WellSkeleton({ title = "w-36", lines = ["w-full", "w-[80%]"], cl
 export function OpsTenantsSkeleton() {
   return (
     <>
-      <TitledBarSkeleton title="w-28" context={["w-[520px]"]} narrow={["w-[50%]"]} />
-      <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 lg:grid-cols-3">
-        <StatCardSkeleton />
-        <StatCardSkeleton />
-        <StatCardSkeleton />
-      </div>
+      <OpsHeadSkeleton title="w-36" context={["w-[620px]"]} narrow={["w-[50%]"]} />
+      <KpiStripSkeleton count={3} />
       <div className="flex flex-col gap-4">
         <Bone className="h-11 w-full max-w-sm" />
         <div aria-hidden className={cardClass({ flush: true })}>
@@ -193,5 +189,38 @@ export function OpsTenantsSkeleton() {
         </div>
       </div>
     </>
+  );
+}
+
+/* --- the ops console (sidebar frame) -------------------------------------------------------- */
+
+/** An ops page's title row (PageHead: the h1 and its context), drawn inside a gap-5 column, so it
+    pulls the column's gap back to keep the content where the loaded page puts it. */
+export function OpsHeadSkeleton({ title = "w-40", context = ["w-[560px]"], narrow = [] }: { title?: string; context?: string[]; narrow?: string[] }) {
+  return (
+    <div className="-mb-5">
+      <PageHeadSkeleton title={title} context={context} narrow={narrow} />
+    </div>
+  );
+}
+
+/** KpiStrip's skeleton: one card split into `count` figures by hairlines. */
+export function KpiStripSkeleton({ count = 3 }: { count?: number }) {
+  const cols = count >= 5 ? "lg:grid-cols-5" : count === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3";
+  return (
+    <div aria-hidden className="overflow-hidden rounded-card border border-line bg-surface shadow-warm-1">
+      <div className={`grid grid-cols-1 min-[480px]:grid-cols-2 ${cols}`}>
+        {Array.from({ length: count }, (_, i) => (
+          <div
+            key={i}
+            className="flex flex-col gap-1 border-line px-4 py-[18px] sm:px-[22px] [&:not(:last-child)]:border-b min-[480px]:[&:nth-child(odd)]:border-r lg:border-b-0 lg:[&:not(:last-child)]:border-r"
+          >
+            <TextBone className="text-[13px] font-semibold" widths={["w-24"]} />
+            <TextBone className="display text-[32px] leading-none" widths={["w-16"]} />
+            <TextBone className="mt-1 text-[13px]" widths={["w-36"]} />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

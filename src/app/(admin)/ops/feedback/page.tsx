@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { FeedbackInbox } from "@/components/ops/FeedbackInbox";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Note } from "@/components/ui/Note";
-import { SectionBar } from "@/components/ui/Page";
+import { PageHead } from "@/components/ui/Page";
 import Link from "next/link";
 import { loadFeedbackInbox } from "@/lib/api/admin-ops";
 
@@ -23,8 +23,8 @@ export default async function OpsFeedbackPage({ searchParams }: { searchParams: 
 
   if (res.kind !== "live") {
     return (
-      <div className="flex flex-col gap-5">
-        <SectionBar title="Feedback" context="Bug reports and feedback from members." />
+      <div className="flex flex-col gap-5 [&>header:first-child]:-mb-5">
+        <PageHead title="Feedback" context="Bug reports and feedback from members." />
         {res.kind === "forbidden" ? <Note tone="error">This account is not on the Mytheus staff list.</Note> : <ErrorState title="The feedback inbox could not be loaded" />}
       </div>
     );
@@ -39,8 +39,8 @@ export default async function OpsFeedbackPage({ searchParams }: { searchParams: 
   ];
 
   return (
-    <div className="flex flex-col gap-5">
-      <SectionBar title="Feedback" context="Bug reports and feedback members sent from Settings, Report a bug. Newest first; answer from the reporter's email." />
+    <div className="flex flex-col gap-5 [&>header:first-child]:-mb-5">
+      <PageHead title="Feedback" context="Bug reports and feedback members sent from Settings, Report a bug. Newest first; answer from the reporter's email." />
       <nav aria-label="Feedback by state" className="flex flex-wrap gap-2">
         {tabs.map((t) => (
           <Link

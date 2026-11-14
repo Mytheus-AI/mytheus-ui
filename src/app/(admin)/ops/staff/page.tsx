@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { StatCard, theadRowClass, thClass } from "@/components/admin/StatCard";
-import { ColumnChart } from "@/components/ops/charts";
+import { theadRowClass, thClass } from "@/components/admin/StatCard";
+import { KpiStrip } from "@/components/ops/viz/Figures";
+import { TrendPanel } from "@/components/ops/overview/TrendPanel";
 import { dayPoints } from "@/lib/ops-charts";
 import { SectionCard, cardPad } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Note } from "@/components/ui/Note";
-import { SectionBar } from "@/components/ui/Page";
+import { PageHead } from "@/components/ui/Page";
 import { loadStaff, myStaffId } from "@/lib/api/admin-ops";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { actionLabel } from "@/lib/ops";
@@ -27,14 +28,14 @@ export default async function OpsStaffPage() {
   const [res, mine] = await Promise.all([loadStaff(), myStaffId()]);
   if (res.kind !== "live") {
     return (
-      <div className="flex flex-col gap-5">
-        <SectionBar title="Staff" context="The Mytheus staff who can open this console." />
+      <>
+        <PageHead title="Staff" context="The Mytheus staff who can open this console." />
         {res.kind === "forbidden" ? (
           <Note tone="error">This account is not on the Mytheus staff list.</Note>
         ) : (
           <ErrorState title="The staff list could not be loaded" />
         )}
-      </div>
+      </>
     );
   }
 
@@ -46,16 +47,21 @@ export default async function OpsStaffPage() {
     return s?.name || s?.email || `${id.slice(0, 8)}…`;
   };
   const active30 = r.staff.filter((s) => s.actions_30d > 0).length;
+  const busiest = Math.max(1, ...r.staff.map((s) => s.actions_30d));
+  const calls14 = r.activity_by_day.reduce((s, d) => s + d.count, 0);
 
   return (
-    <div className="flex flex-col gap-5">
-      <SectionBar title="Staff" context="The Mytheus staff who can open this console, and everything they did in it." />
-
-      <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="On the staff list" value={r.staff.length} hint="From MYTHEUS_STAFF_CLERK_USER_IDS" />
-        <StatCard label="Active in 30 days" value={active30} hint={active30 === r.staff.length ? "Everyone" : `${r.staff.length - active30} quiet`} />
-        <StatCard label="Calls in 14 days" value={whole.format(r.activity_by_day.reduce((s, d) => s + d.count, 0))} hint="Reads included" />
-      </div>
+    <>
+      <PageHead title="Staff" context="The Mytheus staff who can open this console, and everything they did in it." />
+      <div className="flex flex-col gap-5 xl:gap-6">
+      <KpiStrip
+        label="Staff figures"
+        items={[
+          { label: "On the staff list", value: r.staff.length, hint: "From MYTHEUS_STAFF_CLERK_USER_IDS" },
+          { label: "Active in 30 days", value: active30, hint: active30 === r.staff.length ? "Everyone" : `${r.staff.length - active30} quiet` },
+          { label: "Calls in 14 days", value: whole.format(calls14), hint: `Reads included, about ${whole.format(Math.round(calls14 / 14))} a day` },
+        ]}
+      />
 
       {mine ? (
         <SectionCard title="Your Staff ID" headingId="mine-heading" description="Give this to a workspace owner or admin when they grant you support access to their workspace.">
@@ -105,7 +111,12 @@ export default async function OpsStaffPage() {
                   {fmtWhen(s.last_seen_at) || "Never"}
                 </td>
                 <td data-label="Actions, 30 days" className="py-3 pl-5 pr-[22px] text-right tabular-nums text-ink-2">
-                  {whole.format(s.actions_30d)}
+                  <span className="inline-flex items-center justify-end gap-3">
+                    <span aria-hidden className="hidden h-1.5 w-20 rounded-full bg-bg-2 sm:block">
+                      <span className={`block h-full rounded-full bg-pill ${s.actions_30d ? "min-w-1.5" : ""}`} style={{ width: `${(s.actions_30d / busiest) * 100}%` }} />
+                    </span>
+                    {whole.format(s.actions_30d)}
+                  </span>
                 </td>
               </tr>
             ))}
@@ -114,11 +125,11 @@ export default async function OpsStaffPage() {
       </SectionCard>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <SectionCard title="Activity" headingId="activity-heading" description="Console calls per day, last 14 days. Today in coral." clip={false}>
-          <div className={cardPad}>
-            <ColumnChart points={dayPoints(r.activity_by_day)} caption="Ops console calls per day, last 14 days" unit={["call", "calls"]} />
-          </div>
-        </SectionCard>
+        <TrendPanel
+          title="Console calls per day"
+          description="Last 14 days, every staff member, reads included. Today, so far, in coral."
+          series={[{ key: "calls", label: "Calls", caption: "Ops console calls per day, last 14 days", unit: ["call", "calls"], points: dayPoints(r.activity_by_day) }]}
+        />
         <SectionCard title="How someone becomes staff" headingId="how-heading">
           <ol className={`${cardPad} m-0 flex list-decimal flex-col gap-2.5 pl-9 text-[14px] leading-relaxed text-ink-2 sm:pl-10`}>
             <li>They sign up for a new, separate Mytheus account and stop at the page that asks them to join or create an organization. An account that belongs to a workspace can never be staff.</li>
@@ -169,6 +180,7 @@ export default async function OpsStaffPage() {
           </table>
         )}
       </SectionCard>
-    </div>
+      </div>
+    </>
   );
 }

@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionCard } from "@/components/ui/Card";
 import { FieldRow as SettingsRow, TextInput } from "@/components/ui/Form";
 import { Note } from "@/components/ui/Note";
-import { SectionBar } from "@/components/ui/Page";
+import { PageHead } from "@/components/ui/Page";
 import { theadRowClass, thClass } from "@/components/admin/StatCard";
 import { ActionForm } from "@/components/admin/ActionForm";
 import { FormSelect } from "@/components/admin/FormSelect";
@@ -35,8 +35,8 @@ export default async function OpsFlagsPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-5">
-      <SectionBar title="Feature flags" context="Turn features on for every tenant or for one. A tenant flag overrides the global one for that tenant." />
+    <div className="flex flex-col gap-5 [&>header:first-child]:-mb-5">
+      <PageHead title="Feature flags" context="Turn features on for every tenant or for one. A tenant flag overrides the global one for that tenant." />
 
       {res.kind === "forbidden" ? (
         <Note tone="error">This account is not on the Mytheus staff list.</Note>

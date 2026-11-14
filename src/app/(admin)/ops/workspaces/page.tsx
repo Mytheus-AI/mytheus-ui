@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { StatCard } from "@/components/admin/StatCard";
+import { KpiStrip } from "@/components/ops/viz/Figures";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Note } from "@/components/ui/Note";
-import { SectionBar } from "@/components/ui/Page";
+import { PageHead } from "@/components/ui/Page";
 import { TenantDirectory } from "@/components/ops/TenantDirectory";
 import { loadOpsTenants } from "@/lib/api/admin-ops";
 
@@ -18,15 +18,18 @@ export default async function OpsWorkspacesPage() {
   const suspended = tenants.filter((t) => t.status === "suspended").length;
 
   return (
-    <div className="flex flex-col gap-5">
-      <SectionBar title="Tenants" context="Every workspace on the platform. Opening this list is recorded in the ops audit log." />
+    <div className="flex flex-col gap-5 [&>header:first-child]:-mb-5">
+      <PageHead title="Workspaces" context="Every workspace on the platform. Open one for its placement, usage, flags and support access. Opening this list is recorded in the ops audit log." />
       {res.kind === "live" ? (
         <>
-          <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 lg:grid-cols-3">
-            <StatCard label="Tenants" value={res.data.truncated ? `${tenants.length}+` : tenants.length} hint="Every workspace on the platform" />
-            <StatCard label="Suspended" value={suspended} hint={suspended ? "Members have no access" : "None suspended"} />
-            <StatCard label="Members" value={tenants.reduce((s, t) => s + (Number(t.member_count) || 0), 0)} hint="Across every tenant" />
-          </div>
+          <KpiStrip
+            label="Workspace figures"
+            items={[
+              { label: "Workspaces", value: res.data.truncated ? `${tenants.length}+` : tenants.length, hint: "Every workspace on the platform" },
+              { label: "Suspended", value: suspended, hint: suspended ? "Members have no access" : "None suspended" },
+              { label: "Members", value: tenants.reduce((s, t) => s + (Number(t.member_count) || 0), 0), hint: "Across every workspace" },
+            ]}
+          />
           {res.data.truncated ? (
             <Note tone="warning">Showing the newest {tenants.length} tenants. Older tenants are not listed here.</Note>
           ) : null}

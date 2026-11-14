@@ -9,7 +9,8 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { textareaClass } from "@/components/ui/Form";
 import { Note } from "@/components/ui/Note";
 import { ColumnChart, Meter } from "@/components/ops/charts";
-import { weekPoints } from "@/lib/ops-charts";
+import { RegionMap } from "@/components/ops/map/RegionMap";
+import { regionLabel, weekPoints } from "@/lib/ops-charts";
 import { notifySuccess } from "@/lib/toast";
 import {
   beginSupportSession,
@@ -412,6 +413,21 @@ function MoveSection({ detail: d, refresh }: { detail: TenantDetail; refresh: ()
       description="Mytheus runs one database cell today (pool-us-1), so a move is recorded here for the ops team and carried out by hand. Nothing moves automatically."
     >
       <div className="flex flex-col gap-3">
+        <div className="overflow-hidden rounded-ctl border border-line bg-surface-2 px-2 py-3">
+          <RegionMap
+            compact
+            caption={
+              openMove
+                ? `Map: data lives in ${regionLabel(here)}, with a requested move to ${regionLabel(openMove.to_region)}`
+                : `Map: data lives in ${regionLabel(here)}`
+            }
+            hubs={[
+              { region: here, workspaces: 1, detail: [d.residency ? `cell ${d.residency.db_cell}` : "default placement"] },
+              ...(openMove && openMove.to_region !== here ? [{ region: openMove.to_region, workspaces: 0, detail: [`requested, cell ${openMove.to_cell}`] }] : []),
+            ]}
+            route={openMove && openMove.to_region !== here ? { from: here, to: openMove.to_region } : null}
+          />
+        </div>
         {d.residency ? (
           <p className="text-[14px] text-ink-2">
             Data lives in <span className="font-semibold text-ink">{d.residency.region.toUpperCase()}</span>, cell{" "}
