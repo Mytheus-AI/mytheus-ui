@@ -7,42 +7,35 @@ import { failureNote } from "@/lib/voice/catalog";
 import { myteSpeaker, useVoiceSpeed } from "@/lib/voice/myte-voice";
 import { failureCopy } from "@/lib/ask-myte/compose";
 import { plainText, type Answer } from "@/lib/ask-myte/reducer";
-import { initialVoice, levelFrom, phaseWords, plushFor, spaceEvent, voiceReducer } from "@/lib/ask-myte/voice-machine";
+import { firstNameOf, initialVoice, phaseWords, pickGreeting, plushFor, spaceEvent, voiceReducer } from "@/lib/ask-myte/voice-machine";
+import { listenFailureNote, micErrorNote, transcribe, type RollingRecorder } from "@/lib/voice/listen";
+import { MicError, openMic, type Mic } from "@/lib/voice/mic";
+import { createVad, type Vad } from "@/lib/voice/vad";
 import type { AskPage, AskScope } from "@/lib/ask-myte/types";
 import { sourceKindLabel, sourceTitle } from "@/lib/ask-myte/citations";
 import { AnswerText } from "./parts";
 import type { AskMyteState } from "./useAskMyte";
 
 /* Talk to Myte (ADR-0049 F6), loaded only when someone presses Talk. A large live plush in the
-   middle reacts to the conversation: it listens with the microphone's level (Web Audio analyser),
-   thinks while the answer's steps run, and speaks the answer in its own voice (the self-hosted
-   Kokoro voice, ADR-0050) with a level read from that voice's audio, then listens again. A pause of about 1.2 s after you stop talking sends what it heard. The words
-   heard and the answer, with its citations, are on screen and in live regions; the turns are the
-   same thread as typing.
+   middle reacts to the conversation. It greets the person first, in its own voice (the
+   self-hosted Kokoro voice, ADR-0050), then listens: the microphone is recorded and
+   voice-activity detection on its level (lib/voice/vad.ts) finds where speech starts (with a
+   pre-roll, so the first syllable is kept) and ends (about 1.2 s of quiet, 30 s at most). The
+   clip is transcribed by the server (POST /api/voice/transcribe, faster-whisper), so it works in
+   every browser that can record, not only where the browser's own recognition works. The words
+   go into the normal Ask Myte thread, the answer is spoken, and it listens again. It never
+   records while it speaks; Space interrupts it.
 
-   Keyboard: Space talks, sends what it heard, or stops it speaking; Esc ends. Controls: pause,
+   Keyboard: Space interrupts, sends what it is hearing, or pauses; Esc ends. Controls: pause,
    mute (answers are shown but not read aloud), end. */
 
-type Recognition = {
-  lang: string;
-  interimResults: boolean;
-  continuous: boolean;
-  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }>; resultIndex: number }) => void) | null;
-  onend: (() => void) | null;
-  onerror: ((e: { error?: string }) => void) | null;
-  start: () => void;
-  stop: () => void;
-  abort: () => void;
-};
-
-function recognitionCtor(): (new () => Recognition) | null {
-  const w = window as unknown as { SpeechRecognition?: new () => Recognition; webkitSpeechRecognition?: new () => Recognition };
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
-}
+const TICK_MS = 50;
+const SLOW_TRANSCRIBE_MS = 5000;
 
 export default function VoiceMode({
   conv,
   persona,
+  firstName = "",
   scope,
   page,
   isAdmin,
@@ -51,6 +44,7 @@ export default function VoiceMode({
 }: {
   conv: AskMyteState;
   persona: { name: string; seed: string; personality: string | null };
+  firstName?: string;
   scope: AskScope;
   page: AskPage | null;
   isAdmin: boolean;
@@ -61,10 +55,17 @@ export default function VoiceMode({
   const [s, dispatch] = useReducer(voiceReducer, initialVoice);
   const [openSource, setOpenSource] = useState<number | null>(null);
   const root = useRef<HTMLDivElement>(null);
-  const rec = useRef<Recognition | null>(null);
+  const meter = useRef<HTMLSpanElement>(null);
   const level = useRef(0);
-  const audio = useRef<{ ctx: AudioContext; analyser: AnalyserNode; stream: MediaStream; buf: Uint8Array<ArrayBuffer> } | null>(null);
+  const mic = useRef<Mic | null>(null);
+  const micOpening = useRef<Promise<Mic | null> | null>(null);
+  const vad = useRef<Vad>(createVad());
+  const rec = useRef<RollingRecorder | null>(null);
+  const handledClip = useRef(0);
+  const transcribing = useRef<AbortController | null>(null);
+  const [slow, setSlow] = useState(false);
   const [voiceNote, setVoiceNote] = useState<string | null>(null);
+  const [greeting] = useState(() => pickGreeting(persona.name, firstNameOf(firstName)));
   const [speed] = useVoiceSpeed();
   const spokenKey = useRef<string | null>(null);
   const sentTurn = useRef(0);
@@ -72,110 +73,108 @@ export default function VoiceMode({
   const settledKey = useRef<string | null>(null);
   const phaseRef = useRef(s.phase);
   phaseRef.current = s.phase;
+  const mounted = useRef(true);
 
-  /* ---------------- the microphone level ---------------- */
-  const startMeter = useCallback(async () => {
-    if (audio.current || !navigator.mediaDevices?.getUserMedia) return;
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
-      const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!Ctx) return;
-      const ctx = new Ctx();
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 512;
-      ctx.createMediaStreamSource(stream).connect(analyser);
-      audio.current = { ctx, analyser, stream, buf: new Uint8Array(new ArrayBuffer(analyser.fftSize)) };
-    } catch {
-      // No meter (permission is asked again by recognition, which reports its own error).
-    }
+  /* ---------------- the microphone ---------------- */
+  const ensureMic = useCallback((): Promise<Mic | null> => {
+    if (mic.current) return Promise.resolve(mic.current);
+    micOpening.current ??= openMic()
+      .then((m) => {
+        if (!mounted.current) {
+          m.close();
+          return null;
+        }
+        mic.current = m;
+        return m;
+      })
+      .catch((err: unknown) => {
+        micOpening.current = null;
+        if (mounted.current) dispatch({ type: "mic-error", message: micErrorNote(err instanceof MicError ? err.kind : null) });
+        return null;
+      });
+    return micOpening.current;
   }, []);
 
-  const stopMeter = useCallback(() => {
-    const a = audio.current;
-    audio.current = null;
-    a?.stream.getTracks().forEach((t) => t.stop());
-    void a?.ctx.close().catch(() => {});
+  const closeMic = useCallback(() => {
+    rec.current?.cancel();
+    rec.current = null;
+    mic.current?.close();
+    mic.current = null;
+    micOpening.current = null;
   }, []);
 
-  // One loop reads the level: the mic while listening, the words while speaking (eased down).
+  // One loop: the level for the plush and the meter, and voice-activity detection while listening.
   useEffect(() => {
-    let raf = 0;
-    const loop = () => {
-      const a = audio.current;
-      if (phaseRef.current === "listening" && a) {
-        a.analyser.getByteTimeDomainData(a.buf);
-        level.current = level.current * 0.6 + levelFrom(a.buf) * 0.4;
-      } else if (phaseRef.current === "speaking") {
-        // The Myte's own voice, read from the speaker's analyser.
+    const t = window.setInterval(() => {
+      const phase = phaseRef.current;
+      const m = mic.current;
+      if (phase === "listening" && m) {
+        const now = Date.now();
+        const lv = m.level();
+        level.current = level.current * 0.5 + lv * 0.5;
+        if (!rec.current) {
+          // Listening (again): recording starts in the background, the detector starts over.
+          rec.current = m.rolling();
+          rec.current.arm();
+          vad.current.reset(now);
+        }
+        const r = rec.current;
+        r.tick();
+        const ev = vad.current.push(lv, now);
+        if (ev === "start") {
+          r.begin();
+          dispatch({ type: "speech-start" });
+        } else if (ev === "end" || ev === "cap") dispatch({ type: "speech-end" });
+        else if (ev === "discard") {
+          // A cough or a bump: nothing to send; keep listening.
+          r.arm();
+          dispatch({ type: "speech-discard" });
+        }
+      } else if (phase === "speaking" || phase === "greeting") {
         level.current = myteSpeaker().level();
-      } else level.current *= 0.85;
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
+      } else level.current *= 0.8;
+      if (meter.current) meter.current.style.transform = `scaleX(${Math.min(1, level.current * 1.6).toFixed(3)})`;
+    }, TICK_MS);
+    return () => window.clearInterval(t);
   }, []);
 
-  /* ---------------- listening ---------------- */
-  const stopListening = useCallback(() => {
+  // Half-duplex: recording runs only while listening; leaving it any other way drops the audio.
+  useEffect(() => {
+    if (s.phase === "listening") void ensureMic();
+    else if (s.phase !== "transcribing") {
+      rec.current?.cancel();
+      rec.current = null;
+    }
+  }, [s.phase, ensureMic]);
+
+  /* ---------------- transcribing ---------------- */
+  useEffect(() => {
+    if (s.phase !== "transcribing" || s.clip <= handledClip.current) return;
+    handledClip.current = s.clip;
     const r = rec.current;
     rec.current = null;
-    if (r) {
-      r.onend = null;
-      try {
-        r.abort();
-      } catch {
-        // already stopped
+    vad.current.finish(Date.now());
+    const ctrl = new AbortController();
+    transcribing.current = ctrl;
+    setSlow(false);
+    const slowTimer = window.setTimeout(() => setSlow(true), SLOW_TRANSCRIBE_MS);
+    void (async () => {
+      const clip = r ? await r.finish() : null;
+      if (!clip || !clip.size) {
+        if (!ctrl.signal.aborted) dispatch({ type: "transcript", text: "" });
+        return;
       }
-    }
-  }, []);
-
-  const startListening = useCallback(() => {
-    const Ctor = recognitionCtor();
-    if (!Ctor || rec.current) return;
-    const r = new Ctor();
-    r.lang = document.documentElement.lang || navigator.language || "en-US";
-    r.interimResults = true;
-    r.continuous = true;
-    let finalText = "";
-    r.onresult = (e) => {
-      let interim = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const res = e.results[i];
-        if (res.isFinal) finalText += res[0].transcript;
-        else interim += res[0].transcript;
-      }
-      dispatch({ type: "heard", text: `${finalText}${interim}`.replace(/\s+/g, " ").trim(), at: Date.now() });
-    };
-    r.onerror = (e) => {
-      if (e.error === "not-allowed" || e.error === "service-not-allowed") dispatch({ type: "mic-error", message: "Your browser blocked the microphone. Allow it for this site, then press Resume." });
-      else if (e.error === "audio-capture") dispatch({ type: "mic-error", message: "No microphone was found." });
-    };
-    // Recognition stops itself after a while of quiet: start it again while still listening.
-    r.onend = () => {
-      rec.current = null;
-      if (phaseRef.current === "listening") window.setTimeout(() => phaseRef.current === "listening" && startListening(), 120);
-    };
-    rec.current = r;
-    try {
-      r.start();
-    } catch {
-      rec.current = null;
-    }
-  }, []);
-
-  useEffect(() => {
-    if (s.phase === "listening") {
-      void startMeter();
-      startListening();
-    } else stopListening();
-  }, [s.phase, startListening, stopListening, startMeter]);
-
-  // The silence timer.
-  useEffect(() => {
-    if (s.phase !== "listening") return;
-    const t = window.setInterval(() => dispatch({ type: "tick", at: Date.now() }), 150);
-    return () => window.clearInterval(t);
-  }, [s.phase]);
+      const res = await transcribe(clip, { language: document.documentElement.lang, signal: ctrl.signal });
+      if (ctrl.signal.aborted) return;
+      if (res.ok) dispatch({ type: "transcript", text: res.text });
+      else if (res.reason !== "aborted")
+        dispatch({ type: "transcribe-failed", message: listenFailureNote(res.reason), fatal: res.reason === "listening_not_connected" || res.reason === "signed_out" || res.reason === "unsupported" });
+    })().finally(() => {
+      window.clearTimeout(slowTimer);
+      if (transcribing.current === ctrl) transcribing.current = null;
+      setSlow(false);
+    });
+  }, [s.phase, s.clip]);
 
   /* ---------------- sending and the answer ---------------- */
   useEffect(() => {
@@ -205,13 +204,25 @@ export default function VoiceMode({
   }, [s.phase, lastAnswer, persona.name, isAdmin]);
 
   /* ---------------- speaking ---------------- */
-  // The answer in the Myte's own voice (ADR-0050), through the shared speaker. Pause holds the
-  // sound where it is and Resume carries on; interrupting, muting or ending stops it. If the voice
-  // is unavailable it says so quietly and listens again; the answer stays on screen.
+  // The greeting, then each answer, in the Myte's own voice (ADR-0050), through the shared
+  // speaker. Pause holds the sound where it is and Resume carries on; interrupting, muting or
+  // ending stops it. If the voice is unavailable it says so quietly and listens; the words stay
+  // on screen.
   useEffect(() => {
     const speaker = myteSpeaker();
-    const key = lastAnswer ? `talk:${lastAnswer.key}` : null;
-    const owns = () => key !== null && speaker.getSnapshot().key === key;
+    const key = s.phase === "greeting" ? "talk:greeting" : lastAnswer ? `talk:${lastAnswer.key}` : null;
+    const owns = (k: string | null = key) => k !== null && speaker.getSnapshot().key === k;
+    if (s.phase === "greeting") {
+      if (spokenKey.current === "talk:greeting") return;
+      spokenKey.current = "talk:greeting";
+      setVoiceNote(null);
+      void speaker.speak({ key: "talk:greeting", text: greeting, speed }).then((outcome) => {
+        if (outcome === "error") setVoiceNote(failureNote(speaker.getSnapshot().error ?? "voice_failed"));
+        if (outcome !== "stopped") dispatch({ type: "greeted" });
+      });
+      return;
+    }
+    if (owns("talk:greeting")) speaker.stop("talk:greeting");
     if (s.phase === "speaking" && lastAnswer && key) {
       if (owns() && speaker.getSnapshot().status === "paused") {
         speaker.resume();
@@ -236,17 +247,22 @@ export default function VoiceMode({
 
   /* ---------------- start, end, keys ---------------- */
   useEffect(() => {
-    dispatch({ type: "start" });
-    // Opening voice mode is a gesture: it lets the answers be heard later.
+    mounted.current = true;
+    // The tap on Talk unlocked the audio (primeTalk); this keeps it unlocked if it came another way.
     myteSpeaker().unlock();
+    // The Myte speaks first; the microphone opens meanwhile, so asking permission overlaps the greeting.
+    dispatch({ type: "start", greet: true });
+    void ensureMic();
     const t = window.setTimeout(() => root.current?.querySelector<HTMLElement>("[data-voice-primary]")?.focus(), 30);
     return () => {
+      mounted.current = false;
+      spokenKey.current = null;
       window.clearTimeout(t);
-      stopListening();
-      stopMeter();
+      transcribing.current?.abort();
+      closeMic();
       if (myteSpeaker().getSnapshot().key?.startsWith("talk:")) myteSpeaker().stop();
     };
-  }, [stopListening, stopMeter]);
+  }, [ensureMic, closeMic]);
 
   const end = useCallback(() => {
     dispatch({ type: "end" });
@@ -303,16 +319,16 @@ export default function VoiceMode({
 
   const primary =
     s.phase === "listening"
-      ? s.heard.trim()
+      ? s.talking
         ? { label: "Send now", icon: Microphone, ev: { type: "send-now" } as const }
         : { label: "Pause", icon: Pause, ev: { type: "pause" } as const }
-      : s.phase === "speaking"
+      : s.phase === "speaking" || s.phase === "greeting"
         ? { label: "Stop speaking", icon: Microphone, ev: { type: "interrupt" } as const }
         : s.phase === "paused"
           ? { label: "Resume", icon: Play, ev: { type: "resume" } as const }
           : s.phase === "idle" || s.phase === "ended"
             ? { label: "Start talking", icon: Microphone, ev: { type: "start" } as const }
-            : { label: "Looking", icon: Pause, ev: null };
+            : { label: "Thinking", icon: Pause, ev: null };
 
   return (
     <div
@@ -341,18 +357,34 @@ export default function VoiceMode({
           {words}
         </p>
         <p id={`${uid}-k`} className="mt-1 hidden text-center text-[13.5px] text-ink-3 sm:block">
-          Space to talk, send or interrupt. Esc to end.
+          Just talk. Space sends now or interrupts. Esc to end.
         </p>
 
         <div className="mt-6 min-h-[56px] w-full">
-          {s.phase === "listening" || s.heard ? (
-            <p className="text-center text-[18px] leading-relaxed text-ink" aria-live="polite">
-              <span className="sr-only">You said: </span>
-              {s.heard || <span className="text-ink-3">Go ahead, I&apos;m listening.</span>}
+          {s.phase === "greeting" ? (
+            <p className="text-center text-[18px] leading-relaxed text-ink">
+              <span className="sr-only">{persona.name} said: </span>&ldquo;{greeting}&rdquo;
             </p>
-          ) : s.sent && s.phase !== "idle" ? (
+          ) : s.phase === "listening" ? (
+            <div className="flex flex-col items-center gap-2.5" aria-live="polite">
+              <p className="text-center text-[18px] leading-relaxed text-ink">{s.talking ? "Hearing you…" : "Listening…"}</p>
+              <span className="block h-1.5 w-40 overflow-hidden rounded-full bg-line" aria-hidden>
+                <span ref={meter} className="block h-full w-full origin-left scale-x-0 rounded-full bg-signal-ink transition-transform duration-75 motion-reduce:transition-none" />
+              </span>
+              {!s.talking && !s.sent ? <p className="text-center text-[14px] text-ink-3">Just start talking. A short pause sends it.</p> : null}
+            </div>
+          ) : s.sent && s.phase !== "idle" && s.phase !== "transcribing" ? (
             <p className="text-center text-[16px] leading-relaxed text-ink-3">
               <span className="sr-only">You asked: </span>&ldquo;{s.sent}&rdquo;
+            </p>
+          ) : s.phase === "transcribing" && slow ? (
+            <p className="text-center text-[14px] text-ink-3" role="status">
+              Getting ready to listen. The first time takes a little longer.
+            </p>
+          ) : null}
+          {s.note && !s.error ? (
+            <p className="mt-3 text-center text-[14px] text-ink-3" role="status">
+              {s.note}
             </p>
           ) : null}
           {voiceNote && !s.error ? (

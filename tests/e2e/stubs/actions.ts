@@ -554,13 +554,20 @@ export async function saveCapturePreferences(prefs: { slack_enabled: boolean; em
 export async function briefMe() {
   return { ok: true as const, briefing: { ...BRIEFING_WRITING, status: "pending" as const } };
 }
+// A test can make the recorded voice pending, then ready (`window.__briefingAudio()` answers the
+// status for each poll) and give it a file (`window.__briefingAudioUrl`).
+type AudioTestHooks = { __briefingAudio?: () => "none" | "pending" | "ready" | "failed"; __briefingAudioUrl?: string };
 export async function pollBriefing() {
+  const hooks = globalThis as unknown as AudioTestHooks;
+  if (hooks.__briefingAudio) return { ok: true as const, briefing: { ...BRIEFING_READY, audio: { ...BRIEFING_READY.audio, status: hooks.__briefingAudio() } } };
   return { ok: true as const, briefing: BRIEFING_READY };
 }
 export async function markBriefingHeard() {
   return { ok: true as const, briefing: { ...BRIEFING_READY, listened_at: "2026-11-11T10:05:00Z" } };
 }
 export async function briefingAudioUrl() {
+  const url = (globalThis as unknown as AudioTestHooks).__briefingAudioUrl;
+  if (url) return { ok: true as const, url, expiresAt: "2026-11-11T11:00:00Z" };
   return { ok: false as const, message: "No recorded voice in this test." };
 }
 export async function saveBriefingPreferences(prefs: Record<string, unknown>) {

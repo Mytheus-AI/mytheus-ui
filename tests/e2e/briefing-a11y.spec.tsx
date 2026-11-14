@@ -10,7 +10,7 @@ import { expect, test } from "@playwright/experimental-ct-react";
 import type { Page } from "@playwright/test";
 import { BriefingHarness } from "./BriefingHarness";
 import { BRIEFING } from "./briefing-fixture";
-import { fakeVoice } from "./voice-fake";
+import { fakeVoice, wav } from "./voice-fake";
 
 async function axe(page: Page) {
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).include(".mx-app").analyze();
@@ -132,7 +132,9 @@ test("voice unavailable: a quiet note, the transcript stays, no other voice", as
   await expect(page.getByText("Voice is unavailable right now. The whole briefing is written out below.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Play briefing" })).toBeVisible();
   await expect(page.getByRole("list", { name: "Transcript" }).getByRole("listitem")).toHaveCount(6);
-  expect(failed.length).toBe(1);
+  // The segments are rendered ahead three at a time, so up to three asks fail together; after
+  // that it backs off and Play asks nothing more.
+  expect(failed.length).toBeLessThanOrEqual(3);
 });
 
 test("Brief me: being written, then ready", async ({ mount, page }) => {
@@ -172,4 +174,61 @@ test("reduced motion: the speaking ring does not animate", async ({ mount, page 
   await page.getByRole("button", { name: "Play briefing" }).click();
   const anim = await page.locator(".brf-face.is-speaking .brf-ring").first().evaluate((el) => getComputedStyle(el).animationName);
   expect(anim).toBe("none");
+});
+
+/* ---------------- the recorded voice: pending, then ready; the live voice rendered ahead ---------------- */
+
+test("a recording still being made: Preparing…, Play waits, then the file plays the moment it is ready", async ({ mount, page }) => {
+  await page.route("**/fake/briefing.wav", (route) => route.fulfill({ status: 200, contentType: "audio/wav", body: wav(4000) }));
+  const setup = () => {
+    let polls = 0;
+    const w = window as unknown as Record<string, unknown>;
+    w.__briefingAudio = () => (++polls >= 2 ? "ready" : "pending");
+    w.__briefingAudioUrl = "/fake/briefing.wav";
+  };
+  await page.addInitScript(setup);
+  await page.evaluate(setup);
+  await mount(<BriefingHarness view="pending" />);
+  await expect(page.getByText("Preparing your briefing's voice…")).toBeVisible();
+  await page.getByRole("button", { name: "Play briefing" }).click();
+  await expect(page.getByText("It starts the moment it is ready.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Cancel: preparing the voice" })).toBeVisible();
+  // Two polls, two seconds apart: ready, and the recorded file plays.
+  await expect(page.getByText("Recorded voice")).toBeVisible({ timeout: 8000 });
+  await expect(page.getByRole("button", { name: "Pause briefing" })).toBeVisible({ timeout: 5000 });
+  await expect(page.getByText("Preparing your briefing's voice…")).toHaveCount(0);
+  // Nothing was spoken live while it waited.
+  expect(spoken.length).toBe(0);
+  await axe(page);
+});
+
+test("a recording that fails: the live voice, with every segment rendered ahead three at a time", async ({ mount, page }) => {
+  await page.unroute("**/api/voice/speech");
+  const live = await fakeVoice(page, { msPerWord: 20, delayMs: 150 });
+  const setup = () => {
+    (window as unknown as Record<string, unknown>).__briefingAudio = () => "failed";
+  };
+  await page.addInitScript(setup);
+  await page.evaluate(setup);
+  await mount(<BriefingHarness view="pending" />);
+  await expect(page.getByText("Preparing your briefing's voice…")).toHaveCount(0, { timeout: 6000 });
+  // Shown, not yet played: every segment is already being rendered, in order, three at a time.
+  await expect.poll(() => live.length, { timeout: 8000 }).toBeGreaterThanOrEqual(BRIEFING.segments.length);
+  expect(live.stats.maxInFlight).toBeLessThanOrEqual(3);
+  expect(live.stats.maxInFlight).toBeGreaterThan(1);
+  expect(live[0]!.text).toBe(BRIEFING.segments[0]!.text.split(/(?<=[.!?])\s/)[0]);
+  // Wait for the rendering to settle (some segments are more than one chunk).
+  await expect
+    .poll(async () => {
+      const n = live.length;
+      await page.waitForTimeout(400);
+      return live.length === n && live.stats.inFlight === 0;
+    })
+    .toBe(true);
+  const rendered = live.length;
+  await page.getByRole("button", { name: "Play briefing" }).click();
+  await expect(page.getByRole("button", { name: "Pause briefing" })).toBeVisible();
+  // It runs on through every point to the end without asking the network again.
+  await expect(page.getByRole("button", { name: "Play briefing again" })).toBeVisible({ timeout: 20_000 });
+  expect(live.length).toBe(rendered);
 });

@@ -2,6 +2,9 @@
  * The browser's audio output for the speaker: one AudioContext, decoded chunks played through a
  * gain and an analyser (the plush's speaking level), pause and resume by suspending the context.
  * Created on first use, in the browser only.
+ *
+ * The context is shared (`sharedAudioContext`): Talk mode reads the microphone's level through
+ * the same one, so a single tap (opening Talk) unlocks both the Myte's voice and the meter.
  */
 
 import type { AudioOut, Clip, PlayingClip } from "./speaker.ts";
@@ -19,6 +22,16 @@ function levelOf(buf: Uint8Array): number {
   return Math.min(1, Math.sqrt(sum / (buf.length || 1)) * 3.2);
 }
 
+let sharedCtx: AudioContext | null = null;
+
+/** The app's one AudioContext (created on first use; call it first from a click to unlock it). */
+export function sharedAudioContext(): AudioContext {
+  if (sharedCtx && sharedCtx.state !== "closed") return sharedCtx;
+  const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  sharedCtx = new Ctx();
+  return sharedCtx;
+}
+
 export function createWebAudioOut(): AudioOut {
   let ctx: AudioContext | null = null;
   let analyser: AnalyserNode | null = null;
@@ -28,8 +41,7 @@ export function createWebAudioOut(): AudioOut {
 
   const context = (): AudioContext => {
     if (ctx) return ctx;
-    const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    ctx = new Ctx();
+    ctx = sharedAudioContext();
     analyser = ctx.createAnalyser();
     analyser.fftSize = 512;
     analyser.connect(ctx.destination);

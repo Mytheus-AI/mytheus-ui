@@ -1,57 +1,116 @@
 // Run: npm test
+// Talk mode's state machine: greet, listen (VAD events), transcribe, think, speak, listen again;
+// half-duplex, barge-in, pause, mute, errors, and the greeting lines.
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { initialVoice, levelFrom, phaseWords, plushFor, SILENCE_MS, spaceEvent, voiceReducer, type VoiceEvent, type VoiceState } from "../src/lib/ask-myte/voice-machine.ts";
+import {
+  NOT_CAUGHT,
+  firstNameOf,
+  greetingLines,
+  initialVoice,
+  levelFrom,
+  phaseWords,
+  pickGreeting,
+  plushFor,
+  recording,
+  spaceEvent,
+  voiceReducer,
+  type VoiceEvent,
+  type VoiceState,
+} from "../src/lib/ask-myte/voice-machine.ts";
 
 const run = (events: VoiceEvent[], from: VoiceState = initialVoice) => events.reduce(voiceReducer, from);
 
-test("a full turn: listen, a pause sends, think, speak, listen again", () => {
-  let s = run([{ type: "start" }, { type: "heard", text: "what do I owe", at: 1000 }]);
+test("a full turn: greet, listen, speech ends, transcribe, think, speak, listen again", () => {
+  let s = run([{ type: "start", greet: true }]);
+  assert.equal(s.phase, "greeting");
+  assert.equal(recording(s), false, "never records while it speaks");
+  assert.equal(plushFor(s.phase), "speaking");
+  s = voiceReducer(s, { type: "greeted" });
   assert.equal(s.phase, "listening");
-  s = voiceReducer(s, { type: "tick", at: 1000 + SILENCE_MS - 1 });
-  assert.equal(s.phase, "listening");
-  s = voiceReducer(s, { type: "tick", at: 1000 + SILENCE_MS });
+  assert.equal(recording(s), true);
+  s = voiceReducer(s, { type: "speech-start" });
+  assert.equal(s.talking, true);
+  s = voiceReducer(s, { type: "speech-end" });
+  assert.equal(s.phase, "transcribing");
+  assert.equal(s.clip, 1);
+  assert.equal(plushFor(s.phase), "thinking");
+  assert.equal(phaseWords(s.phase, "Pip"), "Thinking…");
+  s = voiceReducer(s, { type: "transcript", text: "  what do I owe  " });
   assert.equal(s.phase, "thinking");
   assert.equal(s.sent, "what do I owe");
   assert.equal(s.turn, 1);
-  assert.equal(s.heard, "");
   s = voiceReducer(s, { type: "answer-done", spoken: true });
   assert.equal(s.phase, "speaking");
+  assert.equal(recording(s), false);
   s = voiceReducer(s, { type: "spoken" });
   assert.equal(s.phase, "listening");
 });
 
-test("silence without words never sends", () => {
-  const s = run([{ type: "start" }, { type: "tick", at: 99_999 }]);
+test("speech-end without speech does nothing; a discarded blip keeps listening", () => {
+  let s = run([{ type: "start" }, { type: "speech-end" }]);
   assert.equal(s.phase, "listening");
+  assert.equal(s.clip, 0);
+  s = run([{ type: "speech-start" }, { type: "speech-discard" }], s);
+  assert.equal(s.phase, "listening");
+  assert.equal(s.talking, false);
+  assert.equal(s.clip, 0);
+});
+
+test("an empty transcript says it didn't catch that and listens again", () => {
+  const s = run([{ type: "start" }, { type: "speech-start" }, { type: "speech-end" }, { type: "transcript", text: " " }]);
+  assert.equal(s.phase, "listening");
+  assert.equal(s.note, NOT_CAUGHT);
   assert.equal(s.turn, 0);
 });
 
-test("muted: no speaking, straight back to listening", () => {
-  const s = run([{ type: "mute", muted: true }, { type: "start" }, { type: "heard", text: "hi", at: 1 }, { type: "send-now" }, { type: "answer-done", spoken: true }]);
+test("transcription failures: passing ones listen again, fatal ones pause with the reason", () => {
+  const base = run([{ type: "start" }, { type: "speech-start" }, { type: "send-now" }]);
+  assert.equal(base.phase, "transcribing");
+  const soft = voiceReducer(base, { type: "transcribe-failed", message: "Wait a few seconds" });
+  assert.equal(soft.phase, "listening");
+  assert.equal(soft.error, "Wait a few seconds");
+  const hard = voiceReducer(base, { type: "transcribe-failed", message: "Listening is unavailable", fatal: true });
+  assert.equal(hard.phase, "paused");
+  assert.equal(voiceReducer(hard, { type: "resume" }).phase, "listening");
+});
+
+test("muted: no greeting and no speaking", () => {
+  const s = run([{ type: "mute", muted: true }, { type: "start", greet: true }]);
   assert.equal(s.phase, "listening");
-  assert.equal(s.muted, true);
-  const speaking = run([{ type: "start" }, { type: "heard", text: "hi", at: 1 }, { type: "send-now" }, { type: "answer-done", spoken: true }, { type: "mute", muted: true }]);
+  const after = run([{ type: "speech-start" }, { type: "speech-end" }, { type: "transcript", text: "hi" }, { type: "answer-done", spoken: true }], s);
+  assert.equal(after.phase, "listening");
+  const speaking = run([{ type: "start", greet: true }, { type: "mute", muted: true }]);
   assert.equal(speaking.phase, "listening");
 });
 
-test("pause and resume keep what was running; errors pause", () => {
-  let s = run([{ type: "start" }, { type: "heard", text: "half a", at: 1 }, { type: "pause" }]);
+test("barge-in: interrupting the greeting or an answer listens", () => {
+  assert.equal(run([{ type: "start", greet: true }, { type: "interrupt" }]).phase, "listening");
+  const speaking = run([{ type: "start" }, { type: "speech-start" }, { type: "speech-end" }, { type: "transcript", text: "x" }, { type: "answer-done", spoken: true }]);
+  assert.equal(speaking.phase, "speaking");
+  assert.equal(voiceReducer(speaking, { type: "interrupt" }).phase, "listening");
+});
+
+test("pause and resume keep what was running; mic errors pause", () => {
+  let s = run([{ type: "start" }, { type: "speech-start" }, { type: "pause" }]);
   assert.equal(s.phase, "paused");
+  assert.equal(s.talking, false, "the half-said utterance is dropped");
   s = voiceReducer(s, { type: "resume" });
   assert.equal(s.phase, "listening");
-  assert.equal(s.heard, "half a");
   s = voiceReducer(s, { type: "mic-error", message: "Microphone blocked" });
   assert.equal(s.phase, "paused");
   assert.equal(s.error, "Microphone blocked");
-  const failed = run([{ type: "start" }, { type: "heard", text: "x", at: 1 }, { type: "send-now" }, { type: "answer-failed", message: "Budget" }]);
+  assert.equal(voiceReducer(s, { type: "resume" }).error, null);
+  const greetPaused = run([{ type: "start", greet: true }, { type: "pause" }, { type: "resume" }]);
+  assert.equal(greetPaused.phase, "listening");
+  const failed = run([{ type: "start" }, { type: "speech-start" }, { type: "speech-end" }, { type: "transcript", text: "x" }, { type: "answer-failed", message: "Budget" }]);
   assert.equal(failed.phase, "listening");
   assert.equal(failed.error, "Budget");
 });
 
 test("end is final until started again", () => {
-  let s = run([{ type: "start" }, { type: "end" }, { type: "heard", text: "x", at: 1 }, { type: "resume" }]);
+  let s = run([{ type: "start" }, { type: "end" }, { type: "speech-start" }, { type: "resume" }]);
   assert.equal(s.phase, "ended");
   s = voiceReducer(s, { type: "start" });
   assert.equal(s.phase, "listening");
@@ -61,17 +120,37 @@ test("Space does the right thing in each phase", () => {
   assert.deepEqual(spaceEvent(initialVoice), { type: "start" });
   const listening = run([{ type: "start" }]);
   assert.deepEqual(spaceEvent(listening), { type: "pause" });
-  assert.deepEqual(spaceEvent({ ...listening, heard: "hi" }), { type: "send-now" });
+  assert.deepEqual(spaceEvent({ ...listening, talking: true }), { type: "send-now" });
   assert.deepEqual(spaceEvent({ ...listening, phase: "speaking" }), { type: "interrupt" });
+  assert.deepEqual(spaceEvent({ ...listening, phase: "greeting" }), { type: "interrupt" });
   assert.deepEqual(spaceEvent({ ...listening, phase: "paused" }), { type: "resume" });
   assert.equal(spaceEvent({ ...listening, phase: "thinking" }), null);
+  assert.equal(spaceEvent({ ...listening, phase: "transcribing" }), null);
 });
 
 test("plush state, words and mic level", () => {
   assert.equal(plushFor("thinking"), "thinking");
   assert.equal(plushFor("paused"), "idle");
   assert.equal(phaseWords("listening", "Pip"), "Pip is listening");
+  assert.equal(phaseWords("greeting", "Pip"), "Pip is speaking");
   assert.equal(levelFrom([128, 128, 128]), 0);
   assert.ok(levelFrom([0, 255, 0, 255]) > 0.9);
   assert.equal(levelFrom([]), 0);
+});
+
+test("the greeting: its name and the person's first name, four lines, never the same twice", () => {
+  assert.equal(firstNameOf("Sushan Adhikari"), "Sushan");
+  assert.equal(firstNameOf("sushan@example.com"), "");
+  assert.equal(firstNameOf(null), "");
+  const lines = greetingLines("Probe", "Sushan");
+  assert.equal(lines.length, 4);
+  assert.equal(new Set(lines).size, 4);
+  for (const l of lines) {
+    assert.match(l, /Probe/);
+    assert.match(l, /Sushan/);
+  }
+  assert.equal(pickGreeting("Probe", "Sushan", () => 0), "Hi Sushan, it's Probe. What can I find for you?");
+  assert.notEqual(pickGreeting("Probe", "Sushan", () => 0, lines[0]), lines[0]);
+  assert.equal(pickGreeting("Probe", "Sushan", () => 0.9999), lines[3]);
+  assert.doesNotMatch(pickGreeting("Probe", "", () => 0), /undefined|,\s*,/);
 });

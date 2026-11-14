@@ -3,8 +3,10 @@
  * starting to speak stops whoever was speaking.
  *
  * A text is cut into chunks (`speechChunks`); chunk 0 is fetched alone so the first sound comes
- * quickly, and chunk N+1 is fetched as soon as chunk N has arrived, so it is ready by the time N
- * ends. Each chunk is decoded and played through the audio output, which also reports a live
+ * quickly, and as soon as chunk N has arrived the next `prefetch` chunks (default 2) are fetched,
+ * so they are ready by the time N ends. `warm(texts)` renders whole texts ahead of time (a
+ * briefing's every segment, `concurrency` at a time, in order) into a small cache that `speak`
+ * reads first, so a later `speak` of the same words starts without a network wait. Each chunk is decoded and played through the audio output, which also reports a live
  * level for the plush. Pause and resume hold the sound where it is; stop and a new `speak`
  * abort every request in flight.
  *
@@ -37,6 +39,16 @@ export interface SpeakRequest {
   voice?: string | null;
   speed?: number;
   language?: string;
+  /** chunks fetched ahead of the one playing (default: the speaker's, 2) */
+  prefetch?: number;
+}
+
+export interface WarmOptions {
+  voice?: string | null;
+  speed?: number;
+  language?: string;
+  /** requests in flight at once (default: the speaker's, 3) */
+  concurrency?: number;
 }
 
 /** A decoded chunk. */
@@ -84,6 +96,7 @@ interface Session {
   voice?: string;
   speed: number;
   language: string;
+  prefetch: number;
   controller: AbortController;
   clips: Map<number, Promise<Clip>>;
   index: number;
@@ -96,6 +109,15 @@ interface Session {
 const IDLE: SpeakerSnapshot = { status: "idle", key: null, error: null, chunk: 0, chunks: 0 };
 export const UNAVAILABLE_BACKOFF_MS = 20_000;
 const UNLOCK_WAIT_MS = 600;
+export const DEFAULT_PREFETCH = 2;
+export const DEFAULT_WARM_CONCURRENCY = 3;
+/** rendered chunks kept for `warm` (about a long briefing's worth) */
+const CACHE_MAX = 96;
+
+type ChunkBody = { text: string; voice?: string; speed: number; language: string };
+const cacheKey = (b: ChunkBody) => `${b.language}|${b.voice ?? ""}|${b.speed}|${b.text}`;
+type Failure = Error & { reason: string };
+const failure = (reason: string, cause?: unknown): Failure => Object.assign(new Error(reason), { reason, cause });
 
 export interface Speaker {
   speak(req: SpeakRequest): Promise<SpeakOutcome>;
@@ -104,6 +126,8 @@ export interface Speaker {
   resume(): void;
   /** Call from a click or key press: lets later, gesture-less speech make sound. */
   unlock(): void;
+  /** Render these texts ahead of time, in order; returns a cancel for what is still waiting. */
+  warm(texts: readonly string[], opts?: WarmOptions): () => void;
   setSpeed(speed: number): void;
   level(): number;
   position(): Position | null;
@@ -111,8 +135,12 @@ export interface Speaker {
   subscribe(fn: () => void): () => void;
 }
 
-export function createSpeaker(deps: { fetchChunk: FetchChunk; out: () => AudioOut; now?: () => number }): Speaker {
+export function createSpeaker(deps: { fetchChunk: FetchChunk; out: () => AudioOut; now?: () => number; prefetch?: number; warmConcurrency?: number }): Speaker {
   const now = deps.now ?? (() => Date.now());
+  const defaultPrefetch = Math.max(1, deps.prefetch ?? DEFAULT_PREFETCH);
+  const defaultConcurrency = Math.max(1, deps.warmConcurrency ?? DEFAULT_WARM_CONCURRENCY);
+  /** rendered audio by its words and voice: warmed ahead, read by `load` */
+  const cache = new Map<string, Promise<ArrayBuffer>>();
   let snapshot: SpeakerSnapshot = IDLE;
   const listeners = new Set<() => void>();
   let session: Session | null = null;
@@ -132,31 +160,52 @@ export function createSpeaker(deps: { fetchChunk: FetchChunk; out: () => AudioOu
     s.controller.abort();
     s.playing?.stop();
     s.playing = null;
+    // Stopped while paused: the output is released so the next voice is heard.
+    if (s.paused) out().resume();
     if (outcome === "error") set({ status: "error", key: s.key, error, chunk: s.index, chunks: s.chunks.length });
     else set({ ...IDLE });
     s.resolve(outcome);
+  };
+
+  /** One chunk's audio from the network (a failure carries `reason`). */
+  const fetchAudio = async (body: ChunkBody, signal: AbortSignal): Promise<ArrayBuffer> => {
+    let res: ChunkResponse;
+    try {
+      res = await deps.fetchChunk(body, signal);
+    } catch (err) {
+      if (signal.aborted) throw failure("aborted");
+      throw failure("voice_not_connected", err);
+    }
+    if (!res.ok) {
+      const json = await res.json().catch(() => null);
+      const reason = json && typeof json === "object" && "reason" in json ? asFailure((json as { reason: unknown }).reason) : speechFailure(res.status, json).reason;
+      throw failure(reason);
+    }
+    return res.arrayBuffer();
+  };
+
+  const remember = (key: string, p: Promise<ArrayBuffer>) => {
+    cache.set(key, p);
+    // A failed or cancelled render is forgotten, so the next ask tries again.
+    p.catch(() => {
+      if (cache.get(key) === p) cache.delete(key);
+    });
+    while (cache.size > CACHE_MAX) cache.delete(cache.keys().next().value as string);
   };
 
   const load = (s: Session, i: number): Promise<Clip> | undefined => {
     if (i >= s.chunks.length) return undefined;
     const have = s.clips.get(i);
     if (have) return have;
-    const body: { text: string; voice?: string; speed: number; language: string } = { text: s.chunks[i]!, speed: s.speed, language: s.language };
+    const body: ChunkBody = { text: s.chunks[i]!, speed: s.speed, language: s.language };
     if (s.voice) body.voice = s.voice;
+    const warmed = cache.get(cacheKey(body));
     const p = (async () => {
-      let res: ChunkResponse;
-      try {
-        res = await deps.fetchChunk(body, s.controller.signal);
-      } catch (err) {
-        if (s.controller.signal.aborted) throw Object.assign(new Error("aborted"), { reason: "aborted" });
-        throw Object.assign(new Error("network"), { reason: "voice_not_connected", cause: err });
-      }
-      if (!res.ok) {
-        const json = await res.json().catch(() => null);
-        const reason = json && typeof json === "object" && "reason" in json ? asFailure((json as { reason: unknown }).reason) : speechFailure(res.status, json).reason;
-        throw Object.assign(new Error(reason), { reason });
-      }
-      const data = await res.arrayBuffer();
+      let data: ArrayBuffer | null = null;
+      // A warm render that failed or was cancelled is fetched again for real.
+      if (warmed) data = await warmed.catch(() => null);
+      data ??= await fetchAudio(body, s.controller.signal);
+      if (s.controller.signal.aborted) throw failure("aborted");
       return out().decode(data);
     })();
     p.catch(() => {}); // handled where it is awaited
@@ -177,8 +226,8 @@ export function createSpeaker(deps: { fetchChunk: FetchChunk; out: () => AudioOu
       return;
     }
     if (session !== s) return;
-    // The next chunk renders while this one plays.
-    load(s, i + 1);
+    // The next chunks render while this one plays.
+    for (let k = 1; k <= s.prefetch; k++) load(s, i + k);
     if (i === 0) {
       const ready = await Promise.race([out().unlock(), new Promise<boolean>((r) => setTimeout(() => r(false), UNLOCK_WAIT_MS))]);
       if (session !== s) return;
@@ -220,6 +269,7 @@ export function createSpeaker(deps: { fetchChunk: FetchChunk; out: () => AudioOu
           voice: req.voice ?? undefined,
           speed: req.speed ?? 1,
           language: req.language ?? "en",
+          prefetch: Math.max(1, req.prefetch ?? defaultPrefetch),
           controller: new AbortController(),
           clips: new Map(),
           index: 0,
@@ -253,6 +303,38 @@ export function createSpeaker(deps: { fetchChunk: FetchChunk; out: () => AudioOu
     },
     unlock() {
       void out().unlock();
+    },
+    warm(texts, opts = {}) {
+      const controller = new AbortController();
+      const queue: ChunkBody[] = [];
+      for (const text of texts)
+        for (const chunk of speechChunks(text)) {
+          const body: ChunkBody = { text: chunk, speed: opts.speed ?? 1, language: opts.language ?? "en" };
+          if (opts.voice) body.voice = opts.voice;
+          queue.push(body);
+        }
+      let next = 0;
+      const pump = (): Promise<void> | void => {
+        while (next < queue.length) {
+          if (controller.signal.aborted || now() < unavailableUntil) return;
+          const body = queue[next++]!;
+          const key = cacheKey(body);
+          if (cache.has(key)) continue;
+          const p = fetchAudio(body, controller.signal);
+          remember(key, p);
+          return p.then(
+            () => pump(),
+            (err: Failure) => {
+              if (err.reason === "voice_not_connected") unavailableUntil = now() + UNAVAILABLE_BACKOFF_MS;
+              // One failure does not stop the rest; a rate limit or an outage does.
+              if (err.reason !== "rate_limited" && err.reason !== "voice_not_connected") return pump();
+            },
+          );
+        }
+      };
+      const lanes = Math.max(1, opts.concurrency ?? defaultConcurrency);
+      for (let l = 0; l < lanes; l++) void pump();
+      return () => controller.abort();
     },
     setSpeed(speed) {
       // Chunks not yet asked for use the new speed.

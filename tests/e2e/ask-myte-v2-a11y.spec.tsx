@@ -14,6 +14,7 @@ import { AskMyteV2Harness } from "./AskMyteV2Harness";
 import { ANSWER_EVENTS, sse } from "./ask-myte-fixture";
 import { PEER_DRAFT, proposalEvents } from "./ask-myte-v2-fixture";
 import { fakeVoice } from "./voice-fake";
+import { fakeMic, fakeTranscribe, say } from "./mic-fake";
 import type { StreamEvent } from "../../src/lib/ask-myte/types";
 
 test.describe.configure({ timeout: 90_000 });
@@ -244,68 +245,48 @@ test("peer review: phone width", async ({ mount, page }) => {
 });
 
 /* ---------------- F6: voice mode ---------------- */
-
-async function fakeRecognition(page: Page) {
-  const install = () => {
-    type Handler = ((e: unknown) => void) | null;
-    class FakeRec {
-      lang = "";
-      interimResults = false;
-      continuous = false;
-      onresult: Handler = null;
-      onend: (() => void) | null = null;
-      onerror: Handler = null;
-      start() {
-        (window as unknown as { __rec: FakeRec | null }).__rec = this;
-      }
-      stop() {
-        this.onend?.();
-      }
-      abort() {
-        if ((window as unknown as { __rec: FakeRec | null }).__rec === this) (window as unknown as { __rec: FakeRec | null }).__rec = null;
-      }
-    }
-    const w = window as unknown as Record<string, unknown>;
-    w.SpeechRecognition = FakeRec;
-    w.webkitSpeechRecognition = FakeRec;
-    w.__say = (text: string, final: boolean) => {
-      const r = w.__rec as FakeRec | null;
-      const res = Object.assign([{ transcript: text }], { isFinal: final });
-      r?.onresult?.({ resultIndex: 0, results: [res] });
-    };
-    Object.defineProperty(navigator, "mediaDevices", { value: { getUserMedia: () => Promise.reject(new Error("no mic in tests")) }, configurable: true });
-  };
-  await page.addInitScript(install);
-  await page.evaluate(install);
-}
+/* Talk mode is heard by the server: a fake microphone (a real Web Audio stream the test turns up
+   and down), a stand-in MediaRecorder and a fake transcribe route. */
 
 for (const theme of ["light", "dark"] as const) {
-  test(`voice mode (${theme}): Talk, a pause sends, it answers aloud, Esc ends`, async ({ mount, page }) => {
+  test(`voice mode (${theme}): it greets, a pause after speech sends the clip, it answers aloud, Esc ends`, async ({ mount, page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await fakeRecognition(page);
+    await fakeMic(page);
+    const heard = await fakeTranscribe(page, { text: "what do I owe this week" });
     const spoken = await fakeVoice(page, { msPerWord: 15 });
     const bodies = await mockStream(page, ANSWER_EVENTS);
     await mount(<AskMyteHarness theme={theme} />);
 
-    const talk = page.getByRole("button", { name: "Talk to Pip" });
-    await talk.click();
+    await page.getByRole("button", { name: "Talk to Pip" }).click();
     const voice = page.getByRole("dialog", { name: "Talking with Pip" });
     await expect(voice).toBeVisible();
-    await expect(voice.getByText("Pip is listening")).toBeVisible();
-    await expect(voice.getByRole("button", { name: "Pause" })).toBeFocused();
+    // It speaks first, in character, with the person's first name.
+    await expect.poll(() => spoken.length).toBeGreaterThan(0);
+    expect(spoken[0]!.text).toMatch(/Sushan/);
+    expect(spoken[0]!.text).toMatch(/Pip/);
+    await expect(voice.getByText("Pip is listening")).toBeVisible({ timeout: 10_000 });
+    await expect(voice.getByText("Listening…")).toBeVisible();
+    await expect(voice.getByRole("button", { name: "Pause" })).toBeVisible();
     await shot(page, `voice-listening-${theme}`);
     await axe(page);
 
-    await page.waitForFunction(() => !!(window as unknown as { __rec?: unknown }).__rec);
-    await page.evaluate(() => (window as unknown as { __say: (t: string, f: boolean) => void }).__say("what do I owe this week", true));
-    await expect(voice.getByText("what do I owe this week")).toBeVisible();
-    // About 1.2 s of quiet sends it.
+    await page.waitForTimeout(600); // the room is measured first
+    await page.evaluate(() => (window as unknown as { __talk: (on: boolean) => void }).__talk(true));
+    await expect(voice.getByText("Hearing you…")).toBeVisible();
+    await expect(voice.getByRole("button", { name: "Send now" })).toBeVisible();
+    await page.waitForTimeout(500);
+    await page.evaluate(() => (window as unknown as { __talk: (on: boolean) => void }).__talk(false));
+    // About 1.2 s of quiet sends the recording to be transcribed, then the words as the question.
+    await expect.poll(() => heard.length, { timeout: 5000 }).toBe(1);
+    expect(heard[0]!.type).toBe("audio/webm");
+    expect(heard[0]!.language).toBe("en");
+    expect(heard[0]!.size).toBeGreaterThan(0);
     await expect.poll(() => bodies.length, { timeout: 5000 }).toBe(1);
     expect(bodies[0].question).toBe("what do I owe this week");
     await expect(voice.getByRole("region", { name: "Pip's answer" }).getByText("One thing is on you")).toBeVisible();
     // It reads the answer in its own voice, then listens again.
-    await expect.poll(() => spoken.length).toBeGreaterThan(0);
-    expect(spoken[0]!.text).not.toMatch(/\[\d+\]/);
+    await expect.poll(() => spoken.length).toBeGreaterThan(1);
+    expect(spoken[1]!.text).not.toMatch(/\[\d+\]/);
     await expect(voice.getByText("Pip is listening")).toBeVisible({ timeout: 15_000 });
     await shot(page, `voice-answered-${theme}`);
     await axe(page);
@@ -318,19 +299,31 @@ for (const theme of ["light", "dark"] as const) {
   });
 }
 
-test("voice mode: Space pauses and resumes, mute keeps it quiet; hidden without speech recognition", async ({ mount, page }) => {
+test("voice mode: Space interrupts the greeting, pauses and resumes; mute keeps it quiet; nothing heard is never sent", async ({ mount, page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await fakeRecognition(page);
-  await fakeVoice(page, { msPerWord: 15 });
+  await fakeMic(page);
+  const heard = await fakeTranscribe(page, { text: "" });
+  await fakeVoice(page, { msPerWord: 200 });
   await mount(<AskMyteHarness />);
   await page.getByRole("button", { name: "Talk to Pip" }).click();
   const voice = page.getByRole("dialog", { name: "Talking with Pip" });
+  await expect(voice.getByText("Pip is speaking")).toBeVisible();
+  await voice.focus();
+  await page.keyboard.press("Space");
+  await expect(voice.getByText("Pip is listening")).toBeVisible();
   await voice.getByRole("button", { name: /^Mute/ }).click();
   await expect(voice.getByRole("button", { name: "Read answers aloud" })).toHaveAttribute("aria-pressed", "true");
   await voice.focus();
   await page.keyboard.press("Space");
   await expect(voice.getByText("Paused", { exact: true })).toBeVisible();
   await page.keyboard.press("Space");
+  await expect(voice.getByText("Pip is listening")).toBeVisible();
+  // Quiet for a while: nothing is sent.
+  await page.waitForTimeout(2000);
+  expect(heard.length).toBe(0);
+  // Speech the server hears as nothing: it says so and listens again.
+  await say(page, 600);
+  await expect(voice.getByText("I didn't catch that. Try again?")).toBeVisible({ timeout: 6000 });
   await expect(voice.getByText("Pip is listening")).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   await noSideScroll(page);
@@ -339,15 +332,57 @@ test("voice mode: Space pauses and resumes, mute keeps it quiet; hidden without 
   await expect(voice).toHaveCount(0);
 });
 
-test("voice mode: no Talk button where the browser cannot listen", async ({ mount, page }) => {
-  await page.evaluate(() => {
-    const w = window as unknown as Record<string, unknown>;
-    delete w.SpeechRecognition;
-    delete w.webkitSpeechRecognition;
-  });
+test("voice mode: a blocked microphone says how to allow it; listening unavailable says so", async ({ mount, page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await fakeMic(page, { deny: "NotAllowedError" });
+  await fakeVoice(page, { status: 503 });
+  await mount(<AskMyteHarness />);
+  await page.getByRole("button", { name: "Talk to Pip" }).click();
+  const voice = page.getByRole("dialog", { name: "Talking with Pip" });
+  await expect(voice.getByRole("alert")).toContainText("blocked the microphone");
+  await expect(voice.getByRole("alert")).toContainText("allow the microphone for this site");
+  await expect(voice.getByRole("button", { name: "Resume" })).toBeVisible();
+  await shot(page, "voice-mic-blocked");
+  await axe(page);
+});
+
+test("voice mode: when the server cannot listen it pauses with plain words", async ({ mount, page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await fakeMic(page);
+  await fakeTranscribe(page, { status: 503, reason: "listening_not_connected" });
+  await fakeVoice(page, { status: 503 });
+  await mount(<AskMyteHarness />);
+  await page.getByRole("button", { name: "Talk to Pip" }).click();
+  const voice = page.getByRole("dialog", { name: "Talking with Pip" });
+  // The voice is off too: the greeting is skipped quietly and it listens.
+  await expect(voice.getByText("Pip is listening")).toBeVisible({ timeout: 10_000 });
+  await page.waitForTimeout(600);
+  await say(page, 600);
+  await expect(voice.getByRole("alert")).toContainText("Listening is unavailable right now", { timeout: 6000 });
+  await expect(voice.getByText("Paused", { exact: true })).toBeVisible();
+});
+
+test("voice mode: no Talk button where the browser cannot record", async ({ mount, page }) => {
+  await fakeMic(page, { noRecorder: true });
   await mount(<AskMyteHarness />);
   await expect(page.getByRole("textbox", { name: "Ask Pip" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Talk to Pip" })).toHaveCount(0);
+});
+
+test("dictation: the composer mic records, stops after a pause and types what the server heard", async ({ mount, page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await fakeMic(page);
+  const heard = await fakeTranscribe(page, { text: "who owes me an update" });
+  await mount(<AskMyteHarness />);
+  const mic = page.getByRole("button", { name: "Ask by voice" });
+  await mic.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("button", { name: "Stop listening" })).toBeVisible();
+  await page.waitForTimeout(600);
+  await say(page, 600);
+  await expect.poll(() => heard.length, { timeout: 6000 }).toBe(1);
+  await expect(page.getByRole("textbox", { name: "Ask Pip" })).toHaveValue("who owes me an update");
+  await expect(page.getByRole("button", { name: "Ask by voice" })).toBeVisible();
 });
 
 /* ---------------- F7: attachments ---------------- */
@@ -485,4 +520,66 @@ test("Home: phone width", async ({ mount, page }) => {
   await noSideScroll(page);
   await shot(page, "home-phone");
   await axe(page);
+});
+
+/* ---------------- the composer: no scrollbar while it fits; thin scrollbars everywhere ---------------- */
+
+async function composerBox(input: Locator) {
+  return input.evaluate((el) => {
+    const t = el as HTMLTextAreaElement;
+    const cs = getComputedStyle(t);
+    return { overflowY: cs.overflowY, height: t.clientHeight, scroll: t.scrollHeight, line: parseFloat(cs.lineHeight) };
+  });
+}
+
+for (const theme of ["light", "dark"] as const) {
+  for (const width of [1280, 390] as const) {
+    test(`composer (${theme}, ${width}px): one line has no scrollbar; it grows to 6 lines (4 in the sheet), then scrolls`, async ({ mount, page }) => {
+      await page.setViewportSize({ width, height: 844 });
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      const pageView = await mount(<AskMyteHarness theme={theme} />);
+      const input = page.getByRole("textbox", { name: "Ask Pip" });
+      await input.fill("What do I owe this week?");
+      let box = await composerBox(input);
+      expect(box.overflowY).toBe("hidden");
+      expect(box.height).toBeLessThan(box.line * 2 + 16);
+      await input.fill(Array.from({ length: 14 }, (_, i) => `Line ${i + 1}`).join("\n"));
+      box = await composerBox(input);
+      expect(box.overflowY).toBe("auto");
+      expect(box.height).toBeLessThanOrEqual(Math.round(box.line * 6 + 14));
+      await shot(page, `composer-page-${theme}-${width}`);
+
+      // The sheet (Cmd+J, the floating Myte): four lines at most.
+      await pageView.unmount();
+      await mount(<AskMyteHarness theme={theme} view="sheet" />);
+      await page.getByRole("button", { name: "Ask about this meeting" }).click();
+      const sheet = page.getByRole("dialog", { name: "Ask Pip" });
+      const small = sheet.getByRole("textbox", { name: "Ask Pip" });
+      await small.fill("Prep me for the review");
+      box = await composerBox(small);
+      expect(box.overflowY).toBe("hidden");
+      expect(box.scroll).toBeLessThanOrEqual(box.height + 1);
+      await shot(page, `composer-sheet-one-line-${theme}-${width}`);
+      await small.fill(Array.from({ length: 10 }, (_, i) => `Line ${i + 1}`).join("\n"));
+      box = await composerBox(small);
+      expect(box.overflowY).toBe("auto");
+      expect(box.height).toBeLessThanOrEqual(Math.round(box.line * 4 + 14));
+      await small.hover();
+      await small.evaluate((el) => (el.scrollTop = 40));
+      await shot(page, `composer-sheet-scrolled-${theme}-${width}`);
+    });
+  }
+}
+
+test("scrollbars are thin and token-coloured everywhere", async ({ mount, page }) => {
+  await mount(<AskMyteHarness thread />);
+  const style = await page.evaluate(() => {
+    const el = document.querySelector("main") ?? document.body;
+    const cs = getComputedStyle(el);
+    return { width: cs.getPropertyValue("scrollbar-width"), color: cs.getPropertyValue("scrollbar-color") };
+  });
+  expect(style.width).toBe("thin");
+  const rail = page.getByRole("navigation").first();
+  if (await rail.count()) await rail.hover();
+  await shot(page, "scrolled-list-thin-scrollbar");
 });

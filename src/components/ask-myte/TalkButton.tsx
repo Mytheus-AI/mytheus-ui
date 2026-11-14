@@ -1,17 +1,22 @@
 "use client";
 
 import { Waveform } from "@phosphor-icons/react";
-import { useCanTalk } from "./voice";
+import { primeTalk, useCanTalk } from "./voice";
 
-/* "Talk" (ADR-0049 F6): opens voice mode. Shown only where the browser can listen. `compact` is
+/* "Talk" (ADR-0049 F6): opens voice mode. Shown only where the browser can record the microphone. `compact` is
    the sheet header's icon button; otherwise a quiet pill with its label. */
 export function TalkButton({ name, onTalk, compact = false, disabled = false }: { name: string; onTalk: () => void; compact?: boolean; disabled?: boolean }) {
   const can = useCanTalk();
   if (!can) return null;
+  // The tap itself unlocks the audio, so the Myte's greeting can be heard (autoplay rules).
+  const talk = () => {
+    primeTalk();
+    onTalk();
+  };
   return compact ? (
     <button
       type="button"
-      onClick={onTalk}
+      onClick={talk}
       disabled={disabled}
       aria-label={`Talk to ${name}`}
       title="Talk: a voice conversation"
@@ -22,7 +27,7 @@ export function TalkButton({ name, onTalk, compact = false, disabled = false }: 
   ) : (
     <button
       type="button"
-      onClick={onTalk}
+      onClick={talk}
       disabled={disabled}
       aria-label={`Talk to ${name}`}
       title="Talk: a voice conversation"

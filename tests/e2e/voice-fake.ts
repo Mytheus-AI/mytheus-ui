@@ -6,7 +6,7 @@ export { VOICES } from "./voice-fixture";
    speaker really decodes, plays and measures a level. `status` makes every call fail instead
    (503 `voice_not_connected`, 429 `rate_limited`). Each request body is kept in `spoken`. */
 
-function wav(ms: number): Buffer {
+export function wav(ms: number): Buffer {
   const rate = 8000;
   const n = Math.max(1, Math.round((rate * ms) / 1000));
   const buf = Buffer.alloc(44 + n * 2);
@@ -27,11 +27,17 @@ function wav(ms: number): Buffer {
   return buf;
 }
 
-export async function fakeVoice(page: Page, opts: { msPerWord?: number; status?: 503 | 429 } = {}) {
+export async function fakeVoice(page: Page, opts: { msPerWord?: number; status?: 503 | 429; delayMs?: number } = {}) {
   const spoken: { text: string; voice?: string; speed?: number }[] = [];
+  /** the most requests in flight at once (`delayMs` holds each answer back) */
+  const stats = { inFlight: 0, maxInFlight: 0 };
   await page.route("**/api/voice/speech", async (route) => {
     const body = route.request().postDataJSON() as { text: string; voice?: string; speed?: number };
     spoken.push(body);
+    stats.inFlight++;
+    stats.maxInFlight = Math.max(stats.maxInFlight, stats.inFlight);
+    if (opts.delayMs) await new Promise((r) => setTimeout(r, opts.delayMs));
+    stats.inFlight--;
     if (opts.status) {
       await route.fulfill({ status: opts.status, contentType: "application/json", body: JSON.stringify({ reason: opts.status === 503 ? "voice_not_connected" : "rate_limited" }) });
       return;
@@ -39,5 +45,5 @@ export async function fakeVoice(page: Page, opts: { msPerWord?: number; status?:
     const words = body.text.split(/\s+/).filter(Boolean).length;
     await route.fulfill({ status: 200, contentType: "audio/wav", headers: { "X-Myte-Voice": body.voice ?? "af_heart" }, body: wav(words * (opts.msPerWord ?? 90)) });
   });
-  return spoken;
+  return Object.assign(spoken, { stats });
 }
