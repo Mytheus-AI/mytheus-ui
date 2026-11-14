@@ -206,3 +206,81 @@ test("speed changes apply to chunks not yet asked for", async () => {
   assert.equal(h.requests[0]!.speed, 1);
   assert.equal(h.requests[1]!.speed, 1.2);
 });
+
+/* ---------------- prefetch depth and warming ahead ---------------- */
+
+const LONG = Array.from({ length: 14 }, (_, i) => `Sentence number ${i} is long enough to stand on its own as a whole chunk of speech, more or less.`).join(" ");
+
+test("prefetch: two chunks ahead by default, configurable per request", async () => {
+  const h = harness();
+  void h.speaker.speak({ key: "p", text: LONG });
+  await flush();
+  assert.equal(h.requests.length, 1, "chunk 0 alone first");
+  h.requests[0]!.resolve(h.ok("c0"));
+  await flush();
+  const chunks = h.speaker.getSnapshot().chunks;
+  assert.ok(chunks >= 4, `enough chunks (${chunks})`);
+  assert.equal(h.requests.length, 3, "chunks 1 and 2 render while 0 plays");
+  h.requests[1]!.resolve(h.ok("c1"));
+  h.requests[2]!.resolve(h.ok("c2"));
+  await flush();
+  h.playing[0]!.end();
+  await flush();
+  assert.equal(h.requests.length, 4, "chunk 3 is asked for as chunk 1 starts");
+
+  const one = harness();
+  void one.speaker.speak({ key: "q", text: LONG, prefetch: 1 });
+  await flush();
+  one.requests[0]!.resolve(one.ok("c0"));
+  await flush();
+  assert.equal(one.requests.length, 2, "one ahead when asked");
+});
+
+test("warm: renders every chunk of every text in order, three at a time; speak then plays from it", async () => {
+  const h = harness();
+  const texts = ["First segment.", "Second segment.", "Third segment.", "Fourth segment.", "Fifth segment."];
+  h.speaker.warm(texts, { speed: 1.1, language: "en" });
+  await flush();
+  assert.deepEqual(
+    h.requests.map((r) => r.text),
+    ["First segment.", "Second segment.", "Third segment."],
+    "three in flight, in order",
+  );
+  h.requests[1]!.resolve(h.ok("s1"));
+  await flush();
+  assert.equal(h.requests.length, 4);
+  assert.equal(h.requests[3]!.text, "Fourth segment.");
+  for (const r of h.requests.slice()) r.resolve(h.ok(r.text));
+  await flush();
+  for (const r of h.requests.slice()) r.resolve(h.ok(r.text));
+  await flush();
+  assert.equal(h.requests.length, 5, "each rendered once");
+
+  // Speaking a warmed segment asks the network for nothing.
+  void h.speaker.speak({ key: "b:1", text: "Second segment.", speed: 1.1, language: "en" });
+  await flush();
+  assert.equal(h.requests.length, 5);
+  assert.equal(h.speaker.getSnapshot().status, "speaking");
+  assert.deepEqual(h.log, ["play:s1"]);
+  // A different speed is a different rendering.
+  void h.speaker.speak({ key: "b:2", text: "Third segment.", speed: 1.2, language: "en" });
+  await flush();
+  assert.equal(h.requests.length, 6);
+});
+
+test("warm: concurrency is configurable; cancel stops what is still queued; a failed render is fetched again by speak", async () => {
+  const h = harness();
+  const cancel = h.speaker.warm(["A one.", "B two.", "C three.", "D four."], { concurrency: 1 });
+  await flush();
+  assert.equal(h.requests.length, 1);
+  h.requests[0]!.resolve(h.err(500, { reason: "voice_failed" }));
+  await flush();
+  assert.equal(h.requests.length, 2, "one failure does not stop the rest");
+  cancel();
+  await flush();
+  assert.ok(h.requests[1]!.signal.aborted);
+  assert.equal(h.requests.length, 2, "nothing more after cancel");
+  void h.speaker.speak({ key: "x", text: "A one." });
+  await flush();
+  assert.equal(h.requests.length, 3, "the failed one is fetched for real");
+});

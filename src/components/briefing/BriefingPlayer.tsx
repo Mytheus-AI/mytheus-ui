@@ -30,6 +30,7 @@ import {
   type Briefing,
   type BriefingPreferences,
 } from "@/lib/briefing";
+import { audioPlan, waitForAudio, type AudioStatus } from "@/lib/briefing-audio";
 import { useBriefingSpeech } from "./useBriefingSpeech";
 import "@/styles/briefing.css";
 
@@ -231,15 +232,35 @@ function ReadyPlayer({
   const [showAll, setShowAll] = useState(variant === "full");
   const segments = briefing.segments;
   const rate = nearestSpeed(prefs.rate);
+  // The recording: ready plays the file; pending waits up to 20 s for it (polling every 2 s);
+  // otherwise, or if it never comes, the Myte speaks it live.
+  const [audioStatus, setAudioStatus] = useState<AudioStatus>(briefing.audio.status);
+  useEffect(() => {
+    if (briefing.audio.status !== "pending") return;
+    const ctrl = new AbortController();
+    void waitForAudio({
+      poll: async () => {
+        const res = await pollBriefing(briefing.id);
+        return res.ok ? res.briefing.audio.status : null;
+      },
+      sleep: (ms) => new Promise((r) => window.setTimeout(r, ms)),
+      now: () => Date.now(),
+      signal: ctrl.signal,
+    }).then((outcome) => {
+      if (outcome === "cancelled") return;
+      setAudioStatus(outcome === "ready" ? "ready" : "failed");
+    });
+    return () => ctrl.abort();
+  }, [briefing.id, briefing.audio.status]);
   const audio = useMemo(
     () =>
-      briefing.audio.status === "ready"
+      audioStatus === "ready"
         ? async () => {
             const res = await briefingAudioUrl(briefing.id);
             return res.ok ? res.url : null;
           }
         : null,
-    [briefing.id, briefing.audio.status],
+    [briefing.id, audioStatus],
   );
   const { state, play, toggle, seek, next, prev } = useBriefingSpeech({
     segments,
@@ -249,6 +270,7 @@ function ReadyPlayer({
     agentName: mine?.name ?? briefing.agent.name,
     rate,
     audio,
+    preparing: audioPlan(audioStatus) === "wait",
     onFirstPlay: () => {
       if (!heard) {
         setHeard(true);
@@ -353,11 +375,12 @@ function ReadyPlayer({
               type="button"
               onClick={toggle}
               disabled={state.loading}
-              aria-label={state.playing ? "Pause briefing" : state.finished ? "Play briefing again" : "Play briefing"}
-              aria-pressed={state.playing}
+              aria-label={state.waiting ? "Cancel: preparing the voice" : state.playing ? "Pause briefing" : state.finished ? "Play briefing again" : "Play briefing"}
+              aria-pressed={state.playing || state.waiting}
+              aria-busy={state.waiting || undefined}
               className="brf-play inline-grid h-[52px] w-[52px] place-items-center rounded-full bg-pill text-pill-on shadow-warm-2 transition-[background-color,transform] duration-150 hover:bg-pill-2 motion-safe:active:scale-[0.96] disabled:opacity-50"
             >
-              {state.playing ? <Pause size={22} weight="fill" aria-hidden /> : <Play size={22} weight="fill" aria-hidden className="translate-x-[1px]" />}
+              {state.playing || state.waiting ? <Pause size={22} weight="fill" aria-hidden /> : <Play size={22} weight="fill" aria-hidden className="translate-x-[1px]" />}
             </button>
             <Button type="button" variant="ghost" size="md" icon onClick={next} aria-label="Next point" disabled={state.index >= segments.length - 1}>
               <SkipForward size={20} weight="fill" aria-hidden />
@@ -388,7 +411,11 @@ function ReadyPlayer({
             />
           </div>
         </div>
-        {state.blocked ? (
+        {state.preparing ? (
+          <p className="mt-3 text-[14px] text-ink-3" role="status">
+            Preparing your briefing&apos;s voice…{state.waiting ? " It starts the moment it is ready." : null}
+          </p>
+        ) : state.blocked ? (
           <p className="mt-3 text-[14px] text-ink-3" role="status">
             Your browser held back auto-play. Press play to listen.
           </p>

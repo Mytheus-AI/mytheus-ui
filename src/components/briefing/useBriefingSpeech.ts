@@ -12,8 +12,12 @@ import { myteSpeaker, useMyteSpeaker } from "@/lib/voice/myte-voice";
      element on a short-lived URL fetched on the first Play; the segment follows the playhead by
      length. A file that fails to load is spoken live instead.
    - `voice`: the shared Myte speaker (`POST /api/voice/speech`), one segment at a time, so
-     pausing, skipping and changing speed never lose more than a sentence. The highlighted word
-     follows the speaker's playhead through the segment.
+     pausing, skipping and changing speed never lose more than a sentence. Every segment is
+     rendered ahead as soon as the player is shown (`speaker.warm`, three at a time, in order), so
+     playback never waits between parts. The highlighted word follows the speaker's playhead.
+
+   While the recording is still being made (`preparing`), Play waits for it (the player polls)
+   and starts the file the moment it is ready; if it never is, the Myte speaks it live.
 
    There is no device voice. When the voice server is unavailable the player says so quietly
    (`note`) and the whole briefing stays written out below.
@@ -35,6 +39,8 @@ export interface SpeechOptions {
   audio: (() => Promise<string | null>) | null;
   /** a stable id for this briefing (the speaker's key) */
   id: string;
+  /** the recording is still being made: Play waits for it */
+  preparing?: boolean;
   onFirstPlay?: () => void;
 }
 
@@ -51,6 +57,10 @@ export interface SpeechState {
   blocked: boolean;
   finished: boolean;
   loading: boolean;
+  /** the recording is still being made */
+  preparing: boolean;
+  /** Play was pressed while preparing: it starts as soon as the voice is ready */
+  waiting: boolean;
   /** a quiet note when the voice could not speak (the text stays) */
   note: string | null;
   /** the speaker's live output level, for the face */
@@ -60,7 +70,12 @@ export interface SpeechState {
 export function useBriefingSpeech(opts: SpeechOptions) {
   const { segments, rate } = opts;
   const starts = useMemo(() => segmentStarts(segments), [segments]);
-  const [engine, setEngine] = useState<Engine>(opts.audio ? "audio" : "voice");
+  // The file plays when there is one and it has not failed; otherwise the live voice.
+  const [fileBroken, setFileBroken] = useState(false);
+  const engine: Engine = opts.audio && !fileBroken ? "audio" : "voice";
+  const preparing = !!opts.preparing && !opts.audio;
+  const [waiting, setWaiting] = useState(false);
+  const wantPlay = useRef(false);
   const [filePlaying, setFilePlaying] = useState(false);
   const [index, setIndex] = useState(0);
   const [word, setWord] = useState<[number, number] | null>(null);
@@ -161,7 +176,7 @@ export function useBriefingSpeech(opts: SpeechOptions) {
     const url = await resolve();
     setLoading(false);
     if (!url) {
-      setEngine("voice");
+      setFileBroken(true);
       return null;
     }
     const el = new Audio(url);
@@ -183,7 +198,7 @@ export function useBriefingSpeech(opts: SpeechOptions) {
       // An expired or unreachable file: the Myte speaks it live instead.
       audioEl.current = null;
       setFilePlaying(false);
-      setEngine("voice");
+      setFileBroken(true);
     });
     audioEl.current = el;
     return el;
@@ -193,6 +208,12 @@ export function useBriefingSpeech(opts: SpeechOptions) {
 
   const play = useCallback(
     async (from?: number) => {
+      if (preparing) {
+        // Wait for the recording; the effect below starts it (or the live voice).
+        wantPlay.current = true;
+        setWaiting(true);
+        return;
+      }
       firstPlay();
       const at = from ?? (finished ? 0 : indexRef.current);
       if (engine === "audio") {
@@ -224,10 +245,33 @@ export function useBriefingSpeech(opts: SpeechOptions) {
       }
       speakFrom(at);
     },
-    [engine, ensureAudio, finished, firstPlay, keyPrefix, speakFrom, starts],
+    [engine, ensureAudio, finished, firstPlay, keyPrefix, preparing, speakFrom, starts],
   );
 
+  // The recording became ready (or will not be): play what was asked for.
+  useEffect(() => {
+    if (preparing || !wantPlay.current) return;
+    wantPlay.current = false;
+    setWaiting(false);
+    void play();
+  }, [preparing, play]);
+
+  // The live voice: render every segment ahead, in order, three at a time.
+  const liveSpeed = Math.min(1.4, Math.max(0.7, rate));
+  useEffect(() => {
+    if (engine !== "voice" || preparing || !segments.length) return;
+    return myteSpeaker().warm(
+      segments.map((seg) => seg.text),
+      { speed: liveSpeed, language: opts.language, concurrency: 3 },
+    );
+  }, [engine, preparing, segments, liveSpeed, opts.language]);
+
   const pause = useCallback(() => {
+    if (wantPlay.current) {
+      wantPlay.current = false;
+      setWaiting(false);
+      return;
+    }
     if (audioEl.current && engine === "audio") {
       audioEl.current.pause();
       return;
@@ -235,7 +279,7 @@ export function useBriefingSpeech(opts: SpeechOptions) {
     myteSpeaker().stop();
   }, [engine]);
 
-  const toggle = useCallback(() => (playingRef.current ? pause() : void play()), [pause, play]);
+  const toggle = useCallback(() => (playingRef.current || wantPlay.current ? pause() : void play()), [pause, play]);
 
   const seek = useCallback(
     (i: number) => {
@@ -317,6 +361,8 @@ export function useBriefingSpeech(opts: SpeechOptions) {
     blocked,
     finished,
     loading,
+    preparing,
+    waiting,
     note: failure ? failureNote(failure) : null,
     level,
   };
