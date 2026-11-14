@@ -8,9 +8,10 @@ import { KpiStrip, QuotaList } from "@/components/ops/viz/Figures";
 import { Donut } from "@/components/ops/viz/Donut";
 import { Heatmap } from "@/components/ops/viz/Heatmap";
 import { TrendPanel } from "@/components/ops/overview/TrendPanel";
-import { RegionsPanel } from "@/components/ops/overview/RegionsPanel";
+import { MembersPanel } from "@/components/ops/overview/MembersPanel";
+import { memberPlaces } from "@/lib/ops-geo";
 import { RefreshButton } from "@/components/ops/RefreshButton";
-import { fmt, periodLabel, planFill, planLabel, planRank, weekPoints } from "@/lib/ops-charts";
+import { REGION_PLACES, fmt, periodLabel, planFill, planLabel, planRank, weekPoints } from "@/lib/ops-charts";
 import { loadOverview } from "@/lib/api/admin-ops";
 import { zonedFormat } from "@/lib/timezone-server";
 
@@ -54,6 +55,16 @@ export default async function OpsOverviewPage() {
     running.unshift(count);
     count -= signups[i].value;
   }
+
+  const where = o.member_zones ? memberPlaces(o.member_zones, t.members) : null;
+  // Storage is a separate fact from where people are: say which region holds the data, and that
+  // it is the default every workspace is given when it is created.
+  const placed = (o.regions ?? []).filter((r) => r.region !== "unplaced");
+  const storage = placed.length
+    ? `Data storage region, a separate setting: ${placed
+        .map((r) => `${REGION_PLACES[r.region]?.short ?? r.region.toUpperCase()} for ${r.workspaces} ${r.workspaces === 1 ? "workspace" : "workspaces"}`)
+        .join(", ")}. New workspaces get US by default; nothing chooses it at sign-up.`
+    : null;
 
   const plans = [...o.plans]
     .sort((a, b) => planRank(a.plan) - planRank(b.plan))
@@ -108,9 +119,9 @@ export default async function OpsOverviewPage() {
         </div>
 
         <SectionCard
-          title="Where workspaces live"
+          title="Where members are"
           headingId="regions-heading"
-          description="Each workspace's data-residency region and database cell. A hub grows with the workspaces it holds."
+          description="Each member placed by the time zone they saved, at that zone's city, grouped by country. A hub grows with its members."
           clip={false}
           aside={
             <Link href="/ops/workspaces" className={linkClass}>
@@ -119,10 +130,10 @@ export default async function OpsOverviewPage() {
           }
         >
           <div className={cardPad}>
-            {o.regions ? (
-              <RegionsPanel regions={o.regions} total={t.tenants} />
+            {where ? (
+              <MembersPanel places={where.places} notSet={where.notSet} total={t.members} storage={storage} />
             ) : (
-              <p className="text-[14px] text-ink-3">Region counts come with the next admin-ops-service deploy; this service does not send them yet.</p>
+              <p className="text-[14px] text-ink-3">Member locations come with the next admin-ops-service deploy; this service does not send them yet.</p>
             )}
           </div>
         </SectionCard>

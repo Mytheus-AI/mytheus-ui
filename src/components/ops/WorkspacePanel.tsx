@@ -10,7 +10,7 @@ import { textareaClass } from "@/components/ui/Form";
 import { Note } from "@/components/ui/Note";
 import { ColumnChart, Meter } from "@/components/ops/charts";
 import { RegionMap } from "@/components/ops/map/RegionMap";
-import { regionLabel, weekPoints } from "@/lib/ops-charts";
+import { REGION_PLACES, regionLabel, weekPoints } from "@/lib/ops-charts";
 import { notifySuccess } from "@/lib/toast";
 import {
   beginSupportSession,
@@ -422,9 +422,11 @@ function MoveSection({ detail: d, refresh }: { detail: TenantDetail; refresh: ()
                 : `Map: data lives in ${regionLabel(here)}`
             }
             hubs={[
-              { region: here, workspaces: 1, detail: [d.residency ? `cell ${d.residency.db_cell}` : "default placement"] },
-              ...(openMove && openMove.to_region !== here ? [{ region: openMove.to_region, workspaces: 0, detail: [`requested, cell ${openMove.to_cell}`] }] : []),
-            ]}
+              { region: here, count: 1, detail: [d.residency ? `cell ${d.residency.db_cell}` : "default placement"] },
+              ...(openMove && openMove.to_region !== here ? [{ region: openMove.to_region, count: 0, detail: [`requested, cell ${openMove.to_cell}`] }] : []),
+            ]
+              .filter((h) => REGION_PLACES[h.region])
+              .map((h) => ({ ...h, key: h.region, label: regionLabel(h.region), short: REGION_PLACES[h.region].short, lon: REGION_PLACES[h.region].lon, lat: REGION_PLACES[h.region].lat }))}
             route={openMove && openMove.to_region !== here ? { from: here, to: openMove.to_region } : null}
           />
         </div>

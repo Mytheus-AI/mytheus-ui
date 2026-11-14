@@ -212,6 +212,9 @@ export interface OpsOverview {
   ops_activity_by_day: DayCount[];
   /** Workspaces by data-residency region, largest first; absent from an older service. */
   regions?: OpsRegion[];
+  /** Members by saved time zone (`listening_preferences.time_zone`), largest first; absent from
+      an older service. */
+  member_zones?: { time_zone: string; members: number }[];
 }
 
 /** One data-residency region on the overview. `unplaced` holds workspaces with no residency row. */
