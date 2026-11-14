@@ -158,7 +158,7 @@ export function AskMytePage({
         <h1 className="display min-w-0 flex-1 truncate text-[20px] text-ink">Ask {persona.name}</h1>
       ) : (
         <>
-          <MyteFace seed={persona.seed} name={persona.name} state={face.state} size={36} followInput={composerRef} />
+          <MyteFace seed={persona.seed} name={persona.name} state={face.state} size={48} followInput={composerRef} />
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-[15px] font-semibold leading-tight text-ink">{conv.title ?? "New question"}</h1>
             <p className="truncate text-[13px] leading-tight text-ink-3" aria-hidden>
@@ -180,7 +180,7 @@ export function AskMytePage({
   );
 
   return (
-    <div className="-mx-4 -mb-12 -mt-1 flex h-[calc(100dvh-68px)] min-h-[480px] sm:-mx-6 lg:-mx-8">
+    <div className="-mb-12 flex h-[calc(100dvh-68px-20px)] min-h-[520px] overflow-hidden rounded-hero border border-line bg-bg shadow-warm-1">
       <aside aria-label="Your questions" className="hidden w-[272px] shrink-0 border-r border-line bg-bg lg:flex lg:flex-col">
         {rail}
       </aside>
