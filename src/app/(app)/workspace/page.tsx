@@ -11,6 +11,7 @@ import { StatCard } from "@/components/admin/StatCard";
 import { WorkspaceInvite } from "@/components/admin/WorkspaceInvite";
 import { ReadinessStrip } from "@/components/org-brain/ReadinessMeter";
 import { OrgNameCard } from "@/components/tenant/OrgNameCard";
+import { OrgLogoCard } from "@/components/tenant/OrgLogoCard";
 import { listMembers } from "@/lib/api/members";
 import { fetchUsage } from "@/lib/api/usage";
 import { loadIntegrations } from "@/lib/api/integrations";
@@ -20,7 +21,7 @@ export const metadata: Metadata = { title: "Workspace | Mytheus" };
 
 /* The Workspace console's Overview: the headline counts (members from `GET /users`, pending Clerk
    invitations, the plan from `GET /usage`, integrations from `GET /integrations`), how ready the
-   company brain is, the workspace's name, and the way into each tab. The member list itself is on
+   company brain is, the workspace's name and logo, and the way into each tab. The member list itself is on
    Members; the data requests are on Data and privacy. Every read degrades its own card. */
 
 const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
@@ -106,7 +107,10 @@ export default async function WorkspaceOverviewPage() {
       </Card>
 
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <OrgNameCard />
+        <div className="grid gap-5">
+          <OrgNameCard />
+          <OrgLogoCard />
+        </div>
         <div className="grid gap-4">
           <QuickLink href="/workspace/members" icon={UsersThree} title="Members">
             {members ? `${members.length} ${members.length === 1 ? "person" : "people"}. Change access or remove it.` : "The member list could not be loaded just now."}

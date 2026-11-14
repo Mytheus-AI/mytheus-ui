@@ -7,6 +7,7 @@ import { CaretUpDown, Plus, SidebarSimple, X } from "@phosphor-icons/react";
 import { useOrgContext } from "@/lib/org-context";
 import { Wordmark } from "@/components/site/Wordmark";
 import { AgentOrb } from "@/components/agent/AgentOrb";
+import { OrgMark } from "@/components/tenant/OrgMark";
 import { defaultDoodleSeed } from "@/lib/doodle";
 import { buttonClass } from "@/components/ui/Button";
 import { countLabel } from "@/lib/inbox";
@@ -272,9 +273,7 @@ export function Sidebar({
         aria-label={`${org.name}: switch workspace`}
         className={`mb-3 flex shrink-0 items-center rounded-ctl border transition-colors hover:border-line-2 ${lay(ORG)}`}
       >
-        <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full bg-pill text-[12.5px] font-bold text-pill-on">
-          {org.name.slice(0, 1).toUpperCase()}
-        </span>
+        <OrgMark name={org.name} logoUrl={org.logoUrl} size={30} decorative />
         <span className={`sb-fade min-w-0 flex-1 ${label}`}>
           <span className="block truncate text-[14px] font-semibold leading-tight text-ink">{org.name}</span>
           <span className="block text-[12.5px] text-ink-3">{isAdmin ? "Workspace admin" : "Member"}</span>

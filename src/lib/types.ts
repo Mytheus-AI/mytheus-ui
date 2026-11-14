@@ -9,7 +9,12 @@
 /** Who is signed in and which workspace they are in, resolved from the verified Clerk session
  *  by `resolveOrgContext()`. `org.id` is Clerk's opaque organization id, never our `org_id`. */
 export type OrgContextValue = {
-  org: { id: string; name: string };
+  org: {
+    id: string;
+    name: string;
+    /** the workspace logo as a same-origin image URL (`/api/org-logo?v=`), when it has one */
+    logoUrl?: string;
+  };
   user: {
     id: string;
     name: string;

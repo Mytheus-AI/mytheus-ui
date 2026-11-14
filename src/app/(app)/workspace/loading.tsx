@@ -4,7 +4,7 @@ import { FieldRowSkeleton, SectionCardSkeleton, StatCardSkeleton, TitledBarSkele
 
 /* The Workspace overview while it loads, inside the console layout (its title and tabs stay put):
    the tab's title row with Invite people, the four figures, the company brain card with its
-   readiness strip, then the workspace name beside the three quick links. */
+   readiness strip, then the workspace name and logo beside the three quick links. */
 export default function Loading() {
   return (
     <SkeletonSection label="Loading the workspace overview" className="flex flex-col gap-5">
@@ -28,12 +28,24 @@ export default function Loading() {
         </div>
       </div>
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <SectionCardSkeleton title="w-40" description={["w-[80%]"]}>
-          <FieldRowSkeleton />
-          <div className="border-t border-line bg-surface-2 px-4 py-3.5 sm:px-[22px]">
-            <ButtonBone label="Save name" />
-          </div>
-        </SectionCardSkeleton>
+        <div className="grid gap-5">
+          <SectionCardSkeleton title="w-40" description={["w-[80%]"]}>
+            <FieldRowSkeleton />
+            <div className="border-t border-line bg-surface-2 px-4 py-3.5 sm:px-[22px]">
+              <ButtonBone label="Save name" />
+            </div>
+          </SectionCardSkeleton>
+          {/* the logo card: the 96 px mark beside the drop zone, then Choose an image */}
+          <SectionCardSkeleton title="w-36" description={["w-[85%]"]}>
+            <div className="grid gap-5 px-4 py-[18px] sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center sm:px-[22px]">
+              <Bone className="mx-auto h-24 w-24 rounded-ctl sm:mx-0" />
+              <Bone className="h-[112px] w-full rounded-card" />
+            </div>
+            <div className="border-t border-line bg-surface-2 px-4 py-3.5 sm:px-[22px]">
+              <ButtonBone label="Choose an image" icon />
+            </div>
+          </SectionCardSkeleton>
+        </div>
         <div className="grid gap-4">
           {[0, 1, 2].map((i) => (
             <div key={i} aria-hidden className={cardClass({ className: "flex items-start gap-4" })}>
