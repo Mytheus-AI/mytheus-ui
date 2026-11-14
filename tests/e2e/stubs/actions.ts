@@ -2,6 +2,7 @@ import { applyUpdate, forgotten, type MemoryUpdate, type PersonMemory } from "..
 import { MEMORY_FIXTURE } from "../memory-fixture";
 import { CAPACITY, CHECK_FULL, LEDGER, TODAY } from "../ledger-fixture";
 import { addDays, type LedgerPromise } from "../../../src/lib/promises/ledger";
+import { VOICES } from "../voice-fixture";
 import { BRIEFING as BRIEFING_READY, SETTINGS as BRIEFING_SETTINGS, WRITING as BRIEFING_WRITING } from "../briefing-fixture";
 import {
   BLAST as WB_BLAST,
@@ -564,6 +565,17 @@ export async function briefingAudioUrl() {
 }
 export async function saveBriefingPreferences(prefs: Record<string, unknown>) {
   return { ok: true as const, settings: { ...BRIEFING_SETTINGS, ...prefs } };
+}
+// The Myte's voice (ADR-0050): the catalogue and the choice, as core-api answers them.
+let voiceChoice: string | null = VOICES.chosen;
+export async function loadVoices() {
+  return { ok: true as const, catalog: { ...VOICES, chosen: voiceChoice, selected: voiceChoice ?? VOICES.selected } };
+}
+export async function saveVoice(voice: string | null) {
+  if (voice === "bf_emma" && (window as unknown as { __refuseVoice?: boolean }).__refuseVoice) return { ok: false as const, message: "Your Myte's voice could not be saved just now. Nothing changed." };
+  voiceChoice = voice;
+  (window as unknown as { __savedVoices?: (string | null)[] }).__savedVoices = [...((window as unknown as { __savedVoices?: (string | null)[] }).__savedVoices ?? []), voice];
+  return { ok: true as const, catalog: { ...VOICES, chosen: voice, selected: voice ?? VOICES.selected } };
 }
 // "Decisions that know why", blast radius and settle threads (a4): answered as core-api would.
 export async function readDecisionWhy() {

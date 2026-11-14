@@ -2,7 +2,7 @@
    Home's compact player, every state, and Settings > Briefings. axe (WCAG 2.0/2.1 A and AA,
    contrast included) in light and dark; play, the transcript highlighting in sync, skip, speed,
    the keyboard; Brief me through writing to ready; 360 and 1600 px with no horizontal scroll;
-   reduced motion. Speech is a fake Web Speech API (briefing-speech-fake.ts).
+   reduced motion. The voice is a fake Kokoro speech route (voice-fake.ts): no device voice exists.
    Run: npm run test:a11y -- briefing */
 
 import AxeBuilder from "@axe-core/playwright";
@@ -10,7 +10,7 @@ import { expect, test } from "@playwright/experimental-ct-react";
 import type { Page } from "@playwright/test";
 import { BriefingHarness } from "./BriefingHarness";
 import { BRIEFING } from "./briefing-fixture";
-import { fakeSpeech } from "./briefing-speech-fake";
+import { fakeVoice } from "./voice-fake";
 
 async function axe(page: Page) {
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).include(".mx-app").analyze();
@@ -25,8 +25,9 @@ async function noOverflow(page: Page) {
   expect(overflow).toBeLessThanOrEqual(0);
 }
 
+let spoken: { text: string }[] = [];
 test.beforeEach(async ({ page }) => {
-  await fakeSpeech(page);
+  spoken = await fakeVoice(page, { msPerWord: 70 });
 });
 
 for (const theme of ["light", "dark"] as const) {
@@ -84,11 +85,10 @@ test("the transcript highlights in sync, and skip, pause and open the moment wor
   // Next point: the second is said and highlighted.
   await page.getByRole("button", { name: "Next point" }).click();
   await expect(list.locator('li[aria-current="true"]')).toHaveAttribute("data-seg", "1");
-  const spoken = await page.evaluate(() => JSON.stringify((window as unknown as { __spoken?: string[] }).__spoken ?? null));
-  expect((JSON.parse(spoken) as string[] | null)?.at(-1)).toBe(BRIEFING.segments[1]!.text);
+  // It is said in the Myte's own voice, through the speech route.
+  await expect.poll(() => spoken.map((b) => b.text).join(" ")).toContain(BRIEFING.segments[1]!.text.split(/(?<=[.!?])\s/)[0]!);
   // It runs on to the next point by itself.
-  await page.evaluate(() => ((window as unknown as { __wordMs: number }).__wordMs = 5));
-  await expect(list.locator('li[aria-current="true"]')).toHaveAttribute("data-seg", "2", { timeout: 5000 });
+  await expect(list.locator('li[aria-current="true"]')).toHaveAttribute("data-seg", "2", { timeout: 10_000 });
   await pause.click();
   await expect(page.getByRole("button", { name: "Play briefing" })).toHaveAttribute("aria-pressed", "false");
   // Open the moment goes to the transcript at the moment.
@@ -116,14 +116,23 @@ test("the keyboard: space plays and pauses, the arrows skip", async ({ mount, pa
   await expect(page.getByRole("button", { name: "Play briefing" })).toBeVisible();
 });
 
-test("speed and voice are remembered for the person", async ({ mount, page }) => {
+test("speed is remembered for the person; no device voice menu", async ({ mount, page }) => {
   await mount(<BriefingHarness view="after" />);
   await page.getByRole("combobox", { name: "Speed" }).click();
   await page.getByRole("option", { name: "1.5x" }).click();
   await expect(page.getByText("Speed saved")).toBeVisible();
-  await page.getByRole("combobox", { name: "Voice" }).click();
-  await page.getByRole("option", { name: /Samantha/ }).click();
-  await expect(page.getByText("Voice remembered")).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Voice" })).toHaveCount(0);
+});
+
+test("voice unavailable: a quiet note, the transcript stays, no other voice", async ({ mount, page }) => {
+  await page.unroute("**/api/voice/speech");
+  const failed = await fakeVoice(page, { status: 503 });
+  await mount(<BriefingHarness view="after" />);
+  await page.getByRole("button", { name: "Play briefing" }).click();
+  await expect(page.getByText("Voice is unavailable right now. The whole briefing is written out below.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play briefing" })).toBeVisible();
+  await expect(page.getByRole("list", { name: "Transcript" }).getByRole("listitem")).toHaveCount(6);
+  expect(failed.length).toBe(1);
 });
 
 test("Brief me: being written, then ready", async ({ mount, page }) => {
@@ -141,10 +150,9 @@ test("settings: switches, length and the voice", async ({ mount, page }) => {
   await expect(on).toHaveAttribute("aria-checked", "false");
   await page.getByRole("radio", { name: /Short/ }).click();
   await expect(page.getByRole("radio", { name: /Short/ })).toHaveAttribute("aria-checked", "true");
-  await page.getByRole("combobox", { name: "Juniper's voice on this device" }).click();
-  await expect(page.getByRole("option", { name: /Matched to your Myte/ })).toBeVisible();
-  await page.getByRole("option", { name: /Samantha/ }).click();
-  await expect(page.getByText("Voice remembered")).toBeVisible();
+  // The Myte's one voice: the same picker as Your Myte.
+  await page.getByRole("region", { name: "Voice" }).locator("label").filter({ hasText: /^George/ }).click();
+  await expect(page.getByText("Voice saved: George")).toBeVisible();
 });
 
 for (const width of [360, 1600]) {

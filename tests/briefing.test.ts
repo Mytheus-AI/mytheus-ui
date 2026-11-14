@@ -1,6 +1,6 @@
 // Run: npm test
-// A briefing from your agent: where "open the moment" goes, which device voice speaks it, the
-// persona's pace, where the playhead is, and the copy for each state.
+// A briefing from your agent: where "open the moment" goes, where the playhead is, and the copy
+// for each state. (The voice is the Myte's own: tests/voice-*.test.ts.)
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
@@ -14,14 +14,11 @@ import {
   momentHref,
   momentLabel,
   nearestSpeed,
-  pickVoice,
   segmentAt,
   segmentSeconds,
   segmentStarts,
   speedLabel,
   unavailableCopy,
-  voiceTone,
-  voicesFor,
   wordAt,
   type BriefingLink,
 } from "../src/lib/briefing.ts";
@@ -40,46 +37,6 @@ test("open the moment goes to the transcript at the moment, else to the record",
   assert.equal(momentLabel({ type: "question", meeting_id: M, id: null, at_ms: null }), "Open the meeting");
   assert.equal(momentHref(null), null);
   assert.equal(momentLabel(undefined), "");
-});
-
-const VOICES = [
-  { name: "Albert", lang: "en-US" },
-  { name: "Samantha", lang: "en-US" },
-  { name: "Google UK English Female", lang: "en-GB" },
-  { name: "Microsoft Aria Online (Natural)", lang: "en-US" },
-  { name: "Monica", lang: "es-ES" },
-  { name: "Google español", lang: "es-ES" },
-  { name: "Thomas", lang: "fr_FR" },
-];
-
-test("the device voices for a language, the good ones first, never the novelty ones", () => {
-  assert.deepEqual(
-    voicesFor(VOICES, "en").map((v) => v.name),
-    ["Google UK English Female", "Microsoft Aria Online (Natural)", "Samantha"],
-  );
-  assert.deepEqual(voicesFor(VOICES, "fr").map((v) => v.name), ["Thomas"]);
-  assert.deepEqual(voicesFor(VOICES, "ja"), []);
-});
-
-test("the remembered voice wins, else a stable pick for the agent among the good voices", () => {
-  assert.equal(pickVoice(VOICES, { language: "en", seed: "a", preferred: "Samantha" })?.name, "Samantha");
-  // A remembered voice for another language is not used.
-  assert.notEqual(pickVoice(VOICES, { language: "es", seed: "a", preferred: "Samantha" })?.name, "Samantha");
-  const a = pickVoice(VOICES, { language: "en", seed: "juniper" });
-  assert.ok(a && /Google|Natural/.test(a.name));
-  assert.equal(pickVoice(VOICES, { language: "en", seed: "juniper" })?.name, a.name); // stable
-  assert.equal(pickVoice(VOICES, { language: "es", seed: "x" })?.name, "Google español");
-  assert.equal(pickVoice(VOICES, { language: "ja", seed: "x" }), null);
-  assert.equal(pickVoice([], { language: "en", seed: "x" }), null);
-});
-
-test("the persona sets the pace and the pitch", () => {
-  assert.deepEqual(voiceTone("balanced"), { rate: 1, pitch: 1 });
-  assert.ok(voiceTone("concise").rate > 1);
-  assert.ok(voiceTone("detailed").rate < 1);
-  assert.ok(voiceTone("friendly").pitch > 1);
-  assert.ok(voiceTone("direct").pitch < 1);
-  assert.deepEqual(voiceTone("unknown"), { rate: 1, pitch: 1 });
 });
 
 test("speeds", () => {

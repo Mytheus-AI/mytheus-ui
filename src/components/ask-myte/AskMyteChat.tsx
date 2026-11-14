@@ -82,7 +82,7 @@ export function AskMyteChat({
   const pinned = useRef(true);
   const sentAuto = useRef(false);
   const sourcesId = useId();
-  const voice = useMyteVoice(persona.seed, persona.personality);
+  const voice = useMyteVoice();
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
   const [routine, setRoutine] = useState<{ open: boolean; question: string }>({ open: false, question: "" });
   const [talking, setTalking] = useState(false);

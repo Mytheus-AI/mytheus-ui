@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useId, useMemo, useReducer, useRef, useState } from "react";
 import { Microphone, Pause, PhoneDisconnect, Play, SpeakerHigh, SpeakerSimpleSlash } from "@phosphor-icons/react";
 import { AgentOrb } from "@/components/agent/AgentOrb";
-import { pickVoice, voiceTone } from "@/lib/briefing";
+import { failureNote } from "@/lib/voice/catalog";
+import { myteSpeaker, useVoiceSpeed } from "@/lib/voice/myte-voice";
 import { failureCopy } from "@/lib/ask-myte/compose";
 import { plainText, type Answer } from "@/lib/ask-myte/reducer";
 import { initialVoice, levelFrom, phaseWords, plushFor, spaceEvent, voiceReducer } from "@/lib/ask-myte/voice-machine";
@@ -14,9 +15,8 @@ import type { AskMyteState } from "./useAskMyte";
 
 /* Talk to Myte (ADR-0049 F6), loaded only when someone presses Talk. A large live plush in the
    middle reacts to the conversation: it listens with the microphone's level (Web Audio analyser),
-   thinks while the answer's steps run, and speaks the answer in its own voice (the briefing's
-   voice pick for this Myte's seed and personality) with a level that follows the words, then
-   listens again. A pause of about 1.2 s after you stop talking sends what it heard. The words
+   thinks while the answer's steps run, and speaks the answer in its own voice (the self-hosted
+   Kokoro voice, ADR-0050) with a level read from that voice's audio, then listens again. A pause of about 1.2 s after you stop talking sends what it heard. The words
    heard and the answer, with its citations, are on screen and in live regions; the turns are the
    same thread as typing.
 
@@ -64,7 +64,9 @@ export default function VoiceMode({
   const rec = useRef<Recognition | null>(null);
   const level = useRef(0);
   const audio = useRef<{ ctx: AudioContext; analyser: AnalyserNode; stream: MediaStream; buf: Uint8Array<ArrayBuffer> } | null>(null);
-  const voices = useRef<SpeechSynthesisVoice[]>([]);
+  const [voiceNote, setVoiceNote] = useState<string | null>(null);
+  const [speed] = useVoiceSpeed();
+  const spokenKey = useRef<string | null>(null);
   const sentTurn = useRef(0);
   const answerKey = useRef<string | null>(null);
   const settledKey = useRef<string | null>(null);
@@ -104,7 +106,8 @@ export default function VoiceMode({
         a.analyser.getByteTimeDomainData(a.buf);
         level.current = level.current * 0.6 + levelFrom(a.buf) * 0.4;
       } else if (phaseRef.current === "speaking") {
-        level.current = Math.max(0.12, level.current * 0.9);
+        // The Myte's own voice, read from the speaker's analyser.
+        level.current = myteSpeaker().level();
       } else level.current *= 0.85;
       raf = requestAnimationFrame(loop);
     };
@@ -194,7 +197,7 @@ export default function VoiceMode({
     }
     if (answerKey.current !== lastAnswer.key || settledKey.current === lastAnswer.key) return;
     settledKey.current = lastAnswer.key;
-    if (lastAnswer.status === "done") dispatch({ type: "answer-done", spoken: !!plainText(lastAnswer.text) && "speechSynthesis" in window });
+    if (lastAnswer.status === "done") dispatch({ type: "answer-done", spoken: !!plainText(lastAnswer.text) });
     else {
       const copy = lastAnswer.error ? failureCopy(lastAnswer.error.reason, { name: persona.name, message: lastAnswer.error.message, isAdmin }) : failureCopy("stopped", { name: persona.name });
       dispatch({ type: "answer-failed", message: copy.title });
@@ -202,57 +205,46 @@ export default function VoiceMode({
   }, [s.phase, lastAnswer, persona.name, isAdmin]);
 
   /* ---------------- speaking ---------------- */
+  // The answer in the Myte's own voice (ADR-0050), through the shared speaker. Pause holds the
+  // sound where it is and Resume carries on; interrupting, muting or ending stops it. If the voice
+  // is unavailable it says so quietly and listens again; the answer stays on screen.
   useEffect(() => {
-    if (!("speechSynthesis" in window)) return;
-    const load = () => {
-      voices.current = window.speechSynthesis.getVoices();
-    };
-    load();
-    window.speechSynthesis.addEventListener?.("voiceschanged", load);
-    return () => window.speechSynthesis.removeEventListener?.("voiceschanged", load);
-  }, []);
-
-  useEffect(() => {
-    if (s.phase !== "speaking" || !lastAnswer) return;
-    const synth = window.speechSynthesis;
-    synth.cancel();
-    const words = plainText(lastAnswer.text);
-    const language = document.documentElement.lang || navigator.language || "en";
-    const voice = pickVoice(voices.current, { language, seed: persona.seed });
-    const tone = voiceTone(persona.personality);
-    const parts = words.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
-    let cancelled = false;
-    parts.forEach((part, i) => {
-      const u = new SpeechSynthesisUtterance(part);
-      if (voice) u.voice = voice;
-      u.lang = voice?.lang ?? language;
-      u.rate = tone.rate;
-      u.pitch = tone.pitch;
-      // Each word bumps the plush's speaking level.
-      u.onboundary = () => {
-        level.current = Math.min(1, 0.55 + Math.random() * 0.4);
-      };
-      if (i === parts.length - 1) {
-        u.onend = () => !cancelled && dispatch({ type: "spoken" });
-        u.onerror = () => !cancelled && dispatch({ type: "spoken" });
+    const speaker = myteSpeaker();
+    const key = lastAnswer ? `talk:${lastAnswer.key}` : null;
+    const owns = () => key !== null && speaker.getSnapshot().key === key;
+    if (s.phase === "speaking" && lastAnswer && key) {
+      if (owns() && speaker.getSnapshot().status === "paused") {
+        speaker.resume();
+        return;
       }
-      synth.speak(u);
-    });
-    return () => {
-      cancelled = true;
-      synth.cancel();
-    };
-  }, [s.phase, lastAnswer, persona.seed, persona.personality]);
+      if (spokenKey.current === key && owns()) return;
+      spokenKey.current = key;
+      setVoiceNote(null);
+      void speaker.speak({ key, text: lastAnswer.text, speed }).then((outcome) => {
+        if (spokenKey.current !== key) return;
+        if (outcome === "error") setVoiceNote(failureNote(speaker.getSnapshot().error ?? "voice_failed"));
+        if (outcome !== "stopped") dispatch({ type: "spoken" });
+      });
+    } else if (s.phase === "paused") {
+      if (owns()) speaker.pause();
+    } else if (owns()) {
+      spokenKey.current = null;
+      speaker.stop(key ?? undefined);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the phase and the answer only
+  }, [s.phase, lastAnswer?.key]);
 
   /* ---------------- start, end, keys ---------------- */
   useEffect(() => {
     dispatch({ type: "start" });
+    // Opening voice mode is a gesture: it lets the answers be heard later.
+    myteSpeaker().unlock();
     const t = window.setTimeout(() => root.current?.querySelector<HTMLElement>("[data-voice-primary]")?.focus(), 30);
     return () => {
       window.clearTimeout(t);
       stopListening();
       stopMeter();
-      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      if (myteSpeaker().getSnapshot().key?.startsWith("talk:")) myteSpeaker().stop();
     };
   }, [stopListening, stopMeter]);
 
@@ -361,6 +353,11 @@ export default function VoiceMode({
           ) : s.sent && s.phase !== "idle" ? (
             <p className="text-center text-[16px] leading-relaxed text-ink-3">
               <span className="sr-only">You asked: </span>&ldquo;{s.sent}&rdquo;
+            </p>
+          ) : null}
+          {voiceNote && !s.error ? (
+            <p className="mt-3 text-center text-[14px] text-ink-3" role="status">
+              {voiceNote}
             </p>
           ) : null}
           {s.error ? (

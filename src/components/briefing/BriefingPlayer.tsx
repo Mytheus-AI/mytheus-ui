@@ -3,7 +3,7 @@
 import { useMyAgent } from "@/lib/my-agent";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { ArrowSquareOut, Pause, Play, SkipBack, SkipForward, SpeakerHigh, Sparkle, Waveform } from "@phosphor-icons/react";
+import { ArrowSquareOut, Pause, Play, SkipBack, SkipForward, Sparkle, Waveform } from "@phosphor-icons/react";
 import { briefMe, briefingAudioUrl, markBriefingHeard, pollBriefing, saveBriefingPreferences } from "@/app/actions/briefings";
 import { Button } from "@/components/ui/Button";
 import { cardClass, cardPadX } from "@/components/ui/Card";
@@ -244,11 +244,9 @@ function ReadyPlayer({
   const { state, play, toggle, seek, next, prev } = useBriefingSpeech({
     segments,
     language: briefing.language,
-    personality: briefing.agent.personality,
-    seed,
+    id: briefing.id,
     title: briefing.meeting_title ? `Briefing: ${briefing.meeting_title}` : "Your briefing",
     agentName: mine?.name ?? briefing.agent.name,
-    preferredVoice: prefs.voice ?? null,
     rate,
     audio,
     onFirstPlay: () => {
@@ -280,7 +278,8 @@ function ReadyPlayer({
     const nextPrefs = { ...prefs, ...patch };
     setPrefs(nextPrefs);
     if (!canSave) return;
-    const res = await saveBriefingPreferences(nextPrefs);
+    // The voice is managed on Your Myte and in Settings; leaving it out keeps the stored one.
+    const res = await saveBriefingPreferences({ ...nextPrefs, server_voice: undefined });
     if (res.ok) notifySuccess(label);
     else notifyError(res.message);
   };
@@ -301,14 +300,12 @@ function ReadyPlayer({
   };
 
   const current = segments[state.index];
-  const voiceOptions = state.voices.map((v) => ({ value: v.name, label: v.name.replace(/\s*\(.*\)$/, ""), description: v.lang }));
-  const deviceVoice = state.engine === "device";
 
   return (
     <section aria-labelledby={headingId} className={cardClass({ flush: true, className: "brf" })} onKeyDown={onKey} aria-keyshortcuts="Space ArrowLeft ArrowRight">
       <div className={`brf-head ${cardPadX} pt-5`}>
         <div className="flex flex-wrap items-center gap-4">
-          <Face seed={seed} size={variant === "compact" ? 56 : 64} speaking={state.playing} orb={state.playing ? "speaking" : "idle"} />
+          <Face seed={seed} size={variant === "compact" ? 56 : 64} speaking={state.playing} orb={state.playing ? "speaking" : "idle"} level={state.engine === "voice" ? state.level : undefined} />
           <div className="min-w-0 flex-[1_1_14rem]">
             <p className="text-[13px] font-semibold text-ink-3">{coverLine(briefing)}</p>
             <H id={headingId} className="display mt-0.5 text-[24px] leading-tight text-ink sm:text-[28px]">
@@ -349,20 +346,20 @@ function ReadyPlayer({
       <div className={`${cardPadX} pb-4 pt-3`}>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
           <div className="flex items-center gap-1.5">
-            <Button type="button" variant="ghost" size="md" icon onClick={prev} aria-label="Previous point" disabled={state.index === 0 || state.engine === "none"}>
+            <Button type="button" variant="ghost" size="md" icon onClick={prev} aria-label="Previous point" disabled={state.index === 0}>
               <SkipBack size={20} weight="fill" aria-hidden />
             </Button>
             <button
               type="button"
               onClick={toggle}
-              disabled={state.engine === "none" || state.loading}
+              disabled={state.loading}
               aria-label={state.playing ? "Pause briefing" : state.finished ? "Play briefing again" : "Play briefing"}
               aria-pressed={state.playing}
               className="brf-play inline-grid h-[52px] w-[52px] place-items-center rounded-full bg-pill text-pill-on shadow-warm-2 transition-[background-color,transform] duration-150 hover:bg-pill-2 motion-safe:active:scale-[0.96] disabled:opacity-50"
             >
               {state.playing ? <Pause size={22} weight="fill" aria-hidden /> : <Play size={22} weight="fill" aria-hidden className="translate-x-[1px]" />}
             </button>
-            <Button type="button" variant="ghost" size="md" icon onClick={next} aria-label="Next point" disabled={state.index >= segments.length - 1 || state.engine === "none"}>
+            <Button type="button" variant="ghost" size="md" icon onClick={next} aria-label="Next point" disabled={state.index >= segments.length - 1}>
               <SkipForward size={20} weight="fill" aria-hidden />
             </Button>
           </div>
@@ -389,30 +386,15 @@ function ReadyPlayer({
               options={SPEEDS.map((s) => ({ value: String(s), label: speedLabel(s) }))}
               renderValue={(o) => <span className="tabular-nums">{o?.label ?? "1x"}</span>}
             />
-            {deviceVoice && voiceOptions.length > 0 ? (
-              <Dropdown
-                label="Voice"
-                size="sm"
-                shape="round"
-                tone="soft"
-                icon={<SpeakerHigh size={15} aria-hidden />}
-                value={state.voice?.name ?? null}
-                onChange={(v) => void save({ voice: v }, "Voice remembered")}
-                options={voiceOptions}
-                placeholder="Voice"
-                panelMinWidth={240}
-                className="max-w-[14rem]"
-              />
-            ) : null}
           </div>
         </div>
         {state.blocked ? (
           <p className="mt-3 text-[14px] text-ink-3" role="status">
             Your browser held back auto-play. Press play to listen.
           </p>
-        ) : state.engine === "none" ? (
+        ) : state.note ? (
           <p className="mt-3 text-[14px] text-ink-3" role="status">
-            This browser cannot speak it aloud. The whole briefing is written out below.
+            {state.note}. The whole briefing is written out below.
           </p>
         ) : null}
       </div>
@@ -478,12 +460,12 @@ function ReadyPlayer({
 /** The agent's face, its live plush: it thinks while the briefing is being written, talks while it
     plays and rests when paused (a still picture under reduced motion); a ring breathes around it
     while it speaks. */
-function Face({ seed, size, speaking, orb }: { seed: string; size: number; speaking: boolean; orb: OrbState }) {
+function Face({ seed, size, speaking, orb, level }: { seed: string; size: number; speaking: boolean; orb: OrbState; level?: () => number }) {
   return (
     <span className={`brf-face relative inline-grid shrink-0 place-items-center ${speaking ? "is-speaking" : ""}`} style={{ width: size + 12, height: size + 12 }} aria-hidden>
       <span className="brf-ring absolute inset-0 rounded-full" />
       <span className="relative block overflow-hidden rounded-full bg-surface shadow-warm-2 ring-2 ring-surface" style={{ width: size, height: size }}>
-        <AgentOrb seed={seed} mode="live" state={orb} size={size} />
+        <AgentOrb seed={seed} mode="live" state={orb} size={size} level={speaking ? level : undefined} />
       </span>
     </span>
   );

@@ -5,7 +5,7 @@
 import { test } from "@playwright/experimental-ct-react";
 import path from "node:path";
 import { BriefingHarness, type BriefingView } from "./BriefingHarness";
-import { fakeSpeech } from "./briefing-speech-fake";
+import { fakeVoice } from "./voice-fake";
 
 const DIR = process.env.BRIEFING_SHOTS_DIR;
 
@@ -24,7 +24,7 @@ const SHOTS: { name: string; view: BriefingView; width: number; theme: "light" |
 for (const s of SHOTS) {
   test(`shot ${s.name}`, async ({ mount, page }) => {
     test.skip(!DIR, "set BRIEFING_SHOTS_DIR to take screenshots");
-    await fakeSpeech(page, 260);
+    await fakeVoice(page, { msPerWord: 260 });
     await page.setViewportSize({ width: s.width, height: 1000 });
     await mount(<BriefingHarness view={s.view} theme={s.theme} />);
     if (s.playing) {

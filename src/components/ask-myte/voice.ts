@@ -1,14 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { pickVoice, voiceTone } from "@/lib/briefing";
-import { plainText } from "@/lib/ask-myte/reducer";
+import { failureNote } from "@/lib/voice/catalog";
+import { myteSpeaker, useMyteSpeaker, useVoiceSpeed } from "@/lib/voice/myte-voice";
 
-/* Voice for Ask Myte, both ways, with the browser's own speech engines.
+const KEY = "ask:";
 
-   - `useMyteVoice`: read an answer aloud in the Myte's own voice, the same pick its briefings use
-     (`pickVoice` keyed on its seed, `voiceTone` from its personality), so it sounds like itself
-     everywhere. Citation markers are left out of what it says.
+/* Voice for Ask Myte, both ways.
+
+   - `useMyteVoice`: read an answer aloud in the Myte's own voice (ADR-0050: the self-hosted
+     Kokoro voice through the shared speaker, the same voice its briefings use). Markdown and
+     citation markers are left out of what it says. When the voice is unavailable, `failed` names
+     the answer and a quiet note; the text stays and no other voice is used.
    - `useSpeechInput`: dictate a question (Web Speech API recognition). `supported` is false where
      the browser has none, and the mic button is then not shown at all. */
 
@@ -30,60 +33,30 @@ function recognitionCtor(): (new () => Recognition) | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
-export function useMyteVoice(seed: string, personality: string | null | undefined) {
-  const [supported, setSupported] = useState(false);
-  const [speakingKey, setSpeakingKey] = useState<string | null>(null);
-  const voices = useRef<SpeechSynthesisVoice[]>([]);
+export function useMyteVoice() {
+  const { snapshot, speak: say, stop: hush } = useMyteSpeaker();
+  const [speed] = useVoiceSpeed();
+  const mine = snapshot.key?.startsWith(KEY) ? snapshot.key.slice(KEY.length) : null;
+  const speakingKey = mine && (snapshot.status === "loading" || snapshot.status === "speaking" || snapshot.status === "paused") ? mine : null;
+  const failed = mine && snapshot.status === "error" && snapshot.error ? { key: mine, note: failureNote(snapshot.error) } : null;
 
-  useEffect(() => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    setSupported(true);
-    const load = () => {
-      voices.current = window.speechSynthesis.getVoices();
-    };
-    load();
-    window.speechSynthesis.addEventListener?.("voiceschanged", load);
-    return () => {
-      window.speechSynthesis.removeEventListener?.("voiceschanged", load);
-      window.speechSynthesis.cancel();
-    };
-  }, []);
+  // Leaving the conversation stops its voice.
+  useEffect(() => () => hush(), [hush]);
 
   const stop = useCallback(() => {
-    if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
-    setSpeakingKey(null);
-  }, []);
+    const k = myteSpeaker().getSnapshot().key;
+    if (k?.startsWith(KEY)) hush();
+  }, [hush]);
 
   const speak = useCallback(
     (key: string, text: string) => {
-      if (!supported) return;
-      const synth = window.speechSynthesis;
-      synth.cancel();
-      const words = plainText(text);
-      if (!words) return;
-      const language = document.documentElement.lang || navigator.language || "en";
-      const voice = pickVoice(voices.current, { language, seed });
-      const tone = voiceTone(personality);
-      // One utterance per paragraph keeps long answers from being cut off by some engines.
-      const parts = words.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
-      setSpeakingKey(key);
-      parts.forEach((part, i) => {
-        const u = new SpeechSynthesisUtterance(part);
-        if (voice) u.voice = voice;
-        u.lang = voice?.lang ?? language;
-        u.rate = tone.rate;
-        u.pitch = tone.pitch;
-        if (i === parts.length - 1) {
-          u.onend = () => setSpeakingKey((k) => (k === key ? null : k));
-          u.onerror = () => setSpeakingKey((k) => (k === key ? null : k));
-        }
-        synth.speak(u);
-      });
+      if (!text.trim()) return;
+      void say({ key: `${KEY}${key}`, text, speed });
     },
-    [supported, seed, personality],
+    [say, speed],
   );
 
-  return { supported, speakingKey, speak, stop };
+  return { supported: true, speakingKey, speak, stop, failed };
 }
 
 export function useSpeechInput(onText: (text: string, final: boolean) => void) {

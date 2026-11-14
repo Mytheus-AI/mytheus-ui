@@ -23,7 +23,14 @@ import { AnswerText, MyteSignature, StepsLine } from "./parts";
 
 export type Persona = { name: string; seed: string };
 export type Viewer = { name: string; email: string; seed?: string | null; image?: string | null };
-export type Voice = { supported: boolean; speakingKey: string | null; speak: (key: string, text: string) => void; stop: () => void };
+export type Voice = {
+  supported: boolean;
+  speakingKey: string | null;
+  speak: (key: string, text: string) => void;
+  stop: () => void;
+  /** the answer whose voice failed, and the quiet note to show under it (its text stays) */
+  failed?: { key: string; note: string } | null;
+};
 
 const REASONS = ["Wrong", "Missing something", "Not what I asked", "Too long", "No sources"] as const;
 
@@ -337,6 +344,11 @@ function AnswerBlock({
             ) : null}
             <Feedback answer={answer} onFeedback={onFeedback} />
           </div>
+        ) : null}
+        {settled && voice.failed?.key === answer.key ? (
+          <p className="mt-2 text-[13.5px] text-ink-3" role="status">
+            {voice.failed.note}
+          </p>
         ) : null}
       </article>
     </li>
