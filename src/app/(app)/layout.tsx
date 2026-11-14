@@ -7,6 +7,7 @@ import { AppShell } from "@/components/app/AppShell";
 import { LiveInterruptions } from "@/components/listening/LiveInterruptions";
 import { TimeZoneSync } from "@/components/app/TimeZoneSync";
 import { SupportSessionBanner } from "@/components/app/SupportSessionBanner";
+import { TimeZonePrompt } from "@/components/app/TimeZonePrompt";
 import type { SidebarAgent } from "@/components/app/Sidebar";
 import { fetchMyProfile, syncDisplayName } from "@/lib/api/profile";
 import { agentDisplayName, agentSeed } from "@/lib/api/profile-types";
@@ -62,6 +63,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {/* In every meeting at once: your Myte's live interruptions, on every app page. */}
         <LiveInterruptions />
         <TimeZoneSync />
+        {/* Until a member saves a time zone, a dismissible nudge to do it (each sign-in). */}
+        <TimeZonePrompt />
         {children}
       </AppShell>
     </OrgProvider>

@@ -961,3 +961,10 @@ export async function myteNudgeData() {
   if (!(window as unknown as { __v2Nudges?: boolean }).__v2Nudges) return { meetings: [], tasks: [], promises: [], decisions: [], peerQuestions: [] };
   return V2_NUDGES;
 }
+
+// The save-your-time-zone prompt: the member's saved zone, set by a test on `window.__savedTimeZone`
+// before mounting (default UTC, the column default).
+export async function savedTimeZone(): Promise<string | null> {
+  const g = globalThis as { __savedTimeZone?: string | null };
+  return "__savedTimeZone" in g ? (g.__savedTimeZone ?? null) : "UTC";
+}
