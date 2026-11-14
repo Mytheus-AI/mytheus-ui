@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useClerk, useOrganizationList, useUser } from "@clerk/nextjs";
-import { CaretRight, Check, Copy, Plus } from "@phosphor-icons/react";
+import { CaretRight, Check, Copy, ImageSquare, Plus, X } from "@phosphor-icons/react";
 import { AuthShell } from "./AuthShell";
 import { FormAlert, PrimaryButton, Spinner, StepHeader, TextButton, TextField } from "./fields";
 import { AFTER_AUTH_URL, firstError } from "./clerk-helpers";
@@ -12,6 +12,9 @@ import { OrgMark } from "@/components/tenant/OrgMark";
 import { Button } from "@/components/ui/Button";
 import { defaultDoodleSeed, isDoodleSeed } from "@/lib/doodle";
 import { provisionActiveWorkspace } from "@/app/actions/workspace";
+import { uploadOrgLogo } from "@/app/actions/org-logo";
+import { CENTRED, LOGO_ACCEPT, logoFileError, logoKind } from "@/lib/org-logo";
+import { exportSquare, loadImage, rasteriseSvg } from "@/lib/org-logo-browser";
 
 /* ================================================================== */
 /*  The "choose-organization" session task, made our own. A new        */
@@ -26,7 +29,12 @@ import { provisionActiveWorkspace } from "@/app/actions/workspace";
 /*  Workspaces are never searchable by name: Clerk does not let a      */
 /*  stranger list organizations they are not in, and that is right.    */
 /*                                                                     */
-/*  Start a workspace - name it and create it.                         */
+/*  Start a workspace - name it, optionally pick its logo, create it.  */
+/*  The logo can only be saved once the workspace exists (the upload   */
+/*  is an admin call scoped to it), so the picked image waits in the   */
+/*  browser, is cropped to a centred 512 px square like the editor's,  */
+/*  and is uploaded right after the workspace is set up. A failed      */
+/*  upload never undoes the workspace: the page says so and continues. */
 /* ================================================================== */
 
 type Path = "join" | "create";
@@ -47,6 +55,14 @@ export function ChooseOrganization() {
   const [busy, setBusy] = useState<string | null>(null);
   const [path, setPath] = useState<Path | null>(null);
   const [copied, setCopied] = useState(false);
+  // The logo picked while starting a workspace: the file and a local preview URL.
+  const [logo, setLogo] = useState<{ file: File; preview: string } | null>(null);
+  const [logoError, setLogoError] = useState<string | null>(null);
+  // Set when the workspace was made but its logo could not be saved: the reason and where to go.
+  const [logoFailed, setLogoFailed] = useState<{ message: string; next: string } | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const logoRef = useRef(logo);
+  logoRef.current = logo;
   // Set while a workspace is being entered, so the "already has a workspace" redirect above does
   // not race the hand-off to the next onboarding step once the session turns active.
   const entering = useRef(false);
@@ -110,7 +126,17 @@ export function ChooseOrganization() {
           // the app; a first workspace goes on to "About you" (ADR-0038 D11), which itself skips
           // ahead for someone whose agent already knows their role.
           const switching = new URLSearchParams(window.location.search).get("switch") === "1";
-          router.push(switching ? AFTER_AUTH_URL : "/onboarding/profile?from=workspace");
+          const next = switching ? AFTER_AUTH_URL : "/onboarding/profile?from=workspace";
+          const picked = key === "create" ? logoRef.current : null;
+          if (picked) {
+            const saved = await saveLogo(picked.preview);
+            if (!saved.ok) {
+              setLogoFailed({ message: saved.message, next });
+              setBusy(null);
+              return;
+            }
+          }
+          router.push(next);
         },
       });
     } catch (err) {
@@ -118,6 +144,30 @@ export function ChooseOrganization() {
       setBusy(null);
       entering.current = false;
     }
+  };
+
+  const pickLogo = async (file: File | undefined) => {
+    if (!file) return;
+    const problem = logoFileError(file);
+    if (problem) {
+      setLogoError(problem);
+      return;
+    }
+    setLogoError(null);
+    try {
+      const preview = logoKind(file) === "svg" ? await rasteriseSvg(file) : URL.createObjectURL(file);
+      if (logo) URL.revokeObjectURL(logo.preview);
+      setLogo({ file, preview });
+    } catch {
+      setLogoError("That image could not be read. Try exporting it again.");
+    }
+  };
+
+  const clearLogo = () => {
+    if (logo) URL.revokeObjectURL(logo.preview);
+    setLogo(null);
+    setLogoError(null);
+    if (fileRef.current) fileRef.current.value = "";
   };
 
   const create = async (e: FormEvent) => {
@@ -328,7 +378,10 @@ export function ChooseOrganization() {
             <form role="tabpanel" onSubmit={create} noValidate className="space-y-5">
               {/* the workspace being named, with its first seat taken */}
               <div className="rounded-card border border-line bg-surface-2 p-4" aria-hidden>
-                <p className="display truncate text-[24px] leading-tight">{name.trim() || "Your workspace"}</p>
+                <div className="flex items-center gap-3">
+                  {logo ? <OrgMark name={name.trim() || "Your workspace"} logoUrl={logo.preview} size={44} decorative /> : null}
+                  <p className="display min-w-0 truncate text-[24px] leading-tight">{name.trim() || "Your workspace"}</p>
+                </div>
                 <div className="mt-3 flex items-center">
                   <Avatar name="You" seed={youSeed} size="md" ring />
                   {[0, 1, 2].map((i) => (
@@ -351,9 +404,50 @@ export function ChooseOrganization() {
                 hint="Usually your company or team name. You can change it later."
                 autoFocus
               />
-              <PrimaryButton loading={busy === "create"} disabled={!!busy && busy !== "create"}>
-                Create workspace
-              </PrimaryButton>
+              <div>
+                <p className="text-[14px] font-semibold text-ink">
+                  Logo <span className="font-normal text-ink-3">(optional)</span>
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                  <OrgMark name={name.trim() || "Your workspace"} logoUrl={logo?.preview} size={44} tone="peach" decorative />
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept={LOGO_ACCEPT}
+                    className="sr-only"
+                    tabIndex={-1}
+                    aria-hidden
+                    onChange={(e) => void pickLogo(e.target.files?.[0])}
+                  />
+                  <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={!!busy}>
+                    <ImageSquare size={16} aria-hidden />
+                    {logo ? "Choose another" : "Choose an image"}
+                  </Button>
+                  {logo ? (
+                    <Button type="button" variant="ghost" size="sm" onClick={clearLogo} disabled={!!busy}>
+                      <X size={16} aria-hidden />
+                      Remove
+                    </Button>
+                  ) : null}
+                </div>
+                <p className={`mt-2 text-[13px] leading-snug ${logoError ? "text-priority-high" : "text-ink-3"}`} role={logoError ? "alert" : undefined}>
+                  {logoError ?? "PNG, JPEG, WebP or SVG, up to 2 MB, cropped to a square from the centre. You can adjust or change it later in Settings."}
+                </p>
+              </div>
+              {logoFailed ? (
+                <div className="space-y-3">
+                  <FormAlert>
+                    Your workspace is ready, but its logo could not be saved: {logoFailed.message} You can add it later in Settings, Profile.
+                  </FormAlert>
+                  <Button type="button" variant="primary" size="md" onClick={() => router.push(logoFailed.next)}>
+                    Continue
+                  </Button>
+                </div>
+              ) : (
+                <PrimaryButton loading={busy === "create"} disabled={!!busy && busy !== "create"}>
+                  Create workspace
+                </PrimaryButton>
+              )}
               {joinable > 0 ? (
                 <p className="text-center text-[14px] text-ink-3">
                   Your team already has one? <TextButton onClick={() => setPath("join")}>Join it instead</TextButton>
@@ -410,4 +504,18 @@ function OrgRow({
       </span>
     </button>
   );
+}
+
+/** The picked logo as the 512 px square the editor saves, uploaded to the workspace just made. */
+async function saveLogo(preview: string): Promise<{ ok: true } | { ok: false; message: string }> {
+  try {
+    const img = await loadImage(preview);
+    const blob = await exportSquare(preview, img.naturalWidth, img.naturalHeight, CENTRED, 256);
+    const form = new FormData();
+    form.append("file", new File([blob], "logo", { type: blob.type }));
+    const res = await uploadOrgLogo(form);
+    return res.ok ? { ok: true } : { ok: false, message: res.message };
+  } catch {
+    return { ok: false, message: "The image could not be prepared." };
+  }
 }

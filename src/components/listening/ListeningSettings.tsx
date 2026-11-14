@@ -200,9 +200,12 @@ export function ListeningSettings({ initial, loaded }: { initial: ListeningPrefe
             </Button>
           ) : null}
         </div>
-        <FieldRow label="Time zone" htmlFor={ids.tz} help={guessedZone ? "Set from your browser. Save to keep it." : "Quiet hours, focus blocks and the digest follow it."}>
-          <Dropdown id={ids.tz} label="Time zone" value={draft.time_zone} onChange={(v) => set({ time_zone: v })} options={zoneOptions} size="lg" />
-        </FieldRow>
+        {/* `#time-zone` is where the save-your-time-zone prompt links to */}
+        <div id="time-zone" className="scroll-mt-24">
+          <FieldRow label="Time zone" htmlFor={ids.tz} help={guessedZone ? "Set from your browser. Save to keep it." : "Quiet hours, focus blocks and the digest follow it."}>
+            <Dropdown id={ids.tz} label="Time zone" value={draft.time_zone} onChange={(v) => set({ time_zone: v })} options={zoneOptions} size="lg" />
+          </FieldRow>
+        </div>
       </SectionCard>
 
       <SectionCard

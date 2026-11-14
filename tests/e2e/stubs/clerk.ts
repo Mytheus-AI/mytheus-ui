@@ -4,6 +4,8 @@ export function useAuth() {
   return {
     isLoaded: true,
     isSignedIn: true,
+    // The time zone prompt keys its dismissal to the session.
+    sessionId: "sess_test",
     getToken: async () => `test-token-${++n}`,
   };
 }

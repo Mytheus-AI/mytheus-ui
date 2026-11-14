@@ -8,11 +8,15 @@ import { DescriptionText } from "./DescriptionText";
 import { TeamCard } from "./TeamCard";
 
 /* The People board: one section per department (name, what it does, its menu for admins), a
-   responsive grid of team cards under it (one column on phones, two from md, three from xl, so
-   the page uses its full width), then the No department group and the people on no team.
+   responsive grid of team cards under it (one column on phones, two from md), then the No
+   department group and the people on no team. Team cards stop at two columns: at three, a card
+   was about 430px wide and a member row (avatar, name, You, role, Lead, menu) cut full names and
+   emails short; the small person tiles of "Not on a team" still use three.
    A server component: the interactive pieces (menus, dialogs, the team card) are client leaves. */
 
-export const teamGridClass = "grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3";
+export const teamGridClass = "grid grid-cols-1 gap-5 md:grid-cols-2";
+/** The person tiles of "Not on a team": small enough for three across from xl. */
+export const personGridClass = "grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3";
 
 export function PeopleBoard({
   chart,
@@ -120,7 +124,7 @@ function Unassigned({ people, canEdit }: { people: ChartPerson[]; canEdit: boole
             : "People in the workspace who are on no team yet."}
         </p>
       </div>
-      <ul className={`mt-5 ${teamGridClass} !gap-3`}>
+      <ul className={`mt-5 ${personGridClass}`}>
         {people.map((p) => (
           <li key={p.id}>
             <Link

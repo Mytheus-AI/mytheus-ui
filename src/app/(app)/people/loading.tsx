@@ -43,7 +43,7 @@ function Department({ teams }: { teams: number }) {
         </div>
         <TextBone className="mt-1.5 max-w-[75ch] text-[15px] leading-relaxed" widths={["w-full max-w-[560px]", "w-[60%] max-w-[340px]"]} narrow={["w-[45%]"]} />
       </div>
-      <div className="mt-5 grid grid-cols-1 items-start gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-5 grid grid-cols-1 items-start gap-5 md:grid-cols-2">
         {Array.from({ length: teams }, (_, i) => (
           <Team key={i} rows={3} />
         ))}
