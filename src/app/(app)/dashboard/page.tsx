@@ -123,10 +123,6 @@ export default async function DashboardPage() {
   const today = meetings.filter(isToday);
 
   const askName = agentDisplayName(profile?.agent_name ?? null, profile?.display_name || orgContext?.user.name || "");
-  const askStarters = [
-    next && !calendarFailed ? { question: next.status === "live" ? `What should I know for ${next.title}?` : `Prep me for ${next.title}` } : { question: "What's on my calendar today?" },
-    { question: "What do I owe this week?", hint: tasks.failed ? undefined : `${tasks.items.length} open task${tasks.items.length === 1 ? "" : "s"}` },
-  ];
   const later = meetings.filter((m) => !isToday(m) && m.status !== "past");
 
   // ADR-0049 F2: "Today from Myte", from the reads above (nothing new is fetched for it but your
@@ -152,13 +148,13 @@ export default async function DashboardPage() {
         needsYou={review.failed ? null : review.items.length}
       />
 
-      {/* Ask Myte (ADR-0047 D1): an ask bar under the greeting with two starters from today. */}
+      {/* Ask Myte (ADR-0047 D1): an ask bar under the greeting. No starter chips: they repeated
+          what the stats beside the greeting already say. */}
       <div className="mb-6">
         <AskBox
           name={askName}
           seed={profile ? agentSeed(profile.agent_avatar_seed, profile.id) : null}
           placeholder={`Ask ${askName} about your day...`}
-          starters={askStarters}
         />
       </div>
 
