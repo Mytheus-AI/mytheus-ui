@@ -32,6 +32,7 @@ test("checks the browser's body and drops what it must not send", () => {
   assert.equal("org_id" in body, false);
   assert.equal(body.timezone, "Europe/London");
   assert.deepEqual(body.page, { kind: "meeting", id: M, title: "Weekly" });
+  assert.deepEqual(body.scope, { kind: "meeting", meeting_id: M, person_id: null, as_of: null, label: "Weekly" });
   assert.equal(checkAskBody({ question: "x", timezone: "../../etc" }).ok && (checkAskBody({ question: "x", timezone: "../../etc" }) as { value: { timezone: unknown } }).value.timezone, null);
 });
 

@@ -58,7 +58,8 @@ export function upstreamBody(ask: CheckedAsk, persona: Persona, history: History
   return {
     question: ask.question,
     history: history.slice(-LIMITS.history),
-    scope: ask.scope,
+    // The chip's words go along so Myte knows who "he" or "this meeting" is (it only had ids).
+    scope: ask.scope.kind === "all" ? ask.scope : { ...ask.scope, label: ask.scopeLabel },
     persona,
     page: ask.page ?? { kind: null, id: null, title: null },
     want_title: ask.threadId === null,
