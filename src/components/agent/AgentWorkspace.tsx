@@ -59,9 +59,13 @@ export function AgentWorkspace({
             Its name, its face and how it words your notes; the portrait above changes as you edit. What it captures and who sees it never change.
           </p>
           <div className="mt-4">
-            <AgentPanel profile={profile} hidePreview onChange={setPersona} />
+            <AgentPanel
+              profile={profile}
+              hidePreview
+              onChange={setPersona}
+              beforeSave={<VoicePicker initial={voices} myteName={name} seed={persona.seed} headingLevel="h3" />}
+            />
           </div>
-          <VoicePicker initial={voices} myteName={name} seed={persona.seed} headingLevel="h3" className="mt-5" />
         </section>
       </div>
       <aside aria-label="What your Myte knows and kept" className="hidden space-y-5 xl:sticky xl:top-2 xl:block">

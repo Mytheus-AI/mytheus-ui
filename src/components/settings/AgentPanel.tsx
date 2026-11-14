@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { OrbPicker } from "@/components/agent/OrbPicker";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -33,12 +33,15 @@ export function AgentPanel({
   profile,
   hidePreview = false,
   onChange,
+  beforeSave,
 }: {
   profile: UserProfile | null;
   /** the agent page draws its own live portrait, so it hides this one */
   hidePreview?: boolean;
   /** every change to the form, saved or not, for a preview drawn elsewhere */
   onChange?: (persona: Persona) => void;
+  /** more cards drawn after the form and above its Save bar (the agent page's Voice picker) */
+  beforeSave?: ReactNode;
 }) {
   const { user } = useOrgContext();
   const defaultSeed = profile ? agentSeed(null, profile.id) : "";
@@ -225,6 +228,8 @@ export function AgentPanel({
           ) : null}
         </SettingsRow>
       </SectionCard>
+
+      {beforeSave}
 
       <div className={cardClass({ flush: true, className: "xl:col-start-1 xl:row-start-3" })}>
         <FormFooter className="!border-t-0">
