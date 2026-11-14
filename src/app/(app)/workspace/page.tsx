@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { Icon } from "@phosphor-icons/react";
-import { ArrowRight, ChartBar, PlugsConnected, UsersThree } from "@phosphor-icons/react/ssr";
+import { ArrowRight, ChartBar, PlugsConnected, Sparkle, UsersThree } from "@phosphor-icons/react/ssr";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { Card, CardHead, cardClass } from "@/components/ui/Card";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -13,7 +13,8 @@ import { ReadinessStrip } from "@/components/org-brain/ReadinessMeter";
 import { OrgNameCard } from "@/components/tenant/OrgNameCard";
 import { OrgLogoCard } from "@/components/tenant/OrgLogoCard";
 import { listMembers } from "@/lib/api/members";
-import { fetchUsage } from "@/lib/api/usage";
+import { fetchUsage, type UsageOut } from "@/lib/api/usage";
+import { LevelLabel, MeterBar, formatNumber, formatPercent, levelOf } from "@/components/tenant/UsageMeter";
 import { loadIntegrations } from "@/lib/api/integrations";
 import { fetchReadiness } from "@/lib/api/org-brain";
 
@@ -54,6 +55,59 @@ function QuickLink({ href, icon: I, title, children }: { href: string; icon: Ico
       </span>
       <ArrowRight size={16} className="mt-1 shrink-0 text-ink-3 transition-transform duration-150 motion-safe:group-hover:translate-x-0.5" aria-hidden />
     </Link>
+  );
+}
+
+/** The first day of the month after `period` ("2026-11" -> Dec 1), when the allowance resets. */
+function resetLabel(period: string): string {
+  const [y, m] = period.split("-").map(Number);
+  if (!y || !m) return "next month";
+  return new Date(Date.UTC(y, m, 1)).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+}
+
+/* This month's AI allowance at a glance: the live budget the agent tier is gated on. Stretches to
+   the bottom of the column so the two sides of the overview end level. */
+function TokenAllowance({ usage }: { usage: UsageOut | null }) {
+  const b = usage?.budget;
+  const ratio = b && b.token_quota > 0 ? b.tokens_consumed / b.token_quota : 0;
+  return (
+    <section aria-labelledby="ai-month-heading" className={cardClass({ className: "flex flex-1 flex-col gap-4" })}>
+      <div className="flex items-start gap-4">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-ctl bg-bg-2 text-ink-2" aria-hidden="true">
+          <Sparkle size={20} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 id="ai-month-heading" className="text-[17px] font-semibold text-ink">
+            AI this month
+          </h2>
+          <p className="mt-0.5 text-[14px] leading-relaxed text-ink-3">
+            {usage ? `Tokens every Myte has used. The allowance resets on ${resetLabel(usage.period)}.` : "The allowance could not be loaded just now."}
+          </p>
+        </div>
+      </div>
+      {b && b.token_quota > 0 ? (
+        <div className="mt-auto">
+          <p className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+            <span className="display text-[34px] leading-none tabular-nums text-ink-display">{formatNumber(b.tokens_consumed)}</span>
+            <span className="text-[14px] text-ink-2">
+              of {formatNumber(b.token_quota)}, <span className="font-semibold text-ink">{formatPercent(ratio)}</span>
+            </span>
+          </p>
+          <div className="mt-3">
+            <MeterBar label="AI tokens this month" used={b.tokens_consumed} included={b.token_quota} />
+          </div>
+          <div className="mt-1 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+            <LevelLabel level={levelOf(ratio)} okText={`${formatNumber(Math.max(b.token_quota - b.tokens_consumed, 0))} left`} />
+            <TextLink href="/workspace/billing">See usage</TextLink>
+          </div>
+        </div>
+      ) : b ? (
+        <p className="mt-auto text-[14px] text-ink-2">
+          <span className="display text-[34px] leading-none tabular-nums text-ink-display">{formatNumber(b.tokens_consumed)}</span> tokens, no
+          monthly limit on this plan.
+        </p>
+      ) : null}
+    </section>
   );
 }
 
@@ -106,12 +160,12 @@ export default async function WorkspaceOverviewPage() {
         )}
       </Card>
 
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <div className="grid gap-5">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="grid content-start gap-5">
           <OrgNameCard />
           <OrgLogoCard />
         </div>
-        <div className="grid gap-4">
+        <div className="flex flex-col gap-4">
           <QuickLink href="/workspace/members" icon={UsersThree} title="Members">
             {members ? `${members.length} ${members.length === 1 ? "person" : "people"}. Change access or remove it.` : "The member list could not be loaded just now."}
           </QuickLink>
@@ -127,6 +181,7 @@ export default async function WorkspaceOverviewPage() {
                 ? "Nothing connected yet. Connect Calendar, Slack and Jira."
                 : `${connected} connected. Manage Calendar, Slack and Jira.`}
           </QuickLink>
+          <TokenAllowance usage={usage.kind === "live" ? usage.usage : null} />
         </div>
       </div>
     </div>
