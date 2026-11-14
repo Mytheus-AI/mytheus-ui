@@ -23,6 +23,11 @@ import { useMyteVoice } from "./voice";
    (D9) and the screen-reader announcements. The caller owns the conversation (`useAskMyte`) and
    the frame around it. */
 
+
+/** How many suggestions the empty chat offers: the two most relevant (the builders put prep for
+    the next meeting and what you owe first). More read as a wall of buttons. */
+const SHOWN_STARTERS = 2;
+
 export type MytePersona = { name: string; seed: string; personality: string | null };
 
 // Voice mode is heavy (speech engines, Web Audio) and rarely opened: loaded on the first Talk.
@@ -219,7 +224,7 @@ export function AskMyteChat({
       <p className="mt-2 max-w-[52ch] text-[15px] text-ink-3">I can see the meetings you were in, your work and the company brain.</p>
       {starters && starters.length ? (
         <ul className={`mt-6 grid w-full gap-2.5 text-left ${sheet ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"}`} aria-label="Ask one of these">
-          {starters.map((s) => (
+          {starters.slice(0, SHOWN_STARTERS).map((s) => (
             <li key={s.id}>
               <button
                 type="button"
@@ -235,7 +240,7 @@ export function AskMyteChat({
         </ul>
       ) : starters === null ? (
         <ul className={`mt-6 grid w-full gap-2.5 ${sheet ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"}`} aria-hidden>
-          {Array.from({ length: sheet ? 3 : 6 }, (_, i) => (
+          {Array.from({ length: SHOWN_STARTERS }, (_, i) => (
             <li key={i} className="h-[64px] rounded-card bg-bg-2 motion-safe:animate-pulse" />
           ))}
         </ul>
