@@ -49,7 +49,7 @@ function failure(err: unknown, fallback: string): Fail {
 
 export async function listMyteThreads(input: { q?: string | null; cursor?: string | null } = {}): Promise<Ok<{ list: ThreadList }> | Fail> {
   const list = await readThreads(input.q ?? null, input.cursor ?? null);
-  return list ? { ok: true, list } : { ok: false, message: "Your questions couldn't be loaded just now." };
+  return list ? { ok: true, list } : { ok: false, message: "Your chats couldn't be loaded just now." };
 }
 
 export async function getMyteThread(id: string): Promise<Ok<{ thread: Thread }> | Fail> {

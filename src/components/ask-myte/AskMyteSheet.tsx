@@ -136,8 +136,8 @@ export function AskMyteSheet({
             <button
               type="button"
               onClick={newQuestion}
-              aria-label="New question"
-              title="New question"
+              aria-label="New chat"
+              title="New chat"
               className="grid h-10 w-10 shrink-0 place-items-center rounded-ctl text-ink-3 transition-colors hover:bg-bg-2 hover:text-ink"
             >
               <Plus size={18} aria-hidden />

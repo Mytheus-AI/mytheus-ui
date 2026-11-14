@@ -35,7 +35,7 @@ for (const theme of ["light", "dark"] as const) {
     await mount(<AskMyteHarness theme={theme} />);
     await expect(page.getByRole("heading", { name: "Hi Sushan, it's Pip. What should I find?" })).toBeVisible();
     await expect(page.getByRole("list", { name: "Ask one of these" }).getByRole("button")).toHaveCount(6);
-    await expect(page.getByRole("navigation", { name: "Your questions" }).first().getByRole("heading", { name: "Pinned" })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Your chats" }).first().getByRole("heading", { name: "Pinned" })).toBeVisible();
     await axe(page);
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/ask-empty-${theme}.png` });
   });
@@ -123,8 +123,8 @@ test("phone width: no sideways scroll, history opens as a drawer", async ({ moun
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/ask-phone-empty.png` });
-  await page.getByRole("button", { name: "Your questions" }).click();
-  const drawer = page.getByRole("dialog", { name: "Your questions" });
+  await page.getByRole("button", { name: "Your chats" }).click();
+  const drawer = page.getByRole("dialog", { name: "Your chats" });
   await expect(drawer).toBeVisible();
   await expect(drawer.getByRole("button", { name: "Close your questions" })).toBeFocused();
   await page.keyboard.press("Escape");

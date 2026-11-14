@@ -10,7 +10,7 @@ import { browserTimeZone } from "@/lib/timezone";
 import { groupThreads } from "@/lib/ask-myte/compose";
 import type { ThreadList, ThreadSummary } from "@/lib/ask-myte/types";
 
-/* Your questions (ADR-0047 D7): New question, a search over titles and message text, then Pinned,
+/* Your chats (ADR-0047 D7): New chat, a search over titles and message text, then Pinned,
    Today, This week and Earlier. Each thread has a small menu to rename, pin and delete; Delete all
    asks first, in a dialog, because threads are hard-deleted. Private: core-api only ever returns
    the caller's own threads. */
@@ -106,12 +106,12 @@ export function HistoryRail({
     if (confirm.kind === "all") {
       setList({ items: [], next_cursor: null });
       onDeleted(null);
-      notifySuccess("All your questions were deleted");
+      notifySuccess("All your chats were deleted");
     } else {
       const id = confirm.thread.id;
       setList((l) => (l ? { ...l, items: l.items.filter((x) => x.id !== id) } : l));
       onDeleted(id);
-      notifySuccess("Question deleted");
+      notifySuccess("Chat deleted");
     }
     setConfirm(null);
   };
@@ -120,14 +120,16 @@ export function HistoryRail({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="space-y-2.5 px-3 pb-3 pt-4">
-        <Button variant="primary" className="w-full !justify-start" onClick={onNew}>
-          <Plus size={17} weight="bold" aria-hidden />
-          New question
+      <div className="flex h-14 shrink-0 items-center border-b border-line px-3">
+        <Button variant="primary" size="sm" className="w-full" onClick={onNew}>
+          <Plus size={15} weight="bold" aria-hidden />
+          New chat
         </Button>
+      </div>
+      <div className="shrink-0 px-3 pb-1 pt-3">
         <div className="relative">
           <label htmlFor={searchId} className="sr-only">
-            Search your questions
+            Search your chats
           </label>
           <MagnifyingGlass size={16} aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" />
           <input
@@ -135,29 +137,29 @@ export function HistoryRail({
             type="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search your questions"
-            className="h-10 w-full rounded-ctl border border-line bg-surface pl-9 pr-3 text-[14px] text-ink placeholder:text-ink-3"
+            placeholder="Search chats"
+            className="h-9 w-full rounded-ctl border border-line bg-surface pl-9 pr-3 text-[14px] text-ink placeholder:text-ink-3"
           />
         </div>
       </div>
 
-      <nav aria-label="Your questions" className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
+      <nav aria-label="Your chats" className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
         {failed && !list ? (
           <p className="px-2.5 py-3 text-[14px] text-ink-3">
-            Your questions couldn&apos;t be loaded.{" "}
+            Your chats couldn&apos;t be loaded.{" "}
             <button type="button" className="font-semibold text-signal-ink underline-offset-4 hover:underline" onClick={() => void load(q)}>
               Try again
             </button>
           </p>
         ) : count === 0 ? (
-          <p className="px-2.5 py-3 text-[14px] text-ink-3">{q ? "Nothing matches that." : "Your questions will show up here. Only you can see them."}</p>
+          <p className="px-2.5 py-3 text-[14px] text-ink-3">{q ? "Nothing matches that." : "Your chats show up here. Only you can see them."}</p>
         ) : (
           groups.map((g) => (
-            <section key={g.key} aria-labelledby={`${searchId}-${g.key}`} className="mb-3">
-              <h3 id={`${searchId}-${g.key}`} className="px-2.5 pb-1 pt-2 text-[12.5px] font-semibold text-ink-3">
+            <section key={g.key} aria-labelledby={`${searchId}-${g.key}`} className="mb-1">
+              <h3 id={`${searchId}-${g.key}`} className="px-2.5 pb-1 pt-3 text-[12px] font-semibold uppercase tracking-[0.06em] text-ink-3">
                 {g.label}
               </h3>
-              <ul className="space-y-0.5">
+              <ul className="space-y-px">
                 {g.items.map((t) => (
                   <ThreadRow
                     key={t.id}
@@ -185,10 +187,10 @@ export function HistoryRail({
       </nav>
 
       {count > 0 ? (
-        <div className="border-t border-line px-3 py-2.5">
+        <div className="shrink-0 border-t border-line px-3 py-2">
           <Button size="sm" variant="ghost" className="w-full !justify-start text-ink-3" onClick={() => setConfirm({ kind: "all" })}>
             <Trash size={16} aria-hidden />
-            Delete all questions
+            Delete all chats
           </Button>
         </div>
       ) : null}
@@ -198,10 +200,10 @@ export function HistoryRail({
         onClose={() => setConfirm(null)}
         busy={busy}
         tone="danger"
-        title={confirm?.kind === "all" ? "Delete all your questions?" : "Delete this question?"}
+        title={confirm?.kind === "all" ? "Delete all your chats?" : "Delete this chat?"}
         description={
           confirm?.kind === "all"
-            ? "Every question and answer in your history is deleted for good. This can't be undone."
+            ? "Every chat in your history is deleted for good. This can't be undone."
             : confirm?.kind === "one"
               ? `"${confirm.thread.title}" and its answers are deleted for good. This can't be undone.`
               : null
@@ -212,7 +214,7 @@ export function HistoryRail({
             Cancel
           </Button>
           <Button variant="danger" onClick={() => void remove()} disabled={busy}>
-            {busy ? "Deleting" : confirm?.kind === "all" ? "Delete all" : "Delete question"}
+            {busy ? "Deleting" : confirm?.kind === "all" ? "Delete all" : "Delete chat"}
           </Button>
         </div>
       </Dialog>
@@ -291,7 +293,7 @@ function ThreadRow({
           }}
         >
           <label htmlFor={`${menuId}-r`} className="sr-only">
-            Rename question
+            Rename chat
           </label>
           <input
             id={`${menuId}-r`}
@@ -324,7 +326,7 @@ function ThreadRow({
           onOpen();
         }}
         aria-current={active ? "page" : undefined}
-        className={`flex min-h-10 items-center rounded-ctl py-2 pl-2.5 pr-10 text-[14px] transition-colors ${
+        className={`flex min-h-9 items-center rounded-ctl py-1.5 pl-2.5 pr-10 text-[14px] leading-snug transition-colors ${
           active ? "bg-surface font-semibold text-ink shadow-warm-1" : "text-ink-2 hover:bg-bg-2 hover:text-ink"
         }`}
       >

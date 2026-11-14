@@ -11,7 +11,7 @@ export default function AskError({ error, reset }: { error: Error & { digest?: s
       reset={reset}
       page="Ask Myte"
       title="Ask Myte did not load"
-      text="Your questions are safe. This is a problem on our side. Try again in a moment."
+      text="Your chats are safe. This is a problem on our side. Try again in a moment."
     />
   );
 }

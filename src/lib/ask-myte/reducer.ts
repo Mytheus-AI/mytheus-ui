@@ -196,7 +196,7 @@ export function titleFrom(events: readonly StreamEvent[]): string | null {
 /** A new thread's title when the stream did not name it: the question, trimmed on a word. */
 export function fallbackTitle(question: string): string {
   const flat = question.replace(/\s+/g, " ").trim();
-  if (flat.length <= 60) return flat || "New question";
+  if (flat.length <= 60) return flat || "New chat";
   const cut = flat.slice(0, 60);
   const at = cut.lastIndexOf(" ");
   return `${(at > 30 ? cut.slice(0, at) : cut).replace(/[,.;:?!]$/, "")}...`;

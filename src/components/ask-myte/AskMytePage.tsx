@@ -151,7 +151,7 @@ export function AskMytePage({
       <button
         type="button"
         onClick={() => setDrawer(true)}
-        aria-label="Your questions"
+        aria-label="Your chats"
         className="grid h-10 w-10 shrink-0 place-items-center rounded-ctl text-ink-2 transition-colors hover:bg-bg-2 hover:text-ink lg:hidden"
       >
         <ClockCounterClockwise size={20} aria-hidden />
@@ -162,7 +162,7 @@ export function AskMytePage({
         <>
           <MyteFace seed={persona.seed} name={persona.name} state={face.state} size={48} followInput={composerRef} />
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-[15px] font-semibold leading-tight text-ink">{conv.title ?? "New question"}</h1>
+            <h1 className="truncate text-[15px] font-semibold leading-tight text-ink">{conv.title ?? "New chat"}</h1>
             <p className="truncate text-[13px] leading-tight text-ink-3" aria-hidden>
               {face.words}
             </p>
@@ -173,8 +173,8 @@ export function AskMytePage({
       <button
         type="button"
         onClick={newQuestion}
-        aria-label="New question"
-        title="New question"
+        aria-label="New chat"
+        title="New chat"
         className="grid h-10 w-10 shrink-0 place-items-center rounded-ctl text-ink-2 transition-colors hover:bg-bg-2 hover:text-ink lg:hidden"
       >
         <Plus size={20} aria-hidden />
@@ -184,7 +184,7 @@ export function AskMytePage({
 
   return (
     <div className="-mb-12 flex h-[calc(100dvh-68px-20px)] min-h-[520px] overflow-hidden rounded-hero border border-line bg-bg shadow-warm-1">
-      <aside aria-label="Your questions" className="hidden w-[272px] shrink-0 border-r border-line bg-bg lg:flex lg:flex-col">
+      <aside aria-label="Your chats" className="hidden w-[272px] shrink-0 border-r border-line bg-bg lg:flex lg:flex-col">
         {rail}
       </aside>
 
@@ -193,7 +193,7 @@ export function AskMytePage({
           className="fixed inset-0 z-50 lg:hidden"
           role="dialog"
           aria-modal="true"
-          aria-label="Your questions"
+          aria-label="Your chats"
           onKeyDown={(e) => {
             if (e.key === "Escape" && !e.defaultPrevented) {
               e.stopPropagation();
@@ -217,7 +217,7 @@ export function AskMytePage({
               <button
                 type="button"
                 onClick={() => setDrawer(false)}
-                aria-label="Close your questions"
+                aria-label="Close your chats"
                 className="grid h-10 w-10 place-items-center rounded-ctl text-ink-3 hover:bg-bg-2 hover:text-ink"
               >
                 <X size={18} aria-hidden />

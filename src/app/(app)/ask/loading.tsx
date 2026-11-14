@@ -1,15 +1,19 @@
 import { Bone } from "@/components/ui/Page";
 
-/* /ask while it loads, in the page's own frame: the history rail (New question, search, a few
+/* /ask while it loads, in the page's own frame: the history rail (New chat, search, a few
    rows) and the conversation column with the face, the greeting and six starter cards, so nothing
    moves when the page arrives. */
 export default function AskLoading() {
   return (
     <div className="-mx-4 -mb-12 -mt-1 flex h-[calc(100dvh-68px)] min-h-[480px] sm:-mx-6 lg:-mx-8" aria-busy="true" aria-label="Loading Ask Myte">
-      <div className="hidden w-[272px] shrink-0 space-y-2.5 border-r border-line px-3 pt-4 lg:block">
-        <Bone className="h-11 w-full rounded-ctl" />
-        <Bone className="h-10 w-full rounded-ctl" />
-        <div className="space-y-2 pt-3">
+      <div className="hidden w-[272px] shrink-0 border-r border-line lg:block">
+        <div className="flex h-14 items-center border-b border-line px-3">
+          <Bone className="h-9 w-full rounded-ctl" />
+        </div>
+        <div className="px-3 pt-3">
+          <Bone className="h-9 w-full rounded-ctl" />
+        </div>
+        <div className="space-y-1.5 px-3 pt-4">
           {Array.from({ length: 6 }, (_, i) => (
             <Bone key={i} className="h-8 w-full rounded-ctl" />
           ))}
