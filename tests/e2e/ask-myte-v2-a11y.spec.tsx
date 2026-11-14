@@ -13,7 +13,7 @@ import { AskMyteHarness } from "./AskMyteHarness";
 import { AskMyteV2Harness } from "./AskMyteV2Harness";
 import { ANSWER_EVENTS, sse } from "./ask-myte-fixture";
 import { PEER_DRAFT, proposalEvents } from "./ask-myte-v2-fixture";
-import { fakeSpeech } from "./briefing-speech-fake";
+import { fakeVoice } from "./voice-fake";
 import type { StreamEvent } from "../../src/lib/ask-myte/types";
 
 test.describe.configure({ timeout: 90_000 });
@@ -283,7 +283,7 @@ for (const theme of ["light", "dark"] as const) {
   test(`voice mode (${theme}): Talk, a pause sends, it answers aloud, Esc ends`, async ({ mount, page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await fakeRecognition(page);
-    await fakeSpeech(page, 15);
+    const spoken = await fakeVoice(page, { msPerWord: 15 });
     const bodies = await mockStream(page, ANSWER_EVENTS);
     await mount(<AskMyteHarness theme={theme} />);
 
@@ -304,7 +304,8 @@ for (const theme of ["light", "dark"] as const) {
     expect(bodies[0].question).toBe("what do I owe this week");
     await expect(voice.getByRole("region", { name: "Pip's answer" }).getByText("One thing is on you")).toBeVisible();
     // It reads the answer in its own voice, then listens again.
-    await expect.poll(() => page.evaluate(() => ((window as unknown as { __spoken: string[] }).__spoken ?? []).length)).toBeGreaterThan(0);
+    await expect.poll(() => spoken.length).toBeGreaterThan(0);
+    expect(spoken[0]!.text).not.toMatch(/\[\d+\]/);
     await expect(voice.getByText("Pip is listening")).toBeVisible({ timeout: 15_000 });
     await shot(page, `voice-answered-${theme}`);
     await axe(page);
@@ -320,7 +321,7 @@ for (const theme of ["light", "dark"] as const) {
 test("voice mode: Space pauses and resumes, mute keeps it quiet; hidden without speech recognition", async ({ mount, page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await fakeRecognition(page);
-  await fakeSpeech(page, 15);
+  await fakeVoice(page, { msPerWord: 15 });
   await mount(<AskMyteHarness />);
   await page.getByRole("button", { name: "Talk to Pip" }).click();
   const voice = page.getByRole("dialog", { name: "Talking with Pip" });

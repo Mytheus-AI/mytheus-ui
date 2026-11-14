@@ -34,6 +34,7 @@ import { WeekPicker } from "../../../src/components/digest/WeekPicker";
 import { AskView } from "../../../src/components/search/AskView";
 import { WelcomeVocabulary } from "../../../src/components/org-brain/WelcomeVocabulary";
 import { AgentWorkspace } from "../../../src/components/agent/AgentWorkspace";
+import { VOICES } from "../voice-fixture";
 import { ListeningCard } from "../../../src/components/agent/ListeningCard";
 import { KeptNotes } from "../../../src/components/agent/KeptNotes";
 import { BriefingPlayer } from "../../../src/components/briefing/BriefingPlayer";
@@ -349,7 +350,7 @@ function AgentPage() {
   );
   return (
     <Page className="pt-2">
-      <AgentWorkspace profile={PROFILE} personName="Maya Chen" aside={aside} />
+      <AgentWorkspace profile={PROFILE} personName="Maya Chen" aside={aside} voices={VOICES} />
     </Page>
   );
 }

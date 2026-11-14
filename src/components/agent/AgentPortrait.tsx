@@ -16,12 +16,17 @@ export function AgentPortrait({
   personality,
   ownerFirstName,
   instructions,
+  speaking = false,
+  level,
 }: {
   name: string;
   seed: string;
   personality: AgentPersonality;
   ownerFirstName: string;
   instructions: string | null;
+  /** a voice preview is playing: the face speaks, moving with the voice's level */
+  speaking?: boolean;
+  level?: () => number;
 }) {
   const preset = presetFor(personality);
   return (
@@ -37,7 +42,7 @@ export function AgentPortrait({
             <circle cx="74" cy="4" r="5" fill="var(--signal)" stroke="var(--signal-soft)" strokeWidth="4" paintOrder="stroke" />
           </svg>
           <span className="block h-[110px] w-[110px] overflow-hidden rounded-full bg-surface shadow-warm-2 ring-4 ring-surface">
-            <AgentOrb seed={seed} mode="live" size={110} followInput="#ag-name, #ag-instructions" />
+            <AgentOrb seed={seed} mode="live" size={110} followInput="#ag-name, #ag-instructions" state={speaking ? "speaking" : "idle"} level={speaking ? level : undefined} />
           </span>
         </div>
 

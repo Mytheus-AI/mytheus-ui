@@ -64,18 +64,32 @@ export async function briefingAudioUrl(id: string): Promise<AudioResult> {
     const res = await api<{ url: string; expires_at: string }>(`/api/v1/briefings/${encodeURIComponent(id)}/audio`);
     return { ok: true, url: res.url, expiresAt: res.expires_at };
   } catch (err) {
-    return failure(err, "The recorded voice could not be loaded; your device will read it instead.");
+    return failure(err, "The recorded briefing could not be loaded; your Myte will read it instead.");
+  }
+}
+
+/** The voice as stored now (ADR-0050: the Myte's one voice, chosen on Your Myte or in Settings).
+    A caller that does not manage the voice leaves `server_voice` out, so a page opened before the
+    voice changed cannot put the old one back. */
+async function storedVoice(): Promise<string | null | undefined> {
+  try {
+    const now = await api<BriefingSettings>("/api/v1/briefings/preferences");
+    return now.server_voice ?? null;
+  } catch {
+    return undefined;
   }
 }
 
 export async function saveBriefingPreferences(prefs: BriefingPreferences): Promise<SettingsResult> {
+  const serverVoice =
+    prefs.server_voice === undefined ? await storedVoice() : typeof prefs.server_voice === "string" && prefs.server_voice ? prefs.server_voice.slice(0, 100) : null;
   const body: BriefingPreferences = {
     enabled: Boolean(prefs.enabled),
     auto_play: Boolean(prefs.auto_play),
     length: prefs.length === "short" ? "short" : "standard",
     language: typeof prefs.language === "string" ? prefs.language.slice(0, 8) : "en",
     voice: typeof prefs.voice === "string" && prefs.voice.trim() ? prefs.voice.trim().slice(0, 200) : null,
-    server_voice: typeof prefs.server_voice === "string" && prefs.server_voice ? prefs.server_voice.slice(0, 100) : null,
+    ...(serverVoice === undefined ? {} : { server_voice: serverVoice }),
     rate: typeof prefs.rate === "number" && prefs.rate >= 0.5 && prefs.rate <= 2 ? prefs.rate : 1,
   };
   try {

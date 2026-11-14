@@ -13,7 +13,7 @@ import { PeopleHarness } from "./PeopleHarness";
 import { PlushHarness } from "./PlushHarness";
 import { comboSeed } from "./plush-fixture";
 import { SidebarHarness } from "./SidebarHarness";
-import { fakeSpeech } from "./briefing-speech-fake";
+import { fakeVoice } from "./voice-fake";
 import { MANY } from "./picker-fixture";
 
 const DIR = process.env.PLUSH_SHOTS_DIR;
@@ -99,7 +99,7 @@ for (const theme of ["light", "dark"] as const) {
   });
 
   test(`briefing player speaking (${theme})`, async ({ mount, page }) => {
-    await fakeSpeech(page, 260);
+    await fakeVoice(page, { msPerWord: 260 });
     await page.setViewportSize({ width: 1280, height: 900 });
     await mount(<BriefingHarness view="after" theme={theme} />);
     await page.getByRole("button", { name: "Play briefing" }).click();

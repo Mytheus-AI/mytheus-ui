@@ -14,6 +14,7 @@ import { agentDisplayName, agentSeed } from "@/lib/api/profile-types";
 import { readMemories, readRoutines } from "@/lib/ask-myte/server";
 import { MyteMemoryCard } from "@/components/agent/MyteMemoryCard";
 import { MyteRoutinesCard } from "@/components/agent/MyteRoutinesCard";
+import { loadVoices } from "@/app/actions/voice";
 
 export const metadata: Metadata = { title: "Your Myte | Mytheus" };
 
@@ -25,12 +26,13 @@ export const metadata: Metadata = { title: "Your Myte | Mytheus" };
  * own: a failed read never blanks the page.
  */
 export default async function AgentPage() {
-  const [orgContext, profile, dashboard, memories, routines] = await Promise.all([
+  const [orgContext, profile, dashboard, memories, routines, voices] = await Promise.all([
     resolveOrgContext(),
     fetchMyProfile(),
     apiSafe<DashboardResponse>("/bff/dashboard"),
     readMemories(),
     readRoutines(),
+    loadVoices(),
   ]);
 
   const personName = orgContext?.user.name ?? "";
@@ -66,7 +68,7 @@ export default async function AgentPage() {
     <Page className="pt-2">
       {ask}
       {profile ? (
-        <AgentWorkspace profile={profile} personName={personName} aside={aside} />
+        <AgentWorkspace profile={profile} personName={personName} aside={aside} voices={voices.ok ? voices.catalog : null} />
       ) : (
         <div className="space-y-5">
           <PageHead title="Your Myte" />

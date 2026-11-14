@@ -3,16 +3,13 @@
  * the after page, the settings and the tests share. No React, no browser globals at import time.
  *
  * - Where "open the moment" goes for each point (`momentHref`, `momentLabel`).
- * - Which device voice speaks it (`pickVoice`): the person's remembered voice when the device has
- *   it, else one chosen to match the persona (its language first, the better voices first, then
- *   stable per agent so the same agent always sounds the same), with the personality's pace and
- *   pitch (`voiceTone`).
+ * - The voice is the Myte's own (ADR-0050, `lib/voice/`), never the device's.
  * - Where the playhead is: per-segment start fractions by length (`segmentStarts`) for the
- *   server-voice file, and the word being said (`wordAt`) for device speech.
+ *   recorded file, and the word being said (`wordAt`) for live speech.
  */
 
 import type { components } from "./api/generated/core-api.ts";
-import { defaultDoodleSeed, hashString, isDoodleSeed } from "./doodle.ts";
+import { defaultDoodleSeed, isDoodleSeed } from "./doodle.ts";
 
 type Schemas = components["schemas"];
 export type Briefing = Schemas["Briefing"];
@@ -76,67 +73,6 @@ export function momentLabel(link: BriefingLink | null | undefined): string {
   }
 }
 
-// --- voices -----------------------------------------------------------------------------------
-
-/** The parts of a SpeechSynthesisVoice the choice reads (plain objects in tests). */
-export interface VoiceLike {
-  name: string;
-  lang: string;
-  localService?: boolean;
-  default?: boolean;
-  voiceURI?: string;
-}
-
-const GOOD = /(natural|neural|enhanced|premium|siri|google|online)/i;
-const NOVELTY = /(whisper|bells|bad news|good news|bubbles|cellos|zarvox|trinoids|jester|organ|superstar|boing|albert|bahh|wobble|deranged|hysterical|pipe organ|fred|junior|ralph)/i;
-
-function langOf(code: string | null | undefined): string {
-  return (code ?? "").toLowerCase().split(/[-_]/)[0] ?? "";
-}
-
-/** The voices that can speak `language`, best first. Novelty voices are never offered. */
-export function voicesFor<T extends VoiceLike>(voices: readonly T[], language: string): T[] {
-  const want = langOf(language) || "en";
-  return voices
-    .filter((v) => langOf(v.lang) === want && !NOVELTY.test(v.name))
-    .sort((a, b) => Number(GOOD.test(b.name)) - Number(GOOD.test(a.name)) || a.name.localeCompare(b.name));
-}
-
-/**
- * The voice for this briefing: the remembered one when the device has it for this language, else
- * a stable pick for this agent among the best voices of the language (so two people's Mytes tend
- * to sound different, and one agent never changes its voice between briefings).
- */
-export function pickVoice<T extends VoiceLike>(
-  voices: readonly T[],
-  opts: { language: string; seed: string; preferred?: string | null },
-): T | null {
-  const usable = voicesFor(voices, opts.language);
-  if (usable.length === 0) return null;
-  if (opts.preferred) {
-    const chosen = usable.find((v) => v.name === opts.preferred || v.voiceURI === opts.preferred);
-    if (chosen) return chosen;
-  }
-  const best = usable.filter((v) => GOOD.test(v.name));
-  const pool = best.length > 0 ? best : usable;
-  return pool[hashString(`voice:${opts.seed}`) % pool.length] ?? null;
-}
-
-/** Pace and pitch for the persona (ADR-0038 presets), multiplied with the person's speed. */
-export function voiceTone(personality: BriefingPersonality | string | null | undefined): { rate: number; pitch: number } {
-  switch (personality) {
-    case "concise":
-      return { rate: 1.08, pitch: 1 };
-    case "direct":
-      return { rate: 1.05, pitch: 0.94 };
-    case "detailed":
-      return { rate: 0.96, pitch: 1 };
-    case "friendly":
-      return { rate: 1, pitch: 1.08 };
-    default:
-      return { rate: 1, pitch: 1 };
-  }
-}
 
 /** The agent's doodle seed, or the default drawn from its person (never the person's own face). */
 export function agentSeed(seed: string | null | undefined, ownerId: string): string {

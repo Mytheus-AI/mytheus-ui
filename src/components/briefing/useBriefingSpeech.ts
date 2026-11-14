@@ -1,45 +1,40 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  pickVoice,
-  segmentAt,
-  segmentSeconds,
-  segmentStarts,
-  voiceTone,
-  voicesFor,
-  wordAt,
-  type BriefingPersonality,
-  type BriefingSegment,
-} from "@/lib/briefing";
+import { segmentAt, segmentSeconds, segmentStarts, wordAt, type BriefingSegment } from "@/lib/briefing";
+import { failureNote, type VoiceFailure } from "@/lib/voice/catalog";
+import { myteSpeaker, useMyteSpeaker } from "@/lib/voice/myte-voice";
 
-/* Playback for one briefing, two engines behind one control surface:
+/* Playback for one briefing, in the Myte's own voice (ADR-0050), two engines behind one control
+   surface:
 
-   - `device`: the browser's own voice (Web Speech API, speechSynthesis). One utterance per
-     segment, so pausing, skipping and changing speed never lose more than a sentence; word
-     boundaries drive the highlighted word. Pause cancels and Play restarts the current segment
-     (the browsers' own pause/resume is unreliable across voices).
-   - `audio`: the server voice (TTS_PROVIDER connected): an <audio> element on a short-lived URL
-     fetched on the first Play; the segment follows the playhead by length. A failed file falls
-     back to the device voice.
+   - `audio`: the briefing's recorded file (core-api rendered it with the same voice): an <audio>
+     element on a short-lived URL fetched on the first Play; the segment follows the playhead by
+     length. A file that fails to load is spoken live instead.
+   - `voice`: the shared Myte speaker (`POST /api/voice/speech`), one segment at a time, so
+     pausing, skipping and changing speed never lose more than a sentence. The highlighted word
+     follows the speaker's playhead through the segment.
+
+   There is no device voice. When the voice server is unavailable the player says so quietly
+   (`note`) and the whole briefing stays written out below.
 
    Either way the Media Session API names the briefing and wires play, pause, previous and next,
    so the lock screen and hardware keys control it too. Nothing plays until asked, except when the
    person turned auto-play on and the browser allows it (`blocked` says when it did not). */
 
-export type Engine = "device" | "audio" | "none";
+export type Engine = "voice" | "audio";
 
 export interface SpeechOptions {
   segments: readonly Pick<BriefingSegment, "text">[];
   language: string;
-  personality: BriefingPersonality | string;
-  seed: string;
   title: string;
   agentName: string;
-  preferredVoice: string | null;
+  /** 0.75..2; the live voice renders 0.7..1.4 and plays faster steps a little quicker */
   rate: number;
-  /** The server voice: resolve a playable URL (null when it cannot be had). */
+  /** The recorded file: resolve a playable URL (null when it cannot be had). */
   audio: (() => Promise<string | null>) | null;
+  /** a stable id for this briefing (the speaker's key) */
+  id: string;
   onFirstPlay?: () => void;
 }
 
@@ -55,63 +50,44 @@ export interface SpeechState {
   /** auto-play was refused by the browser: show "Press play" */
   blocked: boolean;
   finished: boolean;
-  voices: SpeechSynthesisVoice[];
-  voice: SpeechSynthesisVoice | null;
   loading: boolean;
-}
-
-function synth(): SpeechSynthesis | null {
-  return typeof window !== "undefined" && "speechSynthesis" in window ? window.speechSynthesis : null;
+  /** a quiet note when the voice could not speak (the text stays) */
+  note: string | null;
+  /** the speaker's live output level, for the face */
+  level: () => number;
 }
 
 export function useBriefingSpeech(opts: SpeechOptions) {
-  const { segments, language, personality, seed, preferredVoice, rate } = opts;
+  const { segments, rate } = opts;
   const starts = useMemo(() => segmentStarts(segments), [segments]);
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [engine, setEngine] = useState<Engine>(opts.audio ? "audio" : "device");
-  const [playing, setPlaying] = useState(false);
+  const [engine, setEngine] = useState<Engine>(opts.audio ? "audio" : "voice");
+  const [filePlaying, setFilePlaying] = useState(false);
   const [index, setIndex] = useState(0);
   const [word, setWord] = useState<[number, number] | null>(null);
   const [fraction, setFraction] = useState(0);
   const [blocked, setBlocked] = useState(false);
   const [finished, setFinished] = useState(false);
   const [loading, setLoading] = useState(false);
-  const generation = useRef(0);
+  const [failure, setFailure] = useState<VoiceFailure | null>(null);
   const audioEl = useRef<HTMLAudioElement | null>(null);
   const started = useRef(false);
   const indexRef = useRef(0);
-  const playingRef = useRef(false);
   const optsRef = useRef(opts);
   optsRef.current = opts;
+  const { snapshot, level } = useMyteSpeaker();
+
+  const keyPrefix = `briefing:${opts.id}:`;
+  const mine = snapshot.key?.startsWith(keyPrefix) ?? false;
+  const voicePlaying = engine === "voice" && mine && (snapshot.status === "speaking" || snapshot.status === "loading");
+  const playing = engine === "audio" ? filePlaying : voicePlaying;
+  const playingRef = useRef(false);
+  playingRef.current = playing;
 
   useEffect(() => {
     indexRef.current = index;
   }, [index]);
-  useEffect(() => {
-    playingRef.current = playing;
-  }, [playing]);
 
-  // The device's voices arrive late in some browsers (voiceschanged).
-  useEffect(() => {
-    const s = synth();
-    if (!s) {
-      if (!opts.audio) setEngine("none");
-      return;
-    }
-    const load = () => setVoices(s.getVoices());
-    load();
-    s.addEventListener?.("voiceschanged", load);
-    return () => s.removeEventListener?.("voiceschanged", load);
-  }, [opts.audio]);
-
-  const voice = useMemo(
-    () => pickVoice(voices, { language, seed, preferred: preferredVoice }) ?? null,
-    [voices, language, seed, preferredVoice],
-  );
-  const languageVoices = useMemo(() => voicesFor(voices, language), [voices, language]);
-  const tone = voiceTone(personality);
-
-  const total = useMemo(() => segments.reduce((sum, s) => sum + segmentSeconds(s.text, rate * tone.rate), 0), [segments, rate, tone.rate]);
+  const total = useMemo(() => segments.reduce((sum, s) => sum + segmentSeconds(s.text, rate), 0), [segments, rate]);
 
   const firstPlay = useCallback(() => {
     if (!started.current) {
@@ -120,68 +96,62 @@ export function useBriefingSpeech(opts: SpeechOptions) {
     }
   }, []);
 
-  // --- device engine ---------------------------------------------------------------------------
+  // --- live voice ------------------------------------------------------------------------------
 
-  const speak = useCallback(
+  const speakFrom = useCallback(
     (i: number) => {
-      const s = synth();
       const seg = optsRef.current.segments[i];
-      if (!s || !seg) return;
-      generation.current += 1;
-      const mine = generation.current;
-      s.cancel();
-      const u = new SpeechSynthesisUtterance(seg.text);
-      if (voice) {
-        u.voice = voice;
-        u.lang = voice.lang;
-      } else {
-        u.lang = language;
-      }
-      u.rate = Math.min(4, Math.max(0.3, rate * tone.rate));
-      u.pitch = tone.pitch;
-      u.onstart = () => {
-        if (mine !== generation.current) return;
-        setBlocked(false);
-        setPlaying(true);
-      };
-      u.onboundary = (e) => {
-        if (mine !== generation.current || e.name !== "word") return;
-        const w = wordAt(seg.text, e.charIndex);
-        setWord(w);
-        const a = starts[i] ?? 0;
-        const b = starts[i + 1] ?? 1;
-        setFraction(a + (b - a) * ((w?.[1] ?? e.charIndex) / Math.max(1, seg.text.length)));
-      };
-      u.onend = () => {
-        if (mine !== generation.current) return;
-        const next = i + 1;
-        if (next < optsRef.current.segments.length) {
-          setIndex(next);
-          setWord(null);
-          speak(next);
-        } else {
-          setPlaying(false);
-          setWord(null);
-          setFraction(1);
-          setFinished(true);
-        }
-      };
-      u.onerror = (e) => {
-        if (mine !== generation.current) return;
-        if (e.error === "interrupted" || e.error === "canceled") return;
-        setPlaying(false);
-        if (e.error === "not-allowed") setBlocked(true);
-      };
+      if (!seg) return;
       setIndex(i);
       setWord(null);
       setFraction(starts[i] ?? 0);
       setFinished(false);
-      s.speak(u);
+      setFailure(null);
+      setBlocked(false);
+      const r = optsRef.current.rate;
+      void myteSpeaker()
+        .speak({ key: `${keyPrefix}${i}`, text: seg.text, speed: Math.min(1.4, Math.max(0.7, r)), language: optsRef.current.language })
+        .then((outcome) => {
+          if (outcome === "ended") {
+            const next = i + 1;
+            if (next < optsRef.current.segments.length) speakFrom(next);
+            else {
+              setWord(null);
+              setFraction(1);
+              setFinished(true);
+            }
+          } else if (outcome === "error") {
+            const err = myteSpeaker().getSnapshot().error;
+            if (err === "blocked") setBlocked(true);
+            else setFailure(err ?? "voice_failed");
+          }
+        });
     },
-    [voice, language, rate, tone.rate, tone.pitch, starts],
+    [keyPrefix, starts],
   );
 
-  // --- audio engine ----------------------------------------------------------------------------
+  // The word being said, from the speaker's playhead through the segment.
+  useEffect(() => {
+    if (!voicePlaying) return;
+    let raf = 0;
+    const tick = () => {
+      const pos = myteSpeaker().position();
+      const i = indexRef.current;
+      const seg = optsRef.current.segments[i];
+      if (pos && seg) {
+        const at = Math.floor(pos.fraction * seg.text.length);
+        setWord(wordAt(seg.text, Math.min(seg.text.length - 1, at)));
+        const a = starts[i] ?? 0;
+        const b = starts[i + 1] ?? 1;
+        setFraction(a + (b - a) * pos.fraction);
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [voicePlaying, starts]);
+
+  // --- recorded file ---------------------------------------------------------------------------
 
   const ensureAudio = useCallback(async (): Promise<HTMLAudioElement | null> => {
     if (audioEl.current) return audioEl.current;
@@ -191,33 +161,33 @@ export function useBriefingSpeech(opts: SpeechOptions) {
     const url = await resolve();
     setLoading(false);
     if (!url) {
-      setEngine(synth() ? "device" : "none");
+      setEngine("voice");
       return null;
     }
     const el = new Audio(url);
     el.preload = "auto";
-    el.playbackRate = rate;
-    el.addEventListener("play", () => setPlaying(true));
-    el.addEventListener("pause", () => setPlaying(false));
+    el.playbackRate = optsRef.current.rate;
+    el.addEventListener("play", () => setFilePlaying(true));
+    el.addEventListener("pause", () => setFilePlaying(false));
     el.addEventListener("timeupdate", () => {
       const f = el.duration > 0 ? el.currentTime / el.duration : 0;
       setFraction(f);
       setIndex(segmentAt(starts, f));
     });
     el.addEventListener("ended", () => {
-      setPlaying(false);
+      setFilePlaying(false);
       setFraction(1);
       setFinished(true);
     });
     el.addEventListener("error", () => {
-      // An expired or unreachable file: the device reads it instead.
+      // An expired or unreachable file: the Myte speaks it live instead.
       audioEl.current = null;
-      setPlaying(false);
-      setEngine(synth() ? "device" : "none");
+      setFilePlaying(false);
+      setEngine("voice");
     });
     audioEl.current = el;
     return el;
-  }, [rate, starts]);
+  }, [starts]);
 
   // --- controls --------------------------------------------------------------------------------
 
@@ -226,6 +196,8 @@ export function useBriefingSpeech(opts: SpeechOptions) {
       firstPlay();
       const at = from ?? (finished ? 0 : indexRef.current);
       if (engine === "audio") {
+        // A file playing stops any other voice in the app.
+        myteSpeaker().stop();
         const el = await ensureAudio();
         if (el) {
           if (from !== undefined || finished) {
@@ -245,9 +217,14 @@ export function useBriefingSpeech(opts: SpeechOptions) {
           return;
         }
       }
-      if (synth()) speak(at);
+      const snap = myteSpeaker().getSnapshot();
+      if (from === undefined && snap.status === "paused" && snap.key === `${keyPrefix}${at}`) {
+        myteSpeaker().resume();
+        return;
+      }
+      speakFrom(at);
     },
-    [engine, ensureAudio, finished, firstPlay, speak, starts],
+    [engine, ensureAudio, finished, firstPlay, keyPrefix, speakFrom, starts],
   );
 
   const pause = useCallback(() => {
@@ -255,9 +232,7 @@ export function useBriefingSpeech(opts: SpeechOptions) {
       audioEl.current.pause();
       return;
     }
-    generation.current += 1;
-    synth()?.cancel();
-    setPlaying(false);
+    myteSpeaker().stop();
   }, [engine]);
 
   const toggle = useCallback(() => (playingRef.current ? pause() : void play()), [pause, play]);
@@ -269,33 +244,28 @@ export function useBriefingSpeech(opts: SpeechOptions) {
       setIndex(to);
       setWord(null);
       setFinished(false);
+      setFraction(starts[to] ?? 0);
       if (engine === "audio" && audioEl.current) {
         const el = audioEl.current;
         el.currentTime = (starts[to] ?? 0) * (el.duration || 0);
-        setFraction(starts[to] ?? 0);
         return;
       }
-      setFraction(starts[to] ?? 0);
-      if (playingRef.current) speak(to);
+      if (playingRef.current) speakFrom(to);
     },
-    [engine, speak, starts],
+    [engine, speakFrom, starts],
   );
 
   const next = useCallback(() => seek(indexRef.current + 1), [seek]);
   const prev = useCallback(() => seek(indexRef.current - 1), [seek]);
 
-  // Speed and voice changes apply at once: the file's rate, or the current sentence again.
-  useEffect(() => {
-    if (audioEl.current) audioEl.current.playbackRate = rate;
-  }, [rate]);
-  const lastVoice = useRef<string | null>(null);
+  // Speed applies at once: the file's rate, or the current sentence again.
   const lastRate = useRef(rate);
   useEffect(() => {
-    const changed = lastVoice.current !== (voice?.name ?? null) || lastRate.current !== rate;
-    lastVoice.current = voice?.name ?? null;
+    if (audioEl.current) audioEl.current.playbackRate = rate;
+    const changed = lastRate.current !== rate;
     lastRate.current = rate;
-    if (changed && playingRef.current && engine === "device") speak(indexRef.current);
-  }, [voice, rate, engine, speak]);
+    if (changed && playingRef.current && engine === "voice") speakFrom(indexRef.current);
+  }, [rate, engine, speakFrom]);
 
   // Lock screen and hardware keys (Media Session API).
   useEffect(() => {
@@ -321,29 +291,34 @@ export function useBriefingSpeech(opts: SpeechOptions) {
     };
   }, [opts.title, opts.agentName, play, pause, prev, next]);
 
+  // Another voice starting in the app pauses the file.
+  useEffect(() => {
+    if (snapshot.status !== "idle" && !mine && audioEl.current && !audioEl.current.paused) audioEl.current.pause();
+  }, [snapshot.status, mine]);
+
   // Leaving the page stops the voice.
-  useEffect(
-    () => () => {
-      generation.current += 1;
-      synth()?.cancel();
+  useEffect(() => {
+    const prefix = keyPrefix;
+    return () => {
+      const k = myteSpeaker().getSnapshot().key;
+      if (k?.startsWith(prefix)) myteSpeaker().stop();
       audioEl.current?.pause();
-    },
-    [],
-  );
+    };
+  }, [keyPrefix]);
 
   const state: SpeechState = {
     engine,
     playing,
     index,
-    word,
+    word: engine === "voice" ? word : null,
     progress: fraction,
     elapsed: total * fraction,
     total,
     blocked,
     finished,
-    voices: languageVoices,
-    voice,
     loading,
+    note: failure ? failureNote(failure) : null,
+    level,
   };
   return { state, play, pause, toggle, seek, next, prev };
 }

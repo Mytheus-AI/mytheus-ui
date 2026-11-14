@@ -1,34 +1,26 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState } from "react";
-import { Play, SpeakerHigh, Waveform } from "@phosphor-icons/react";
+import { useId, useState } from "react";
 import { saveBriefingPreferences } from "@/app/actions/briefings";
 import { Toggle } from "@/components/settings/Toggle";
-import { Button } from "@/components/ui/Button";
 import { CardHead, cardClass, cardPadX } from "@/components/ui/Card";
-import { AgentOrb } from "@/components/agent/AgentOrb";
+import { VoicePicker } from "@/components/voice/VoicePicker";
+import type { VoiceCatalog } from "@/lib/voice/catalog";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { notifyError, notifySuccess } from "@/lib/toast";
 import {
   LENGTHS,
   SPEEDS,
   nearestSpeed,
-  pickVoice,
   speedLabel,
-  voiceTone,
-  voicesFor,
-  type BriefingPersonality,
   type BriefingPreferences,
   type BriefingSettings,
 } from "@/lib/briefing";
 
 /* Settings > Briefings: whether your Myte briefs you after every meeting, auto-play, length,
-   language (the live-caption languages), the voice it speaks in and how fast. Every change saves
-   at once and says so; a refused change rolls back. The voice section shows the server voices
-   when this workspace renders audio (TTS connected), and otherwise the voices this device has,
-   with "Matched to your Myte" as the default and a Preview that speaks a line in that voice. */
-
-const AUTO = "__auto__";
+   language (the live-caption languages), how fast, and the voice it speaks in. Every change saves
+   at once and says so; a refused change rolls back. The voice is the Myte's one voice
+   (ADR-0050): the same picker and the same stored value as on Your Myte. */
 
 function prefsOf(s: BriefingSettings): BriefingPreferences {
   return {
@@ -46,35 +38,23 @@ export function BriefingSettingsPanel({
   initial,
   agentName,
   agentSeed,
-  personality,
+  voices,
 }: {
   initial: BriefingSettings;
   agentName: string;
   agentSeed: string;
-  personality: BriefingPersonality;
+  /** `GET /api/v1/voice/voices` (ADR-0050), or null when it could not be read */
+  voices: VoiceCatalog | null;
 }) {
   const ids = useId();
   const [prefs, setPrefs] = useState<BriefingPreferences>(() => prefsOf(initial));
   const [saving, setSaving] = useState<string | null>(null);
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [canSpeak, setCanSpeak] = useState(false);
-
-  useEffect(() => {
-    if (!("speechSynthesis" in window)) return;
-    setCanSpeak(true);
-    const s = window.speechSynthesis;
-    const load = () => setVoices(s.getVoices());
-    load();
-    s.addEventListener?.("voiceschanged", load);
-    return () => s.removeEventListener?.("voiceschanged", load);
-  }, []);
-
   const save = async (patch: Partial<BriefingPreferences>, key: string, done: string) => {
     const before = prefs;
     const next = { ...prefs, ...patch };
     setPrefs(next);
     setSaving(key);
-    const res = await saveBriefingPreferences(next);
+    const res = await saveBriefingPreferences({ ...next, server_voice: undefined });
     setSaving(null);
     if (res.ok) {
       setPrefs(prefsOf(res.settings));
@@ -86,25 +66,6 @@ export function BriefingSettingsPanel({
   };
 
   const language = prefs.language ?? "en";
-  const usable = useMemo(() => voicesFor(voices, language), [voices, language]);
-  const matched = useMemo(() => pickVoice(voices, { language, seed: agentSeed }), [voices, language, agentSeed]);
-  const chosen = prefs.voice && usable.some((v) => v.name === prefs.voice) ? prefs.voice : AUTO;
-
-  const preview = () => {
-    if (!("speechSynthesis" in window)) return;
-    const s = window.speechSynthesis;
-    s.cancel();
-    const u = new SpeechSynthesisUtterance(`Hi, it's ${agentName}. Here's what changed for you since your last meeting.`);
-    const v = pickVoice(voices, { language: "en", seed: agentSeed, preferred: chosen === AUTO ? null : chosen });
-    if (v) {
-      u.voice = v;
-      u.lang = v.lang;
-    }
-    const tone = voiceTone(personality);
-    u.rate = Math.min(4, Math.max(0.3, nearestSpeed(prefs.rate) * tone.rate));
-    u.pitch = tone.pitch;
-    s.speak(u);
-  };
 
   const enabledId = `${ids}-on`;
   const autoId = `${ids}-auto`;
@@ -136,7 +97,7 @@ export function BriefingSettingsPanel({
       </section>
 
       <section aria-labelledby={`${ids}-h2`} className={cardClass({ flush: true })}>
-        <CardHead id={`${ids}-h2`} as="h3" title="Length and language" divided />
+        <CardHead id={`${ids}-h2`} as="h3" title="Length, language and speed" divided />
         <div className={`grid gap-5 py-4 ${cardPadX}`}>
           <fieldset>
             <legend className="text-[15px] font-semibold text-ink">How long</legend>
@@ -175,85 +136,30 @@ export function BriefingSettingsPanel({
             />
             <p className="text-[14px] text-ink-3">Your Myte writes it in English and translates it with the same translator the live captions use.</p>
           </div>
+          <div className="grid gap-1.5 sm:max-w-[360px]">
+            <label htmlFor={`${ids}-rate`} className="text-[15px] font-semibold text-ink">
+              Briefing speed
+            </label>
+            <Dropdown
+              id={`${ids}-rate`}
+              label="Briefing speed"
+              size="lg"
+              value={String(nearestSpeed(prefs.rate))}
+              disabled={saving === "rate"}
+              onChange={(v) => void save({ rate: Number(v) }, "rate", "Speed saved")}
+              options={SPEEDS.map((s) => ({ value: String(s), label: speedLabel(s), description: s === 1 ? "As written" : undefined }))}
+            />
+          </div>
         </div>
       </section>
 
-      <section aria-labelledby={`${ids}-h3`} className={cardClass({ flush: true })}>
-        <CardHead
-          id={`${ids}-h3`}
-          as="h3"
-          title="Voice"
-          description={
-            initial.server_voice_connected
-              ? "Your briefings are recorded on the server, so they sound the same on every device and play from the lock screen."
-              : "Your device speaks your briefings. Pick a voice it has, or let Mytheus match one to your Myte."
-          }
-          divided
-        />
-        <div className={`flex flex-wrap items-center gap-4 py-4 ${cardPadX}`}>
-          <span className="relative block h-14 w-14 shrink-0 overflow-hidden rounded-full bg-surface shadow-warm-2 ring-2 ring-surface" aria-hidden>
-            <AgentOrb seed={agentSeed} size={56} />
-          </span>
-          <div className="grid min-w-0 flex-[1_1_16rem] gap-3 sm:grid-cols-2">
-            {initial.server_voice_connected ? (
-              <div className="grid gap-1.5">
-                <label htmlFor={`${ids}-sv`} className="text-[14px] font-semibold text-ink-2">
-                  {agentName}&apos;s voice
-                </label>
-                <Dropdown
-                  id={`${ids}-sv`}
-                  label={`${agentName}'s voice`}
-                  icon={<Waveform size={16} aria-hidden />}
-                  value={prefs.server_voice ?? AUTO}
-                  onChange={(v) => void save({ server_voice: v === AUTO ? null : v }, "server_voice", "Voice saved")}
-                  options={[
-                    { value: AUTO, label: "Matched to your Myte", description: "Chosen from its personality" },
-                    ...(initial.server_voices ?? []).map((v) => ({ value: v.id, label: v.name, description: v.description })),
-                  ]}
-                />
-              </div>
-            ) : (
-              <div className="grid gap-1.5">
-                <label htmlFor={`${ids}-dv`} className="text-[14px] font-semibold text-ink-2">
-                  {agentName}&apos;s voice on this device
-                </label>
-                <Dropdown
-                  id={`${ids}-dv`}
-                  label={`${agentName}'s voice on this device`}
-                  icon={<SpeakerHigh size={16} aria-hidden />}
-                  value={chosen}
-                  disabled={!canSpeak || usable.length === 0}
-                  placeholder={canSpeak ? "No voices for this language" : "This browser cannot speak"}
-                  onChange={(v) => void save({ voice: v === AUTO ? null : v }, "voice", "Voice remembered")}
-                  options={[
-                    { value: AUTO, label: "Matched to your Myte", description: matched ? matched.name : "The device default" },
-                    ...usable.map((v) => ({ value: v.name, label: v.name.replace(/\s*\(.*\)$/, ""), description: v.lang })),
-                  ]}
-                  panelMinWidth={260}
-                />
-              </div>
-            )}
-            <div className="grid gap-1.5">
-              <label htmlFor={`${ids}-rate`} className="text-[14px] font-semibold text-ink-2">
-                Speed
-              </label>
-              <Dropdown
-                id={`${ids}-rate`}
-                label="Speed"
-                value={String(nearestSpeed(prefs.rate))}
-                onChange={(v) => void save({ rate: Number(v) }, "rate", "Speed saved")}
-                options={SPEEDS.map((s) => ({ value: String(s), label: speedLabel(s), description: s === 1 ? "As written" : undefined }))}
-              />
-            </div>
-          </div>
-          {!initial.server_voice_connected ? (
-            <Button type="button" variant="outline" size="md" onClick={preview} disabled={!canSpeak}>
-              <Play size={16} weight="fill" aria-hidden />
-              Preview
-            </Button>
-          ) : null}
-        </div>
-      </section>
+      <VoicePicker
+        initial={voices}
+        myteName={agentName}
+        seed={agentSeed}
+        headingLevel="h3"
+        description={`The voice ${agentName} briefs you in, the same one it uses everywhere it speaks. Changing it here changes it on Your Myte too.`}
+      />
     </div>
   );
 }
