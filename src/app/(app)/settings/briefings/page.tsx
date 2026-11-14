@@ -7,7 +7,7 @@ import { fetchMyProfile } from "@/lib/api/profile";
 import { resolveOrgContext } from "@/lib/api/org-context";
 import { agentDisplayName } from "@/lib/realtime/agent-persona";
 import { loadVoices } from "@/app/actions/voice";
-import { agentSeed } from "@/lib/briefing";
+import { agentSeed } from "@/lib/api/profile-types";
 
 export const metadata: Metadata = { title: "Briefings | Mytheus" };
 export const dynamic = "force-dynamic";
@@ -25,7 +25,8 @@ export default async function BriefingSettingsPage() {
           initial={settings.data}
           agentName={name}
           voices={voices.ok ? voices.catalog : null}
-          agentSeed={agentSeed(profile?.agent_avatar_seed, org?.user.id ?? "")}
+          /* The same face as the sidebar and Your Myte: seeded from the profile id, not the Clerk id. */
+          agentSeed={agentSeed(profile?.agent_avatar_seed, profile?.id ?? "")}
         />
       ) : (
         <ErrorState title="Your briefing settings could not be loaded" text="Nothing was lost. Your Myte keeps your settings; this page returns when it can be read." />
