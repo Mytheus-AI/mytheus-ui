@@ -7,6 +7,8 @@ import { AppShell } from "@/components/app/AppShell";
 import { LiveInterruptions } from "@/components/listening/LiveInterruptions";
 import { TimeZoneSync } from "@/components/app/TimeZoneSync";
 import { SupportSessionBanner } from "@/components/app/SupportSessionBanner";
+import { BudgetBanner } from "@/components/app/BudgetBanner";
+import { fetchBillingStatus } from "@/lib/api/billing";
 import { LocationPrompt } from "@/components/app/LocationPrompt";
 import type { SidebarAgent } from "@/components/app/Sidebar";
 import { fetchMyProfile, syncDisplayName } from "@/lib/api/profile";
@@ -34,7 +36,7 @@ export const metadata: Metadata = {
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   // The agent rides along with the org context: one more gateway read, on the docker network.
   // A failed read leaves the sidebar's Myte tab generic rather than failing the shell.
-  const [orgContext, profile] = await Promise.all([resolveOrgContext(), fetchMyProfile()]);
+  const [orgContext, profile, billing] = await Promise.all([resolveOrgContext(), fetchMyProfile(), fetchBillingStatus()]);
   if (!orgContext) {
     // A superadmin has no workspace and sees only the ops console (ADR-0046 D1).
     if ((await checkOpsGate()) === "staff") redirect("/ops");
@@ -60,6 +62,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <AppShell agent={agent}>
         {/* A staff support session says so on every page (ADR-0046). */}
         <SupportSessionBanner />
+        {/* AI paused for everyone at 100%; admins also see the 75/90/95% steps. */}
+        {billing ? (
+          <BudgetBanner blocked={billing.blocked} percent={billing.percent_used ?? null} isAdmin={orgContext.user.role === "admin"} />
+        ) : null}
         {/* In every meeting at once: your Myte's live interruptions, on every app page. */}
         <LiveInterruptions />
         <TimeZoneSync />
