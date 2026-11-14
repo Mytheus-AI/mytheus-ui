@@ -37,10 +37,12 @@ export function AuditLogViewer({ tenants }: { tenants: { org_id: string; name: s
   const [items, setItems] = useState<AuditEntry[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [noGrant, setNoGrant] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const fetchPage = (nextOrg: string, after: string | null) => {
     setError(null);
+    setNoGrant(false);
     if (nextOrg === NONE) {
       setItems([]);
       setCursor(null);
@@ -54,8 +56,10 @@ export function AuditLogViewer({ tenants }: { tenants: { org_id: string; name: s
       const res = await searchAuditLog(nextOrg, after);
       if (!res.ok) {
         setError(res.message);
+        setNoGrant(Boolean(res.noGrant));
         return;
       }
+      setNoGrant(false);
       setItems((prev) => (after ? [...prev, ...res.page.items] : res.page.items));
       setCursor(res.page.next_cursor);
     });
@@ -82,7 +86,7 @@ export function AuditLogViewer({ tenants }: { tenants: { org_id: string; name: s
         </span>
       </div>
 
-      {error ? <Note tone="error">{error}</Note> : null}
+      {error && !noGrant ? <Note tone="error">{error}</Note> : null}
 
       <section aria-label="Audit log" aria-busy={pending} className={cardClass({ flush: true })}>
         {items.length === 0 ? (
@@ -105,18 +109,22 @@ export function AuditLogViewer({ tenants }: { tenants: { org_id: string; name: s
                   ? tenants.length === 0
                     ? "No tenants yet"
                     : "Pick a tenant"
-                  : error
-                    ? "Nothing to show"
-                    : "No audit entries"
+                  : noGrant
+                    ? "Support access needed"
+                    : error
+                      ? "Nothing to show"
+                      : "No audit entries"
               }
               description={
                 org === NONE
                   ? tenants.length === 0
                     ? "There are no tenants to show an audit log for."
                     : "Nothing is read until you pick one, and each search is recorded."
-                  : error
-                    ? "The entries could not be read. Pick the tenant again to retry."
-                    : "This tenant has no audit entries yet."
+                  : noGrant
+                    ? "A workspace's audit log stays private until one of its admins grants you access in Workspace > Support access, using your Staff ID. Ask them, then pick the tenant again."
+                    : error
+                      ? "The entries could not be read. Pick the tenant again to retry."
+                      : "This tenant has no audit entries yet."
               }
             />
           )

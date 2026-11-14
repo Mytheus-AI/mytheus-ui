@@ -108,12 +108,21 @@ export async function removeFeatureFlag(id: string): Promise<OpsResult> {
 export async function searchAuditLog(
   orgId: string,
   cursor: string | null,
-): Promise<{ ok: true; page: AuditPage } | { ok: false; message: string }> {
+): Promise<{ ok: true; page: AuditPage } | { ok: false; message: string; noGrant?: boolean }> {
   if (!isUuid(orgId)) return { ok: false, message: "Pick a tenant to see its audit log." };
   if (cursor !== null && (typeof cursor !== "string" || cursor.length > 512)) return { ok: false, message: "That page is not valid." };
   try {
     return { ok: true, page: await searchAudit({ org_id: orgId, cursor, limit: 50 }) };
   } catch (err) {
+    // Staff can see that a workspace exists, but not what happened in it, until that workspace
+    // grants support access (ADR-0046). Say so rather than calling this a staff-list problem.
+    if (err instanceof ApiError && err.reason === "no_support_grant") {
+      return {
+        ok: false,
+        noGrant: true,
+        message: "This workspace has not granted you support access, so its audit log stays private.",
+      };
+    }
     return failure(err, "The audit log could not be loaded just now. Try again in a moment.");
   }
 }
