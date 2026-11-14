@@ -210,6 +210,18 @@ export interface OpsOverview {
   plans: { plan: string; count: number }[];
   token_leaders: { org_id: string; name: string; tokens: number; token_quota: number | null }[];
   ops_activity_by_day: DayCount[];
+  /** Workspaces by data-residency region, largest first; absent from an older service. */
+  regions?: OpsRegion[];
+}
+
+/** One data-residency region on the overview. `unplaced` holds workspaces with no residency row. */
+export interface OpsRegion {
+  region: string;
+  workspaces: number;
+  active: number;
+  members: number;
+  meetings_7d: number;
+  cells: { db_cell: string; workspaces: number }[];
 }
 
 export interface OpsAction {

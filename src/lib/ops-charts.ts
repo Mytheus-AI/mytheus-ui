@@ -34,3 +34,48 @@ export function dayPoints(rows: { day: string; count: number }[]): ColumnPoint[]
     return { label, title: label, value: Number(r.count) || 0 };
   });
 }
+
+/** "November 2026" from a billing period "2026-11"; the input itself when it does not parse. */
+export function periodLabel(period: string): string {
+  const [y, m] = period.split("-").map(Number);
+  if (!y || !m) return period;
+  return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(y, m - 1, 1)));
+}
+
+export interface Change {
+  /** Signed difference between the last two points. */
+  diff: number;
+  /** The previous point's value, for the sentence ("from 12"). */
+  from: number;
+  /** "up", "down" or "flat"; null when there is no earlier point to compare with. */
+  direction: "up" | "down" | "flat";
+}
+
+/** The change from the second-to-last point to the last, or null with fewer than two points. */
+export function lastChange(points: { value: number }[]): Change | null {
+  if (points.length < 2) return null;
+  const now = points[points.length - 1].value;
+  const from = points[points.length - 2].value;
+  const diff = now - from;
+  return { diff, from, direction: diff > 0 ? "up" : diff < 0 ? "down" : "flat" };
+}
+
+/** Where each data-residency region sits on the map (a point inside the region, not a data
+    centre's address: the console knows the region code and the cell, nothing finer). */
+export const REGION_PLACES: Record<string, { label: string; short: string; lon: number; lat: number }> = {
+  us: { label: "United States", short: "US", lon: -97, lat: 39 },
+  eu: { label: "European Union", short: "EU", lon: 9, lat: 50 },
+  ap: { label: "Asia Pacific", short: "AP", lon: 112, lat: 8 },
+};
+
+export const regionLabel = (code: string) => REGION_PLACES[code]?.label ?? (code === "unplaced" ? "No region recorded" : code.toUpperCase());
+
+/** Plan codes in rank order (billing's `plans.code`, plus "none"), mapped onto the four-step
+    ordinal scale: no plan is the lightest step, enterprise the darkest. */
+const PLAN_ORDER = ["none", "free", "pro", "enterprise"];
+export const planRank = (plan: string) => {
+  const i = PLAN_ORDER.indexOf(plan.toLowerCase());
+  return i === -1 ? PLAN_ORDER.length : i;
+};
+export const planFill = (plan: string) => `var(--ord-${Math.min(planRank(plan), 3) + 1})`;
+export const planLabel = (plan: string) => (plan === "none" ? "No plan" : plan.charAt(0).toUpperCase() + plan.slice(1));

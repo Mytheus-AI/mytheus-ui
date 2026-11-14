@@ -1,0 +1,64 @@
+/* The ops console's chart scales, scoped to `.mx-ops` so nothing else in the app sees them.
+   Each ramp is one hue, light to dark, checked with the dataviz palette validator against the
+   card surface in its own theme (ordinal mode: monotone lightness, visible steps, the light end
+   clears 2:1 on the card). The dark set is chosen, not flipped.
+
+   --ord-*   plans, an ordered scale from the lowest plan to the highest (warm ink)
+   --heat-*  activity heatmap, few to many (coral); an empty cell is the well, --bg-2
+   --land    the dotted world map's land dots */
+
+.mx-ops {
+  --ord-1: #bba996;
+  --ord-2: #94826f;
+  --ord-3: #65574a;
+  --ord-4: #2f2924;
+  --heat-1: #e4a487;
+  --heat-2: #d9875f;
+  --heat-3: #c2603a;
+  --heat-4: #923d22;
+  --land: #d3cdbd;
+}
+
+:root[data-theme="dark"] .mx-ops,
+.mx-app[data-theme="dark"] .mx-ops {
+  --ord-1: #5a5047;
+  --ord-2: #8a7d6f;
+  --ord-3: #bcae9d;
+  --ord-4: #ece4d8;
+  --heat-1: #7a4632;
+  --heat-2: #a2573a;
+  --heat-3: #cf7450;
+  --heat-4: #f3a283;
+  --land: #4a4540;
+}
+
+/* The map's hubs pulse once when the overview opens, then rest. */
+@media (prefers-reduced-motion: no-preference) {
+  .mx-ops .ops-hub-ring {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: ops-hub 1.6s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) 0.2s both;
+  }
+  .mx-ops .ops-route {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: ops-draw 1.1s var(--ease-draw, cubic-bezier(0.65, 0, 0.35, 1)) 0.3s forwards;
+  }
+}
+
+@keyframes ops-hub {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes ops-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
