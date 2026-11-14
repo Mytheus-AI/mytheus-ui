@@ -11,6 +11,9 @@ import { Page, PageHead } from "@/components/ui/Page";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { AskBox } from "@/components/ask-myte/AskBox";
 import { agentDisplayName, agentSeed } from "@/lib/api/profile-types";
+import { readMemories, readRoutines } from "@/lib/ask-myte/server";
+import { MyteMemoryCard } from "@/components/agent/MyteMemoryCard";
+import { MyteRoutinesCard } from "@/components/agent/MyteRoutinesCard";
 
 export const metadata: Metadata = { title: "Your Myte | Mytheus" };
 
@@ -22,18 +25,24 @@ export const metadata: Metadata = { title: "Your Myte | Mytheus" };
  * own: a failed read never blanks the page.
  */
 export default async function AgentPage() {
-  const [orgContext, profile, dashboard] = await Promise.all([
+  const [orgContext, profile, dashboard, memories, routines] = await Promise.all([
     resolveOrgContext(),
     fetchMyProfile(),
     apiSafe<DashboardResponse>("/bff/dashboard"),
+    readMemories(),
+    readRoutines(),
   ]);
 
   const personName = orgContext?.user.name ?? "";
   const worklogs = dashboard.ok ? dashboard.data.worklogs : null;
   const notes = worklogs && worklogs.status !== "degraded" ? worklogs.items.slice(0, 5) : null;
 
+  const askName = agentDisplayName(profile?.agent_name ?? null, personName);
+  // ADR-0049 F4 and F5: what it remembers and the questions it asks on a schedule.
   const aside = (
     <>
+      <MyteMemoryCard initial={memories} name={askName} />
+      <MyteRoutinesCard initial={routines} name={askName} />
       <ListeningCard profile={profile} />
       <TopicWatchCard />
       <KeptNotes notes={notes} />
@@ -41,7 +50,6 @@ export default async function AgentPage() {
   );
 
   // Ask Myte (ADR-0047 D1): a large ask box at the top; sending opens /ask with it already asked.
-  const askName = agentDisplayName(profile?.agent_name ?? null, personName);
   const ask = (
     <section aria-label={`Ask ${askName}`} className="mb-6">
       <AskBox
