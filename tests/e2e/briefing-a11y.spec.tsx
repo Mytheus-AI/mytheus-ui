@@ -144,7 +144,7 @@ test("Brief me: being written, then ready", async ({ mount, page }) => {
   await expect(page.getByRole("heading", { name: "A briefing from Juniper" }).first()).toBeVisible({ timeout: 8000 });
 });
 
-test("settings: switches, length and the voice", async ({ mount, page }) => {
+test("settings: switches and length; the voice lives on Your Myte", async ({ mount, page }) => {
   await mount(<BriefingHarness view="settings" />);
   const on = page.getByRole("switch", { name: "A briefing after every meeting" });
   await on.click();
@@ -152,9 +152,8 @@ test("settings: switches, length and the voice", async ({ mount, page }) => {
   await expect(on).toHaveAttribute("aria-checked", "false");
   await page.getByRole("radio", { name: /Short/ }).click();
   await expect(page.getByRole("radio", { name: /Short/ })).toHaveAttribute("aria-checked", "true");
-  // The Myte's one voice: the same picker as Your Myte.
-  await page.getByRole("region", { name: "Voice" }).locator("label").filter({ hasText: /^George/ }).click();
-  await expect(page.getByText("Voice saved: George")).toBeVisible();
+  // The Myte's one voice is chosen on Your Myte, not here.
+  await expect(page.getByRole("region", { name: "Voice" })).toHaveCount(0);
 });
 
 for (const width of [360, 1600]) {

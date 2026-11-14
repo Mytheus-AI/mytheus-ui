@@ -3,7 +3,6 @@ import { Toaster } from "../../src/components/ui/Toaster";
 import { BriefingPlayer } from "../../src/components/briefing/BriefingPlayer";
 import { BriefingSettingsPanel } from "../../src/components/briefing/BriefingSettingsPanel";
 import { BRIEFING, EMPTY, FAILED, SETTINGS, WRITING } from "./briefing-fixture";
-import { VOICES } from "./voice-fixture";
 
 /* The briefing surfaces as the app renders them: the after page's full player, Home's compact
    player, every other state, and Settings > Briefings. Server reads are props; the server
@@ -40,7 +39,7 @@ export function BriefingHarness({ theme = "light", view = "after" }: { theme?: "
           {view === "settings" ? (
             <div className="max-w-[880px]">
               <h2 className="display mb-4 text-[24px] text-ink-display">Briefings</h2>
-              <BriefingSettingsPanel initial={SETTINGS} agentName="Juniper" agentSeed="agent-seed-juniper" voices={VOICES} />
+              <BriefingSettingsPanel initial={SETTINGS} />
             </div>
           ) : null}
         </main>

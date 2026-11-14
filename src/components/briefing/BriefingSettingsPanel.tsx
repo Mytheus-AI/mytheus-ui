@@ -4,8 +4,6 @@ import { useId, useState } from "react";
 import { saveBriefingPreferences } from "@/app/actions/briefings";
 import { Toggle } from "@/components/settings/Toggle";
 import { CardHead, cardClass, cardPadX } from "@/components/ui/Card";
-import { VoicePicker } from "@/components/voice/VoicePicker";
-import type { VoiceCatalog } from "@/lib/voice/catalog";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { notifyError, notifySuccess } from "@/lib/toast";
 import {
@@ -18,9 +16,9 @@ import {
 } from "@/lib/briefing";
 
 /* Settings > Briefings: whether your Myte briefs you after every meeting, auto-play, length,
-   language (the live-caption languages), how fast, and the voice it speaks in. Every change saves
-   at once and says so; a refused change rolls back. The voice is the Myte's one voice
-   (ADR-0050): the same picker and the same stored value as on Your Myte. */
+   language (the live-caption languages) and how fast. Every change saves at once and says so; a
+   refused change rolls back. The voice it speaks in is the Myte's one voice (ADR-0050), set on
+   Your Myte only. */
 
 function prefsOf(s: BriefingSettings): BriefingPreferences {
   return {
@@ -36,15 +34,8 @@ function prefsOf(s: BriefingSettings): BriefingPreferences {
 
 export function BriefingSettingsPanel({
   initial,
-  agentName,
-  agentSeed,
-  voices,
 }: {
   initial: BriefingSettings;
-  agentName: string;
-  agentSeed: string;
-  /** `GET /api/v1/voice/voices` (ADR-0050), or null when it could not be read */
-  voices: VoiceCatalog | null;
 }) {
   const ids = useId();
   const [prefs, setPrefs] = useState<BriefingPreferences>(() => prefsOf(initial));
@@ -121,7 +112,8 @@ export function BriefingSettingsPanel({
               })}
             </div>
           </fieldset>
-          <div className="grid gap-1.5 sm:max-w-[360px]">
+          <div className="grid items-start gap-5 sm:grid-cols-2 sm:gap-4">
+          <div className="grid min-w-0 gap-1.5">
             <label htmlFor={`${ids}-lang`} className="text-[15px] font-semibold text-ink">
               Language
             </label>
@@ -136,7 +128,7 @@ export function BriefingSettingsPanel({
             />
             <p className="text-[14px] text-ink-3">Your Myte writes it in English and translates it with the same translator the live captions use.</p>
           </div>
-          <div className="grid gap-1.5 sm:max-w-[360px]">
+          <div className="grid min-w-0 gap-1.5">
             <label htmlFor={`${ids}-rate`} className="text-[15px] font-semibold text-ink">
               Briefing speed
             </label>
@@ -150,16 +142,9 @@ export function BriefingSettingsPanel({
               options={SPEEDS.map((s) => ({ value: String(s), label: speedLabel(s), description: s === 1 ? "As written" : undefined }))}
             />
           </div>
+          </div>
         </div>
       </section>
-
-      <VoicePicker
-        initial={voices}
-        myteName={agentName}
-        seed={agentSeed}
-        headingLevel="h3"
-        description={`The voice ${agentName} briefs you in, the same one it uses everywhere it speaks. Changing it here changes it on Your Myte too.`}
-      />
     </div>
   );
 }

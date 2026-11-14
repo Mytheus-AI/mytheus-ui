@@ -352,7 +352,7 @@ const ENTRIES: Record<string, Entry> = {
     () => (
       <>
         <SectionBar title="Briefings" context="When your Myte briefs you, how long, in which language and in what voice. Only you hear your briefings." />
-        <BriefingSettingsPanel initial={BRIEFING_SETTINGS} agentName="Juniper" agentSeed="agent-seed-juniper" personality="friendly" />
+        <BriefingSettingsPanel initial={BRIEFING_SETTINGS} />
       </>
     ),
   ),

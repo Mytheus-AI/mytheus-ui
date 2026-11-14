@@ -1,7 +1,7 @@
 import { SettingsPanelSkeleton } from "@/components/settings/SettingsSkeleton";
 
-/* The Briefings panel while it loads: BriefingSettingsPanel's three cards (when, length and
-   language, voice). */
+/* The Briefings panel while it loads: BriefingSettingsPanel's two cards (when; length,
+   language and speed). */
 export default function Loading() {
   return (
     <SettingsPanelSkeleton
@@ -10,8 +10,7 @@ export default function Loading() {
       wrapClass="flex flex-col gap-5"
       cards={[
         { title: "w-48", description: ["w-[90%]", "w-[50%]"], rows: ["inline", "inline"] },
-        { title: "w-40", rows: ["field", "field"] },
-        { title: "w-16", description: ["w-[70%]"], rows: ["choices"] },
+        { title: "w-40", rows: ["choices", "field"] },
       ]}
     />
   );
