@@ -32,6 +32,9 @@ export type UserProfile = {
   agent_instructions: string | null;
   /** The person's real name as Mytheus stores it (from Clerk), or null when unknown. */
   display_name: string | null;
+  /** Where the person says they work: ISO 3166-1 alpha-2 ("IN") and ISO 3166-2 ("IN-KA"). */
+  country: string | null;
+  subdivision: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -50,6 +53,9 @@ export type UserProfileUpdate = {
   agent_instructions?: string | null;
   /** Self only. Trimmed by the API; blank stores NULL. At most `LIMITS.displayName`. */
   display_name?: string | null;
+  /** Self only. ISO codes; a new country without a subdivision clears the old one. */
+  country?: string | null;
+  subdivision?: string | null;
 };
 
 /* ---------------- limits (ADR-0038 D1, D2) ---------------- */
@@ -140,6 +146,8 @@ export function normalizeProfile(raw: Partial<UserProfile> & { id: string }): Us
     agent_personality: isPersonality(raw.agent_personality) ? raw.agent_personality : "balanced",
     agent_instructions: text(raw.agent_instructions),
     display_name: text(raw.display_name)?.trim() ?? null,
+    country: typeof raw.country === "string" && /^[A-Z]{2}$/.test(raw.country) ? raw.country : null,
+    subdivision: typeof raw.subdivision === "string" && /^[A-Z]{2}-[A-Z0-9]{1,3}$/.test(raw.subdivision) ? raw.subdivision : null,
     created_at: raw.created_at ?? "",
     updated_at: raw.updated_at ?? "",
   };
