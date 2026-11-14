@@ -124,7 +124,7 @@ test("Space does the right thing in each phase", () => {
   assert.deepEqual(spaceEvent({ ...listening, phase: "speaking" }), { type: "interrupt" });
   assert.deepEqual(spaceEvent({ ...listening, phase: "greeting" }), { type: "interrupt" });
   assert.deepEqual(spaceEvent({ ...listening, phase: "paused" }), { type: "resume" });
-  assert.equal(spaceEvent({ ...listening, phase: "thinking" }), null);
+  assert.deepEqual(spaceEvent({ ...listening, phase: "thinking" }), { type: "interrupt" }, "fillers can be interrupted");
   assert.equal(spaceEvent({ ...listening, phase: "transcribing" }), null);
 });
 
@@ -153,4 +153,28 @@ test("the greeting: its name and the person's first name, four lines, never the 
   assert.notEqual(pickGreeting("Probe", "Sushan", () => 0, lines[0]), lines[0]);
   assert.equal(pickGreeting("Probe", "Sushan", () => 0.9999), lines[3]);
   assert.doesNotMatch(pickGreeting("Probe", "", () => 0), /undefined|,\s*,/);
+});
+
+test("streaming: the answer's first audio moves thinking to speaking before done; done keeps speaking", () => {
+  let s = run([{ type: "start" }, { type: "speech-start" }, { type: "speech-end" }, { type: "transcript", text: "what is next" }]);
+  assert.equal(s.phase, "thinking");
+  s = voiceReducer(s, { type: "answer-audio" });
+  assert.equal(s.phase, "speaking");
+  s = voiceReducer(s, { type: "answer-done", spoken: true });
+  assert.equal(s.phase, "speaking", "it carries on until everything is said");
+  s = voiceReducer(s, { type: "spoken" });
+  assert.equal(s.phase, "listening");
+  // A failure while it is already speaking listens with the reason.
+  s = run([{ type: "speech-start" }, { type: "speech-end" }, { type: "transcript", text: "again" }, { type: "answer-audio" }, { type: "answer-failed", message: "Lost" }], s);
+  assert.equal(s.phase, "listening");
+  assert.equal(s.error, "Lost");
+  // Muted: no audio, so no speaking.
+  s = run([{ type: "mute", muted: true }, { type: "speech-start" }, { type: "speech-end" }, { type: "transcript", text: "x" }, { type: "answer-audio" }], s);
+  assert.equal(s.phase, "thinking");
+});
+
+test("barge-in while it fills the wait: Space while thinking listens", () => {
+  const s = run([{ type: "start" }, { type: "speech-start" }, { type: "speech-end" }, { type: "transcript", text: "what is next" }]);
+  assert.deepEqual(spaceEvent(s), { type: "interrupt" });
+  assert.equal(voiceReducer(s, { type: "interrupt" }).phase, "listening");
 });

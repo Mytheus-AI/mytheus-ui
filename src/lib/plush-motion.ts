@@ -42,7 +42,7 @@ export interface PlushPose {
   speak: number;
   /** 0..1, the audio level driving the ripples, the sound arcs and the speaking pulse */
   level: number;
-  /** 0..1, how open the mouth is; it only exists while speaking */
+  /** 0..1, how open the mouth is; it exists while speaking, and while thinking out loud */
   mouth: number;
   /** where the eyes look, each about -1..1 (x right, y up) */
   look: [number, number];
@@ -386,8 +386,10 @@ export function createPlushMotion(options: PlushMotionOptions = {}): PlushMotion
       const ease = Math.min(1, dt * 4);
       s.think += ((mode === "thinking" && !drowsy ? 1 : 0) - s.think) * ease;
       s.li += ((mode === "listening" && !drowsy ? 1 : 0) - s.li) * ease;
-      s.sp += ((mode === "speaking" && !drowsy ? 1 : 0) - s.sp) * ease;
-      s.mouth += ((mode === "speaking" ? Math.min(1, level * 1.3) : 0) - s.mouth) * Math.min(1, dt * 22);
+      // Thinking out loud (Talk mode's "Let me check."): the spark stays and the mouth moves with the sound.
+      const voiced = mode === "speaking" || (mode === "thinking" && level > 0.02);
+      s.sp += ((voiced && !drowsy ? 1 : 0) - s.sp) * ease;
+      s.mouth += ((voiced ? Math.min(1, level * 1.3) : 0) - s.mouth) * Math.min(1, dt * 22);
       s.smile = Math.max(0, s.smile - dt);
       const squint = 1 - 0.1 * s.think;
 

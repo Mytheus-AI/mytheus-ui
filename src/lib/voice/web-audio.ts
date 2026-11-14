@@ -59,26 +59,51 @@ export function createWebAudioOut(): AudioOut {
       const c = context();
       const src = c.createBufferSource();
       src.buffer = (clip as WebClip).buffer;
-      src.connect(analyser!);
+      // Each clip has its own gain, so a filler can fade out under the answer.
+      const gain = c.createGain();
+      src.connect(gain);
+      gain.connect(analyser!);
       let done = false;
       src.onended = () => {
         if (done) return;
         done = true;
+        gain.disconnect();
         onEnded();
       };
       const startedAt = c.currentTime;
       src.start();
+      const stop = () => {
+        if (done) return;
+        done = true;
+        src.onended = null;
+        try {
+          src.stop();
+        } catch {
+          // never started
+        }
+        src.disconnect();
+        gain.disconnect();
+      };
       return {
-        stop() {
+        stop,
+        fade(ms) {
           if (done) return;
           done = true;
           src.onended = null;
+          const t = c.currentTime;
           try {
-            src.stop();
+            gain.gain.setValueAtTime(gain.gain.value, t);
+            gain.gain.linearRampToValueAtTime(0, t + ms / 1000);
+            src.stop(t + ms / 1000 + 0.02);
           } catch {
-            // never started
+            src.disconnect();
+            gain.disconnect();
+            return;
           }
-          src.disconnect();
+          src.onended = () => {
+            src.disconnect();
+            gain.disconnect();
+          };
         },
         elapsed: () => Math.max(0, c.currentTime - startedAt),
       };

@@ -10,7 +10,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { Note } from "@/components/ui/Note";
 import { notifyError, notifySuccess } from "@/lib/toast";
 import { failureNote, genderLabel, previewLine, type VoiceCatalog, type VoiceOption } from "@/lib/voice/catalog";
-import { SPEED_STEPS, useMyteSpeaker, useVoiceSpeed } from "@/lib/voice/myte-voice";
+import { SPEED_STEPS, forgetFillers, useMyteSpeaker, useVoiceSpeed } from "@/lib/voice/myte-voice";
 import { speedName } from "@/lib/voice/speed";
 
 /* The Myte's voice picker (ADR-0050 D2), on Your Myte and in Settings > Briefings: one choice,
@@ -83,6 +83,7 @@ export function VoicePicker({
     setSaving(false);
     if (res.ok) {
       saved.current = res.catalog.chosen ?? MATCH;
+      forgetFillers();
       setCatalog(res.catalog);
       setValue(saved.current);
       const picked = res.catalog.voices.find((v) => v.id === res.catalog.chosen);

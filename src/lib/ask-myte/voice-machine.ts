@@ -2,8 +2,9 @@
  * Talk to Myte (ADR-0049 F6): the voice mode's state machine. When it opens the Myte greets the
  * person in its own voice, then listens. The microphone is recorded and voice-activity detection
  * (`lib/voice/vad.ts`) decides when someone starts and stops talking; the clip is transcribed by
- * the server, sent as the question, the answer is spoken, and it listens again. Half-duplex: it
- * never records while it speaks; Space (or the button) interrupts it and listens.
+ * the server, sent as the question, and the answer is spoken while it streams (short fillers in
+ * its voice cover the wait), then it listens again. Half-duplex: it never records while it speaks;
+ * Space (or the button) interrupts it, fillers included, and listens.
  *
  * The component owns the browser engines and feeds their events in here; this decides what
  * happens next and what the plush shows. Pure, tested in tests/ask-myte-voice.test.ts.
@@ -39,6 +40,7 @@ export type VoiceEvent =
   | { type: "send-now" }
   | { type: "transcript"; text: string }
   | { type: "transcribe-failed"; message: string; fatal?: boolean }
+  | { type: "answer-audio" }
   | { type: "answer-done"; spoken: boolean }
   | { type: "answer-failed"; message: string }
   | { type: "spoken" }
@@ -80,17 +82,21 @@ export function voiceReducer(s: VoiceState, e: VoiceEvent): VoiceState {
     case "transcribe-failed":
       if (s.phase !== "transcribing") return s;
       return e.fatal ? { ...s, phase: "paused", resumeTo: "listening", error: e.message } : { ...s, phase: "listening", error: e.message };
+    case "answer-audio":
+      // The answer's first audio is playing while the rest is still being written.
+      return s.phase === "thinking" && !s.muted ? { ...s, phase: "speaking" } : s;
     case "answer-done":
+      // Already speaking (it started while streaming): it carries on until it is all said.
       if (s.phase !== "thinking") return s;
       return { ...s, phase: e.spoken && !s.muted ? "speaking" : "listening" };
     case "answer-failed":
-      if (s.phase !== "thinking") return s;
+      if (s.phase !== "thinking" && s.phase !== "speaking") return s;
       return { ...s, phase: "listening", error: e.message };
     case "spoken":
       return s.phase === "speaking" ? { ...s, phase: "listening" } : s;
     case "interrupt":
-      // Space (or the button) while it speaks or greets: it stops and listens.
-      return s.phase === "speaking" || s.phase === "greeting" ? { ...s, phase: "listening" } : s;
+      // Space (or the button) while it speaks, greets or fills the wait: it stops and listens.
+      return s.phase === "speaking" || s.phase === "greeting" || s.phase === "thinking" ? { ...s, phase: "listening" } : s;
     case "pause":
       if (s.phase === "listening" || s.phase === "speaking") return { ...s, phase: "paused", resumeTo: s.phase, talking: false };
       if (s.phase === "greeting") return { ...s, phase: "paused", resumeTo: "listening" };
@@ -119,6 +125,7 @@ export function spaceEvent(s: VoiceState): VoiceEvent | null {
       return s.talking ? { type: "send-now" } : { type: "pause" };
     case "speaking":
     case "greeting":
+    case "thinking":
       return { type: "interrupt" };
     default:
       return null;
