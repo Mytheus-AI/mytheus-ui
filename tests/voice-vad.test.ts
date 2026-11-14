@@ -60,11 +60,11 @@ test("speech starts after 100 ms above the threshold; a 50 ms click does not sta
   assert.equal(vad.speaking, true);
 });
 
-test("it ends after 1.2 s of quiet; a short pause in the middle does not end it", () => {
+test("it ends after 0.7 s of quiet; a short breath in the middle does not end it", () => {
   const { vad, at } = calibrated();
   let r = feed(vad, at, 600, 0.4);
   assert.equal(r.events[0]?.ev, "start");
-  r = feed(vad, r.at, 800, 0.02); // a breath
+  r = feed(vad, r.at, 500, 0.02); // a breath
   assert.deepEqual(r.events, []);
   // Level between the silence and speech thresholds still counts as voice (hysteresis).
   const th = vad.thresholds();
@@ -75,7 +75,7 @@ test("it ends after 1.2 s of quiet; a short pause in the middle does not end it"
   assert.equal(r.events.length, 1);
   assert.equal(r.events[0]!.ev, "end");
   const quietFor = r.events[0]!.at - quietFrom;
-  assert.ok(quietFor >= 1150 && quietFor <= 1250, `ended after ${quietFor} ms of quiet`);
+  assert.ok(quietFor >= 650 && quietFor <= 750, `ended after ${quietFor} ms of quiet`);
   assert.equal(vad.speaking, false);
 });
 

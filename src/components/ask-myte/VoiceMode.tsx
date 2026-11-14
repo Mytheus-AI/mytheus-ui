@@ -285,7 +285,7 @@ export default function VoiceMode({
       const t: Turn = { n: s.turn, key: null, active: true, timing, segmenter: createSegmenter(), stepSeen: false, textSeen: false, settled: false, logged: false };
       turnRef.current = t;
       setTimings(timing.summary());
-      conv.send(s.sent, scope, page);
+      conv.send(s.sent, scope, page, { channel: "voice" });
       if (!s.muted) {
         const st = myteSpeaker().stream({
           key: `talk:turn-${s.turn}`,

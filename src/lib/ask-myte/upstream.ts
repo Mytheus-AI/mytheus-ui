@@ -27,6 +27,7 @@ export interface CheckedAsk {
   attachments: Attachment[];
   /** ADR-0049 F1: a peer draft is streamed back and never stored */
   mode: AskMode;
+  channel: "text" | "voice";
   peer: PeerContext | null;
   /** ADR-0049 F5: the new thread's title for a routine run */
   threadTitle: string | null;
@@ -36,6 +37,7 @@ export function checkAskBody(raw: unknown): { ok: true; value: CheckedAsk } | { 
   if (!raw || typeof raw !== "object") return { ok: false, message: "Send a question." };
   const body = raw as Record<string, unknown>;
   const mode: AskMode = body.mode === "peer_answer" ? "peer_answer" : "ask";
+  const channel = body.channel === "voice" && mode === "ask" ? "voice" : "text";
   let peer: PeerContext | null = null;
   if (mode === "peer_answer") {
     const p = (body.peer && typeof body.peer === "object" ? body.peer : null) as Record<string, unknown> | null;
@@ -72,6 +74,7 @@ export function checkAskBody(raw: unknown): { ok: true; value: CheckedAsk } | { 
       timezone: tz,
       attachments: files.value,
       mode,
+      channel,
       peer,
       // A peer draft never creates a thread, so it has no title or thread of its own.
       threadTitle: mode === "peer_answer" ? null : threadTitle,
@@ -108,6 +111,7 @@ export function upstreamBody(ask: CheckedAsk, persona: Persona, history: History
     memories: memories.slice(0, LIMITS.memories),
     ...(ask.attachments.length ? { attachments: ask.attachments } : {}),
     mode: ask.mode,
+    ...(ask.channel === "voice" ? { channel: "voice" } : {}),
     ...(ask.peer ? { peer: ask.peer } : {}),
   };
 }

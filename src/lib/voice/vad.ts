@@ -8,7 +8,7 @@
  *   drifting slowly toward the room as it is now.
  * - Speech starts when the level stays at or above the speech threshold for `onsetMs` (100 ms):
  *   `floor * 2.5 + 0.05`, kept within 0.08..0.4. A click or a tap on the desk is shorter.
- * - It ends after `silenceMs` (1.2 s) below the lower silence threshold (hysteresis:
+ * - It ends after `silenceMs` (0.7 s) below the lower silence threshold (hysteresis:
  *   `floor * 1.6 + 0.03`, at most three quarters of the speech threshold), or at `maxMs` (30 s).
  * - An utterance with under `minSpeechMs` (250 ms) of voice in it is a cough or a bump: `discard`.
  *
@@ -24,7 +24,7 @@ export interface VadConfig {
   minSpeechMs: number;
 }
 
-export const VAD_DEFAULTS: VadConfig = { calibrateMs: 500, onsetMs: 100, silenceMs: 1200, maxMs: 30_000, minSpeechMs: 250 };
+export const VAD_DEFAULTS: VadConfig = { calibrateMs: 500, onsetMs: 100, silenceMs: 700, maxMs: 30_000, minSpeechMs: 250 };
 
 /** `start`: speech began; `end`: it finished (silence); `cap`: it ran to the limit; `discard`: too short to be words. */
 export type VadEvent = "start" | "end" | "cap" | "discard";
