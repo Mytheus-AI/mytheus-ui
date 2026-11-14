@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { CalendarBlank, Coins, Timer, UsersThree } from "@phosphor-icons/react/ssr";
 import { Card, CardHead, SectionCard } from "@/components/ui/Card";
+import { LinkButton } from "@/components/ui/Button";
+import { TextLink } from "@/components/ui/TextLink";
+import { isNoCap, planLabel } from "@/lib/plans";
 import { Chip, type ChipTone } from "@/components/ui/Chip";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Note } from "@/components/ui/Note";
 import { SectionBar } from "@/components/ui/Page";
@@ -34,8 +36,9 @@ export const metadata: Metadata = { title: "Usage and billing | Mytheus" };
    single-series bar in the same hue; identity comes from the row label, never colour. Status
    (warning / blocked) is the frozen priority language, always with an icon and words.
 
-   Payments are not connected: the Stripe band (checkout, invoices, dunning) is not built, so the
-   invoices card says so plainly instead of listing invoices or a next charge. */
+   Payments go through Razorpay from the Plans page (`/workspace/billing/plans`); Razorpay emails
+   each receipt. A Pay as you go workspace sees its running window here: tokens, their price and
+   the deposit, and the last settlement. */
 
 const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 const number = new Intl.NumberFormat("en-US");
@@ -97,23 +100,59 @@ const STATE_LABEL: Record<string, { text: string; tone: ChipTone }> = {
   blocked: { text: "Paused", tone: "high" },
 };
 
-function Invoices() {
+const shortDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+/* Payments: what the next charge is, or the Pay as you go window and its last settlement. */
+function Payments({ usage }: { usage: UsageOut | null }) {
+  const payg = usage?.payg ?? null;
+  const last = usage?.last_settlement ?? null;
+  const until = usage?.paid_until ? shortDate.format(new Date(usage.paid_until)) : null;
   return (
     <SectionCard
-      title="Invoices"
-      headingId="invoices-heading"
-      description="Payments are not connected yet. This workspace has not been charged, and nothing here bills you."
+      title="Payments"
+      headingId="payments-heading"
+      description="Paid through Razorpay, which emails a receipt for each payment. Mytheus never sees your card."
+      aside={<LinkButton href="/workspace/billing/plans" size="sm" variant="outline">Plans and credits</LinkButton>}
     >
-      <EmptyState
-        inCard
-        art="billing"
-        title="No invoices yet"
-        description="Checkout, invoices and seat billing arrive with the payments release. Each invoice will be listed here with its date, status and amount."
-      />
-      <div className="flex items-center gap-2 px-4 py-3.5 text-[14px] text-ink-3 sm:px-[22px]">
-        <CalendarBlank size={16} aria-hidden="true" />
-        No next charge is scheduled.
-      </div>
+      {payg ? (
+        <div className="px-4 py-4 sm:px-[22px]">
+          <p className="text-[15px] font-semibold text-ink">
+            This Pay as you go window: {currency.format(payg.cost_cents / 100)} of the {currency.format(payg.deposit_cents / 100)} deposit
+          </p>
+          <div className="mt-3">
+            <MeterBar label="Deposit used" used={payg.cost_cents} included={Math.max(1, payg.deposit_cents)} />
+          </div>
+          <p className="mt-2 text-[14px] text-ink-3">
+            {number.format(payg.tokens)} tokens since {shortDate.format(new Date(payg.window_start))}, at{" "}
+            {currency.format(payg.cents_per_million / 100)} per million. Settled on {shortDate.format(new Date(payg.window_end))}: anything
+            under the deposit is refunded, anything over is billed here.
+          </p>
+        </div>
+      ) : null}
+      {last ? (
+        <div className="flex items-start gap-2 px-4 py-3.5 text-[14px] text-ink-2 sm:px-[22px]">
+          <CalendarBlank size={16} className="mt-0.5 shrink-0 text-ink-3" aria-hidden="true" />
+          <span>
+            Last Pay as you go month ({shortDate.format(new Date(last.window_end))}): {number.format(last.tokens)} tokens,{" "}
+            {currency.format(last.cost_cents / 100)}.{" "}
+            {last.balance_cents < 0
+              ? last.status === "refunded"
+                ? `${currency.format(-last.balance_cents / 100)} refunded.`
+                : `${currency.format(-last.balance_cents / 100)} refund on its way.`
+              : last.balance_cents > 0
+                ? last.status === "paid"
+                  ? `${currency.format(last.balance_cents / 100)} balance paid.`
+                  : `${currency.format(last.balance_cents / 100)} balance due on the Plans page.`
+                : "Exactly the deposit."}
+          </span>
+        </div>
+      ) : null}
+      {!payg && !last ? (
+        <div className="flex items-center gap-2 px-4 py-3.5 text-[14px] text-ink-3 sm:px-[22px]">
+          <CalendarBlank size={16} aria-hidden="true" />
+          {until ? `This plan is paid until ${until}; it returns to Free unless bought again.` : "Nothing is charged automatically."}
+        </div>
+      ) : null}
     </SectionCard>
   );
 }
@@ -130,7 +169,7 @@ export default async function UsageAndBillingPage() {
         ) : (
           <ErrorState title="The plan and usage could not be loaded" text="Billing did not answer just now. Nothing is charged while it is unavailable." />
         )}
-        <Invoices />
+        <Payments usage={null} />
       </div>
     );
   }
@@ -156,18 +195,26 @@ export default async function UsageAndBillingPage() {
           <div className="min-w-0">
             <Chip tone="solid">Current plan</Chip>
             <h2 id="plan-heading" className="display mt-3 text-[30px] text-ink-display">
-              {plan.name}
+              {planLabel(plan.code)}
             </h2>
             <p className="mt-1 text-[15px] text-ink-2">
-              {plan.seat_price_cents > 0 ? (
+              {plan.code === "payg" ? (
                 <>
-                  <span className="display text-[22px] text-ink">{currency.format(plan.seat_price_cents / 100)}</span> per seat per month on the
-                  price list
+                  <span className="display text-[22px] text-ink">{currency.format(plan.seat_price_cents / 100)}</span> deposit, settled on use
+                </>
+              ) : plan.seat_price_cents > 0 ? (
+                <>
+                  <span className="display text-[22px] text-ink">{currency.format(plan.seat_price_cents / 100)}</span> a month for the workspace
                 </>
               ) : (
                 "No charge on this plan"
               )}
             </p>
+            <div className="mt-4">
+              <LinkButton href="/workspace/billing/plans" size="sm">
+                {["payg", "unlimited", "enterprise"].includes(plan.code) ? "See plans" : "Upgrade"}
+              </LinkButton>
+            </div>
           </div>
           <ul className="flex flex-wrap gap-x-6 gap-y-2 text-[14px] text-ink-2 md:flex-col md:items-start">
             {members ? (
@@ -184,7 +231,9 @@ export default async function UsageAndBillingPage() {
             </li>
             <li className="inline-flex items-center gap-1.5">
               <Coins size={17} className="text-ink-3" aria-hidden="true" />
-              {number.format(plan.included_agent_tokens)} agent tokens included per month
+              {isNoCap(plan.included_agent_tokens)
+                ? "No cap on agent tokens"
+                : `${number.format(plan.included_agent_tokens)} agent tokens included per month`}
             </li>
           </ul>
         </div>
@@ -192,17 +241,13 @@ export default async function UsageAndBillingPage() {
 
       {v.state === "blocked" ? (
         <Note tone="error">
-          Your workspace has used all of its agent tokens for this period. Live notes are paused until the next period;
-          transcription and captions continue. Upgrade to keep agents running.
+          This month&rsquo;s AI allowance is used up, so AI is paused for everyone in the workspace. Captions and transcription
+          continue. <TextLink href="/workspace/billing/plans">Buy credits or upgrade</TextLink> to turn it back on now.
         </Note>
-      ) : v.state === "throttled" ? (
+      ) : !isNoCap(tokens.included ?? 0) && (v.alert80 || tokenLevel === "warn" || tokenLevel === "critical") ? (
         <Note tone="warning">
-          Your workspace is past its included agent tokens. Notes continue on the faster, cheaper model until the hard cap.
-        </Note>
-      ) : v.alert80 || tokenLevel === "warn" || tokenLevel === "critical" ? (
-        <Note tone="warning">
-          {pct(v.tokenRatio)} of this period&rsquo;s agent tokens are used. Admins were alerted at 80%
-          {v.alert95 || tokenLevel === "critical" ? " and 95%" : ""}.
+          {pct(v.tokenRatio)} of this month&rsquo;s AI tokens are used. AI pauses at 100%;{" "}
+          <TextLink href="/workspace/billing/plans">buy credits or upgrade</TextLink> before then.
         </Note>
       ) : null}
 
@@ -214,7 +259,7 @@ export default async function UsageAndBillingPage() {
           right={<Chip tone={state.tone}>{state.text}</Chip>}
         />
         <div className="px-4 pb-5 pt-1 sm:px-[22px]">
-          {tokens.included ? (
+          {tokens.included && !isNoCap(tokens.included) ? (
             <>
               <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <span className="display text-[44px] leading-none tabular-nums text-ink-display">
@@ -237,7 +282,7 @@ export default async function UsageAndBillingPage() {
           ) : (
             <p className="flex flex-wrap items-baseline gap-x-3">
               <span className="display text-[44px] leading-none tabular-nums text-ink-display">{formatNumber(tokens.used)}</span>
-              <span className="text-[15px] text-ink-2">tokens, no quota set</span>
+              <span className="text-[15px] text-ink-2">tokens, no cap on this plan</span>
             </p>
           )}
         </div>
@@ -290,7 +335,7 @@ export default async function UsageAndBillingPage() {
         </SectionCard>
       </div>
 
-      <Invoices />
+      <Payments usage={result.usage} />
     </div>
   );
 }

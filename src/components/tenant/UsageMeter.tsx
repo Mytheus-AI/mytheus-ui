@@ -1,12 +1,12 @@
 import { CheckCircle, Warning, WarningOctagon } from "@phosphor-icons/react/ssr";
 
 /* One usage dimension against its plan limit: a single magnitude, so one bar in one hue (the dark
-   control colour), the figure printed beside it, and the 80% and 95% alert thresholds as ticks
+   control colour), the figure printed beside it, and the 75% and 95% alert thresholds as ticks
    with their labels underneath. Past a threshold the bar and the status line switch to the frozen
    priority language (amber attention, red act now), always with an icon and words, never colour
    alone. A dimension with no limit prints its figure and no bar. Server component. */
 
-export const WARN = 0.8;
+export const WARN = 0.75;
 export const CRITICAL = 0.95;
 
 export type Level = "ok" | "warn" | "critical" | "over";
@@ -39,7 +39,7 @@ export function LevelLabel({ level, okText = "Within plan" }: { level: Level; ok
     );
   const Icon = level === "warn" ? Warning : WarningOctagon;
   const cls = level === "warn" ? "text-priority-medium" : "text-priority-high";
-  const text = level === "warn" ? "Past 80% of the plan" : level === "critical" ? "Past 95% of the plan" : "Over the plan";
+  const text = level === "warn" ? "Past 75% of the plan" : level === "critical" ? "Past 95% of the plan" : "Over the plan";
   return (
     <span className={`inline-flex items-center gap-1.5 text-[14px] font-semibold ${cls}`}>
       <Icon size={16} weight="fill" aria-hidden />
