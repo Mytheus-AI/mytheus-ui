@@ -423,19 +423,4 @@ export const ZONES: Record<string, [number, number, string]> = {
   "Pacific/Wallis": [-13.3, -176.17, "WF"],
 };
 
-/** Older zone names some browsers still report, mapped to the current name. */
-export const ZONE_ALIASES: Record<string, string> = {
-  "Asia/Calcutta": "Asia/Kolkata",
-  "Asia/Katmandu": "Asia/Kathmandu",
-  "Asia/Saigon": "Asia/Ho_Chi_Minh",
-  "Asia/Rangoon": "Asia/Yangon",
-  "Europe/Kiev": "Europe/Kyiv",
-  "America/Buenos_Aires": "America/Argentina/Buenos_Aires",
-  "Asia/Dacca": "Asia/Dhaka",
-  "Asia/Thimbu": "Asia/Thimphu",
-  "Australia/ACT": "Australia/Sydney",
-  "US/Eastern": "America/New_York",
-  "US/Central": "America/Chicago",
-  "US/Mountain": "America/Denver",
-  "US/Pacific": "America/Los_Angeles",
-};
+export { ZONE_ALIASES } from "./zone-aliases.ts";
