@@ -19,6 +19,8 @@
  */
 
 import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
+import { isRedirectError } from "next/dist/client/components/redirect";
 
 import type { components as CoreApiSchemas } from "./generated/core-api";
 
@@ -56,7 +58,18 @@ export class ApiError extends Error {
   get isAuthFailure(): boolean {
     return this.code === "AUTH_REQUIRED" || this.code === "TOKEN_EXPIRED";
   }
+
+  /** The gateway refused because Mytheus staff suspended this member's workspace. */
+  get isSuspended(): boolean {
+    return this.reason === TENANT_SUSPENDED;
+  }
 }
+
+/** The gateway's `reason` on a suspended workspace's 401 (identity's `org_resolver`). */
+const TENANT_SUSPENDED = "tenant_suspended";
+
+/** Where a member of a suspended workspace is sent: it signs them out and says why. */
+export const SUSPENDED_PATH = "/suspended";
 
 export interface RequestOptions {
   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
@@ -170,7 +183,13 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
     next: options.revalidate === undefined ? undefined : { revalidate: options.revalidate },
   });
 
-  if (!response.ok) throw await toApiError(response);
+  if (!response.ok) {
+    const error = await toApiError(response);
+    // A suspended workspace is not one failed panel: every read would fail the same way. Send
+    // the member to the page that signs them out and explains, from wherever this was called.
+    if (error.isSuspended) redirect(SUSPENDED_PATH);
+    throw error;
+  }
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
 }
@@ -189,6 +208,8 @@ export async function apiSafe<T>(
   try {
     return { ok: true, data: await api<T>(path, options) };
   } catch (error) {
+    // The suspended-workspace redirect must reach Next, not become a degraded panel.
+    if (isRedirectError(error)) throw error;
     if (error instanceof ApiError) return { ok: false, error };
     return {
       ok: false,

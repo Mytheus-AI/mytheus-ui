@@ -64,6 +64,9 @@ const isPublicRoute = createRouteMatcher([
   // organization, and `auth.protect()` treats pending as signed out, so gating this page would
   // bounce the user to sign-in forever. The page itself sends a visitor with no session away.
   "/onboarding(.*)",
+  // Where a member of a suspended workspace lands. It signs them out, so it must still render
+  // once they are signed out.
+  "/suspended",
   // Mytheus Capture's extension calls these with no Clerk cookie. Each route authenticates
   // itself with the signed link token and the Clerk session behind it, and fails closed
   // (src/app/api/capture/_lib/session.ts).
