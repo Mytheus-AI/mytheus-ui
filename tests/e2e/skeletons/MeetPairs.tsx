@@ -204,7 +204,7 @@ function MeetingDetailStub() {
               <input className="nm-input" readOnly aria-label="Join link" value="https://dashboard.mytheus.cloud/meetings/m-1/join" />
               <span className="mt-2 text-[13px] font-semibold text-ink-3">Add to calendar</span>
               <div className="flex flex-wrap gap-2">
-                {["Google", "Outlook", "Download .ics"].map((l) => (
+                {["Google", "Outlook", ".ics"].map((l) => (
                   <button key={l} type="button" className="mx-btn is-outline is-sm tap">
                     {l}
                   </button>

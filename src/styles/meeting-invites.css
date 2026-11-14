@@ -27,8 +27,8 @@
 }
 .mx-meet .iv-copy { flex-shrink: 0; height: 40px; }
 
-.mx-meet .iv-cal { display: flex; flex-wrap: wrap; gap: 8px; }
-.mx-meet .iv-cal .mx-btn { height: 40px; }
+.mx-meet .iv-cal { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.mx-meet .iv-cal .mx-btn { height: 40px; justify-content: center; padding: 0 10px; min-width: 0; }
 
 .mx-meet .iv-invite { padding-top: 16px; border-top: 1px solid var(--line); gap: 12px; }
 .mx-meet .iv-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 36px; }
@@ -68,16 +68,23 @@
 .mx-meet .iv-list { display: flex; flex-direction: column; }
 .mx-meet .iv-item {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 0;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  padding: 12px 0;
 }
+.mx-meet .iv-item > .mx-av { margin-top: 2px; }
 .mx-meet .iv-item + .iv-item { border-top: 1px solid var(--line); }
 .mx-meet .iv-who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .mx-meet .iv-who strong { overflow: hidden; color: var(--ink); font-size: 14.5px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-.mx-meet .iv-who small { overflow-wrap: anywhere; color: var(--ink-3); font-size: 13px; line-height: 1.35; }
-.mx-meet .iv-act { height: 36px; padding: 0 10px; }
+.mx-meet .iv-name-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.mx-meet .iv-name-row strong { flex: 0 1 auto; min-width: 0; }
+.mx-meet .iv-name-row > :last-child { flex-shrink: 0; }
+.mx-meet .iv-who small { color: var(--ink-3); font-size: 13px; line-height: 1.4; }
+.mx-meet .iv-email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-meet .iv-email.is-error { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; white-space: normal; }
+.mx-meet .iv-when { color: var(--ink-4); font-size: 12.5px; }
+.mx-meet .iv-act { height: 32px; padding: 0 10px; margin-top: -2px; }
 
 .mx-meet .iv-bone { display: block; height: 12px; border-radius: 999px; background: var(--bg-2); }
 .mx-meet .iv-bone.is-thin { height: 10px; margin-top: 4px; }

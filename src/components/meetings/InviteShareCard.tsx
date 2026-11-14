@@ -228,9 +228,9 @@ export function InviteShareCard({
               Outlook
               <span className="sr-only"> (opens in a new tab)</span>
             </a>
-            <a className="mx-btn is-outline is-sm tap" href={`/api/meetings/${meetingId}/calendar`} download>
+            <a className="mx-btn is-outline is-sm tap" href={`/api/meetings/${meetingId}/calendar`} download aria-label="Download .ics">
               <DownloadSimple size={16} aria-hidden="true" />
-              Download .ics
+              .ics
             </a>
           </div>
         ) : (
@@ -289,13 +289,15 @@ export function InviteShareCard({
                   <li key={inv.id} className="iv-item">
                     <Avatar name={name} id={inv.email} size="sm" />
                     <span className="iv-who">
-                      <strong>{name}</strong>
-                      <small>
+                      <span className="iv-name-row">
+                        <strong title={name}>{name}</strong>
+                        <Chip tone={tone(inv)}>{statusLabel(inv)}</Chip>
+                      </span>
+                      <small className={`iv-email${inv.status === "failed" ? " is-error" : ""}`} title={inv.status === "failed" ? failureText(inv.last_error) : inv.email}>
                         {inv.status === "failed" ? failureText(inv.last_error) : inv.email}
-                        {inv.status === "sent" && when ? `, ${when}` : ""}
                       </small>
+                      {inv.status === "sent" && when ? <small className="iv-when">{when}</small> : null}
                     </span>
-                    <Chip tone={tone(inv)}>{statusLabel(inv)}</Chip>
                     {inv.user_id && !notConfigured ? (
                       <button
                         type="button"
