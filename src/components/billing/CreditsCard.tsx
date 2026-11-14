@@ -13,7 +13,7 @@ export function CreditsCard({ blocked, prefill }: { blocked: boolean; prefill?: 
   return (
     <section
       aria-labelledby="credits-heading"
-      className={`rounded-card border bg-surface p-5 sm:p-6 ${blocked ? "border-signal-line shadow-[0_0_0_1px_var(--signal-line),0_0_36px_-6px_var(--signal-glow)]" : "border-line"}`}
+      className="rounded-card border border-line bg-surface p-5 sm:p-6"
     >
       <div className="flex flex-wrap items-start justify-between gap-5">
         <div className="min-w-0 max-w-[52ch]">
