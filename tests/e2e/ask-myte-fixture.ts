@@ -33,6 +33,7 @@ export const MENTIONS: Mentionable[] = [
   { kind: "meeting", id: M, label: "Test tomorrow", hint: null },
   { kind: "meeting", id: "33333333-3333-4333-8333-333333333333", label: "Feature Update - Backend", hint: null },
   { kind: "person", id: "44444444-4444-4444-8444-444444444444", label: "Maya Chen", hint: "maya@example.com" },
+  { kind: "person", id: "55555555-5555-4555-8555-555555555555", label: "Samar Rihan", hint: "samar@example.com" },
   { kind: "decision", id: D, label: "Drop Google Drive access", hint: "Feature Update - Backend" },
 ];
 

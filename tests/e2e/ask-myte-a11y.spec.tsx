@@ -149,7 +149,8 @@ for (const theme of ["light", "dark"] as const) {
     await page.keyboard.press("Enter");
     const sheet = page.getByRole("dialog", { name: "Ask Pip" });
     await expect(sheet).toBeVisible();
-    await expect(sheet.getByText("This meeting: Feature Update - Backend")).toBeVisible();
+    await expect(sheet.getByRole("button", { name: /^Look in: This meeting: Feature Update - Backend/ })).toHaveText("This meeting");
+    await expect(sheet.getByRole("textbox", { name: "Ask Pip" })).toHaveAttribute("placeholder", "Ask about Feature Update - Backend…");
     await expect(sheet.getByRole("textbox", { name: "Ask Pip" })).toBeFocused();
     await expect(sheet.getByRole("button", { name: "What are the open questions?" }).or(sheet.getByRole("button", { name: /Prep me for Test/ }))).toBeVisible();
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/ask-sheet-${theme}.png` });
