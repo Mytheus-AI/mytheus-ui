@@ -6,7 +6,7 @@ import { Bone, ButtonBone, CardHeadSkeleton, CardSkeleton, ChipBone, ListCardSke
    page's grid (one column, the 300 to 360px rail from 1101px; the rail is two columns between 721
    and 1100px). The main column holds the hero, the briefing (the same CardSkeleton the page streams
    it in with), Needs you, Catch up and the meeting brief's slot; the rail Today, Your tasks, Your
-   notes and Recent decisions. The first-run checklist is not drawn: most people have finished it. */
+   and notes (decisions live on their own page). The first-run checklist is not drawn: most people have finished it. */
 
 /* DashboardHeader's Figure, with its own classes around invisible copies of the real labels, so
    each figure takes the label's real width and wrap. */
@@ -116,7 +116,6 @@ export default function DashboardLoading() {
           </div>
           <ListCardSkeleton head="w-24" rows={4} row={{ meta: "w-[30%]", className: "py-3" }} />
           <ListCardSkeleton head="w-24" rows={3} row={{ meta: "w-[40%]", className: "py-3" }} />
-          <ListCardSkeleton head="w-36" rows={3} row={{ meta: "w-[40%]", className: "py-3" }} className="min-[721px]:col-span-2 min-[1101px]:col-span-1" />
         </div>
       </div>
     </Page>

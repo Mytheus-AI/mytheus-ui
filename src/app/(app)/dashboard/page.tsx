@@ -7,7 +7,6 @@ import { DashboardHeader } from "@/components/app/dashboard/DashboardHeader";
 import { HeroUpNext } from "@/components/app/dashboard/HeroUpNext";
 import { NeedsYou } from "@/components/app/dashboard/NeedsYou";
 import { MyNotes, type DashboardNote } from "@/components/app/dashboard/MyNotes";
-import { RecentDecisions } from "@/components/app/dashboard/RecentDecisions";
 import { RecentMeetings } from "@/components/app/dashboard/RecentMeetings";
 import { TaskList } from "@/components/app/dashboard/TaskList";
 import { TodayTimeline } from "@/components/app/dashboard/TodayTimeline";
@@ -183,18 +182,13 @@ export default async function DashboardPage() {
         </div>
 
         <aside
-          aria-label="Today, tasks, notes and decisions"
+          aria-label="Today, tasks and notes"
           className="grid min-w-0 grid-cols-1 items-start gap-5 min-[721px]:grid-cols-2 min-[1101px]:flex min-[1101px]:flex-col min-[1101px]:items-stretch"
         >
           <TodayFromMyte data={nudgeData} name={askName} seed={profile ? agentSeed(profile.agent_avatar_seed, profile.id) : agentSeed(null, orgContext?.user.id ?? "")} />
           <TodayTimeline today={today} later={later} nextId={next?.id} calendarFailed={calendarFailed} nowMs={nowMs} />
           <TaskList tasks={tasks.items} failed={tasks.failed} nowIso={now.toISOString()} />
           <MyNotes notes={notes} failed={notesFailed} />
-          <RecentDecisions
-            decisions={decisions.items}
-            failed={decisions.failed}
-            className="min-[721px]:col-span-2 min-[1101px]:col-span-1"
-          />
         </aside>
       </div>
     </Page>
