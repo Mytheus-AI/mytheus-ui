@@ -12,6 +12,49 @@
  */
 
 export interface paths {
+    "/billing/checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Checkout
+         * @description authz: admin. Price the purchase server-side and open a Razorpay order for it.
+         */
+        post: operations["create_checkout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/billing/checkout/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify Checkout
+         * @description authz: admin. Check Razorpay's signature for one of this tenant's orders, then apply it.
+         *
+         *     Its own transaction rather than `tenant_session`, so the Redis mirror and the staff email
+         *     happen strictly after the purchase has committed.
+         */
+        post: operations["verify_checkout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/billing/internal/budget": {
         parameters: {
             query?: never;
@@ -23,6 +66,26 @@ export interface paths {
         put?: never;
         /** Refresh Budget */
         post: operations["refresh_budget"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/billing/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Billing Status
+         * @description authz: member. Whether AI is paused for this workspace, and its plan; usage for admins.
+         */
+        get: operations["billing_status"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -104,6 +167,25 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** BillingStatus */
+        BillingStatus: {
+            /** Blocked */
+            blocked: boolean;
+            /** Paid Until */
+            paid_until?: string | null;
+            /** Percent Used */
+            percent_used?: number | null;
+            /** Plan Code */
+            plan_code: string;
+            /** Plan Name */
+            plan_name: string;
+            /** State */
+            state: string;
+            /** Token Quota */
+            token_quota?: number | null;
+            /** Tokens Consumed */
+            tokens_consumed?: number | null;
+        };
         /** BudgetMirror */
         BudgetMirror: {
             /** Enforcement */
@@ -121,10 +203,25 @@ export interface components {
         };
         /** BudgetOut */
         BudgetOut: {
+            /**
+             * Alert 75 Sent
+             * @default false
+             */
+            alert_75_sent: boolean;
             /** Alert 80 Sent */
             alert_80_sent: boolean;
+            /**
+             * Alert 90 Sent
+             * @default false
+             */
+            alert_90_sent: boolean;
             /** Alert 95 Sent */
             alert_95_sent: boolean;
+            /**
+             * Credit Tokens
+             * @default 0
+             */
+            credit_tokens: number;
             /** Enforcement */
             enforcement: string;
             /** Hard Cap */
@@ -137,6 +234,51 @@ export interface components {
             token_quota: number;
             /** Tokens Consumed */
             tokens_consumed: number;
+        };
+        /** CheckoutOrder */
+        CheckoutOrder: {
+            /** Amount */
+            amount: number;
+            /** Currency */
+            currency: string;
+            /** Description */
+            description: string;
+            /** Key Id */
+            key_id: string;
+            /** Order Id */
+            order_id: string;
+            /** Usd Cents */
+            usd_cents: number;
+        };
+        /** CheckoutRequest */
+        CheckoutRequest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "plan" | "credits" | "settlement";
+            /** Packs */
+            packs?: number | null;
+            /** Plan Code */
+            plan_code?: ("pro" | "ultra" | "payg") | null;
+            /** Settlement Id */
+            settlement_id?: string | null;
+        };
+        /** CheckoutResult */
+        CheckoutResult: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "plan" | "credits" | "settlement";
+            /** Plan Code */
+            plan_code: string;
+            /** State */
+            state: string;
+            /** Token Quota */
+            token_quota: number;
+            /** Tokens Added */
+            tokens_added: number;
         };
         /** DimensionOut */
         DimensionOut: {
@@ -159,6 +301,35 @@ export interface components {
          * @enum {string}
          */
         ErrorCode: "MALFORMED_BODY" | "INVALID_CURSOR" | "AUTH_REQUIRED" | "TOKEN_EXPIRED" | "FORBIDDEN_ROLE" | "CROSS_TENANT_DENIED" | "NOT_FOUND" | "IDEMPOTENCY_KEY_REUSED" | "VERSION_CONFLICT" | "VALIDATION_FAILED" | "RATE_LIMITED" | "QUOTA_EXCEEDED" | "INTERNAL" | "DEPENDENCY_UNAVAILABLE" | "NOT_IMPLEMENTED" | "NOT_A_PARTICIPANT" | "CONSENT_REQUIRED" | "EXTERNAL_MEETING" | "PROVIDER_NOT_CONFIGURED" | "PM_ALREADY_CONNECTED" | "ACCOUNT_CONNECTED_ELSEWHERE";
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * PaygWindowOut
+         * @description The running Pay as you go window: usage so far, priced, against the deposit.
+         */
+        PaygWindowOut: {
+            /** Cents Per Million */
+            cents_per_million: number;
+            /** Cost Cents */
+            cost_cents: number;
+            /** Deposit Cents */
+            deposit_cents: number;
+            /** Tokens */
+            tokens: number;
+            /**
+             * Window End
+             * Format: date-time
+             */
+            window_end: string;
+            /**
+             * Window Start
+             * Format: date-time
+             */
+            window_start: string;
+        };
         /** PlanFeatures */
         PlanFeatures: {
             /** Features */
@@ -204,14 +375,66 @@ export interface components {
              */
             type: string;
         };
+        /** SettlementOut */
+        SettlementOut: {
+            /** Balance Cents */
+            balance_cents: number;
+            /** Cost Cents */
+            cost_cents: number;
+            /** Deposit Cents */
+            deposit_cents: number;
+            /** Id */
+            id: string;
+            /** Status */
+            status: string;
+            /** Tokens */
+            tokens: number;
+            /**
+             * Window End
+             * Format: date-time
+             */
+            window_end: string;
+            /**
+             * Window Start
+             * Format: date-time
+             */
+            window_start: string;
+        };
         /** UsageOut */
         UsageOut: {
+            balance_due?: components["schemas"]["SettlementOut"] | null;
             budget: components["schemas"]["BudgetOut"];
             /** Dimensions */
             dimensions: components["schemas"]["DimensionOut"][];
+            last_settlement?: components["schemas"]["SettlementOut"] | null;
+            /** Paid Until */
+            paid_until?: string | null;
+            payg?: components["schemas"]["PaygWindowOut"] | null;
             /** Period */
             period: string;
             plan: components["schemas"]["PlanOut"];
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Context */
+            ctx?: Record<string, never>;
+            /** Input */
+            input?: unknown;
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+        };
+        /** VerifyRequest */
+        VerifyRequest: {
+            /** Order Id */
+            order_id: string;
+            /** Payment Id */
+            payment_id: string;
+            /** Signature */
+            signature: string;
         };
     };
     responses: never;
@@ -222,6 +445,114 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    create_checkout: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckoutRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckoutOrder"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    verify_checkout: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckoutResult"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     refresh_budget: {
         parameters: {
             query?: never;
@@ -244,6 +575,44 @@ export interface operations {
                 };
             };
             /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    billing_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingStatus"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
             401: {
                 headers: {
                     [name: string]: unknown;

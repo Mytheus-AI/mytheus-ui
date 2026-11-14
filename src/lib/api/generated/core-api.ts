@@ -1191,6 +1191,35 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/departments/{department_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Department
+         * @description Delete a department. Its teams are NEVER deleted: they move to "No department"
+         *     (`department_id = NULL`), people and all. Departments nested under it move up one level, to
+         *     its own parent. The row is soft-deleted (`deleted_at`), like every org row.
+         */
+        delete: operations["delete_department"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Department
+         * @description Rename, describe or re-parent a department. Only the fields sent change.
+         *
+         *     A parent must be a live department of this tenant and must not be the department itself or
+         *     one of its descendants (that would detach a loop of departments from every root).
+         */
+        patch: operations["update_department"];
+        trace?: never;
+    };
     "/api/v1/digests": {
         parameters: {
             query?: never;
@@ -1799,6 +1828,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/meetings/invitations/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Invitation Email Status
+         * @description Whether this server can email invitations (the New meeting window asks before there is
+         *     a meeting). Reveals no address or secret.
+         */
+        get: operations["invitation_email_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/meetings/{meeting_id}": {
         parameters: {
             query?: never;
@@ -1981,6 +2031,27 @@ export interface paths {
         };
         /** Meeting Briefing */
         get: operations["meeting_briefing"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meetings/{meeting_id}/calendar.ics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The meeting as a calendar file
+         * @description The meeting as an `.ics` (METHOD:PUBLISH): the agenda, the join link, the host and every
+         *     participant. Participants, the creator and admins; 404 across tenants.
+         */
+        get: operations["meeting_calendar"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2256,6 +2327,32 @@ export interface paths {
          *     pressing it again reaches only guests added since. Honours `Idempotency-Key`.
          */
         post: operations["send_follow_up"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meetings/{meeting_id}/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Invitations
+         * @description The join link and calendar links, and (for those who may invite) who was invited and how
+         *     each delivery went. 404 across tenants; 403 for someone not in the meeting.
+         */
+        get: operations["list_invitations"];
+        put?: never;
+        /**
+         * Send Invitations
+         * @description Email the meeting to people in this workspace (and add them to it). See the module doc.
+         *     Honours `Idempotency-Key`.
+         */
+        post: operations["send_invitations"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2745,6 +2842,313 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/myte/memories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What your Myte remembers about you
+         * @description Your own memories, newest first (at most 100 exist).
+         */
+        get: operations["list_memories"];
+        put?: never;
+        /**
+         * Ask your Myte to remember something
+         * @description Text 1 to 300 characters (trimmed). The same text again returns the memory already stored. At most 100 per person (422). `source_thread_id` must be one of your threads. Honours `Idempotency-Key`.
+         */
+        post: operations["create_memory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/myte/memories/{memory_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Make your Myte forget something */
+        delete: operations["delete_memory"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/myte/messages/{message_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Rate one of Myte's answers or record what happened to its proposals
+         * @description `feedback`: 1 helpful, -1 not helpful, 0 clears the rating (and its reason). `proposal_states` (ADR-0049 R2): `{<proposal_id>: "confirmed"|"dismissed"}`, merged into `payload.proposal_states`, at most 20 per message. Either or both; on Myte's answers only.
+         */
+        patch: operations["rate_message"];
+        trace?: never;
+    };
+    "/api/v1/myte/peer-questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List questions for your Myte, or the ones you asked
+         * @description `box=inbox` (default): questions teammates asked your Myte. `box=sent`: questions you asked theirs. Newest first; `status` filters.
+         */
+        get: operations["list_peer_questions"];
+        put?: never;
+        /**
+         * Ask a teammate's Myte a question
+         * @description Stores the question and notifies the teammate in-app. 404 for someone who is not a member of this workspace (or a `thread_id` that is not yours); 422 for yourself or past 20 pending questions. Honours `Idempotency-Key`.
+         */
+        post: operations["ask_peer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/myte/peer-questions/{question_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Open a question between you and a teammate's Myte
+         * @description Visible to the person who asked and the person asked; anyone else gets 404.
+         */
+        get: operations["get_peer_question"];
+        put?: never;
+        post?: never;
+        /**
+         * Withdraw a question you asked
+         * @description The asker only, while it is pending (409 otherwise). Deleted for good.
+         */
+        delete: operations["withdraw_peer_question"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/myte/peer-questions/{question_id}/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send your reviewed answer to a teammate's question
+         * @description The person asked only, once (409 after it was answered or declined). The asker is notified in-app.
+         */
+        post: operations["answer_peer_question"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/myte/peer-questions/{question_id}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decline a teammate's question
+         * @description The person asked only, while it is pending (409 otherwise). The asker is notified in-app, with the reason when one is given.
+         */
+        post: operations["decline_peer_question"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/myte/routines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Your Ask Myte routines
+         * @description Your recurring questions, oldest first (at most 10 exist).
+         */
+        get: operations["list_routines"];
+        put?: never;
+        /**
+         * Make a question a routine
+         * @description Runs at `hour:00` in `timezone`, daily, on weekdays, or weekly on `weekday` (0 Monday). `next_run_at` is computed. At most 10 per person (422). Honours `Idempotency-Key`.
+         */
+        post: operations["create_routine"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/myte/routines/due": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Your routines that are due to run
+         * @description Enabled routines whose `next_run_at` has passed, the most overdue first.
+         */
+        get: operations["list_due_routines"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/myte/routines/{routine_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a routine */
+        delete: operations["delete_routine"];
+        options?: never;
+        head?: never;
+        /**
+         * Change a routine
+         * @description Any of question, scope, cadence, weekday, hour, timezone, enabled. `next_run_at` is recomputed when the timing changes or a disabled routine is enabled again.
+         */
+        patch: operations["update_routine"];
+        trace?: never;
+    };
+    "/api/v1/myte/routines/{routine_id}/ran": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record that a routine ran
+         * @description Sets `last_run_at` to now and `last_thread_id`, and moves `next_run_at` to the next slot strictly after now. `thread_id` must be one of your threads.
+         */
+        post: operations["routine_ran"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/myte/threads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List your Ask Myte conversations
+         * @description Your own conversations with your Myte, pinned first and then the most recent. `q` matches a title or any message's text. Keyset-paginated with `cursor`.
+         */
+        get: operations["list_threads"];
+        put?: never;
+        /**
+         * Start an Ask Myte conversation
+         * @description A new, empty conversation of yours. An empty title becomes "New question"; a title is cut to 120 characters. Honours `Idempotency-Key`.
+         */
+        post: operations["create_thread"];
+        /**
+         * Delete all your Ask Myte conversations
+         * @description Deletes every conversation of yours and their messages, for good.
+         */
+        delete: operations["delete_all_threads"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/myte/threads/{thread_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Open an Ask Myte conversation
+         * @description One of your conversations with its latest 200 messages, oldest first.
+         */
+        get: operations["get_thread"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete an Ask Myte conversation
+         * @description Deletes the conversation and every message in it, for good.
+         */
+        delete: operations["delete_thread"];
+        options?: never;
+        head?: never;
+        /** Rename or pin an Ask Myte conversation */
+        patch: operations["update_thread"];
+        trace?: never;
+    };
+    "/api/v1/myte/threads/{thread_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save a turn to an Ask Myte conversation
+         * @description Appends one or two messages (a question and its answer) in order and moves the conversation's `last_message_at` to the newest. `payload` is at most 64 KB. Honours `Idempotency-Key`, so a retried save stores the turn once.
+         */
+        post: operations["append_messages"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/promises": {
         parameters: {
             query?: never;
@@ -3002,6 +3406,26 @@ export interface paths {
          * @description Take back a promise you handed off, while the colleague has not confirmed it yet.
          */
         post: operations["undo_hand_off"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/calendar/{token}.ics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A meeting as a calendar file, from an invitation's link
+         * @description No authentication: the signed token in the path is the credential. It grants the meeting's calendar data only: the title, the time, the join link and the host's name, never the agenda, the attendees or anything said in the meeting. 404 for a token that does not verify or a meeting that is gone.
+         */
+        get: operations["public_meeting_calendar"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3436,6 +3860,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/teams/{team_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Team
+         * @description Delete a team: the team is soft-deleted and its memberships are removed (the people stay
+         *     in the workspace, on whatever other teams they are on). The UI confirms first and says how
+         *     many people are on it; the API itself is a plain DELETE so a script can do the same.
+         */
+        delete: operations["delete_team"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Team
+         * @description Rename, describe or move a team to another department (`department_id`, or null for "No
+         *     department"). Only the fields sent change.
+         */
+        patch: operations["update_team"];
+        trace?: never;
+    };
     "/api/v1/teams/{team_id}/members": {
         parameters: {
             query?: never;
@@ -3483,6 +3934,28 @@ export interface paths {
          *     response rather than re-reading the roster.
          */
         delete: operations["remove_team_member"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/teams/{team_id}/members/{user_id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move Team Member
+         * @description Move a person from this team to `to_team_id` in one transaction: never on both, never on
+         *     neither. Their label (`role`) comes along unless the body sets a new one. Moving onto a team
+         *     they are already on just updates that membership and leaves this one.
+         */
+        post: operations["move_team_member"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -3542,6 +4015,74 @@ export interface paths {
          *     words that decided it.
          */
         get: operations["timeline"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/voice/preference": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Choose Voice */
+        put: operations["choose_voice"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/voice/speech": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Speak */
+        post: operations["speak"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/voice/transcribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transcribe */
+        post: operations["transcribe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/voice/voices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Voices */
+        get: operations["list_voices"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5613,6 +6154,23 @@ export interface components {
             /** Waiting */
             waiting: components["schemas"]["SourceItem"][];
         };
+        /** CalendarLinks */
+        CalendarLinks: {
+            /** Google Url */
+            google_url: string;
+            /**
+             * Ics Path
+             * @description The signed-in download, `/api/v1/meetings/{id}/calendar.ics`.
+             */
+            ics_path: string;
+            /** Outlook Url */
+            outlook_url: string;
+            /**
+             * Public Ics Url
+             * @description The no-sign-in calendar link from the emails; null when the calendar token key is not configured.
+             */
+            public_ics_url?: string | null;
+        };
         /** Calibration */
         Calibration: {
             /** Buckets */
@@ -7418,6 +7976,8 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Description */
+            description?: string | null;
             /**
              * Id
              * Format: uuid
@@ -7430,8 +7990,23 @@ export interface components {
         };
         /** DepartmentCreate */
         DepartmentCreate: {
+            /** Description */
+            description?: string | null;
             /** Name */
             name: string;
+            /** Parent Id */
+            parent_id?: string | null;
+        };
+        /**
+         * DepartmentUpdate
+         * @description `PATCH /departments/{id}`. Only the fields sent change; `description: null` or "" clears
+         *     it, `parent_id: null` makes it top level.
+         */
+        DepartmentUpdate: {
+            /** Description */
+            description?: string | null;
+            /** Name */
+            name?: string | null;
             /** Parent Id */
             parent_id?: string | null;
         };
@@ -7639,6 +8214,12 @@ export interface components {
             as_of: string;
             /** Issues */
             issues: components["schemas"]["OpenIssue"][];
+            /**
+             * Provider
+             * @default jira
+             * @enum {string}
+             */
+            provider: "jira" | "linear";
         };
         /** DriftNudgeResult */
         DriftNudgeResult: {
@@ -7883,9 +8464,9 @@ export interface components {
             external_key: string;
             /**
              * Source
-             * @constant
+             * @enum {string}
              */
-            source: "jira";
+            source: "jira" | "linear";
             /**
              * Status
              * @enum {string}
@@ -8448,12 +9029,138 @@ export interface components {
              */
             user_id: string;
         };
+        /** Invitation */
+        Invitation: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Email */
+            email: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Invited By */
+            invited_by: string | null;
+            /**
+             * Last Error
+             * @description Why the last delivery failed, e.g. `resend_http_500`.
+             */
+            last_error?: string | null;
+            /**
+             * Last Kind
+             * @description What was sent last: the invitation, an update after a reschedule, or the cancellation.
+             * @enum {string}
+             */
+            last_kind: "invite" | "update" | "cancel";
+            /**
+             * Name
+             * @description The person's name as the workspace shows it.
+             */
+            name: string | null;
+            /** Send Count */
+            send_count: number;
+            /** Sent At */
+            sent_at: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "sent" | "failed" | "not_configured";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** User Id */
+            user_id: string | null;
+        };
+        /** InvitationCreate */
+        InvitationCreate: {
+            /**
+             * Emails
+             * @description Addresses of people in this workspace (lowercased, de-duplicated).
+             */
+            emails?: string[];
+            /**
+             * Message
+             * @description A short personal note shown in the email. Left out on a resend, the note sent before is kept.
+             */
+            message?: string | null;
+            /** User Ids */
+            user_ids?: string[];
+        };
+        /** InvitationEmailStatus */
+        InvitationEmailStatus: {
+            /**
+             * Email Configured
+             * @description Whether this server can send email; null when it could not be asked.
+             */
+            email_configured: boolean | null;
+        };
+        /** InvitationList */
+        InvitationList: {
+            /** @description Null for a meeting with no scheduled time. */
+            calendar?: components["schemas"]["CalendarLinks"] | null;
+            /**
+             * Can Invite
+             * @description The host, the creator or a workspace admin.
+             */
+            can_invite: boolean;
+            /**
+             * Email Configured
+             * @description Whether this server can send email; null for someone who cannot invite, or when notification-service could not be asked.
+             */
+            email_configured?: boolean | null;
+            /**
+             * Items
+             * @description Who was invited; empty for someone who cannot invite.
+             */
+            items?: components["schemas"]["Invitation"][];
+            /** Join Url */
+            join_url: string;
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+        };
+        /** InvitationSendResult */
+        InvitationSendResult: {
+            /** Email Configured */
+            email_configured: boolean;
+            /** Failed */
+            failed: number;
+            /**
+             * Invitations
+             * @description The rows this call sent, in order.
+             */
+            invitations: components["schemas"]["Invitation"][];
+            /** Not Configured */
+            not_configured: number;
+            /**
+             * Participants Added
+             * @description People who were not in the meeting before.
+             */
+            participants_added: number;
+            /** Sent */
+            sent: number;
+        };
         /** Issue */
         Issue: {
             /** Due Date */
             due_date?: string | null;
             /** Key */
             key: string;
+            /**
+             * Provider
+             * @default jira
+             * @enum {string}
+             */
+            provider: "jira" | "linear";
             /** Status */
             status?: string | null;
             /** Status Category */
@@ -8477,12 +9184,18 @@ export interface components {
             /** Open */
             open: boolean;
         };
-        /** JiraOutcome */
+        /**
+         * JiraOutcome
+         * @description The tenant's tracker outcome. Named for Jira on the wire; since ADR-0044 it may be
+         *     Linear, and `provider` says which (evidence `kind` stays `jira`, meaning the tracker).
+         */
         JiraOutcome: {
             /** Connected */
             connected: boolean;
             /** Issues */
             issues?: components["schemas"]["JiraIssue"][];
+            /** Provider */
+            provider?: ("jira" | "linear") | null;
         };
         /** KeepBoth */
         KeepBoth: {
@@ -9839,6 +10552,441 @@ export interface components {
         MyTaskList: {
             /** Items */
             items: components["schemas"]["MyTask"][];
+        };
+        /**
+         * MyteFeedback
+         * @description A rating, proposal states (ADR-0049 R2), or both. At least one of the two.
+         */
+        MyteFeedback: {
+            /**
+             * Feedback
+             * @default 0
+             * @enum {integer}
+             */
+            feedback: 1 | -1 | 0;
+            /** Feedback Reason */
+            feedback_reason?: string | null;
+            /**
+             * Proposal States
+             * @description `{<proposal_id>: "confirmed"|"dismissed"}`, merged into `payload.proposal_states` (a key already there is overwritten). Keys are 1 to 64 characters; the message holds at most 20 in total.
+             */
+            proposal_states?: {
+                [key: string]: "confirmed" | "dismissed";
+            } | null;
+        };
+        /** MyteMemory */
+        MyteMemory: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Source Thread Id */
+            source_thread_id?: string | null;
+            /** Text */
+            text: string;
+        };
+        /** MyteMemoryCreate */
+        MyteMemoryCreate: {
+            /** Source Thread Id */
+            source_thread_id?: string | null;
+            /** Text */
+            text: string;
+        };
+        /** MyteMemoryList */
+        MyteMemoryList: {
+            /** Items */
+            items: components["schemas"]["MyteMemory"][];
+        };
+        /** MyteMessage */
+        MyteMessage: {
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Feedback
+             * @description The owner's rating: 1, -1, or 0 for none.
+             */
+            feedback: number;
+            /** Feedback Reason */
+            feedback_reason?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Payload
+             * @description What the UI renders besides text: `steps`, `sources`, `cards`, `proposals` (with their confirmed state), `followups`, `abstained`, `degraded`. At most 64 KB.
+             */
+            payload?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "myte";
+            /**
+             * Thread Id
+             * Format: uuid
+             */
+            thread_id: string;
+        };
+        /** MyteMessageIn */
+        MyteMessageIn: {
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+            /** Payload */
+            payload?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "myte";
+        };
+        /** MyteMessageList */
+        MyteMessageList: {
+            /** Items */
+            items: components["schemas"]["MyteMessage"][];
+        };
+        /** MyteMessagesAppend */
+        MyteMessagesAppend: {
+            /** Messages */
+            messages: components["schemas"]["MyteMessageIn"][];
+        };
+        /** MytePeerAnswer */
+        MytePeerAnswer: {
+            /** Answer */
+            answer: string;
+        };
+        /** MytePeerDecline */
+        MytePeerDecline: {
+            /** Reason */
+            reason?: string | null;
+        };
+        /** MytePeerQuestion */
+        MytePeerQuestion: {
+            /** Answer */
+            answer?: string | null;
+            /**
+             * Answered At
+             * @description When it was answered or declined.
+             */
+            answered_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decline Reason */
+            decline_reason?: string | null;
+            from_user: components["schemas"]["MytePerson"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Question */
+            question: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "answered" | "declined";
+            /**
+             * Thread Id
+             * @description The asker's own thread the question came from; null for the recipient.
+             */
+            thread_id?: string | null;
+            to_user: components["schemas"]["MytePerson"];
+        };
+        /** MytePeerQuestionCreate */
+        MytePeerQuestionCreate: {
+            /** Question */
+            question: string;
+            /** Thread Id */
+            thread_id?: string | null;
+            /**
+             * To User Id
+             * Format: uuid
+             */
+            to_user_id: string;
+        };
+        /** MytePeerQuestionList */
+        MytePeerQuestionList: {
+            /** Items */
+            items: components["schemas"]["MytePeerQuestion"][];
+        };
+        /**
+         * MytePerson
+         * @description A person and their Myte, as a peer question shows them.
+         */
+        MytePerson: {
+            /**
+             * Agent Avatar Seed
+             * @description Their Myte's plush seed; null when they never chose one.
+             */
+            agent_avatar_seed?: string | null;
+            /**
+             * Agent Name
+             * @description Their Myte's name; "{first name}'s Myte" when unset.
+             */
+            agent_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Name
+             * @description Their display name (or the name guessed from their email).
+             */
+            name: string;
+        };
+        /** MyteRoutine */
+        MyteRoutine: {
+            /**
+             * Cadence
+             * @enum {string}
+             */
+            cadence: "daily" | "weekdays" | "weekly";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Enabled */
+            enabled: boolean;
+            /**
+             * Hour
+             * @description 0 to 23, on the hour, in `timezone`.
+             */
+            hour: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Last Run At */
+            last_run_at?: string | null;
+            /** Last Thread Id */
+            last_thread_id?: string | null;
+            /**
+             * Next Run At
+             * Format: date-time
+             */
+            next_run_at: string;
+            /** Question */
+            question: string;
+            scope?: components["schemas"]["MyteScope"] | null;
+            /**
+             * Timezone
+             * @description An IANA timezone, e.g. Europe/London.
+             */
+            timezone: string;
+            /**
+             * Weekday
+             * @description 0 Monday to 6 Sunday; weekly only.
+             */
+            weekday?: number | null;
+        };
+        /** MyteRoutineCreate */
+        MyteRoutineCreate: {
+            /**
+             * Cadence
+             * @enum {string}
+             */
+            cadence: "daily" | "weekdays" | "weekly";
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /** Hour */
+            hour: number;
+            /** Question */
+            question: string;
+            scope?: components["schemas"]["MyteScope"] | null;
+            /** Timezone */
+            timezone: string;
+            /** Weekday */
+            weekday?: number | null;
+        };
+        /** MyteRoutineList */
+        MyteRoutineList: {
+            /** Items */
+            items: components["schemas"]["MyteRoutine"][];
+        };
+        /** MyteRoutineRan */
+        MyteRoutineRan: {
+            /**
+             * Thread Id
+             * Format: uuid
+             */
+            thread_id: string;
+        };
+        /**
+         * MyteRoutineUpdate
+         * @description At least one field. `weekday` may be sent with a move to `weekly`, or alone on one.
+         */
+        MyteRoutineUpdate: {
+            /** Cadence */
+            cadence?: ("daily" | "weekdays" | "weekly") | null;
+            /** Enabled */
+            enabled?: boolean | null;
+            /** Hour */
+            hour?: number | null;
+            /** Question */
+            question?: string | null;
+            scope?: components["schemas"]["MyteScope"] | null;
+            /** Timezone */
+            timezone?: string | null;
+            /** Weekday */
+            weekday?: number | null;
+        };
+        /**
+         * MyteScope
+         * @description What the question was asked about (ADR-0047 D8 `scope`).
+         */
+        MyteScope: {
+            /** As Of */
+            as_of?: string | null;
+            /**
+             * Kind
+             * @default all
+             * @enum {string}
+             */
+            kind: "all" | "meeting" | "person" | "as_of";
+            /**
+             * Label
+             * @description How the UI names the scope, e.g. the meeting title (ADR-0049).
+             */
+            label?: string | null;
+            /** Meeting Id */
+            meeting_id?: string | null;
+            /** Person Id */
+            person_id?: string | null;
+        };
+        /** MyteThread */
+        MyteThread: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Last Message At
+             * Format: date-time
+             */
+            last_message_at: string;
+            /** Pinned */
+            pinned: boolean;
+            scope?: components["schemas"]["MyteScope"] | null;
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** MyteThreadCreate */
+        MyteThreadCreate: {
+            scope?: components["schemas"]["MyteScope"] | null;
+            /** Title */
+            title?: string | null;
+        };
+        /** MyteThreadDetail */
+        MyteThreadDetail: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Last Message At
+             * Format: date-time
+             */
+            last_message_at: string;
+            /**
+             * Messages
+             * @description The latest 200 messages, oldest first.
+             */
+            messages: components["schemas"]["MyteMessage"][];
+            /** Pinned */
+            pinned: boolean;
+            scope?: components["schemas"]["MyteScope"] | null;
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** MyteThreadPage */
+        MyteThreadPage: {
+            /** Items */
+            items: components["schemas"]["MyteThreadSummary"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
+        /** MyteThreadSummary */
+        MyteThreadSummary: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Last Message At
+             * Format: date-time
+             */
+            last_message_at: string;
+            /** Pinned */
+            pinned: boolean;
+            /** Title */
+            title: string;
+        };
+        /**
+         * MyteThreadUpdate
+         * @description At least one field.
+         */
+        MyteThreadUpdate: {
+            /** Pinned */
+            pinned?: boolean | null;
+            /** Title */
+            title?: string | null;
         };
         /** Note */
         Note: {
@@ -11683,6 +12831,23 @@ export interface components {
              */
             user_id: string;
         };
+        /** SpeechRequest */
+        SpeechRequest: {
+            /**
+             * Language
+             * @default en
+             */
+            language: string;
+            /**
+             * Speed
+             * @default 1
+             */
+            speed: number;
+            /** Text */
+            text: string;
+            /** Voice */
+            voice?: string | null;
+        };
         /** StandInAnswer */
         StandInAnswer: {
             /**
@@ -12007,6 +13172,8 @@ export interface components {
             created_at: string;
             /** Department Id */
             department_id: string | null;
+            /** Description */
+            description?: string | null;
             /**
              * Id
              * Format: uuid
@@ -12019,6 +13186,8 @@ export interface components {
         TeamCreate: {
             /** Department Id */
             department_id?: string | null;
+            /** Description */
+            description?: string | null;
             /** Name */
             name: string;
         };
@@ -12037,6 +13206,20 @@ export interface components {
              */
             user_id: string;
         };
+        /**
+         * TeamMemberMove
+         * @description `POST /teams/{team_id}/members/{user_id}/move`: one transaction, out of this team and
+         *     into `to_team_id`. `role` omitted keeps the label the person had on the old team.
+         */
+        TeamMemberMove: {
+            /** Role */
+            role?: string | null;
+            /**
+             * To Team Id
+             * Format: uuid
+             */
+            to_team_id: string;
+        };
         /** TeamMemberUpsert */
         TeamMemberUpsert: {
             /** Role */
@@ -12051,6 +13234,19 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+        };
+        /**
+         * TeamUpdate
+         * @description `PATCH /teams/{id}`. Only the fields sent change. `department_id: null` moves the team to
+         *     "No department"; `description: null` or "" clears it.
+         */
+        TeamUpdate: {
+            /** Department Id */
+            department_id?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Name */
+            name?: string | null;
         };
         /** TemplateAgendaItem */
         TemplateAgendaItem: {
@@ -12124,6 +13320,11 @@ export interface components {
             /** Resolved */
             resolved: number;
         };
+        /** Transcript */
+        Transcript: {
+            /** Text */
+            text: string;
+        };
         /**
          * TranscriptChunk
          * @description One persisted final from `transcript_chunks`, owned by `transcription-service`.
@@ -12192,6 +13393,44 @@ export interface components {
         ViewPost: {
             /** Text */
             text: string;
+        };
+        /** VoiceOption */
+        VoiceOption: {
+            /** Accent */
+            accent: string;
+            /** Description */
+            description: string;
+            /** Gender */
+            gender: string;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /** VoicePreference */
+        VoicePreference: {
+            /** Voice */
+            voice?: string | null;
+        };
+        /** VoicesView */
+        VoicesView: {
+            /**
+             * Chosen
+             * @description The voice the person picked, if any.
+             */
+            chosen: string | null;
+            /**
+             * Connected
+             * @description Whether Mytheus speaks with its own server voice.
+             */
+            connected: boolean;
+            /**
+             * Selected
+             * @description The voice their Myte speaks with now: their choice, else its personality.
+             */
+            selected: string | null;
+            /** Voices */
+            voices: components["schemas"]["VoiceOption"][];
         };
         /** Watch */
         Watch: {
@@ -16495,6 +17734,109 @@ export interface operations {
             };
         };
     };
+    delete_department: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                department_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    update_department: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                department_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepartmentUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Department"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     list_digests: {
         parameters: {
             query?: {
@@ -18611,6 +19953,44 @@ export interface operations {
             };
         };
     };
+    invitation_email_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationEmailStatus"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     get_meeting: {
         parameters: {
             query?: never;
@@ -19224,6 +20604,73 @@ export interface operations {
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    meeting_calendar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description An RFC 5545 calendar with one VEVENT. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/calendar": string;
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unknown meeting (or invalid token). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The meeting has no scheduled time yet. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -20031,6 +21478,138 @@ export interface operations {
             };
             /** @description Validation Error */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_invitations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    send_invitations: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvitationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationSendResult"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Only the host, the creator or a workspace admin can invite. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The meeting has ended or was cancelled. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Too many invitations for this meeting this hour (`Retry-After`). */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -21381,6 +22960,1152 @@ export interface operations {
             };
         };
     };
+    list_memories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyteMemoryList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    create_memory: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MyteMemoryCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyteMemory"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    delete_memory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                memory_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    rate_message: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MyteFeedback"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyteMessage"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_peer_questions: {
+        parameters: {
+            query?: {
+                box?: "inbox" | "sent";
+                status?: ("pending" | "answered" | "declined") | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MytePeerQuestionList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    ask_peer: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MytePeerQuestionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MytePeerQuestion"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_peer_question: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MytePeerQuestion"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    withdraw_peer_question: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    answer_peer_question: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MytePeerAnswer"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MytePeerQuestion"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    decline_peer_question: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MytePeerDecline"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MytePeerQuestion"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_routines: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyteRoutineList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    create_routine: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MyteRoutineCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyteRoutine"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_due_routines: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyteRoutineList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    delete_routine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                routine_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    update_routine: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                routine_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MyteRoutineUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyteRoutine"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    routine_ran: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                routine_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MyteRoutineRan"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyteRoutine"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_threads: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+                q?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyteThreadPage"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    create_thread: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MyteThreadCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyteThread"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    delete_all_threads: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_thread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                thread_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyteThreadDetail"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    delete_thread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                thread_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    update_thread: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                thread_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MyteThreadUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyteThread"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    append_messages: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                thread_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MyteMessagesAppend"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyteMessageList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     list_promises: {
         parameters: {
             query?: {
@@ -22141,6 +24866,64 @@ export interface operations {
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    public_meeting_calendar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description An RFC 5545 calendar with one VEVENT. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/calendar": string;
+                };
+            };
+            /** @description Unknown meeting (or invalid token). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The meeting has no scheduled time yet. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -23514,6 +26297,109 @@ export interface operations {
             };
         };
     };
+    delete_team: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                team_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    update_team: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                team_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TeamUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     list_team_members: {
         parameters: {
             query?: never;
@@ -23638,6 +26524,63 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    move_team_member: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                team_id: string;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TeamMemberMove"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamMember"];
+                };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
             401: {
@@ -23802,6 +26745,204 @@ export interface operations {
             };
             /** @description Validation Error */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    choose_voice: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoicePreference"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoicesView"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    speak: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpeechRequest"];
+            };
+        };
+        responses: {
+            /** @description MP3, streamed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "audio/mpeg": unknown;
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    transcribe: {
+        parameters: {
+            query?: {
+                language?: string | null;
+            };
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transcript"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_voices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoicesView"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

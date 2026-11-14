@@ -266,7 +266,7 @@ export interface paths {
         put?: never;
         /**
          * MCP server (Streamable HTTP)
-         * @description Model Context Protocol endpoint. Point an MCP client at `{API}/mcp` with `Authorization: Bearer mytheus_pat_...`, or add it as a Claude custom connector (OAuth: discovery at `/.well-known/oauth-protected-resource`). Tools: search_meetings, ask_meetings, get_meeting_outcome, get_decision_record, list_my_open_actions, list_my_promises, check_against_decisions, check_my_capacity, create_action and add_promise (read_write tokens). Resources: meeting summaries and decision records.
+         * @description Model Context Protocol endpoint. Point an MCP client at `{API}/mcp` with `Authorization: Bearer mytheus_pat_...`, or add it as a Claude custom connector (OAuth: discovery at `/.well-known/oauth-protected-resource`). Tools: search_meetings, ask_meetings, get_meeting_outcome, get_decision_record, list_my_open_actions, list_my_promises, check_against_decisions, check_my_capacity, list_my_schedule, find_people, list_my_inbox, get_my_myte, create_action and add_promise (read_write tokens). Resources: meeting summaries and decision records.
          */
         post: operations["mcp_post"];
         delete?: never;
@@ -795,6 +795,8 @@ export interface components {
         DepartmentNode: {
             /** Children */
             children: components["schemas"]["DepartmentNode"][];
+            /** Description */
+            description?: string | null;
             /**
              * Id
              * Format: uuid
@@ -807,6 +809,8 @@ export interface components {
         };
         /** DepartmentRef */
         DepartmentRef: {
+            /** Description */
+            description?: string | null;
             /**
              * Id
              * Format: uuid
@@ -1161,6 +1165,8 @@ export interface components {
         };
         /** TeamNode */
         TeamNode: {
+            /** Description */
+            description?: string | null;
             /**
              * Id
              * Format: uuid
@@ -1179,6 +1185,8 @@ export interface components {
         TeamRef: {
             /** Department Id */
             department_id: string | null;
+            /** Description */
+            description?: string | null;
             /**
              * Id
              * Format: uuid

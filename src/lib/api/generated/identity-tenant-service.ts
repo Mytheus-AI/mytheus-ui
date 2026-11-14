@@ -326,6 +326,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/org/logo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The workspace logo
+         * @description authz: member. `logo_url` is null when the workspace has no logo.
+         */
+        get: operations["read_org_logo"];
+        /**
+         * Upload or replace the workspace logo
+         * @description authz: admin. The body is the image; the type is decided from its bytes.
+         */
+        put: operations["put_org_logo"];
+        post?: never;
+        /**
+         * Remove the workspace logo
+         * @description authz: admin. Idempotent: a workspace with no logo answers 204 too.
+         */
+        delete: operations["delete_org_logo"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/org/logo/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The workspace logo image
+         * @description authz: member. 404 when the workspace has no logo, or `v` names a replaced version.
+         */
+        get: operations["org_logo_image"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/org/profile": {
         parameters: {
             query?: never;
@@ -1347,6 +1395,8 @@ export interface components {
         };
         /** DepartmentRef */
         DepartmentRef: {
+            /** Description */
+            description?: string | null;
             /**
              * Id
              * Format: uuid
@@ -1632,6 +1682,33 @@ export interface components {
             /** Title */
             title?: string | null;
         };
+        /** OrgLogo */
+        OrgLogo: {
+            /**
+             * Content Type
+             * @description image/png, image/jpeg or image/webp
+             */
+            content_type?: string | null;
+            /** Height */
+            height?: number | null;
+            /** Logo Updated At */
+            logo_updated_at?: string | null;
+            /**
+             * Logo Url
+             * @description Gateway-relative URL of the logo image (send the bearer token), or null when the workspace has no logo. Versioned, so it is safe to cache for good.
+             */
+            logo_url: string | null;
+            /**
+             * Logo Version
+             * @description Bumped on every upload; part of the URL so caches never go stale.
+             * @default 0
+             */
+            logo_version: number;
+            /** Size Bytes */
+            size_bytes?: number | null;
+            /** Width */
+            width?: number | null;
+        };
         /**
          * OrgOwner
          * @description The tenant's first owner. Becomes a `users` mirror row plus an `owner` `rbac_grants`
@@ -1694,6 +1771,10 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Logo Updated At */
+            logo_updated_at?: string | null;
+            /** Logo Url */
+            logo_url?: string | null;
             /** Name */
             name: string;
             /** Slug */
@@ -1729,6 +1810,10 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Logo Updated At */
+            logo_updated_at?: string | null;
+            /** Logo Url */
+            logo_url?: string | null;
             /** Name */
             name: string;
             /**
@@ -1862,6 +1947,8 @@ export interface components {
         TeamRef: {
             /** Department Id */
             department_id: string | null;
+            /** Description */
+            description?: string | null;
             /**
              * Id
              * Format: uuid
@@ -2101,6 +2188,8 @@ export interface components {
             avatar_url: string | null;
             /** Bio */
             bio: string | null;
+            /** Country */
+            country?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -2123,6 +2212,8 @@ export interface components {
             role: string | null;
             /** Skills */
             skills: string[];
+            /** Subdivision */
+            subdivision?: string | null;
             /**
              * Updated At
              * Format: date-time
@@ -2153,6 +2244,8 @@ export interface components {
             agent_personality?: ("balanced" | "concise" | "detailed" | "direct" | "friendly") | null;
             /** Bio */
             bio?: string | null;
+            /** Country */
+            country?: string | null;
             /** Display Name */
             display_name?: string | null;
             /** Ignore Topics */
@@ -2163,6 +2256,8 @@ export interface components {
             role?: string | null;
             /** Skills */
             skills?: string[] | null;
+            /** Subdivision */
+            subdivision?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -3296,6 +3391,232 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["GroundRules"];
                 };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    read_org_logo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgLogo"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    put_org_logo: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The image bytes (PNG, JPEG or WebP, 2 MB at most). SVG is refused. */
+        requestBody: {
+            content: {
+                "image/jpeg": string;
+                "image/png": string;
+                "image/webp": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgLogo"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Larger than 2 MB. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not a PNG, JPEG or WebP (SVG is refused). */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Too many uploads this hour. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Object storage is not connected. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    delete_org_logo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Object storage is not connected. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    org_logo_image: {
+        parameters: {
+            query?: {
+                /** @description The version from logo_url */
+                v?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The image. Immutable when `v` names the current version. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": unknown;
+                    "image/png": unknown;
+                    "image/webp": unknown;
+                };
+            };
+            /** @description Not modified (If-None-Match). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
             401: {

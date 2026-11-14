@@ -55,6 +55,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/ops/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Feedback Inbox
+         * @description authz: staff. Every report, newest first (at most 200), with counts by state.
+         */
+        get: operations["feedback_inbox"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/ops/feedback/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set Feedback Status
+         * @description authz: staff. Mark a report new, seen or resolved.
+         */
+        post: operations["set_feedback_status"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/ops/flags": {
         parameters: {
             query?: never;
@@ -103,6 +143,129 @@ export interface paths {
         patch: operations["update_flag"];
         trace?: never;
     };
+    "/admin/ops/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Health
+         * @description authz: staff. Service probes and the outbox backlog (counts per workspace only).
+         */
+        get: operations["health"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/ops/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Overview
+         * @description authz: staff. Platform totals and series. Aggregates only.
+         */
+        get: operations["overview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/ops/staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Staff Report
+         * @description authz: staff. The allowlist and its activity. Staff accounts have no `users` row (they
+         *     belong to no workspace), so each name and email is read from Clerk; if Clerk cannot be
+         *     asked, the list still shows each account's ids and activity.
+         */
+        get: operations["staff_report"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/ops/support/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Support Members
+         * @description authz: staff with an active `impersonate` grant from that workspace.
+         */
+        post: operations["support_members"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/ops/support/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Support Session
+         * @description authz: staff with an active `impersonate` grant. Opens a time-boxed session as one
+         *     member through a Clerk actor token. The workspace's own audit log records it.
+         */
+        post: operations["start_support_session"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/ops/support/sessions/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End Support Session
+         * @description authz: staff, their own session. Access ends on the member's next request.
+         */
+        post: operations["end_support_session"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/ops/tenants": {
         parameters: {
             query?: never;
@@ -117,6 +280,94 @@ export interface paths {
         get: operations["list_tenants"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/ops/tenants/detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Tenant Detail
+         * @description authz: staff. One workspace's control-plane picture. No meeting, transcript, decision
+         *     or action content: meetings are counted by week, nothing else is read from them.
+         */
+        post: operations["tenant_detail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/ops/tenants/migrate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request Migration
+         * @description authz: staff. Record a move request (ADR-0046 D5). One open request per workspace.
+         */
+        post: operations["request_migration"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/ops/tenants/migrations/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Migration
+         * @description authz: staff. Cancel an open move request.
+         */
+        post: operations["cancel_migration"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/ops/tenants/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change Tenant Plan
+         * @description authz: staff. Put a workspace on any plan, Unlimited included, with no payment.
+         *
+         *     The write is billing-metering-service's own code (`set_subscription_plan` +
+         *     `sync_budget_to_plan`) run in-process in its own transaction under the workspace's RLS:
+         *     admin-ops never writes a billing table with SQL of its own. A staff-set plan has no paid
+         *     window, so it never lapses (recorded deviation: a direct call, not a service hop, because
+         *     both run the same codebase against the same database). The agent-tier mirror is rewritten
+         *     after commit, so the new allowance applies to the next AI call; the superadmins are emailed.
+         */
+        post: operations["change_tenant_plan"];
         delete?: never;
         options?: never;
         head?: never;
@@ -172,7 +423,9 @@ export interface paths {
         };
         /**
          * Whoami
-         * @description authz: any signed-in user; answers whether they are Mytheus staff. Logged.
+         * @description authz: any signed-in session, with or without a workspace; answers whether it is a
+         *     Mytheus staff account (ADR-0046 D1), and its Staff ID when it is. Logged, with the reason
+         *     when it is not.
          */
         get: operations["whoami"];
         put?: never;
@@ -228,6 +481,30 @@ export interface paths {
          *     core-api's 404 / 409 (meeting live) / 422 (confirmation mismatch, own data) pass through.
          */
         post: operations["create_erasure"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/tenant/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Feedback
+         * @description authz: member. The caller's own reports, newest first.
+         */
+        get: operations["my_feedback"];
+        put?: never;
+        /**
+         * Submit Feedback
+         * @description authz: member. Send Mytheus a bug report or feedback.
+         */
+        post: operations["submit_feedback"];
         delete?: never;
         options?: never;
         head?: never;
@@ -318,7 +595,8 @@ export interface paths {
         put?: never;
         /**
          * Create Support Grant
-         * @description authz: admin. A time-boxed grant to one Mytheus staff user (at most 30 days).
+         * @description authz: admin. A time-boxed grant to one Mytheus staff user (at most 30 days). Refused
+         *     inside a staff support session: support access is never granted by the support itself.
          */
         post: operations["create_support_grant"];
         delete?: never;
@@ -343,6 +621,27 @@ export interface paths {
          *     grant is a 204 no-op with no second audit row.
          */
         delete: operations["revoke_support_grant"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/tenant/support-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Support Sessions
+         * @description authz: admin. Every staff support session in this workspace, newest first (ADR-0046):
+         *     who acted as whom, why, and for how long.
+         */
+        get: operations["list_support_sessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -423,6 +722,13 @@ export interface components {
              */
             org_id: string;
         };
+        /** CellCount */
+        CellCount: {
+            /** Db Cell */
+            db_cell: string;
+            /** Workspaces */
+            workspaces: number;
+        };
         /** ConfidenceThresholds */
         ConfidenceThresholds: {
             /** Silent */
@@ -476,6 +782,13 @@ export interface components {
         DataExportList: {
             /** Items */
             items: components["schemas"]["DataExport"][];
+        };
+        /** DayCount */
+        DayCount: {
+            /** Count */
+            count: number;
+            /** Day */
+            day: string;
         };
         /** DlqCount */
         DlqCount: {
@@ -611,6 +924,65 @@ export interface components {
          * @enum {string}
          */
         ErrorCode: "MALFORMED_BODY" | "INVALID_CURSOR" | "AUTH_REQUIRED" | "TOKEN_EXPIRED" | "FORBIDDEN_ROLE" | "CROSS_TENANT_DENIED" | "NOT_FOUND" | "IDEMPOTENCY_KEY_REUSED" | "VERSION_CONFLICT" | "VALIDATION_FAILED" | "RATE_LIMITED" | "QUOTA_EXCEEDED" | "INTERNAL" | "DEPENDENCY_UNAVAILABLE" | "NOT_IMPLEMENTED" | "NOT_A_PARTICIPANT" | "CONSENT_REQUIRED" | "EXTERNAL_MEETING" | "PROVIDER_NOT_CONFIGURED" | "PM_ALREADY_CONNECTED" | "ACCOUNT_CONNECTED_ELSEWHERE";
+        /** FeedbackCreate */
+        FeedbackCreate: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "bug" | "feedback";
+            /** Message */
+            message: string;
+            /** Page */
+            page?: string | null;
+        };
+        /** FeedbackList */
+        FeedbackList: {
+            /** Items */
+            items: components["schemas"]["FeedbackReport"][];
+        };
+        /** FeedbackReport */
+        FeedbackReport: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Message */
+            message: string;
+            /** Page */
+            page: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "new" | "seen" | "resolved";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** FeedbackStatusUpdate */
+        FeedbackStatusUpdate: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "new" | "seen" | "resolved";
+        };
         /** Flag */
         Flag: {
             /** Enabled */
@@ -669,10 +1041,61 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
+        /** GrantView */
+        GrantView: {
+            /** Active */
+            active: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Revoked At */
+            revoked_at: string | null;
+            /** Scope */
+            scope: string;
+            /**
+             * Staff User Id
+             * Format: uuid
+             */
+            staff_user_id: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** Health */
+        Health: {
+            /**
+             * Checked At
+             * Format: date-time
+             */
+            checked_at: string;
+            /** Consumer Lag */
+            consumer_lag?: components["schemas"]["ConsumerLag"][] | null;
+            /** Dlq */
+            dlq?: components["schemas"]["DlqCount"][] | null;
+            /** Outbox Max Attempts */
+            outbox_max_attempts: number;
+            /** Outbox Oldest Pending At */
+            outbox_oldest_pending_at: string | null;
+            /** Outbox Pending */
+            outbox_pending: number;
+            /** Outbox Tenants */
+            outbox_tenants: components["schemas"]["OutboxTenant"][];
+            /** Services */
+            services: components["schemas"]["ServiceProbe"][];
         };
         /** Member */
         Member: {
@@ -704,6 +1127,248 @@ export interface components {
              */
             tier: "owner" | "admin" | "member";
         };
+        /** MigrateRequest */
+        MigrateRequest: {
+            /**
+             * Org Id
+             * Format: uuid
+             */
+            org_id: string;
+            /** Reason */
+            reason: string;
+            /** To Cell */
+            to_cell?: string | null;
+            /**
+             * To Region
+             * @enum {string}
+             */
+            to_region: "us" | "eu" | "ap";
+        };
+        /** MigrationCancel */
+        MigrationCancel: {
+            /**
+             * Migration Id
+             * Format: uuid
+             */
+            migration_id: string;
+            /**
+             * Org Id
+             * Format: uuid
+             */
+            org_id: string;
+        };
+        /** MigrationView */
+        MigrationView: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** From Cell */
+            from_cell: string;
+            /** From Region */
+            from_region: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Reason */
+            reason: string;
+            /**
+             * Requested By
+             * Format: uuid
+             */
+            requested_by: string;
+            /** Status */
+            status: string;
+            /** To Cell */
+            to_cell: string;
+            /** To Region */
+            to_region: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** OpsAction */
+        OpsAction: {
+            /** Action */
+            action: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Details */
+            details: {
+                [key: string]: unknown;
+            };
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Staff User Id */
+            staff_user_id: string | null;
+            /** Target Org Id */
+            target_org_id: string | null;
+        };
+        /** OpsFeedback */
+        OpsFeedback: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Handled By */
+            handled_by: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Message */
+            message: string;
+            /**
+             * Org Id
+             * Format: uuid
+             */
+            org_id: string;
+            /** Org Name */
+            org_name: string | null;
+            /** Page */
+            page: string | null;
+            /** Reporter Email */
+            reporter_email: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "new" | "seen" | "resolved";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** OpsFeedbackList */
+        OpsFeedbackList: {
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Items */
+            items: components["schemas"]["OpsFeedback"][];
+        };
+        /** OutboxTenant */
+        OutboxTenant: {
+            /** Max Attempts */
+            max_attempts: number;
+            /** Name */
+            name: string;
+            /** Oldest Pending At */
+            oldest_pending_at: string | null;
+            /**
+             * Org Id
+             * Format: uuid
+             */
+            org_id: string;
+            /** Pending */
+            pending: number;
+        };
+        /** Overview */
+        Overview: {
+            /** Meetings By Week */
+            meetings_by_week: components["schemas"]["WeekCount"][];
+            /**
+             * Member Places
+             * @description Members by the country and subdivision they set (users.country, users.subdivision), across every workspace, largest first; a row with both null counts members who have not said.
+             */
+            member_places?: components["schemas"]["PlaceCount"][];
+            /**
+             * Member Zones
+             * @description Members by saved time zone across every workspace, largest first. Members with no listening preferences row are not counted here.
+             */
+            member_zones?: components["schemas"]["ZoneCount"][];
+            /** Ops Activity By Day */
+            ops_activity_by_day: components["schemas"]["DayCount"][];
+            /** Period */
+            period: string;
+            /** Plans */
+            plans: components["schemas"]["PlanCount"][];
+            /** Regions */
+            regions?: components["schemas"]["RegionCount"][];
+            /** Signups By Week */
+            signups_by_week: components["schemas"]["WeekCount"][];
+            /** Token Leaders */
+            token_leaders: components["schemas"]["TokenLeader"][];
+            totals: components["schemas"]["OverviewTotals"];
+        };
+        /** OverviewTotals */
+        OverviewTotals: {
+            /** Active */
+            active: number;
+            /**
+             * Feedback New
+             * @default 0
+             */
+            feedback_new: number;
+            /** Meetings 7D */
+            meetings_7d: number;
+            /** Meetings Total */
+            meetings_total: number;
+            /** Members */
+            members: number;
+            /** Suspended */
+            suspended: number;
+            /** Tenants */
+            tenants: number;
+            /** Tokens Period */
+            tokens_period: number;
+        };
+        /**
+         * PlaceCount
+         * @description Members who say they work in this country (and subdivision). Both null: not set.
+         */
+        PlaceCount: {
+            /** Country */
+            country: string | null;
+            /** Members */
+            members: number;
+            /** Subdivision */
+            subdivision: string | null;
+        };
+        /** PlanChangeRequest */
+        PlanChangeRequest: {
+            /**
+             * Org Id
+             * Format: uuid
+             */
+            org_id: string;
+            /**
+             * Plan Code
+             * @enum {string}
+             */
+            plan_code: "free" | "pro" | "ultra" | "payg" | "unlimited";
+            /** Reason */
+            reason?: string | null;
+        };
+        /** PlanCount */
+        PlanCount: {
+            /** Count */
+            count: number;
+            /** Plan */
+            plan: string;
+        };
         /** @description RFC 7807 problem detail. Every 4xx and 5xx this service emits has this shape, including the ones FastAPI would otherwise return in its own format: `libs/shared/errors.py` registers handlers for `ProblemDetail`, `HTTPException`, `RequestValidationError` and bare `Exception`. */
         Problem: {
             code: components["schemas"]["ErrorCode"];
@@ -723,6 +1388,25 @@ export interface components {
              */
             type: string;
         };
+        /**
+         * RegionCount
+         * @description Where workspaces live: one row per `data_residency.region`. A workspace with no
+         *     residency row is counted under `unplaced`, so the rows always add up to `totals.tenants`.
+         */
+        RegionCount: {
+            /** Active */
+            active: number;
+            /** Cells */
+            cells: components["schemas"]["CellCount"][];
+            /** Meetings 7D */
+            meetings_7d: number;
+            /** Members */
+            members: number;
+            /** Region */
+            region: string;
+            /** Workspaces */
+            workspaces: number;
+        };
         /** ReinstateRequest */
         ReinstateRequest: {
             /**
@@ -732,6 +1416,65 @@ export interface components {
             org_id: string;
             /** Reason */
             reason?: string | null;
+        };
+        /** Residency */
+        Residency: {
+            /** Db Cell */
+            db_cell: string;
+            /** Locked At */
+            locked_at: string | null;
+            /** Object Bucket Region */
+            object_bucket_region: string;
+            /** Qdrant Region */
+            qdrant_region: string;
+            /** Region */
+            region: string;
+        };
+        /** ServiceProbe */
+        ServiceProbe: {
+            /** Detail */
+            detail?: string | null;
+            /** Latency Ms */
+            latency_ms: number | null;
+            /** Service */
+            service: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "up" | "down";
+        };
+        /** StaffMember */
+        StaffMember: {
+            /** Actions 30D */
+            actions_30d: number;
+            /** Clerk User Id */
+            clerk_user_id: string;
+            /** Email */
+            email: string | null;
+            /**
+             * In Workspace
+             * @default false
+             */
+            in_workspace: boolean;
+            /** Last Seen At */
+            last_seen_at: string | null;
+            /** Name */
+            name?: string | null;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** StaffReport */
+        StaffReport: {
+            /** Activity By Day */
+            activity_by_day: components["schemas"]["DayCount"][];
+            /** Recent */
+            recent: components["schemas"]["OpsAction"][];
+            /** Staff */
+            staff: components["schemas"]["StaffMember"][];
         };
         /** SupportGrant */
         SupportGrant: {
@@ -793,6 +1536,114 @@ export interface components {
             /** Items */
             items: components["schemas"]["SupportGrant"][];
         };
+        /** SupportMember */
+        SupportMember: {
+            /** Email */
+            email: string;
+            /** Is Staff */
+            is_staff: boolean;
+            /** Name */
+            name?: string | null;
+            /** Tier */
+            tier: string | null;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** SupportMemberList */
+        SupportMemberList: {
+            /**
+             * Grant Expires At
+             * Format: date-time
+             */
+            grant_expires_at: string;
+            /** Items */
+            items: components["schemas"]["SupportMember"][];
+        };
+        /** SupportSessionEnd */
+        SupportSessionEnd: {
+            /**
+             * Org Id
+             * Format: uuid
+             */
+            org_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+        };
+        /** SupportSessionList */
+        SupportSessionList: {
+            /** Items */
+            items: components["schemas"]["SupportSessionView"][];
+        };
+        /** SupportSessionStart */
+        SupportSessionStart: {
+            /**
+             * Minutes
+             * @default 30
+             */
+            minutes: number;
+            /**
+             * Org Id
+             * Format: uuid
+             */
+            org_id: string;
+            /** Reason */
+            reason: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** SupportSessionStarted */
+        SupportSessionStarted: {
+            session: components["schemas"]["SupportSessionView"];
+            /** Sign In Url */
+            sign_in_url: string;
+        };
+        /** SupportSessionView */
+        SupportSessionView: {
+            /** End Reason */
+            end_reason: string | null;
+            /** Ended At */
+            ended_at: string | null;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Open */
+            open: boolean;
+            /** Reason */
+            reason: string;
+            /**
+             * Staff User Id
+             * Format: uuid
+             */
+            staff_user_id: string;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** User Email */
+            user_email?: string | null;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
         /** SuspendRequest */
         SuspendRequest: {
             /**
@@ -817,12 +1668,70 @@ export interface components {
             /** Tokens Consumed */
             tokens_consumed: number;
         };
+        /** TenantDetail */
+        TenantDetail: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Flags */
+            flags: components["schemas"]["Flag"][];
+            /** Grants */
+            grants: components["schemas"]["GrantView"][];
+            /** Meetings By Week */
+            meetings_by_week: components["schemas"]["WeekCount"][];
+            /** Meetings Total */
+            meetings_total: number;
+            /** Members */
+            members: number;
+            /** Migrations */
+            migrations: components["schemas"]["MigrationView"][];
+            /** Name */
+            name: string;
+            /**
+             * Org Id
+             * Format: uuid
+             */
+            org_id: string;
+            /** Period */
+            period: string;
+            /** Plan */
+            plan: string | null;
+            /** Recent Ops */
+            recent_ops: components["schemas"]["OpsAction"][];
+            residency: components["schemas"]["Residency"] | null;
+            /** Sessions */
+            sessions: components["schemas"]["SupportSessionView"][];
+            /** Status */
+            status: string;
+            /** Token Quota */
+            token_quota: number | null;
+            /** Tokens Period */
+            tokens_period: number;
+        };
         /** TenantList */
         TenantList: {
             /** Items */
             items: components["schemas"]["TenantSummary"][];
             /** Next Cursor */
             next_cursor?: string | null;
+        };
+        /** TenantPlan */
+        TenantPlan: {
+            /**
+             * Org Id
+             * Format: uuid
+             */
+            org_id: string;
+            /** Plan Code */
+            plan_code: string;
+            /** State */
+            state: string;
+            /** Token Quota */
+            token_quota: number;
+            /** Tokens Consumed */
+            tokens_consumed: number;
         };
         /** TenantSettings */
         TenantSettings: {
@@ -899,6 +1808,28 @@ export interface components {
              */
             status: "active" | "suspended";
         };
+        /** TenantTarget */
+        TenantTarget: {
+            /**
+             * Org Id
+             * Format: uuid
+             */
+            org_id: string;
+        };
+        /** TokenLeader */
+        TokenLeader: {
+            /** Name */
+            name: string;
+            /**
+             * Org Id
+             * Format: uuid
+             */
+            org_id: string;
+            /** Token Quota */
+            token_quota: number | null;
+            /** Tokens */
+            tokens: number;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -912,10 +1843,30 @@ export interface components {
             /** Error Type */
             type: string;
         };
+        /** WeekCount */
+        WeekCount: {
+            /** Count */
+            count: number;
+            /** Week */
+            week: string;
+        };
         /** Whoami */
         Whoami: {
             /** Staff */
             staff: boolean;
+            /** Staff Id */
+            staff_id?: string | null;
+        };
+        /**
+         * ZoneCount
+         * @description Members whose saved time zone (`listening_preferences.time_zone`) is this IANA zone.
+         *     `UTC` is also the column default, so it mostly means "never set".
+         */
+        ZoneCount: {
+            /** Members */
+            members: number;
+            /** Time Zone */
+            time_zone: string;
         };
     };
     responses: never;
@@ -999,6 +1950,109 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CostReport"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    feedback_inbox: {
+        parameters: {
+            query?: {
+                state?: "new" | "seen" | "resolved" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpsFeedbackList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    set_feedback_status: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackStatusUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpsFeedback"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
@@ -1225,6 +2279,282 @@ export interface operations {
             };
         };
     };
+    health: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Health"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    overview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Overview"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    staff_report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffReport"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    support_members: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TenantTarget"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupportMemberList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    start_support_session: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupportSessionStart"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupportSessionStarted"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    end_support_session: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupportSessionEnd"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupportSessionView"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     list_tenants: {
         parameters: {
             query?: {
@@ -1244,6 +2574,222 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TenantList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    tenant_detail: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TenantTarget"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TenantDetail"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    request_migration: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MigrateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MigrationView"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    cancel_migration: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MigrationCancel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MigrationView"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    change_tenant_plan: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanChangeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TenantPlan"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
@@ -1561,6 +3107,98 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Erasure"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    my_feedback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    submit_feedback: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackReport"];
                 };
             };
             /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
@@ -1946,6 +3584,44 @@ export interface operations {
             };
             /** @description Validation Error */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_support_sessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupportSessionList"];
+                };
+            };
+            /** @description No bearer token, or a token that is expired, malformed or fails JWKS verification. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

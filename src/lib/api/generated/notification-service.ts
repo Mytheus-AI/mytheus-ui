@@ -29,6 +29,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/internal/email/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send Invitations
+         * @description Send meeting invitations (or their update or cancellation). See the module doc.
+         */
+        post: operations["send_invitations"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/internal/email/send": {
         parameters: {
             query?: never;
@@ -270,6 +290,49 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** InvitationAttachment */
+        InvitationAttachment: {
+            /** Content Base64 */
+            content_base64: string;
+            /**
+             * Content Type
+             * @enum {string}
+             */
+            content_type: "text/calendar; method=REQUEST" | "text/calendar; method=CANCEL";
+            /** Filename */
+            filename: string;
+        };
+        /** InvitationMessage */
+        InvitationMessage: {
+            /** Html */
+            html?: string | null;
+            /** Idempotency Key */
+            idempotency_key: string;
+            /** Recipient */
+            recipient: string;
+            /** Reply To */
+            reply_to?: string | null;
+            /** Subject */
+            subject: string;
+            /** Text */
+            text: string;
+        };
+        /** InvitationSend */
+        InvitationSend: {
+            attachment?: components["schemas"]["InvitationAttachment"] | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "meeting_invitation" | "meeting_update" | "meeting_cancel";
+            /**
+             * Meeting Id
+             * Format: uuid
+             */
+            meeting_id: string;
+            /** Messages */
+            messages: components["schemas"]["InvitationMessage"][];
+        };
         /** NotificationPage */
         NotificationPage: {
             /** Items */
@@ -477,6 +540,60 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+            /** @description Unhandled server error. Carries a `trace_id` and no internals. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    send_invitations: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Client-generated key making this write safe to retry. A replay with the same key replays the original response; a replay with a different body is `409 IDEMPOTENCY_KEY_REUSED`. Scoped per tenant and per route. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvitationSend"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailSendResult"];
+                };
+            };
+            /** @description Missing or invalid credentials for this operation's own security scheme (not a bearer token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Unhandled server error. Carries a `trace_id` and no internals. */

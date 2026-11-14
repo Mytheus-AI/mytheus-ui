@@ -519,6 +519,8 @@ export interface components {
             connected: boolean;
             /** Issues */
             issues: components["schemas"]["IssueStatus"][];
+            /** Provider */
+            provider?: ("jira" | "linear") | null;
         };
         /** JiraSource */
         JiraSource: {
@@ -534,6 +536,8 @@ export interface components {
              * @default false
              */
             connected: boolean;
+            /** Issues */
+            issues?: components["schemas"]["WatchIssue"][];
         };
         /** MeetingRef */
         MeetingRef: {
@@ -690,6 +694,12 @@ export interface components {
             due_date?: string | null;
             /** Key */
             key: string;
+            /**
+             * Provider
+             * @default jira
+             * @enum {string}
+             */
+            provider: "jira" | "linear";
             /** Status */
             status?: string | null;
             /** Status Category */
