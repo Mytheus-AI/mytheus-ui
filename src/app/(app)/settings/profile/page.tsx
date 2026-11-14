@@ -8,8 +8,9 @@ import { OrgLogoCard } from "@/components/tenant/OrgLogoCard";
 export const metadata: Metadata = { title: "Profile | Mytheus" };
 
 /* Settings > Profile: your account, your doodle, and what your Myte knows about you. How alerts
-   reach you moved to Settings > Notifications. A member also sees the workspace they are in, with
-   its logo, read-only (admins change it in the Workspace console). */
+   reach you moved to Settings > Notifications. Everyone also sees the workspace they are in, with
+   its logo: an admin can upload, crop, replace or remove it here as in the Workspace console
+   (the same card), and a member sees it read-only. */
 export default async function ProfileSettingsPage() {
   const [profile, ctx] = await Promise.all([fetchMyProfile(), resolveOrgContext()]);
   return (
@@ -17,7 +18,7 @@ export default async function ProfileSettingsPage() {
       <SectionBar title="Profile" context="How you appear to teammates, and what your Myte knows about you." />
       <div className="grid gap-5">
         <ProfilePanel profile={profile} />
-        {ctx && ctx.user.role !== "admin" ? <OrgLogoCard canEdit={false} /> : null}
+        {ctx ? <OrgLogoCard canEdit={ctx.user.role === "admin"} /> : null}
       </div>
     </>
   );
