@@ -26,7 +26,6 @@ import { RecentMeetings } from "../../../src/components/app/dashboard/RecentMeet
 import { TodayTimeline } from "../../../src/components/app/dashboard/TodayTimeline";
 import { TaskList } from "../../../src/components/app/dashboard/TaskList";
 import { MyNotes } from "../../../src/components/app/dashboard/MyNotes";
-import { RecentDecisions } from "../../../src/components/app/dashboard/RecentDecisions";
 import type { HomeMeeting } from "../../../src/components/app/dashboard/types";
 import { CardSkeleton } from "../../../src/components/ui/Page";
 import { DigestSections } from "../../../src/components/digest/DigestSections";
@@ -41,7 +40,7 @@ import { BriefingPlayer } from "../../../src/components/briefing/BriefingPlayer"
 import type { WeeklyDigest } from "../../../src/lib/api/only-mytheus-types";
 import type { UserProfile } from "../../../src/lib/api/profile-types";
 import type { GlossaryTerm } from "../../../src/lib/api/org-brain-types";
-import type { DashboardDecision, DashboardNote, DashboardRecentMeeting, DashboardReviewItem } from "../../../src/lib/api/types";
+import type { DashboardNote, DashboardRecentMeeting, DashboardReviewItem } from "../../../src/lib/api/types";
 import type { MineTask } from "../../../src/lib/api/tasks";
 
 /* Skeleton and page pairs, Home group: each route's loading.tsx against the page as it looks
@@ -83,10 +82,6 @@ const NOTES: DashboardNote[] = [
   { id: "n-1", content: "Raj wants the pricing numbers before Thursday", created_at: at(7), meeting_id: "m-7", meeting_title: "Launch planning" },
   { id: "n-2", content: "Priya owns the onboarding checklist", created_at: at(6), meeting_id: "m-8", meeting_title: "Design crit" },
 ] as DashboardNote[];
-const DECISIONS: DashboardDecision[] = [
-  { id: "d-1", content: "Price the team plan at 49 dollars", created_at: at(7), meeting_id: "m-7", meeting_title: "Launch planning", rationale: null },
-  { id: "d-2", content: "Ship the beta on 2 December", created_at: at(6), meeting_id: "m-8", meeting_title: "Design crit", rationale: null },
-] as DashboardDecision[];
 
 function DashboardPage() {
   return (
@@ -104,7 +99,6 @@ function DashboardPage() {
           <TodayTimeline today={[STANDUP, NEXT, LATER]} later={[]} nextId={NEXT.id} calendarFailed={false} nowMs={NOW_MS} />
           <TaskList tasks={TASKS} failed={false} nowIso={NOW} />
           <MyNotes notes={NOTES} failed={false} />
-          <RecentDecisions decisions={DECISIONS} failed={false} className="min-[721px]:col-span-2 min-[1101px]:col-span-1" />
         </aside>
       </div>
     </Page>
