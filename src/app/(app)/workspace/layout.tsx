@@ -22,7 +22,7 @@ export default async function WorkspaceLayout({ children }: { children: React.Re
       <PageHead
         title={
           <span className="inline-flex items-center gap-3">
-            {/* The workspace's own mark beside the console title (ADR-0047); the name is in the
+            {/* The workspace's own mark beside the console title (ADR-0048); the name is in the
                 line under it, so the mark is decorative here. */}
             <OrgMark name={ctx.org.name} logoUrl={ctx.org.logoUrl} size={40} decorative />
             Workspace

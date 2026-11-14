@@ -1,5 +1,5 @@
 /**
- * The workspace logo, the pure parts (ADR-0047): what a file must be, the crop geometry, and how the
+ * The workspace logo, the pure parts (ADR-0048): what a file must be, the crop geometry, and how the
  * backend's logo URL becomes one an `<img>` can load. No React, no browser APIs, so `npm test`
  * covers it.
  *

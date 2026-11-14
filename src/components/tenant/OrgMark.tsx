@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { orgInitial } from "@/lib/org-logo";
 
-/* The workspace's mark wherever the workspace appears (ADR-0047): its logo in a rounded square,
+/* The workspace's mark wherever the workspace appears (ADR-0048): its logo in a rounded square,
    or, when there is none or the image fails to load, its initial. The logo sits on the card
    surface with a hairline ring drawn over its edge, so a white or transparent logo still has a
    shape on cream and on the dark theme; `object-fit: cover` fills the square.

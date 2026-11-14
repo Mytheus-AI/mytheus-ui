@@ -1,4 +1,4 @@
-/* The workspace logo fixtures (ADR-0047): a Kestrel Labs mark as an SVG, as a data URL for the
+/* The workspace logo fixtures (ADR-0048): a Kestrel Labs mark as an SVG, as a data URL for the
    places that show a saved logo, and as file bytes for the editor (an SVG goes through the same
    in-browser rasterising a real upload does). */
 

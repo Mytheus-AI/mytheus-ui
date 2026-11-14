@@ -1,5 +1,5 @@
 // Run: npm test
-// The workspace logo's pure parts (ADR-0047): which files the editor takes, the fallback initial,
+// The workspace logo's pure parts (ADR-0048): which files the editor takes, the fallback initial,
 // the backend URL mapped to the same-origin route, and the crop geometry.
 import assert from "node:assert/strict";
 import { test } from "node:test";

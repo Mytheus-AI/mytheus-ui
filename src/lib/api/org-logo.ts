@@ -1,5 +1,5 @@
 /**
- * The workspace logo on identity-tenant-service (ADR-0047).
+ * The workspace logo on identity-tenant-service (ADR-0048).
  *
  *   GET    /api/v1/org/logo          {logo_url, logo_updated_at, ...}; logo_url null when none (member)
  *   PUT    /api/v1/org/logo          the image bytes as the body, with their Content-Type (admin)

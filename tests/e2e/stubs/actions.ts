@@ -851,7 +851,8 @@ export async function confirmMyteProposal(proposal: { kind: string; title: strin
   (aw().__askConfirmed ??= []).push({ proposal, edits });
   return { ok: true as const, done: "Task added", href: "/work/tasks" };
 }
-// The workspace logo editor (ADR-0047). `window.__logoUpload` steers a test: "slow" holds the
+// The workspace logo editor (ADR-0048). `window.__logoUpload` steers a test: "slow" holds the
+// The workspace logo editor (ADR-0048). `window.__logoUpload` steers a test: "slow" holds the
 // upload long enough to see the progress state, "refuse" answers as the API does for a 429.
 export async function uploadOrgLogo(_form: FormData) {
   const mode = (globalThis as { __logoUpload?: string }).__logoUpload;

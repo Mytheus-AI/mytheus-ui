@@ -25,7 +25,7 @@ import { RemoveButton } from "@/components/ui/RemoveButton";
 import { OrgMark } from "@/components/tenant/OrgMark";
 import { notifyError, notifySuccess } from "@/lib/toast";
 
-/* The workspace logo editor (ADR-0047), in the Workspace console's Overview beside the name.
+/* The workspace logo editor (ADR-0048), in the Workspace console's Overview beside the name.
 
    States, each drawn:
    - empty: the initial, a drop zone and "Choose an image";

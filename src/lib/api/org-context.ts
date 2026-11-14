@@ -97,7 +97,7 @@ export const resolveOrgContext = cache(async (): Promise<OrgContextValue | null>
   const { orgId, orgSlug, orgRole, userId } = await auth();
   if (!userId) return null; // signed out; middleware should already have redirected
 
-  // The logo (ADR-0047) is read from the gateway, in parallel with the Clerk lookups. A failed
+  // The logo (ADR-0048) is read from the gateway, in parallel with the Clerk lookups. A failed
   // read draws the initial instead; it never holds the shell.
   const [{ name, email, avatarSeed, imageUrl }, orgName, logo] = await Promise.all([
     profileFor(userId),

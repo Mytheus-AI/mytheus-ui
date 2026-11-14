@@ -397,7 +397,7 @@ function OrgRow({
       }`}
     >
       {/* The workspace's logo, mirrored to its Clerk organization when an admin saves it in Mytheus
-          (ADR-0047); the initial when it has none or it fails to load. The name follows, so the
+          (ADR-0048); the initial when it has none or it fails to load. The name follows, so the
           mark is decorative. */}
       <OrgMark name={name} logoUrl={imageUrl} size={44} tone="peach" decorative />
       <span className="min-w-0 flex-1">

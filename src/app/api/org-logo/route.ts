@@ -1,5 +1,5 @@
 /**
- * `GET /api/org-logo?v={version}` - the workspace logo, for an `<img>` (ADR-0047).
+ * `GET /api/org-logo?v={version}` - the workspace logo, for an `<img>` (ADR-0048).
  *
  * A route handler because an `<img src>` cannot carry the Clerk bearer: this forwards the caller's
  * own session to `api-gateway` (`GET /api/v1/org/logo/image?v=`, where identity-tenant-service

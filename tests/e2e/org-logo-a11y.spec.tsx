@@ -1,4 +1,4 @@
-/* The workspace logo (ADR-0047): the editor in every state, the logo in the sidebar switcher (open
+/* The workspace logo (ADR-0048): the editor in every state, the logo in the sidebar switcher (open
    and on the rail, still centred on the rail line), and in the workspace chooser. Axe runs on each
    state in both themes. With ORG_LOGO_SHOTS set, every state is also saved as a screenshot:
 
