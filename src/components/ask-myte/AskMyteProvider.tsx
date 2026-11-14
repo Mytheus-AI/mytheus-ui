@@ -11,6 +11,8 @@ import { defaultDoodleSeed } from "@/lib/doodle";
 import { parsePageContext } from "@/lib/ask-myte/page-context";
 import { useModKey } from "./mod-key";
 import { AskMyteContext, type Layer, type OpenOptions, type Request } from "./sheet-context";
+import { MyteNudge } from "./MyteNudge";
+import { RoutineRunner } from "./RoutineRunner";
 
 export { useAskMyteSheet } from "./sheet-context";
 
@@ -113,6 +115,10 @@ export function AskMyteLayer() {
           </span>
         </button>
       ) : null}
+      {/* ADR-0049 F2 and F5: the nudge bubble beside the floating Myte, and due routines run once per session. */}
+      {/* Home has its own "Today from Myte" card, so the bubble stays away there. */}
+      {!onAsk && pathname !== "/dashboard" ? <MyteNudge name={persona.name} hidden={isOpen} onAsk={(question) => open({ question })} /> : null}
+      <RoutineRunner />
       {loaded ? <AskMyteSheet open={isOpen} onClose={close} persona={persona} pathPage={pageFromPath} request={request} modKey={mod} /> : null}
     </>
   );

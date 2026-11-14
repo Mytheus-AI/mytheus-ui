@@ -138,3 +138,11 @@ export function useSpeechInput(onText: (text: string, final: boolean) => void) {
 
   return { supported, listening, start, stop };
 }
+
+/** Whether voice mode (ADR-0049 F6) can run here: the browser has speech recognition. False on
+    the server and until mounted, so the Talk button never flashes in where it can't work. */
+export function useCanTalk(): boolean {
+  const [can, setCan] = useState(false);
+  useEffect(() => setCan(recognitionCtor() !== null), []);
+  return can;
+}
