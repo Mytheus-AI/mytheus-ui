@@ -15,7 +15,8 @@ export const metadata: Metadata = { title: "Cost and lag | Ops console | Mytheus
 export const dynamic = "force-dynamic";
 
 /* Cost and lag (plan 3.13 step 3): per-tenant agent-token use this period from
-   `usage_aggregates`, plus dead-letter counts and consumer lag when the service can read them.
+   `agent_budgets` (live) or `usage_aggregates`, plus dead-letter counts and consumer lag read
+   from Redpanda.
    Aggregates only, never tenant content. A section the server cannot fill (null) says so instead
    of showing zeros. The treemap answers "who is spending it"; the meters under it answer "who is
    about to run out", highest share of quota first. */
@@ -88,8 +89,8 @@ export default async function OpsCostsPage() {
             { label: "Past 80% of quota", value: nearQuota, hint: overQuota ? `${overQuota} past their quota` : nearQuota ? "Near their quota" : "None near quota" },
             {
               label: "Dead letters",
-              value: dlqTotal === null ? "Not readable" : whole.format(dlqTotal),
-              hint: dlqTotal === null ? "Not readable from the ops service yet" : "Across every queue",
+              value: dlqTotal === null ? "Unknown" : whole.format(dlqTotal),
+              hint: dlqTotal === null ? "Redpanda did not answer; refresh to retry" : dlqTotal === 0 ? "Every message was processed" : "Across every queue",
             },
           ]}
         />
@@ -133,9 +134,9 @@ export default async function OpsCostsPage() {
       <div className="grid gap-5 lg:grid-cols-2 xl:gap-6">
         <SectionCard title="Dead-letter queues" headingLevel={2} headingId="dlq-heading" description="Messages that failed processing and were set aside.">
           {d.dlq === null ? (
-            <p className="px-4 py-5 text-[14px] text-ink-3 sm:px-[22px]">Not readable from the ops service yet.</p>
+            <p className="px-4 py-5 text-[14px] text-ink-3 sm:px-[22px]">Redpanda did not answer just now. Refresh to try again.</p>
           ) : d.dlq.length === 0 ? (
-            <p className="px-4 py-5 text-[14px] text-ink-3 sm:px-[22px]">No dead letters.</p>
+            <p className="px-4 py-5 text-[14px] text-ink-3 sm:px-[22px]">No dead letters. Every message was processed.</p>
           ) : (
             <table className="mx-table w-full border-collapse text-left text-[14px]">
               <thead>
@@ -162,7 +163,7 @@ export default async function OpsCostsPage() {
 
         <SectionCard title="Consumer lag" headingLevel={2} headingId="lag-heading" description="How far each consumer group is behind its topic.">
           {d.consumer_lag === null ? (
-            <p className="px-4 py-5 text-[14px] text-ink-3 sm:px-[22px]">Not readable from the ops service yet.</p>
+            <p className="px-4 py-5 text-[14px] text-ink-3 sm:px-[22px]">Redpanda did not answer just now. Refresh to try again.</p>
           ) : d.consumer_lag.length === 0 ? (
             <p className="px-4 py-5 text-[14px] text-ink-3 sm:px-[22px]">No consumer groups reported.</p>
           ) : (

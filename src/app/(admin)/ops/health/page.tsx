@@ -16,8 +16,8 @@ export const dynamic = "force-dynamic";
 
 /* Service health (ADR-0046 D3): each backend service's /healthz, probed from admin-ops-service
    on the internal network, and the transactional outbox's unpublished backlog. Status always
-   carries a word and an icon beside its colour. Dead letters and consumer lag live in Redpanda
-   and Prometheus, which the ops service cannot read yet, and the page says so. */
+   carries a word and an icon beside its colour. Dead letters and consumer lag are read from
+   Redpanda by admin-ops-service; when it cannot answer, the page says so. */
 
 const whole = new Intl.NumberFormat("en-US");
 const SELF = "admin-ops-service";
@@ -134,10 +134,38 @@ export default async function OpsHealthPage() {
               />
             </div>
           </SectionCard>
-          <SectionCard title="Queues and lag" headingId="queues-heading" description="Dead-letter queues and consumer lag.">
-            <p className={`${cardPad} text-[14px] leading-relaxed text-ink-3`}>
-              Not readable from the ops service yet. Both live in Redpanda and Prometheus, which this service cannot reach. Use Grafana on the server for now.
-            </p>
+          <SectionCard title="Queues and lag" headingId="queues-heading" description="Dead letters set aside per queue, then how far each consumer group is behind, read from Redpanda.">
+            <div className={`${cardPad} flex flex-col gap-6`}>
+              {h.dlq === null || h.consumer_lag === null ? (
+                <p className="text-[14px] leading-relaxed text-ink-3">
+                  Redpanda did not answer just now, so these could not be counted. Refresh to try again.
+                </p>
+              ) : (
+                <>
+                  <BarList
+                    caption="Dead letters per queue"
+                    empty="No dead letters. Every message was processed."
+                    items={h.dlq
+                      .filter((x) => x.count > 0)
+                      .map((x) => ({ key: x.topic, label: x.topic, value: x.count, tone: "high" as const }))}
+                  />
+                  <BarList
+                    caption="Consumer lag per group"
+                    empty="Every consumer group is caught up."
+                    items={h.consumer_lag
+                      .filter((x) => x.lag > 0)
+                      .slice(0, 10)
+                      .map((x) => ({
+                        key: `${x.group}|${x.topic}`,
+                        label: x.group,
+                        value: x.lag,
+                        note: x.topic,
+                        tone: x.lag >= 1000 ? ("medium" as const) : ("default" as const),
+                      }))}
+                  />
+                </>
+              )}
+            </div>
           </SectionCard>
         </div>
       </div>
