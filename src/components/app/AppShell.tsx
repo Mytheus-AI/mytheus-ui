@@ -26,7 +26,8 @@ import { AskMyteLayer, AskMyteProvider } from "@/components/ask-myte/AskMyteProv
    styles/app-theme.css); the root layout sets light/dark on <html> before first paint so there is no
    flash.
 
-   h-dvh (not min-h-dvh) so <main> is the scroll container: the Topbar stays reachable on long
+   h-dvh (not min-h-dvh) so <main> is the scroll container (and `relative`, so absolutely placed
+   children such as `.sr-only` labels anchor inside it instead of stretching the document): the Topbar stays reachable on long
    pages and the nav column stays fixed. */
 
 const EASE_OUT: [number, number, number, number] = [0.215, 0.61, 0.355, 1];
@@ -225,7 +226,7 @@ export function AppShell({
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar onMenuClick={() => setNavOpen(true)} onSearchClick={() => setPaletteOpen(true)} />
-        <main id="main" tabIndex={-1} className="flex-1 focus:outline-none overflow-y-auto overflow-x-hidden px-4 pb-12 pt-1 sm:px-6 lg:px-8">
+        <main id="main" tabIndex={-1} className="relative flex-1 focus:outline-none overflow-y-auto overflow-x-hidden px-4 pb-12 pt-1 sm:px-6 lg:px-8">
           {children}
         </main>
       </div>
