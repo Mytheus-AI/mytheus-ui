@@ -35,6 +35,7 @@ export default defineConfig({
       },
       resolve: {
         alias: [
+          { find: /^@clerk\/nextjs\/errors$/, replacement: stub("clerk-errors.ts") },
           { find: "@clerk/nextjs", replacement: stub("clerk.ts") },
           { find: /^next\/link$/, replacement: stub("next-link.tsx") },
           { find: /^next\/navigation$/, replacement: stub("next-navigation.ts") },

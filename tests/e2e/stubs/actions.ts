@@ -851,3 +851,18 @@ export async function confirmMyteProposal(proposal: { kind: string; title: strin
   (aw().__askConfirmed ??= []).push({ proposal, edits });
   return { ok: true as const, done: "Task added", href: "/work/tasks" };
 }
+// The workspace logo editor (ADR-0047). `window.__logoUpload` steers a test: "slow" holds the
+// upload long enough to see the progress state, "refuse" answers as the API does for a 429.
+export async function uploadOrgLogo(_form: FormData) {
+  const mode = (globalThis as { __logoUpload?: string }).__logoUpload;
+  await new Promise((r) => setTimeout(r, mode === "slow" ? 60_000 : 300));
+  if (mode === "refuse") return { ok: false as const, message: "The logo has been changed too many times this hour. Try again later." };
+  return { ok: true as const, logoUrl: "/api/v1/org/logo/image?v=2" };
+}
+export async function removeOrgLogo() {
+  return { ok: true as const, logoUrl: null };
+}
+// The workspace chooser hands a chosen workspace to the API; nothing to provision in a test.
+export async function provisionActiveWorkspace() {
+  return { ok: true as const };
+}

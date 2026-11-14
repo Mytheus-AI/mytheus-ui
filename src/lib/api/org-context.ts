@@ -23,6 +23,8 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import type { OrgContextValue } from "@/lib/types";
 import { defaultDoodleSeed, isDoodleSeed } from "@/lib/doodle";
 import { fullNameFrom } from "@/lib/api/profile-types";
+import { fetchOrgLogo } from "@/lib/api/org-logo";
+import { logoSrc } from "@/lib/org-logo";
 
 type Profile = {
   name: string;
@@ -95,14 +97,21 @@ export const resolveOrgContext = cache(async (): Promise<OrgContextValue | null>
   const { orgId, orgSlug, orgRole, userId } = await auth();
   if (!userId) return null; // signed out; middleware should already have redirected
 
-  const { name, email, avatarSeed, imageUrl } = await profileFor(userId);
+  // The logo (ADR-0047) is read from the gateway, in parallel with the Clerk lookups. A failed
+  // read draws the initial instead; it never holds the shell.
+  const [{ name, email, avatarSeed, imageUrl }, orgName, logo] = await Promise.all([
+    profileFor(userId),
+    orgId ? orgNameFor(orgId) : Promise.resolve(null),
+    orgId ? fetchOrgLogo().catch(() => null) : Promise.resolve(null),
+  ]);
 
   return {
     org: {
       // Clerk's opaque org id, for display only. A personal account has no organization; the
       // gateway rejects its token, so the shell shows a name rather than crashing first.
       id: orgId ?? "",
-      name: (orgId ? await orgNameFor(orgId) : null) ?? orgSlug ?? "Your workspace",
+      name: orgName ?? orgSlug ?? "Your workspace",
+      logoUrl: logoSrc(logo?.logo_url),
     },
     user: {
       id: userId,

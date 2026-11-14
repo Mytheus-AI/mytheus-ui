@@ -8,6 +8,7 @@ import { AuthShell } from "./AuthShell";
 import { FormAlert, PrimaryButton, Spinner, StepHeader, TextButton, TextField } from "./fields";
 import { AFTER_AUTH_URL, firstError } from "./clerk-helpers";
 import { Avatar } from "@/components/ui/Avatar";
+import { OrgMark } from "@/components/tenant/OrgMark";
 import { Button } from "@/components/ui/Button";
 import { defaultDoodleSeed, isDoodleSeed } from "@/lib/doodle";
 import { provisionActiveWorkspace } from "@/app/actions/workspace";
@@ -395,14 +396,10 @@ function OrgRow({
         highlight ? "border-signal-line" : "border-line enabled:hover:border-line-2"
       }`}
     >
-      {imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={imageUrl} alt="" className="h-11 w-11 shrink-0 rounded-ctl object-cover" />
-      ) : (
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-ctl bg-tint-peach font-display text-[20px] font-medium text-ink" aria-hidden>
-          {name.trim().charAt(0).toUpperCase() || "W"}
-        </span>
-      )}
+      {/* The workspace's logo, mirrored to its Clerk organization when an admin saves it in Mytheus
+          (ADR-0047); the initial when it has none or it fails to load. The name follows, so the
+          mark is decorative. */}
+      <OrgMark name={name} logoUrl={imageUrl} size={44} tone="peach" decorative />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[16px] font-semibold text-ink">{name}</span>
         <span className={`mt-0.5 block truncate text-[13px] ${highlight ? "text-signal-ink" : "text-ink-3"}`}>{meta}</span>
