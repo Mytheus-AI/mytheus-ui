@@ -9,12 +9,14 @@ import { Faq } from "@/components/company/Faq";
 
 export const metadata: Metadata = { title: "Pricing | Mytheus" };
 
-/* Pricing: the three catalog plans, honest to the business architecture (doc 18 section 3):
-   Free, Pro at $25 per seat per month, Enterprise, with the real included minutes, agent
-   allowance, residency, SSO/SCIM and SLO values. No invented numbers.
+/* Pricing: the four plans a workspace can buy, verbatim from the billing catalog (migration
+   a7c3e9f1b2d4, billing-metering-service): Free, Pro at $25 a month, Ultra at $200 a month, and
+   Pay as you go on a $500 deposit. Prices are per workspace, not per seat. Every plan stops at its
+   AI allowance (extra credits or a bigger plan turn it back on); Pay as you go has no cap and is
+   settled on what was used. No invented numbers.
 
-   The recommended plan sits raised on a peach stage; the other two are quiet white cards with
-   the same rows in the same order, so the three read across as one comparison. */
+   The recommended plan sits raised on a peach stage; the others are quiet white cards with the
+   same rows in the same order, so the four read across as one comparison. */
 
 type Plan = {
   name: string;
@@ -30,96 +32,101 @@ const PLANS: Plan[] = [
   {
     name: "Free",
     price: "$0",
-    priceSub: "for small teams trying it out",
+    priceSub: "forever",
     tagline: "Your own Myte, for real meetings, not a demo.",
     cta: { label: "Get started free", href: "/dashboard" },
     bullets: [
-      "Up to 5 seats",
-      "300 meeting minutes per seat each month",
-      "Live notes, decisions, action items and cross-meeting answers",
-      "Google Calendar and Slack integrations",
-      "Hard usage cap: it stops, it never surprise-bills",
-      "Community support, 99.5% availability",
+      "10,000 AI tokens a month",
+      "300 meeting minutes a month",
+      "Live notes, decisions, action items and answers",
+      "Hard stop at the allowance: never a surprise bill",
+      "Community support",
     ],
   },
   {
     name: "Pro",
     price: "$25",
-    priceSub: "per seat each month",
-    tagline: "The full experience for teams that live in meetings.",
-    cta: { label: "Start with Pro", href: "/dashboard" },
+    priceSub: "a month, whole workspace",
+    tagline: "For a team that meets every day.",
+    cta: { label: "Start with Pro", href: "/workspace/billing/plans" },
     recommended: true,
     bullets: [
-      "Up to 100 seats",
-      "3,000 meeting minutes per seat each month",
-      "20 times the agent allowance of Free",
-      "Choose where your data lives: US, EU or AP",
-      "Metered overage: keep working past the included usage",
-      "Priority support, 99.9% availability",
+      "200,000 AI tokens a month",
+      "3,000 meeting minutes a month",
+      "Mytes fill each other's context gaps",
+      "Extra credits whenever you need them",
+      "Email support",
     ],
   },
   {
-    name: "Enterprise",
-    price: "Custom",
-    priceSub: "annual contract",
-    tagline: "Isolation, identity, and scale for the whole organization.",
-    cta: { label: "Talk to the team", href: "/enterprise" },
+    name: "Ultra",
+    price: "$200",
+    priceSub: "a month, whole workspace",
+    tagline: "For a company that runs on its meetings.",
+    cta: { label: "Go Ultra", href: "/workspace/billing/plans" },
     bullets: [
-      "Unlimited seats, pooled custom usage",
-      "SSO (SAML) and SCIM provisioning",
-      "Dedicated cell isolation and residency pinning",
-      "Jira or Linear integration, your pick",
-      "Contractual overage terms",
-      "Dedicated support, 99.95% availability",
+      "2,000,000 AI tokens a month",
+      "20,000 meeting minutes a month",
+      "Proactive conflict and workload alerts",
+      "Extra credits whenever you need them",
+      "Priority support",
+    ],
+  },
+  {
+    name: "Pay as you go",
+    price: "$500",
+    priceSub: "deposit, settled monthly",
+    tagline: "No cap. Pay for what your Mytes actually use.",
+    cta: { label: "Pay as you go", href: "/workspace/billing/plans" },
+    bullets: [
+      "No AI cap, $100 per million tokens",
+      "Meetings without a minutes cap",
+      "Use less than $500 and the rest is refunded",
+      "Use more and the balance is billed at month end",
+      "Priority support",
     ],
   },
 ];
 
 /* the comparison matrix, values verbatim from the plan catalog. `true` = included, `false` = not */
 type Cell = string | boolean;
-const MATRIX: { label: string; free: Cell; pro: Cell; ent: Cell }[] = [
-  { label: "Price", free: "$0", pro: "$25 per seat each month", ent: "Custom, annual" },
-  { label: "Max seats", free: "5", pro: "100", ent: "Unlimited" },
-  { label: "Included meeting minutes", free: "300 per seat each month", pro: "3,000 per seat each month", ent: "Pooled, custom" },
-  {
-    label: "Included agent allowance",
-    free: "200k tokens per seat each month",
-    pro: "4M tokens per seat each month",
-    ent: "Pooled, custom",
-  },
-  { label: "Included storage", free: "1 GB per team", pro: "50 GB per team", ent: "Custom" },
-  { label: "Past the included usage", free: "Hard cap", pro: "Metered overage", ent: "Contractual" },
-  { label: "Data residency", free: "US", pro: "US, EU or AP, your choice", ent: "Your choice, plus a dedicated cell" },
-  { label: "SSO (SAML) and SCIM", free: false, pro: false, ent: true },
-  { label: "Integrations", free: "Calendar and Slack", pro: "Calendar and Slack", ent: "Calendar, Slack, plus Jira or Linear" },
-  { label: "Availability SLO", free: "99.5%", pro: "99.9%", ent: "99.95%" },
+const MATRIX: { label: string; free: Cell; pro: Cell; ultra: Cell; payg: Cell }[] = [
+  { label: "Price", free: "$0", pro: "$25 a month", ultra: "$200 a month", payg: "$500 deposit, settled monthly" },
+  { label: "AI tokens", free: "10,000 a month", pro: "200,000 a month", ultra: "2,000,000 a month", payg: "No cap, $100 per 1M" },
+  { label: "Meeting minutes", free: "300 a month", pro: "3,000 a month", ultra: "20,000 a month", payg: "No cap" },
+  { label: "At the allowance", free: "AI pauses", pro: "AI pauses", ultra: "AI pauses", payg: "Keeps running" },
+  { label: "Extra credits", free: "$10 per 100,000 tokens", pro: "$10 per 100,000 tokens", ultra: "$10 per 100,000 tokens", payg: "Not needed" },
+  { label: "Context-gap answers between Mytes", free: false, pro: true, ultra: true, payg: true },
+  { label: "Proactive conflict and workload alerts", free: false, pro: false, ultra: true, payg: true },
+  { label: "Admin warnings at 75%, 90% and 95%", free: true, pro: true, ultra: true, payg: true },
+  { label: "Support", free: "Community", pro: "Email", ultra: "Priority", payg: "Priority" },
 ];
 
 const FAQ = [
   {
-    q: "What is the agent allowance?",
+    q: "What are AI tokens?",
     a: (
       <p>
-        It is what your Mytes spend thinking: notes, labels, answers and insights all draw from it. Free includes
-        200k tokens per seat each month, Pro includes 4M, and Enterprise pools a custom amount across the organization.
+        They are what your Mytes spend thinking: notes, labels, answers and insights all draw from them. The allowance is
+        shared by the whole workspace and resets each month.
       </p>
     ),
   },
   {
-    q: "What happens when we reach the included usage?",
+    q: "What happens when we reach the allowance?",
     a: (
       <p>
-        Free stops at its cap, so you are never billed by surprise. Pro meters what you use past the included amount
-        at published rates, so work never stops mid-meeting. Enterprise follows the overage terms in your contract.
+        AI pauses for the workspace, so you are never billed by surprise; captions and transcription keep running. Admins
+        are warned at 75%, 90% and 95%, and can buy extra credits or move to a bigger plan to turn AI back on at once.
       </p>
     ),
   },
   {
-    q: "Can we choose where our data lives?",
+    q: "How does Pay as you go work?",
     a: (
       <p>
-        On Pro you choose US, EU or AP. Free runs in the US. Enterprise adds residency pinning and a dedicated cell
-        for isolation.
+        You pay a $500 deposit and AI runs without a cap for 30 days, priced at $100 per million tokens. If you use less
+        than the deposit, the rest is refunded to your card; if you use more, the balance is billed at the end.
       </p>
     ),
   },
@@ -208,30 +215,30 @@ export default function Page() {
         eyebrow="Pricing"
         title={
           <>
-            One price per seat. Every seat gets <Loop>an agent.</Loop>
+            One price per workspace. Everyone gets <Loop>an agent.</Loop>
           </>
         }
-        blurb="Start free with your team. Move to Pro when the meetings, and the memory, pile up."
+        blurb="Start free with your team. Move up when the meetings, and the memory, pile up."
         secondaryHref="#compare"
         secondaryLabel="Compare every feature"
       />
 
-      {/* the three plans, read across */}
+      {/* the four plans, read across */}
       <section aria-labelledby="plans-title" className="pb-[clamp(64px,9vw,120px)]">
         <Wrap>
           <h2 id="plans-title" className="sr-only">
             Plans
           </h2>
-          <div className="grid items-start gap-5 lg:grid-cols-3 lg:gap-6">
+          <div className="grid items-start gap-5 sm:grid-cols-2 xl:grid-cols-4 xl:gap-6">
             {PLANS.map((p) =>
               p.recommended ? (
-                <Stage key={p.name} glow className="order-first !p-3 sm:!p-4 lg:order-none lg:-mt-6">
+                <Stage key={p.name} glow className="!p-3 sm:!p-4 xl:-mt-6">
                   <div className="rounded-card bg-surface p-6 shadow-warm-3 sm:p-7">
                     <PlanBody plan={p} />
                   </div>
                 </Stage>
               ) : (
-                <div key={p.name} className="rounded-card border border-line bg-surface p-6 sm:p-7 lg:mt-4">
+                <div key={p.name} className="rounded-card border border-line bg-surface p-6 sm:p-7 xl:mt-4">
                   <PlanBody plan={p} />
                 </div>
               ),
@@ -248,8 +255,8 @@ export default function Page() {
             lead="Every limit and every included feature, from the same catalog the plans above are built on."
           />
           <div className="overflow-x-auto rounded-card border border-line bg-surface">
-            <table className="w-full min-w-[720px] border-collapse text-left text-[15px]">
-              <caption className="sr-only">Free, Pro and Enterprise plans compared</caption>
+            <table className="w-full min-w-[880px] border-collapse text-left text-[15px]">
+              <caption className="sr-only">Free, Pro, Ultra and Pay as you go plans compared</caption>
               <thead>
                 <tr className="bg-surface-2">
                   <th scope="col" className="sticky left-0 bg-surface-2 px-5 py-4 text-[14px] font-semibold text-ink-3">
@@ -264,7 +271,10 @@ export default function Page() {
                     </span>
                   </th>
                   <th scope="col" className="px-5 py-4 font-display text-[1.2rem] font-medium text-ink">
-                    Enterprise
+                    Ultra
+                  </th>
+                  <th scope="col" className="px-5 py-4 font-display text-[1.2rem] font-medium text-ink">
+                    Pay as you go
                   </th>
                 </tr>
               </thead>
@@ -281,7 +291,10 @@ export default function Page() {
                       <CellValue v={row.pro} strong />
                     </td>
                     <td className="px-5 py-4">
-                      <CellValue v={row.ent} />
+                      <CellValue v={row.ultra} />
+                    </td>
+                    <td className="px-5 py-4">
+                      <CellValue v={row.payg} />
                     </td>
                   </tr>
                 ))}
@@ -289,9 +302,9 @@ export default function Page() {
             </table>
           </div>
           <p className="mt-5 max-w-[72ch] text-[15px] leading-relaxed text-ink-3">
-            The agent allowance is what your Mytes spend thinking: notes, labels, answers, and insights all draw from
-            it. Free stops at its cap so you&rsquo;re never billed by surprise; Pro meters what you use past the
-            included amount at published rates, so work never stops mid-meeting.
+            AI tokens are what your Mytes spend thinking: notes, labels, answers and insights all draw from them.
+            Free, Pro and Ultra stop at their allowance so you&rsquo;re never billed by surprise, and extra credits
+            turn AI back on at once; Pay as you go has no cap and is settled on what you used.
           </p>
         </Wrap>
       </Section>
@@ -300,7 +313,7 @@ export default function Page() {
         <Wrap>
           <Faq
             title="Questions about plans."
-            lead="What teams ask before they pick one: the allowance, the caps, and where the data lives."
+            lead="What teams ask before they pick one: the allowance, the caps and how Pay as you go settles."
             items={FAQ}
           />
         </Wrap>
@@ -308,7 +321,7 @@ export default function Page() {
 
       <CloseCTA
         title="Start free. Bring the team when it sticks."
-        lead="Every seat gets its own Myte from the first meeting. Move to Pro when the memory starts to matter."
+        lead="Everyone gets their own Myte from the first meeting. Move up when the memory starts to matter."
         secondaryHref="/enterprise"
         secondaryLabel="Talk to the team about Enterprise"
       />
