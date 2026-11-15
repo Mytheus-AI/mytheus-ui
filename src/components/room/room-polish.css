@@ -539,11 +539,11 @@
 .mx-meet .qdock-pill.is-p2 { --qdock-tone: var(--priority-medium); }
 .mx-meet .qdock {
   width: min(380px, calc(100vw - 32px));
-  padding: 14px 16px 14px 18px;
+  padding: 14px 16px;
   border-radius: var(--radius-card);
   background: var(--surface);
-  border: 1px solid color-mix(in srgb, var(--qdock-tone) 45%, var(--line));
-  border-left: 4px solid var(--qdock-tone);
+  /* One even hairline, no accent stripe: the priority reads from the tinted icon and the label. */
+  border: 1px solid var(--line);
   box-shadow: var(--sh-2, var(--sh-1));
 }
 .mx-meet .qdock-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
@@ -581,7 +581,7 @@
   gap: 8px;
   padding: 9px 14px;
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--qdock-tone) 45%, var(--line));
+  border: 1px solid var(--line);
   background: var(--surface);
   color: var(--ink);
   font-size: 13.5px;
