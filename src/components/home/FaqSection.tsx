@@ -5,14 +5,14 @@ import s from "@/components/home/home.module.css";
    details/summary, so it works without JS and from the keyboard; the coral plus turns into a
    minus when an answer is open. */
 
-const QA = [
+export const QA = [
   {
     q: "Is there a bot that joins my call?",
     a: "No. Mytheus is its own meeting platform. The call happens in Mytheus, so there is no recording link to paste and no third-party notetaker in the participant list. Each person's Myte listens from the inside.",
   },
   {
-    q: "Does it integrate with Zoom, Meet or Teams?",
-    a: "Not today. Meetings run inside Mytheus, which is how every participant gets a Myte without a bot joining. You invite people with a link, like any other call.",
+    q: "Does it work with Zoom, Meet or Teams?",
+    a: "Yes, through Mytheus Capture, our Chrome extension. It brings calls on Google Meet, Microsoft Teams and the Zoom web client into Mytheus without a bot joining, and the call becomes an ordinary Mytheus meeting with its transcript, notes and decisions. Meetings held in Mytheus itself need nothing extra.",
   },
   {
     q: "Will my Myte commit decisions without me?",

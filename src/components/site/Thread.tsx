@@ -207,6 +207,10 @@ export function Thread() {
     // Rebuilt from scratch on every marketing route: each page has its own hero and sections.
   }, [pathname]);
 
+  // The redesigned home page (Nov 2026) has its own signatures (glyph eclipse, transcript,
+  // contour map) and runs without the page-long line; the footer draws its own mark there.
+  if (pathname === "/") return null;
+
   return (
     <svg
       ref={svgRef}
