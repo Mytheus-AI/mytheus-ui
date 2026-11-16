@@ -108,6 +108,53 @@ body:has([data-home-type]) {
   --font-display: var(--font-newsreader), Georgia, "Times New Roman", serif;
 }
 
+/* The home page snaps section by section (src/components/home/fx/SnapStage.tsx). On desktop it is
+   Lenis with its Snap plugin (one gesture, one stop); on touch it is native CSS snapping with
+   proximity, so a swipe can still travel freely. Off under reduced motion. Lenis sets the scroll
+   position itself every frame, so the site's smooth scroll-behavior must not smooth it again. */
+html.lenis {
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: no-preference) and (pointer: coarse) {
+  html:has([data-home-type]) {
+    scroll-snap-type: y proximity;
+  }
+}
+/* The home page draws its own scrollbar (the blocks on the right, SnapStage), so the browser's
+   bar is hidden there. Scrolling itself is untouched. */
+html:has([data-home-type]) {
+  scrollbar-width: none;
+}
+html:has([data-home-type])::-webkit-scrollbar {
+  display: none;
+  width: 0;
+}
+[data-snap],
+[data-snap-stop] {
+  scroll-snap-align: start;
+}
+[data-snap-end] {
+  scroll-snap-align: end;
+}
+
+/* Arrival: blocks marked data-snap-in settle in when their section becomes the active one, in
+   order (--si), and ease back out when you move on. Only with JS and motion allowed. */
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-snap] [data-snap-in] {
+    transition:
+      opacity 0.7s var(--ease-soft) calc(var(--si, 0) * 90ms),
+      transform 0.8s var(--ease-soft) calc(var(--si, 0) * 90ms),
+      filter 0.7s var(--ease-soft) calc(var(--si, 0) * 90ms);
+  }
+  .js [data-snap]:not([data-active]) [data-snap-in] {
+    opacity: 0.18;
+    transform: translateY(36px) scale(0.985);
+    filter: blur(4px);
+    transition-duration: 0.45s;
+    transition-delay: 0s;
+  }
+}
+
 /* The dashboard: Inter Tight titles, and upright type throughout (emphasis by weight and colour,
    never italic). Marketing and auth pages keep their own display faces. */
 .mx-app {

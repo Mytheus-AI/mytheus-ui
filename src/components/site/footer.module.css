@@ -1,0 +1,82 @@
+/* The footer's few pieces Tailwind cannot say: the sunset glow, the giant wordmark that is cut by
+   the panel's bottom edge, the mark that draws on arrival, and the letters that lift. Tokens only. */
+
+.footer {
+  isolation: isolate;
+}
+
+/* a low coral sun behind the wordmark, and a faint second warmth top right */
+.glow {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 55% at 50% 112%, color-mix(in srgb, var(--signal-line) 42%, transparent), transparent 70%),
+    radial-gradient(40% 40% at 92% 0%, color-mix(in srgb, var(--signal-line) 12%, transparent), transparent 70%);
+}
+
+/* the sign: mark and wordmark share a baseline and sink below the panel's edge */
+.sign {
+  transform: translateY(19%);
+}
+
+.word {
+  display: inline-flex;
+  font-size: min(16.8vw, 236px);
+  line-height: 0.8;
+  letter-spacing: -0.045em;
+}
+
+.letter {
+  display: inline-block;
+  transition: transform 0.55s var(--ease-soft);
+}
+@media (prefers-reduced-motion: no-preference) and (hover: hover) {
+  .letter:hover {
+    transform: translateY(-0.07em);
+  }
+  /* the neighbours follow a little, so it reads as a wave rather than a jump */
+  .letter:hover + .letter,
+  .letter:has(+ .letter:hover) {
+    transform: translateY(-0.035em);
+  }
+}
+
+/* the mark draws itself when the footer comes into view (InView adds .in on the wrapper; the
+   page-long line on other pages adds .in to the mark itself) */
+:global(.js) .mark path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+:global(.in) .mark path,
+.mark:global(.in) path {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 2.2s var(--ease-draw) 0.15s;
+}
+@media (prefers-reduced-motion: reduce) {
+  :global(.js) .mark path {
+    stroke-dashoffset: 0;
+  }
+  .letter {
+    transition: none;
+  }
+}
+
+/* the voice line: fades in at both edges and drifts left forever; still under reduced motion */
+.voice {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+  opacity: 0.75;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .wave {
+    animation: drift 38s linear infinite;
+  }
+}
+@keyframes drift {
+  to {
+    transform: translateX(-50%);
+  }
+}

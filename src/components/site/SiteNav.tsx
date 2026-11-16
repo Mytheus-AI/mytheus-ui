@@ -67,9 +67,11 @@ export function SiteNav() {
 
   return (
     <header data-site-nav="" className="sticky top-3.5 z-50 mx-auto mt-3.5 w-[min(1120px,100%-40px)] sm:w-[min(1120px,100%-80px)]">
-      <div className="mx-auto flex max-w-[960px] items-center gap-1.5 rounded-full border border-line bg-surface-2 py-[7px] pl-[18px] pr-[7px] shadow-warm-2">
-        <Link href="/" aria-label="Mytheus home" className="group mr-auto rounded-full">
-          <Wordmark size={22} textClassName="text-[22px]" />
+      {/* Frosted glass: the page shows through, softened. A rounded rectangle (the card radius),
+          not a pill. */}
+      <div className="mx-auto flex min-h-[60px] max-w-[1040px] items-center gap-1.5 rounded-card border border-[color-mix(in_srgb,var(--line-2)_55%,transparent)] bg-[color-mix(in_srgb,var(--surface-2)_58%,transparent)] py-2 pl-4 pr-2 shadow-[0_10px_34px_-14px_rgba(60,45,35,0.32),inset_0_1px_0_color-mix(in_srgb,var(--surface)_45%,transparent)] backdrop-blur-xl backdrop-saturate-[1.4]">
+        <Link href="/" aria-label="Mytheus home" className="group mr-auto flex h-11 items-center rounded-ctl pr-1">
+          <Wordmark size={22} textClassName="text-[22px] translate-y-[-1px]" />
         </Link>
 
         <div
@@ -87,7 +89,7 @@ export function SiteNav() {
                   aria-controls="features-menu"
                   onMouseEnter={() => setHover(l.href)}
                   onClick={() => setMenu((m) => !m)}
-                  className={`rounded-full px-[13px] py-2 text-[15.5px] font-medium transition-colors ${
+                  className={`rounded-ctl px-[13px] py-2 text-[15.5px] font-medium transition-colors ${
                     current === l.href || menu ? "text-ink" : "text-ink-3 hover:text-ink"
                   }`}
                 >
@@ -130,7 +132,7 @@ export function SiteNav() {
                 data-href={l.href}
                 aria-current={current === l.href ? "page" : undefined}
                 onMouseEnter={() => setHover(l.href)}
-                className={`rounded-full px-[13px] py-2 text-[15.5px] font-medium transition-colors ${
+                className={`rounded-ctl px-[13px] py-2 text-[15.5px] font-medium transition-colors ${
                   current === l.href ? "text-ink" : "text-ink-3 hover:text-ink"
                 }`}
               >
@@ -148,7 +150,7 @@ export function SiteNav() {
           </svg>
         </div>
 
-        <span className="[&>button]:rounded-full">
+        <span className="[&>button]:rounded-ctl">
           <ThemeToggle />
         </span>
         <Link
@@ -159,7 +161,7 @@ export function SiteNav() {
         </Link>
         <Link
           href="/sign-up"
-          className="inline-flex h-10 items-center whitespace-nowrap rounded-full bg-pill px-4 text-[15px] font-semibold text-pill-on transition-[background-color,box-shadow] hover:bg-pill-2 hover:shadow-warm-2"
+          className="inline-flex h-11 items-center whitespace-nowrap rounded-ctl bg-pill px-[18px] text-[15px] font-semibold text-pill-on transition-[background-color,transform] hover:bg-pill-2 motion-safe:active:scale-[.98]"
         >
           Get started<span className="hidden min-[480px]:inline">&nbsp;free</span>
         </Link>
@@ -169,16 +171,16 @@ export function SiteNav() {
           aria-expanded={sheet}
           aria-controls="site-sheet"
           onClick={() => setSheet((v) => !v)}
-          className="relative h-10 w-10 flex-none rounded-full border border-line-2 bg-surface min-[860px]:hidden"
+          className="relative h-11 w-11 flex-none rounded-ctl border border-line-2 bg-surface min-[860px]:hidden"
         >
           <span
-            className={`absolute left-[11px] right-[11px] h-0.5 rounded bg-ink transition-[top,transform] duration-200 ${
-              sheet ? "top-[18.5px] rotate-45" : "top-[15px]"
+            className={`absolute left-[13px] right-[13px] h-0.5 rounded bg-ink transition-[top,transform] duration-200 ${
+              sheet ? "top-[20.5px] rotate-45" : "top-[17px]"
             }`}
           />
           <span
-            className={`absolute left-[11px] right-[11px] h-0.5 rounded bg-ink transition-[top,transform] duration-200 ${
-              sheet ? "top-[18.5px] -rotate-45" : "top-[22px]"
+            className={`absolute left-[13px] right-[13px] h-0.5 rounded bg-ink transition-[top,transform] duration-200 ${
+              sheet ? "top-[20.5px] -rotate-45" : "top-[24px]"
             }`}
           />
         </button>
