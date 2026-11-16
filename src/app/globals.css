@@ -108,9 +108,13 @@ body:has([data-home-type]) {
   --font-display: var(--font-newsreader), Georgia, "Times New Roman", serif;
 }
 
-/* The home page snaps section by section (src/components/home/fx/SnapStage.tsx). On desktop the
-   stepping is done in JS (one gesture, one section); on touch it is native CSS snapping with
-   proximity, so a swipe can still travel freely. Off under reduced motion. */
+/* The home page snaps section by section (src/components/home/fx/SnapStage.tsx). On desktop it is
+   Lenis with its Snap plugin (one gesture, one stop); on touch it is native CSS snapping with
+   proximity, so a swipe can still travel freely. Off under reduced motion. Lenis sets the scroll
+   position itself every frame, so the site's smooth scroll-behavior must not smooth it again. */
+html.lenis {
+  scroll-behavior: auto !important;
+}
 @media (prefers-reduced-motion: no-preference) and (pointer: coarse) {
   html:has([data-home-type]) {
     scroll-snap-type: y proximity;
