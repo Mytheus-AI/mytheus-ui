@@ -1,6 +1,5 @@
 import type { CSSProperties } from "react";
 import { HeroField } from "@/components/home/fx/HeroField";
-import { Decode } from "@/components/home/fx/Decode";
 import s from "@/components/home/home.module.css";
 
 /* The home hero: the full first screen is React Bits GradientASCII (HeroField), edge to edge and
@@ -27,7 +26,7 @@ export function HomeHero() {
             Every meeting,
           </span>
           <span className={`${s.word} block text-signal-ink`} style={d(".3s")}>
-            <Decode text="on repeat." delay={500} duration={1200} />
+            on repeat.
           </span>
         </h1>
 
