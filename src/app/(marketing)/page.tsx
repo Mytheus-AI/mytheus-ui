@@ -18,9 +18,10 @@ import { SnapStage } from "@/components/home/fx/SnapStage";
       (DitherVeil).
    5. Relay: the Myte-to-Myte exchange, typed out, cited.
    6. Confirm: the proposal card you can actually confirm, carried down the week.
-   7. Features: an index that floods coral on hover (FlowingMenu).
-   8. How it works: five steps drawn as one coral line, talk to follow-through (from the previous
-      home page), then the close on a moving contour map (Topography), over the footer's cubes.
+   7. How it works: five steps drawn as one coral line, talk to follow-through (from the previous
+      home page).
+   8. Features: an index that floods coral on hover with what each feature does and a picture of
+      it (FlowingMenu), then the close on a moving contour map (Topography), over the footer's cubes.
    The page snaps section by section, with a rail of sections on the right (SnapStage).
    Nav and footer come from the marketing layout. The page-long coral line is off on this page. */
 export default function Home() {
@@ -34,8 +35,8 @@ export default function Home() {
       <MyteSection />
       <RelaySection />
       <ConfirmSection />
-      <FeatureMenu />
       <HowSection />
+      <FeatureMenu />
       <HomeClose />
       <SnapStage />
     </>

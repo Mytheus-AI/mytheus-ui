@@ -31,8 +31,8 @@ export function HomeHero() {
         </h1>
 
         <p className={`${s.rise} mt-[clamp(24px,3.6vh,40px)] max-w-[56ch] text-[clamp(1.1rem,1.6vw,1.3rem)] leading-relaxed text-ink-2`} style={d(".7s")}>
-          Everyone gets their own Myte. It sits in the noise of every call, keeps the decisions that matter to you, and carries them into the
-          next meeting, and the one after that.
+          Mytheus is the meeting platform that remembers. Your calls, notes, decisions and follow-ups live in one place, and every meeting
+          starts from everything your team already knows.
         </p>
       </div>
     </section>

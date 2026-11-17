@@ -1,19 +1,27 @@
 import FlowingMenu, { type FlowingMenuItem } from "@/components/reactbits/FlowingMenu";
 import { SectionHead } from "@/components/site/Section";
-import { AGENT_SLUGS, FEATURES } from "@/lib/marketing/features";
+import { AGENT_SLUGS, FEATURES, type FeatureDef } from "@/lib/marketing/features";
 
 /* What your Myte does, as an index you can run a finger down (React Bits FlowingMenu). Each row
-   is a real link to its feature page; hovering floods the row with a coral band that streams the
-   feature's own promise (its hero line from src/lib/marketing/features.ts), entering from the
-   edge the pointer came in on. Keyboard focus does the same; touch taps straight through. */
+   is a real link to its feature page. Hovering floods the row with a coral band that streams what
+   that feature actually does (its three benefits from src/lib/marketing/features.ts), entering
+   from the edge the pointer came in on. Text only, no pictures. Keyboard focus does the same;
+   touch taps straight through. */
+
+const band = (f: FeatureDef) => `${f.benefits.map((b) => b.title).join("  ·  ")}  ·`;
 
 const ITEMS: FlowingMenuItem[] = [
   ...FEATURES.filter((f) => AGENT_SLUGS.includes(f.slug)).map((f) => ({
     text: f.nav,
     link: `/features/${f.slug}`,
-    marquee: `${f.title} ${f.accent}`,
+    marquee: band(f),
   })),
-  { text: "Every feature", link: "/features", marquee: "Search, transcripts, the knowledge graph and more", meta: `${FEATURES.length}` },
+  {
+    text: "Every feature",
+    link: "/features",
+    marquee: "Live transcription  ·  Meeting search  ·  The knowledge graph  ·  Integrations  ·",
+    meta: `${FEATURES.length}`,
+  },
 ];
 
 export function FeatureMenu() {

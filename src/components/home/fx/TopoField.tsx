@@ -5,7 +5,8 @@ import { PALETTE, useSiteTheme } from "@/components/home/fx/theme";
 
 /* The closing ground: contour lines of a slowly shifting terrain (React Bits Topography) in the
    coral line colour. Each meeting lays down another contour; the pointer traces the line under
-   it and a click sends a pulse across the map. */
+   it and a click sends a pulse across the map. No markers (the React Bits default): the dot grid
+   and its aim-like frames read as a targeting overlay. */
 const Topography = dynamic(() => import("@/components/reactbits/Topography"), { ssr: false });
 
 export function TopoField() {
@@ -31,7 +32,7 @@ export function TopoField() {
       hoverEffect="trace"
       mouseRadius={1.1}
       clickEffect="pulse"
-      markers="dots"
+      markers="none"
       parallax={0.35}
     />
   );
