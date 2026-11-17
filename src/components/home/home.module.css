@@ -229,29 +229,34 @@
 
 /* ------------------------------------------------------------------ how it works */
 
+/* --ico is the icon's width; everything on the line is measured from it (the icons are drawn in
+   an 80 x 64 box whose baseline is at y 56, with a 2.2 stroke), so the baseline that joins them
+   lands exactly on each icon's own. */
 .steps {
+  --ico: clamp(96px, 9vw, 128px);
+  --gap: clamp(20px, 2.4vw, 36px);
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 26px;
+  gap: var(--gap);
 }
 .stepIco {
   position: relative;
-  height: 64px;
-  margin-bottom: 18px;
+  height: calc(var(--ico) * 0.8);
+  margin-bottom: 22px;
 }
 .stepIco svg {
-  width: 80px;
-  height: 64px;
+  width: var(--ico);
+  height: calc(var(--ico) * 0.8);
   overflow: visible;
 }
 /* every icon sits on one baseline that runs on to the next step */
 .stepIco::after {
   content: "";
   position: absolute;
-  left: 79px;
-  right: -27px;
-  top: 54.9px;
-  height: 2.2px;
+  left: calc(var(--ico) - 1px);
+  right: calc(var(--gap) * -1 - 1px);
+  top: calc(var(--ico) * 0.7 - var(--ico) * 0.01375);
+  height: calc(var(--ico) * 0.0275);
   border-radius: 2px;
   background: var(--signal-line);
   transform: scaleX(0);
@@ -266,11 +271,12 @@
 }
 @media (max-width: 980px) {
   .steps {
+    --ico: 82px;
     grid-template-columns: 1fr;
   }
   .step {
     display: grid;
-    grid-template-columns: 82px 1fr;
+    grid-template-columns: var(--ico) 1fr;
     gap: 0 18px;
     align-items: start;
   }
@@ -782,55 +788,5 @@
   .rDot,
   .rDotA {
     display: none;
-  }
-}
-
-/* ------------------------------------------------------------------ ask a Myte */
-
-/* "is checking" with three dots that fill in turn */
-.thinking::after {
-  content: "";
-  display: inline-block;
-  width: 1.2em;
-  text-align: left;
-  animation: dots 1.1s steps(4, end) infinite;
-}
-@keyframes dots {
-  0% {
-    content: "";
-  }
-  25% {
-    content: ".";
-  }
-  50% {
-    content: "..";
-  }
-  75%,
-  100% {
-    content: "...";
-  }
-}
-/* the streaming caret, as in the room's agent sidebar */
-.caret {
-  display: inline-block;
-  width: 2px;
-  height: 0.95em;
-  margin-left: 2px;
-  vertical-align: -0.12em;
-  background: var(--signal);
-  animation: blink 0.9s steps(2, start) infinite;
-}
-@keyframes blink {
-  to {
-    visibility: hidden;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .thinking::after {
-    animation: none;
-    content: "...";
-  }
-  .caret {
-    animation: none;
   }
 }

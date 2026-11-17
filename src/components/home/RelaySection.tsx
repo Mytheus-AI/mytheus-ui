@@ -5,12 +5,12 @@ import { ArrowCounterClockwise, CheckCircle } from "@phosphor-icons/react";
 import { MARK_PATH } from "@/components/Logo";
 import s from "@/components/home/home.module.css";
 
-/* Mytes talk to each other, drawn. Your Myte (the brand mark on its disc, left) asks around:
+/* Mytes talk to each other, drawn. Your Myte (the Mytheus mark on its disc, left) asks around:
    the question goes out to three other Mytes as thin lines, a dot riding each one. The two that
    were not in the meeting say so and fall back; Sarah's Myte, which was, lights up and sends
    the answer home on a coral line of its own, bowing over the top. It lands as the answer card
    below, cited to the meeting it came from. In the line language of the old home page's
-   drawings (the agent relay, the five steps, the week's strands).
+   drawings (the agent relay, the five steps, the week's strands); each Myte is the whole Mytheus mark on its disc.
 
    One timeline, driven by a single `run` class: the strokes draw and the cards arrive on CSS
    delays, and the dots ride SMIL animateMotion started together with beginElementAt(offset).
@@ -29,11 +29,10 @@ const OTHERS: Myte[] = [
   { name: "Tom's Myte", status: "Wasn't in that meeting", x: 660, y: 386, r: 48 },
 ];
 
-/* The brand mark's four tangled loops, without the zigzag tail (the first half of MARK_PATH, the
-   same crop Tangle.tsx makes): it stands for a Myte on its disc. Its loops fill about 45..310 by
-   25..385 in the mark's own units. */
-const TANGLE = MARK_PATH.slice(0, MARK_PATH.indexOf("C 290 245"));
-const TANGLE_C = { x: 178, y: 205, h: 360 };
+/* The whole Mytheus mark, the tangle and its rising zigzag (MARK_PATH, as in the nav and the
+   footer), stands for a Myte on its disc. It is drawn in an 802 x 414 box, its ink about 25..775
+   by 10..400, so its centre is (400, 205) and its half-diagonal about 423 units. */
+const MARK_C = { x: 400, y: 205, halfDiag: 423 };
 
 const f = (n: number) => Math.round(n * 10) / 10;
 
@@ -57,15 +56,15 @@ function answerPath(o: Myte) {
   return `M${f(sx)} ${f(sy)} C${f(sx - 170)} ${f(sy - 52)} ${f(ex + 160)} ${f(ey - 110)} ${f(ex)} ${f(ey)}`;
 }
 
-/** The tangle centred on a disc, its stroke the same weight on every disc. */
+/** The mark centred on a disc, its corners well inside the rim, its stroke the same weight on every disc. */
 function Mark({ x, y, r, className }: { x: number; y: number; r: number; className: string }) {
-  const k = (r * 1.2) / TANGLE_C.h;
+  const k = (r * 0.8) / MARK_C.halfDiag;
   return (
     <path
       className={className}
-      d={TANGLE}
-      strokeWidth={f(2.6 / k)}
-      transform={`translate(${f(x - TANGLE_C.x * k)} ${f(y - TANGLE_C.y * k)}) scale(${f(k * 1000) / 1000})`}
+      d={MARK_PATH}
+      strokeWidth={f(3 / k)}
+      transform={`translate(${f(x - MARK_C.x * k)} ${f(y - MARK_C.y * k)}) scale(${f(k * 10000) / 10000})`}
     />
   );
 }

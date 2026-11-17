@@ -83,7 +83,7 @@ export function SignalSection() {
       {[40, 80, 120, 160].map((vh) => (
         <span key={vh} aria-hidden data-snap-stop="" className="pointer-events-none absolute left-0 hidden h-px w-px min-[1000px]:block" style={{ top: `${vh}vh` }} />
       ))}
-      <div className="min-[1000px]:sticky min-[1000px]:top-0 min-[1000px]:flex min-[1000px]:h-[100svh] min-[1000px]:items-center">
+      <div className="min-[1000px]:sticky min-[1000px]:top-0 min-[1000px]:flex min-[1000px]:h-[100svh] min-[1000px]:items-center min-[1000px]:pb-6 min-[1000px]:pt-[104px]">
         <div className="mx-auto grid w-[min(1280px,100%-40px)] gap-x-[clamp(32px,5vw,80px)] gap-y-10 py-[clamp(64px,9vw,112px)] sm:w-[min(1280px,100%-80px)] min-[1000px]:grid-cols-[minmax(0,1fr)_340px] min-[1000px]:py-0">
           <div>
             <h2 className="display text-[clamp(2rem,3.4vw,3.1rem)] leading-[1.02]">All that talk. Only the lines that matter.</h2>

@@ -16,16 +16,26 @@
     radial-gradient(40% 40% at 92% 0%, color-mix(in srgb, var(--signal-line) 12%, transparent), transparent 70%);
 }
 
-/* the sign: mark and wordmark share a baseline and sink below the panel's edge */
+/* the sign: mark and wordmark share a baseline and sink below the panel's edge. The wordmark's
+   size is set here so the mark can measure in the same em. */
 .sign {
+  font-size: min(16.8vw, 236px);
   transform: translateY(19%);
 }
 
 .word {
   display: inline-flex;
-  font-size: min(16.8vw, 236px);
+  font-size: 1em;
   line-height: 0.8;
   letter-spacing: -0.045em;
+}
+
+/* At line-height 0.8 the wordmark's baseline sits 0.165em above the bottom of its box (measured:
+   39px at 236px), so a mark aligned to the box's bottom hung below the letters. Lifting it by
+   that, less the mark's own bottom margin inside its viewBox (about 0.02em), stands its tangle on
+   the baseline like a letter. */
+.mark {
+  margin-bottom: 0.145em;
 }
 
 .letter {
