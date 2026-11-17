@@ -6,8 +6,8 @@ import s from "@/components/home/home.module.css";
 
 /* Signal out of noise, the page's centre. A whole stretch of a meeting is set large in grey: the
    recap nobody needed, the offsite, the coffee machine. As you scroll, your Myte finds the four
-   lines that matter; each one lights up in ink with a highlighter in its own colour and a tag
-   saying what it is and, at the same moment, lands on the right as what it kept. On wide screens the scene pins while you scroll through it; on
+   lines that matter; each one lights up in ink with a highlighter in its own colour and, at the
+   same moment, lands on the right as what it kept. On wide screens the scene pins while you scroll through it; on
    narrow ones it plays once when it comes into view. Reduced motion shows it finished. Sample
    people and lines. Nothing is saved until you confirm, which the cards say. */
 
@@ -20,18 +20,14 @@ const KEPT: Kept[] = [
 ];
 
 /* Each kept line is highlighted in its own colour (the frozen language: coral for a decision,
-   blue for context, red for a conflict, amber for an action item) and tagged with what it is. The
-   tag's space is always reserved, so lighting a line never reflows the paragraph. */
+   blue for context, red for a conflict, amber for an action item). What it is gets said once, on
+   its card on the right, so the transcript reads as plain speech. */
 const KIND = [s.hlDecision, s.hlContext, s.hlConflict, s.hlAction];
 
 function Mark({ n, lit, children }: { n: number; lit: number; children: ReactNode }) {
-  const on = lit > n;
   return (
-    <mark className={`${s.hlMark} ${KIND[n]} ${on ? s.hlMarkOn : ""}`}>
+    <mark className={`${s.hlMark} ${KIND[n]} ${lit > n ? s.hlMarkOn : ""}`}>
       <span className={s.hlText}>{children}</span>
-      <span className={s.kindTag} aria-hidden={!on}>
-        {KEPT[n].kind}
-      </span>
     </mark>
   );
 }
@@ -90,10 +86,7 @@ export function SignalSection() {
       <div className="min-[1000px]:sticky min-[1000px]:top-0 min-[1000px]:flex min-[1000px]:h-[100svh] min-[1000px]:items-center">
         <div className="mx-auto grid w-[min(1280px,100%-40px)] gap-x-[clamp(32px,5vw,80px)] gap-y-10 py-[clamp(64px,9vw,112px)] sm:w-[min(1280px,100%-80px)] min-[1000px]:grid-cols-[minmax(0,1fr)_340px] min-[1000px]:py-0">
           <div>
-            <p className="text-[14px] font-semibold text-ink-3">
-              Q3 launch sync, 41 minutes. <span className="tabular-nums text-signal-ink">{lit} of 4</span> lines kept.
-            </p>
-            <h2 className="display mt-2.5 text-[clamp(2rem,3.4vw,3.1rem)] leading-[1.02]">Forty minutes of talk. Four lines that matter.</h2>
+            <h2 className="display text-[clamp(2rem,3.4vw,3.1rem)] leading-[1.02]">All that talk. Only the lines that matter.</h2>
             <p className={`${s.transcript} mt-[clamp(18px,2.6vw,32px)] font-display text-[clamp(1.25rem,1.8vw,1.95rem)] leading-[1.5]`}>
               <b>Maya</b> Okay, before we jump in, did everyone see the deck? <b>Diego</b> Mostly. Can we skip the recap? <b>Sarah</b> Sorry, my
               camera froze again. <b>Maya</b> Fine, no recap.{" "}

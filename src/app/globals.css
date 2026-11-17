@@ -138,18 +138,18 @@ html:has([data-home-type])::-webkit-scrollbar {
 }
 
 /* Arrival: blocks marked data-snap-in settle in when their section becomes the active one, in
-   order (--si), and ease back out when you move on. Only with JS and motion allowed. */
+   order (--si), and ease back out when you move on. Only with JS and motion allowed. Opacity and
+   transform only: a blur here re-rasterised two full screens on every frame of a snap, which is
+   what made the snaps drop frames. */
 @media (prefers-reduced-motion: no-preference) {
   .js [data-snap] [data-snap-in] {
     transition:
       opacity 0.7s var(--ease-soft) calc(var(--si, 0) * 90ms),
-      transform 0.8s var(--ease-soft) calc(var(--si, 0) * 90ms),
-      filter 0.7s var(--ease-soft) calc(var(--si, 0) * 90ms);
+      transform 0.8s var(--ease-soft) calc(var(--si, 0) * 90ms);
   }
   .js [data-snap]:not([data-active]) [data-snap-in] {
     opacity: 0.18;
     transform: translateY(36px) scale(0.985);
-    filter: blur(4px);
     transition-duration: 0.45s;
     transition-delay: 0s;
   }

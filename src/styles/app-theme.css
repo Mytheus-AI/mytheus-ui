@@ -22,10 +22,13 @@
   color-scheme: light;
 }
 
+/* `.mx-dark` puts any block in the dark set whatever the theme (the home page's hero is always
+   dark); the tokens are inherited, so the whole subtree follows. */
 :root[data-theme="dark"] :is(.mx-app, .mx-auth, .mx-site),
 .mx-app[data-theme="dark"],
 .mx-auth[data-theme="dark"],
-.mx-site[data-theme="dark"] {
+.mx-site[data-theme="dark"],
+.mx-site .mx-dark {
   /* Wells, table heads and hairlines each get their own value in dark mode, so a well on a card,
      a table head on a card and a line on either stay visible (in the first dark set --surface-2
      equalled --bg-2 and --line equalled --bg-3, and wells vanished). */
