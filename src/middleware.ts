@@ -119,7 +119,7 @@ export const config = {
   matcher: [
     // Everything except Next internals and static assets. Skipping those is a performance
     // matter, not a security one: they carry no tenant data.
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest|glb|gltf)).*)",
     "/(api|trpc)(.*)",
   ],
 };
