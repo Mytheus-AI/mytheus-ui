@@ -576,19 +576,22 @@ export function MyteStage({
       projSync();
       setReady(true);
 
+      // run while the stage is on screen and the tab is showing; resume when either comes back
+      let onScreen = false;
+      const sync = () => {
+        if (onScreen && !document.hidden) play();
+        else pause();
+        if (reduced) frame();
+      };
       const io = new IntersectionObserver(
         (entries) => {
-          const vis = entries.some((e) => e.isIntersecting);
-          if (vis && !document.hidden) play();
-          else pause();
-          if (reduced) frame();
+          onScreen = entries.some((e) => e.isIntersecting);
+          sync();
         },
         { threshold: 0.15 },
       );
       io.observe(wrap);
-      const onVis = () => {
-        if (document.hidden) pause();
-      };
+      const onVis = () => sync();
       document.addEventListener("visibilitychange", onVis);
       frame();
 
