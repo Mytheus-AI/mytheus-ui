@@ -1,28 +1,32 @@
 import Link from "next/link";
+import {
+  ArrowRight,
+  ArrowUp,
+  GithubLogo,
+} from "@phosphor-icons/react/dist/ssr";
 import { AGENT_SLUGS as AGENT, FEATURES } from "@/lib/marketing/features";
 import { MARK_PATH } from "@/components/Logo";
 import { InView } from "@/components/site/InView";
-import { WAVE } from "@/components/site/footer-wave";
 import s from "@/components/site/footer.module.css";
 
-/* The marketing footer: the end of the line. One screen tall on desktop (the home page's last
-   snap lands on it whole), a dark panel that slides up over the last section, in three bands:
+/* The marketing footer: a calm dark panel that slides up over the last section, rounded at the
+   top. No giant type; everything is set at reading size.
 
-   1. the promise set large with the one action beside it, the links on the right, and the
-      copyright and legal links folded into the same block (no separate base bar);
-   (between them, on desktop, a thin coral voice line drifts across the panel: a meeting being
-   heard, bursts of talk and quiet between;)
-   2. the brand mark drawn huge in coral as the footer arrives, the tangle resolving into the
-      rising line, which runs on into
-   3. the wordmark set across the whole width and cut by the panel's bottom edge, with a low coral
-      glow behind it. Each letter lifts a little under the pointer.
+   1. The brand block: the mark (where the page-long coral line ends: `[data-thread-end]`, and it
+      draws itself when the footer arrives), the wordmark, the promise in one serif line, a short
+      line of what Mytheus is, and the one action.
+   2. Four link columns.
+   3. A hairline, then the legal row: copyright, the policies, GitHub, the address, back to top.
 
-   The page-long line (Thread) on other pages ends in the tail of the mark (`[data-thread-end]`);
-   the mark also draws itself when the footer scrolls into view (InView adds `.in`). The panel is
-   the dark control colour, so it turns cream in the dark theme like every other dark control.
-   Reduced motion shows the mark drawn and the letters still. */
+   The panel is ink in the light theme and a deeper shade of the page in the dark theme (the
+   footer reads its own --f-bg / --f-ink, footer.module.css), so it never flips to cream.
+   It is the home page's last snap stop (`data-snap-end`: the page's bottom), and the home page's
+   contour map shows above it there. Reduced motion shows the mark drawn. */
 
-const COLS: { title: string; links: { label: string; href: string }[] }[] = [
+const COLS: {
+  title: string;
+  links: { label: string; href: string; external?: boolean }[];
+}[] = [
   {
     title: "Product",
     links: [
@@ -35,11 +39,17 @@ const COLS: { title: string; links: { label: string; href: string }[] }[] = [
   },
   {
     title: "Your Myte",
-    links: FEATURES.filter((f) => AGENT.includes(f.slug)).map((f) => ({ label: f.nav, href: `/features/${f.slug}` })),
+    links: FEATURES.filter((f) => AGENT.includes(f.slug)).map((f) => ({
+      label: f.nav,
+      href: `/features/${f.slug}`,
+    })),
   },
   {
     title: "Platform",
-    links: FEATURES.filter((f) => !AGENT.includes(f.slug)).map((f) => ({ label: f.nav, href: `/features/${f.slug}` })),
+    links: FEATURES.filter((f) => !AGENT.includes(f.slug)).map((f) => ({
+      label: f.nav,
+      href: `/features/${f.slug}`,
+    })),
   },
   {
     title: "Company",
@@ -47,110 +57,162 @@ const COLS: { title: string; links: { label: string; href: string }[] }[] = [
       { label: "About", href: "/about" },
       { label: "Blog", href: "/blog" },
       { label: "Careers", href: "/careers" },
-      { label: "GitHub", href: "https://github.com/Mytheus-AI" },
+      {
+        label: "GitHub",
+        href: "https://github.com/Mytheus-AI",
+        external: true,
+      },
     ],
   },
 ];
 
-const soft = "text-[color-mix(in_srgb,var(--pill-on)_58%,transparent)]";
-const WORD = "Mytheus".split("");
+const wrap = "mx-auto w-[min(1200px,100%-40px)] sm:w-[min(1200px,100%-80px)]";
 
 export function SiteFooter() {
   return (
     <footer
       data-snap-end=""
-      className={`${s.footer} relative z-10 -mt-7 flex flex-col overflow-hidden rounded-t-hero bg-pill text-pill-on lg:h-[min(100svh,1000px)] lg:min-h-[640px]`}
+      className={`${s.footer} relative z-10 -mt-7 overflow-hidden rounded-t-hero`}
     >
       <div aria-hidden className={s.glow} />
 
-      {/* band 1: the promise, the action, the links */}
-      <div className="relative mx-auto grid w-[min(1280px,100%-40px)] gap-x-[clamp(32px,5vw,80px)] gap-y-12 pt-[clamp(56px,8vh,104px)] sm:w-[min(1280px,100%-80px)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
-        <div>
-          <p className={`text-[14px] font-semibold ${soft}`}>The end of the line, for now.</p>
-          <p className="display mt-3 !text-pill-on text-[clamp(2.5rem,4.6vw,4.2rem)] leading-[0.96]">
-            Every meeting,
-            <br />
-            <span className="text-signal-line">on repeat.</span>
-          </p>
-          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
-            <Link
-              href="/sign-up"
-              className="inline-flex h-12 items-center rounded-ctl bg-pill-on px-5 text-[15.5px] font-semibold text-pill transition-[opacity,transform] hover:opacity-90 motion-safe:active:scale-[.98]"
-            >
-              Get started free
-            </Link>
-            <a href="mailto:hello@mytheus.cloud" className="font-semibold underline decoration-signal-line decoration-2 underline-offset-[6px] transition-colors hover:text-signal-line">
-              hello@mytheus.cloud
-            </a>
-          </div>
-        </div>
-
-        <div>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-9 sm:grid-cols-4">
-            {COLS.map((c) => (
-              <nav key={c.title} aria-label={c.title}>
-                <h3 className={`mb-3.5 text-[13.5px] font-semibold ${soft}`}>{c.title}</h3>
-                <ul className="space-y-2.5">
-                  {c.links.map((l) => (
-                    <li key={l.href}>
-                      <Link
-                        href={l.href}
-                        className="text-[15px] font-medium text-[color-mix(in_srgb,var(--pill-on)_86%,transparent)] decoration-signal-line decoration-2 underline-offset-[5px] transition-colors hover:text-pill-on hover:underline"
-                      >
-                        {l.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </nav>
-            ))}
-          </div>
-          <p className={`mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 text-[14px] ${soft}`}>
-            <span>&copy; 2026 Mytheus</span>
-            <Link href="/privacy" className="transition-colors hover:text-pill-on">
-              Privacy
-            </Link>
-            <Link href="/terms" className="transition-colors hover:text-pill-on">
-              Terms
-            </Link>
-            <Link href="/security" className="transition-colors hover:text-pill-on">
-              Security
-            </Link>
-          </p>
-        </div>
-      </div>
-
-      {/* the voice line: a meeting being heard, drifting across the panel */}
-      <div aria-hidden className={`${s.voice} relative hidden flex-1 items-center lg:flex`}>
-        <svg viewBox="0 0 2400 120" preserveAspectRatio="none" className={`${s.wave} h-[clamp(70px,11vh,120px)] w-[200%] flex-none`}>
-          <path d={WAVE} fill="none" stroke="var(--signal-line)" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-        </svg>
-      </div>
-
-      {/* bands 2 and 3: the mark draws, and runs on into the wordmark */}
-      <InView threshold={0.2} className="relative mt-auto pt-[clamp(28px,4vh,56px)] lg:mt-0">
-        <div className="mx-auto w-[min(1280px,100%-40px)] sm:w-[min(1280px,100%-80px)]">
-          <Link href="/" aria-label="Mytheus home" className={`${s.sign} group flex items-end gap-[1.4vw] rounded-ctl`}>
+      <div
+        className={`${wrap} grid gap-x-[clamp(32px,6vw,96px)] gap-y-14 pb-14 pt-[clamp(56px,7vw,88px)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.55fr)]`}
+      >
+        {/* 1. the brand block */}
+        <InView threshold={0.3} className="max-w-[420px]">
+          <Link
+            href="/"
+            aria-label="Mytheus home"
+            className="group inline-flex items-center gap-3 rounded-ctl"
+          >
             <svg
               viewBox="0 0 802 414"
               aria-hidden
               data-thread-end=""
               data-thread-x={775 / 802}
               data-thread-y={38 / 414}
-              className={`${s.mark} h-auto w-[21%] flex-none overflow-visible`}
+              className={`${s.mark} h-[30px] w-auto flex-none overflow-visible`}
             >
-              <path d={MARK_PATH} pathLength={1} fill="none" stroke="var(--signal-line)" strokeWidth={26} strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d={MARK_PATH}
+                pathLength={1}
+                fill="none"
+                stroke="var(--signal-line)"
+                strokeWidth={34}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
-            <span className={`${s.word} wordmark whitespace-nowrap text-pill-on`} aria-hidden>
-              {WORD.map((ch, i) => (
-                <span key={i} className={s.letter} style={{ ["--i" as string]: i }}>
-                  {ch}
-                </span>
-              ))}
+            <span className={`wordmark text-[25px] leading-none ${s.ink}`}>
+              Mytheus
             </span>
           </Link>
+
+          <p
+            className={`display mt-7 text-[clamp(1.6rem,2.4vw,2rem)] leading-[1.1] ${s.ink}`}
+          >
+            Every meeting, <span className="text-signal-line">on repeat.</span>
+          </p>
+          <p className={`mt-3 text-[15.5px] leading-relaxed ${s.soft}`}>
+            The meeting platform that remembers. Your Myte keeps what was said,
+            decided and promised, and brings it back when it matters.
+          </p>
+
+          <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3">
+            <Link
+              href="/sign-up"
+              className={`${s.cta} group/cta inline-flex h-11 items-center gap-1.5 rounded-ctl px-4 text-[15px] font-semibold motion-safe:active:scale-[.98]`}
+            >
+              Get started free
+              <ArrowRight
+                size={14}
+                weight="bold"
+                aria-hidden
+                className="transition-transform duration-200 group-hover/cta:translate-x-0.5"
+              />
+            </Link>
+            <Link
+              href="/enterprise"
+              className={`${s.link} text-[15px] font-semibold`}
+            >
+              Talk to the team
+            </Link>
+          </div>
+        </InView>
+
+        {/* 2. the links */}
+        <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-4 lg:pt-1.5">
+          {COLS.map((c) => (
+            <nav key={c.title} aria-label={c.title}>
+              <h3 className={`mb-4 text-[13px] font-semibold ${s.faint}`}>
+                {c.title}
+              </h3>
+              <ul className="space-y-3">
+                {c.links.map((l) => (
+                  <li key={l.href}>
+                    {l.external ? (
+                      <a
+                        href={l.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={`${s.link} text-[14.5px]`}
+                      >
+                        {l.label}
+                      </a>
+                    ) : (
+                      <Link href={l.href} className={`${s.link} text-[14.5px]`}>
+                        {l.label}
+                      </Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ))}
         </div>
-      </InView>
+      </div>
+
+      {/* 3. the legal row */}
+      <div
+        className={`${wrap} ${s.rule} flex flex-col gap-4 py-6 text-[13.5px] sm:flex-row sm:items-center sm:justify-between`}
+      >
+        <p className={`flex flex-wrap items-center gap-x-5 gap-y-2 ${s.faint}`}>
+          <span>&copy; 2026 Mytheus</span>
+          <Link href="/privacy" className={s.link}>
+            Privacy
+          </Link>
+          <Link href="/terms" className={s.link}>
+            Terms
+          </Link>
+          <Link href="/security" className={s.link}>
+            Security
+          </Link>
+        </p>
+        <div
+          className={`flex flex-wrap items-center gap-x-5 gap-y-2 ${s.faint}`}
+        >
+          <a href="mailto:hello@mytheus.cloud" className={s.link}>
+            hello@mytheus.cloud
+          </a>
+          <a
+            href="https://github.com/Mytheus-AI"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Mytheus on GitHub"
+            className={`${s.link} ${s.icon} grid h-9 w-9 place-items-center rounded-ctl`}
+          >
+            <GithubLogo size={18} aria-hidden />
+          </a>
+          <a
+            href="#top"
+            className={`${s.link} ${s.icon} inline-flex h-9 items-center gap-1.5 rounded-ctl px-2.5`}
+          >
+            Back to top
+            <ArrowUp size={13} weight="bold" aria-hidden />
+          </a>
+        </div>
+      </div>
     </footer>
   );
 }
