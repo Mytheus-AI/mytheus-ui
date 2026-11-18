@@ -855,3 +855,20 @@ html:has([data-home-type])::-webkit-scrollbar {
     transform: translateY(100%);
   }
 }
+
+/* Introducing Mytes: the kept line swaps in as the spark reaches each Myte. */
+.mytes-kept {
+  animation: mytes-kept 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes mytes-kept {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+    filter: blur(3px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mytes-kept {
+    animation: none;
+  }
+}
