@@ -2,6 +2,7 @@ import { HomeHero } from "@/components/home/HomeHero";
 import { IntegrationsBand } from "@/components/home/IntegrationsBand";
 import { SignalSection } from "@/components/home/SignalSection";
 import { MyteSection } from "@/components/home/MyteSection";
+import { MytesIntro } from "@/components/home/MytesIntro";
 import { RelaySection } from "@/components/home/RelaySection";
 import { ConfirmSection } from "@/components/home/ConfirmSection";
 import { FeatureMenu } from "@/components/home/FeatureMenu";
@@ -13,6 +14,7 @@ import { SnapStage } from "@/components/home/fx/SnapStage";
    1. Hero: an eclipse of transcript glyphs (React Bits GradientASCII), the promise resolving out of
       it, a live ticker of a meeting being labelled.
    2. Works with: two belts of real integrations running opposite ways (LogoLoop).
+   2b. Introducing Mytes: the cast of five 3D Mytes on one arc, a relay spark running between them.
    3. Signal: a pinned transcript where your Myte lights the four lines that matter.
    4. Meet your Myte: a Myte's portrait printed as a coral dither that clears under the pointer
       (DitherVeil).
@@ -31,6 +33,7 @@ export default function Home() {
       <span hidden data-home-type />
       <HomeHero />
       <IntegrationsBand />
+      <MytesIntro />
       <SignalSection />
       <MyteSection />
       <RelaySection />
