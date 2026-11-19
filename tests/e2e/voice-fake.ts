@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 export { VOICES } from "./voice-fixture";
 
-/* A fake Kokoro voice for the component tests (ADR-0050): `POST /api/voice/speech` answers a
+/* A fake Deepgram voice for the component tests (ADR-0050): `POST /api/voice/speech` answers a
    short WAV tone (decodeAudioData reads WAV as well as MP3), about `msPerWord` per word, so the
    speaker really decodes, plays and measures a level. `status` makes every call fail instead
    (503 `voice_not_connected`, 429 `rate_limited`). Each request body is kept in `spoken`. */
@@ -43,7 +43,7 @@ export async function fakeVoice(page: Page, opts: { msPerWord?: number; status?:
       return;
     }
     const words = body.text.split(/\s+/).filter(Boolean).length;
-    await route.fulfill({ status: 200, contentType: "audio/wav", headers: { "X-Myte-Voice": body.voice ?? "af_heart" }, body: wav(words * (opts.msPerWord ?? 90)) });
+    await route.fulfill({ status: 200, contentType: "audio/wav", headers: { "X-Myte-Voice": body.voice ?? "aura-2-thalia-en" }, body: wav(words * (opts.msPerWord ?? 90)) });
   });
   return Object.assign(spoken, { stats });
 }

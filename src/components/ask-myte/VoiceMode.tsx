@@ -22,7 +22,7 @@ import type { AskMyteState } from "./useAskMyte";
 
 /* Talk to Myte (ADR-0049 F6), loaded only when someone presses Talk. A large live plush in the
    middle reacts to the conversation. It greets the person first, in its own voice (the
-   self-hosted Kokoro voice, ADR-0050), then listens: the microphone is recorded and
+   Deepgram Aura-2 voice, ADR-0050, ADR-0052), then listens: the microphone is recorded and
    voice-activity detection on its level (lib/voice/vad.ts) finds where speech starts (with a
    pre-roll, so the first syllable is kept) and ends (about 1.2 s of quiet, 30 s at most). The
    clip is transcribed by the server (POST /api/voice/transcribe, faster-whisper), so it works in

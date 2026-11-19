@@ -27,7 +27,7 @@ test("failure reasons are a closed set, with a quiet note each", () => {
   assert.match(failureNote("blocked"), /Press play/);
 });
 
-test("the speech body: text 1..1500, a Kokoro voice id, speed clamped, short language", () => {
+test("the speech body: text 1..1500, a Deepgram or Kokoro voice id, speed clamped, short language", () => {
   assert.deepEqual(checkSpeechBody({ text: "  Hi  " }), { ok: true, body: { text: "Hi", speed: 1, language: "en" } });
   assert.deepEqual(checkSpeechBody({ text: "Hi", voice: "af_heart", speed: 2, language: "en-GB", org_id: "x" }), {
     ok: true,
@@ -38,6 +38,15 @@ test("the speech body: text 1..1500, a Kokoro voice id, speed clamped, short lan
   assert.equal(checkSpeechBody({ text: "x".repeat(1501) }).ok, false);
   assert.equal(checkSpeechBody({ text: "Hi", voice: "../etc" }).ok, false);
   assert.equal(checkSpeechBody({ text: "Hi", voice: "AF_HEART" }).ok, false);
+  // Deepgram Aura-2 ids (ADR-0052) pass; near misses do not.
+  assert.deepEqual(checkSpeechBody({ text: "Hi", voice: "aura-2-thalia-en" }), {
+    ok: true,
+    body: { text: "Hi", voice: "aura-2-thalia-en", speed: 1, language: "en" },
+  });
+  assert.equal(checkSpeechBody({ text: "Hi", voice: "aura-2-izanami-ja" }).ok, true);
+  assert.equal(checkSpeechBody({ text: "Hi", voice: "aura-2-../en" }).ok, false);
+  assert.equal(checkSpeechBody({ text: "Hi", voice: "aura-2-Thalia-en" }).ok, false);
+  assert.equal(checkSpeechBody({ text: "Hi", voice: "aura-3-thalia-en" }).ok, false);
   assert.equal(checkSpeechBody(null).ok, false);
   assert.equal(checkSpeechBody("Hi").ok, false);
 });
@@ -52,6 +61,7 @@ test("the catalogue drops anything malformed and only keeps choices it offers", 
       { id: "BAD ID", name: "Nope" },
       null,
       { id: "am_puck", accent: "Martian", gender: "robot" },
+      { id: "aura-2-draco-en", name: "Draco", description: "Warm and measured", accent: "British", gender: "male" },
     ],
     chosen: "bm_george",
     selected: "zz_unknown",
@@ -63,6 +73,7 @@ test("the catalogue drops anything malformed and only keeps choices it offers", 
       ["af_heart", "Heart", "American", "female"],
       ["bm_george", "George", "British", "male"],
       ["am_puck", "am_puck", "American", "female"],
+      ["aura-2-draco-en", "Draco", "British", "male"],
     ],
   );
   assert.equal(c.chosen, "bm_george");

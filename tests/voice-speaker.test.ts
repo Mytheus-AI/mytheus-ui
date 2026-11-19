@@ -90,9 +90,9 @@ test("chunk 0 alone first; chunk 1 is fetched as soon as chunk 0 arrives; plays 
 
 test("a preview names its voice", async () => {
   const h = harness();
-  void h.speaker.speak({ key: "preview:bm_george", text: "Hi, I'm Pip.", voice: "bm_george" });
+  void h.speaker.speak({ key: "preview:aura-2-draco-en", text: "Hi, I'm Pip.", voice: "aura-2-draco-en" });
   await flush();
-  assert.equal(h.requests[0]!.voice, "bm_george");
+  assert.equal(h.requests[0]!.voice, "aura-2-draco-en");
 });
 
 test("one speaker app-wide: a new speak stops the old one and aborts its requests", async () => {

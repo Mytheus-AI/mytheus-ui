@@ -2,7 +2,7 @@
    (WCAG 2.0/2.1 A and AA, contrast included) in light and dark and at phone width, the keyboard
    (native radios: arrows choose, Tab reaches Preview), a preview spoken through the speech route
    in the chosen voice while the portrait speaks, the personality match, a refused save rolling
-   back, the voice server off, and the speed kept on this device. The voice is a fake Kokoro
+   back, the voice server off, and the speed kept on this device. The voice is a fake Deepgram
    route (voice-fake.ts).
    Run: npm run test:a11y -- voice-picker
         VOICE_SHOTS=/some/dir npm run test:a11y -- voice-picker   (also writes screenshots) */
@@ -41,8 +41,8 @@ for (const theme of ["light", "dark"] as const) {
     await expect(v).toBeVisible();
     await expect(v.getByRole("group", { name: "Juniper's voice" }).getByRole("radio")).toHaveCount(VOICES.voices.length + 1);
     await expect(v.getByRole("radio", { name: "Match my Myte's personality" })).toBeChecked();
-    await expect(v.getByText("Right now that is Heart.")).toBeVisible();
-    for (const name of ["Heart", "Bella", "Kore", "Aoede", "Michael", "Fenrir", "Puck", "Emma", "George"]) {
+    await expect(v.getByText("Right now that is Thalia.")).toBeVisible();
+    for (const name of ["Thalia", "Helena", "Callista", "Harmonia", "Orpheus", "Zeus", "Apollo", "Pandora", "Draco"]) {
       await expect(v.getByRole("button", { name: `Preview ${name}` })).toBeVisible();
     }
     expect(await axe(page)).toEqual([]);
@@ -72,11 +72,11 @@ test("the keyboard: arrows choose (saved once, where you stop), Tab reaches Prev
   await match.focus();
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowRight");
-  await expect(v.getByRole("radio", { name: "Bella" })).toBeChecked();
-  await expect(v.getByRole("radio", { name: "Bella" })).toBeFocused();
-  await expect(page.getByText("Voice saved: Bella")).toBeVisible();
+  await expect(v.getByRole("radio", { name: "Helena" })).toBeChecked();
+  await expect(v.getByRole("radio", { name: "Helena" })).toBeFocused();
+  await expect(page.getByText("Voice saved: Helena")).toBeVisible();
   const saved = await page.evaluate(() => (window as unknown as { __savedVoices?: (string | null)[] }).__savedVoices);
-  expect(saved).toEqual(["af_bella"]);
+  expect(saved).toEqual(["aura-2-helena-en"]);
   // Tab leaves the group to the next control, a Preview button.
   await page.keyboard.press("Tab");
   await expect(page.locator(":focus")).toHaveAccessibleName(/^Preview /);
@@ -89,19 +89,19 @@ test("preview speaks the in-character line in that voice, the portrait speaks, t
   const spoken = await fakeVoice(page, { msPerWord: 160 });
   await mount(<AgentHarness />);
   const v = picker(page);
-  await v.getByRole("button", { name: "Preview George" }).click();
-  const stop = v.getByRole("button", { name: "Stop the George preview" });
+  await v.getByRole("button", { name: "Preview Draco" }).click();
+  const stop = v.getByRole("button", { name: "Stop the Draco preview" });
   await expect(stop).toHaveAttribute("aria-pressed", "true");
   await expect.poll(() => spoken.length).toBeGreaterThan(0);
   await shot(page, "preview-speaking", true);
-  expect(spoken[0]).toMatchObject({ text: "Hi, I'm Juniper.", voice: "bm_george", speed: 1 });
+  expect(spoken[0]).toMatchObject({ text: "Hi, I'm Juniper.", voice: "aura-2-draco-en", speed: 1 });
   await expect.poll(() => spoken.map((s) => s.text).join(" ")).toBe("Hi, I'm Juniper. I'll keep track of what matters to you.");
   // Previewing another voice stops the first: one speaker in the app.
-  await v.getByRole("button", { name: "Preview Emma" }).click();
-  await expect(v.getByRole("button", { name: "Preview George" })).toHaveAttribute("aria-pressed", "false");
-  await expect(v.getByRole("button", { name: "Stop the Emma preview" })).toBeVisible();
-  await v.getByRole("button", { name: "Stop the Emma preview" }).click();
-  await expect(v.getByRole("button", { name: "Preview Emma" })).toBeVisible();
+  await v.getByRole("button", { name: "Preview Pandora" }).click();
+  await expect(v.getByRole("button", { name: "Preview Draco" })).toHaveAttribute("aria-pressed", "false");
+  await expect(v.getByRole("button", { name: "Stop the Pandora preview" })).toBeVisible();
+  await v.getByRole("button", { name: "Stop the Pandora preview" }).click();
+  await expect(v.getByRole("button", { name: "Preview Pandora" })).toBeVisible();
   // Previewing never changes the choice.
   await expect(v.getByRole("radio", { name: "Match my Myte's personality" })).toBeChecked();
 });
@@ -111,7 +111,7 @@ test("a refused save rolls back and says why", async ({ mount, page }) => {
   await mount(<AgentHarness />);
   await page.evaluate(() => ((window as unknown as { __refuseVoice: boolean }).__refuseVoice = true));
   const v = picker(page);
-  await pick(page, /^Emma/);
+  await pick(page, /^Pandora/);
   await expect(page.getByText("Your Myte's voice could not be saved just now. Nothing changed.")).toBeVisible();
   await expect(v.getByRole("radio", { name: "Match my Myte's personality" })).toBeChecked();
 });
@@ -120,13 +120,13 @@ test("voice server off: preview says so quietly; a disconnected catalogue turns 
   await fakeVoice(page, { status: 503 });
   const c = await mount(<AgentHarness />);
   const v = picker(page);
-  await v.getByRole("button", { name: "Preview Heart" }).click();
+  await v.getByRole("button", { name: "Preview Thalia" }).click();
   await expect(v.getByText("Voice is unavailable right now")).toBeVisible();
-  await expect(v.getByRole("button", { name: "Preview Heart" })).toBeVisible();
+  await expect(v.getByRole("button", { name: "Preview Thalia" })).toBeVisible();
 
   await c.update(<AgentHarness voices={{ ...VOICES, connected: false }} />);
   await expect(v.getByText(/previews are off/)).toBeVisible();
-  await expect(v.getByRole("button", { name: "Preview Heart" })).toBeDisabled();
+  await expect(v.getByRole("button", { name: "Preview Thalia" })).toBeDisabled();
   expect(await axe(page)).toEqual([]);
   await shot(page, "picker-disconnected");
 });
@@ -135,7 +135,7 @@ test("the voices could not be read: an inline error with Retry", async ({ mount,
   await mount(<AgentHarness voices={null} />);
   await expect(page.getByText("The voices could not be loaded")).toBeVisible();
   await page.getByRole("button", { name: "Retry" }).click();
-  await expect(picker(page).getByRole("radio", { name: "Heart" })).toBeVisible();
+  await expect(picker(page).getByRole("radio", { name: "Thalia" })).toBeVisible();
 });
 
 test("speed is kept on this device and used by previews", async ({ mount, page }) => {
@@ -145,6 +145,6 @@ test("speed is kept on this device and used by previews", async ({ mount, page }
   await pick(page, "1.1x");
   await expect(v.getByRole("radio", { name: /1\.1x/ })).toBeChecked();
   expect(await page.evaluate(() => window.localStorage.getItem("mytheus.myte-voice.speed"))).toBe("1.1");
-  await v.getByRole("button", { name: "Preview Puck" }).click();
+  await v.getByRole("button", { name: "Preview Apollo" }).click();
   await expect.poll(() => spoken[0]?.speed).toBe(1.1);
 });
