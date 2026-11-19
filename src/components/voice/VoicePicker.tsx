@@ -296,7 +296,7 @@ export function VoicePicker({
 
         <p className="flex items-center gap-2 text-[13.5px] text-ink-3">
           <Waveform size={16} aria-hidden className="shrink-0 text-ink-4" />
-          Spoken by Mytheus&apos;s own voice server. What your Myte says never leaves it.
+          Spoken with Deepgram&apos;s Aura voices. What your Myte says is sent to Deepgram to be read aloud.
         </p>
       </div>
     </section>
