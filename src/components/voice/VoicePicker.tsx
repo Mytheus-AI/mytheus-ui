@@ -14,8 +14,8 @@ import { SPEED_STEPS, forgetFillers, useMyteSpeaker, useVoiceSpeed } from "@/lib
 import { speedName } from "@/lib/voice/speed";
 
 /* The Myte's voice picker (ADR-0050 D2), on Your Myte and in Settings > Briefings: one choice,
-   the same stored value in both places. A list of Kokoro voices (name, a short description,
-   accent and gender), each with a Preview that says a short line in that voice through the
+   the same stored value in both places. A list of Deepgram Aura-2 voices (ADR-0052: name, a
+   short description, accent and gender), each with a Preview that says a short line in that voice through the
    shared speaker (the plush on the page follows it: preview keys start with `preview:`), plus
    "Match my Myte's personality" (null). Choosing saves at once (debounced, so arrowing through
    the list saves only where you stop) and rolls back if refused. Speed is kept on this device.

@@ -26,8 +26,10 @@ export interface VoiceCatalog {
   selected: string | null;
 }
 
-/** A voice id as Kokoro names them (`af_heart`). Anything else is never forwarded. */
-export const VOICE_ID = /^[a-z]{2}_[a-z0-9]{1,40}$/;
+/** A voice id as the server's text-to-speech names them: Deepgram Aura-2 (`aura-2-thalia-en`,
+    ADR-0052) or Kokoro (`af_heart`, when core-api runs `TTS_PROVIDER=kokoro`). Anything else is
+    never forwarded. */
+export const VOICE_ID = /^(?:aura-2-[a-z]{2,20}-[a-z]{2}|[a-z]{2}_[a-z0-9]{1,40})$/;
 
 export function asVoiceId(v: unknown): string | null {
   return typeof v === "string" && VOICE_ID.test(v) ? v : null;

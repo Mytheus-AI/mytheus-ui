@@ -579,7 +579,7 @@ export async function loadVoices() {
   return { ok: true as const, catalog: { ...VOICES, chosen: voiceChoice, selected: voiceChoice ?? VOICES.selected } };
 }
 export async function saveVoice(voice: string | null) {
-  if (voice === "bf_emma" && (window as unknown as { __refuseVoice?: boolean }).__refuseVoice) return { ok: false as const, message: "Your Myte's voice could not be saved just now. Nothing changed." };
+  if (voice === "aura-2-pandora-en" && (window as unknown as { __refuseVoice?: boolean }).__refuseVoice) return { ok: false as const, message: "Your Myte's voice could not be saved just now. Nothing changed." };
   voiceChoice = voice;
   (window as unknown as { __savedVoices?: (string | null)[] }).__savedVoices = [...((window as unknown as { __savedVoices?: (string | null)[] }).__savedVoices ?? []), voice];
   return { ok: true as const, catalog: { ...VOICES, chosen: voice, selected: voice ?? VOICES.selected } };

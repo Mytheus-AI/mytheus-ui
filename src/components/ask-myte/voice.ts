@@ -11,8 +11,8 @@ const KEY = "ask:";
 
 /* Voice for Ask Myte, both ways.
 
-   - `useMyteVoice`: read an answer aloud in the Myte's own voice (ADR-0050: the self-hosted
-     Kokoro voice through the shared speaker, the same voice its briefings use). Markdown and
+   - `useMyteVoice`: read an answer aloud in the Myte's own voice (ADR-0050: the Deepgram
+     Aura-2 voice, ADR-0052, through the shared speaker, the same voice its briefings use). Markdown and
      citation markers are left out of what it says. When the voice is unavailable, `failed` names
      the answer and a quiet note; the text stays and no other voice is used.
    - `useSpeechInput`: dictate a question. The microphone is recorded and the clip transcribed by

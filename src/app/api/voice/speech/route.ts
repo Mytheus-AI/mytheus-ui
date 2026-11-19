@@ -4,7 +4,7 @@
  * A route handler because the answer is streamed audio, which `lib/api/client.ts` (JSON only)
  * does not carry. It holds no secret: it forwards the caller's own Clerk session token to
  * core-api's `POST /api/v1/voice/speech` through the gateway and streams `audio/mpeg` back as it
- * arrives. The body is checked first (text 1..1500, a Kokoro-shaped voice id, speed 0.7..1.4);
+ * arrives. The body is checked first (text 1..1500, a known-shaped voice id, speed 0.7..1.4);
  * anything else the browser sent is dropped.
  *
  * Every failure is JSON `{reason}` (`signed_out` 401, `invalid` 422, `rate_limited` 429,
